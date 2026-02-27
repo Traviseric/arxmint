@@ -46,15 +46,15 @@ The technology exists — Fedimint, Cashu, Lightning, L402, Ark — but stitchin
 
 - **Prompt-driven economy creation** — Describe your community in natural language, get a full deployment config
 - **Fedimint federation support** — Multi-guardian federated ecash with blinded Chaumian e-cash notes backed by BTC
-- **Cashu mint support** — Lightweight single-operator mint, CDK cloud-native for production
-- **Lightning AI agent commerce** — L402 + NUT-24 paywalls, MCP server, scoped macaroon tiers, remote signer
-- **Privacy defaults on** — Silent Payments (BIP-352), CoinJoin, PayJoin, Ark VTXOs — with honest per-backend availability
+- **Cashu mint support** — Lightweight local Nutshell + CDK compose generation path for production deployments
+- **Lightning AI agent commerce** — L402 + NUT-24 paywall flows, scoped security tiers, macaroon baking, remote signer config validation
+- **Privacy defaults on** — CoinJoin/PayJoin routing + honest per-backend support matrix; SP/Ark paths include experimental scaffolding
 - **Spend router** — Auto-selects ecash → Lightning → Ark → on-chain based on amount and privacy score
 - **Cycle monitoring** — Real-time MVRV, NUPL, and supply-in-profit signals from on-chain data
 - **Merchant directory** — Onboarding flow, QR codes, NFC support, "Spend sats here" listings
 - **Agent marketplace** — AI agents sell data, compute, privacy audits, and cycle signals for sats
 - **BCE health metrics** — Community health dashboard with grant-ready export (JSON/CSV)
-- **Docker one-command deploy** — LND + CDK/Nutshell + Fedimint + Aperture + Ark + Prometheus/Grafana
+- **Deployment generation** — Compose generation for LND + Fedimint/Cashu + Aperture + optional Ark/SP/monitoring services
 
 ## Quick Start
 
@@ -136,11 +136,11 @@ See [docs/roadmap.md](docs/roadmap.md) for the full phased plan with research tr
 
 | Phase | Codename | Status |
 |-------|----------|--------|
-| 0 | **Fortify** — Security hardening | Done |
-| 1 | **Keystone** — Core architecture (NUT-24, spend router, merchants, agents) | Done |
-| 2 | **Spire** — Full privacy + commerce (Ark, CDK, multi-mint, monitoring) | Done |
-| 3 | **Aether** — Advanced features (STARK eCash, ZK reissuance, governance, HW wallets) | Done |
-| 4 | **Citadel** — Production pilot + grants (Longmont deployment, FBCE/OpenSats) | Active |
+| 0 | **Fortify** — Security hardening | In progress (most items complete, remote signer integration still partial) |
+| 1 | **Keystone** — Core architecture (NUT-24, spend router, merchants, agents) | In progress (core shipped, hardening/testing ongoing) |
+| 2 | **Spire** — Full privacy + commerce (Ark, CDK, multi-mint, monitoring) | In progress (mixed complete/partial/prototype) |
+| 3 | **Aether** — Advanced features (STARK eCash, ZK reissuance, governance, HW wallets) | Experimental groundwork |
+| 4 | **Citadel** — Production pilot + grants (Longmont deployment, FBCE/OpenSats) | Planning + tooling |
 
 ## Built On
 

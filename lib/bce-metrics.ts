@@ -395,6 +395,13 @@ export function generateProgressReport(
   totalBudgetUSD: number
 ): GrantProgressReport {
   const cadence = getReportCadence(reportNumber);
+  const milestoneProgress: MilestoneProgressItem[] = milestones.map((m) => ({
+    milestoneId: m.id,
+    title: m.title,
+    status: m.status,
+    percentComplete: m.percentComplete,
+    notes: m.notes,
+  }));
 
   const kpiProgress: KPIProgressItem[] = [
     {
@@ -447,7 +454,7 @@ export function generateProgressReport(
     cadence,
     metrics,
     kpiProgress,
-    milestoneProgress: milestones,
+    milestoneProgress,
     progressNotes: notes,
     challenges,
     nextPeriodGoals: nextGoals,

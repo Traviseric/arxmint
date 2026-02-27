@@ -19,17 +19,39 @@ export const metadata = {
     "Five phases from security hardening to production deployment. Every task traces back to research. See where ArxMint is headed.",
 };
 
-const phases = [
+type RoadmapStatus = "done" | "current" | "pending";
+
+type RoadmapTask = {
+  id: string;
+  title: string;
+  humanTitle: string;
+  description: string;
+  status: RoadmapStatus;
+};
+
+type RoadmapPhase = {
+  number: number;
+  codename: string;
+  title: string;
+  status: RoadmapStatus;
+  icon: any;
+  description: string;
+  humanDescription: string;
+  timeline: string;
+  tasks: RoadmapTask[];
+};
+
+const phases: RoadmapPhase[] = [
   {
     number: 0,
     codename: "Fortify",
     title: "Security Hardening",
-    status: "done" as const,
+    status: "current" as const,
     icon: Shield,
     description:
-      "All P0 security issues identified by research — fixed and verified. Foundation is safe.",
+      "Most P0 controls are shipped and tested. Final remote-signer transport hardening is still in progress.",
     humanDescription: "your sats and data are protected before anything else gets built",
-    timeline: "Complete",
+    timeline: "In Progress",
     tasks: [
       {
         id: "0.1",
@@ -60,8 +82,8 @@ const phases = [
         title: "Remote signer integration",
         humanTitle: "Agent processes never hold signing keys",
         description:
-          "litd remote signer support — agent processes never hold signing keys.",
-        status: "done" as const,
+          "Signer config and fail-closed validation are shipped. Full isolated signer transport remains to be finalized.",
+        status: "current" as const,
       },
     ],
   },
@@ -69,19 +91,19 @@ const phases = [
     number: 1,
     codename: "Keystone",
     title: "Core Architecture",
-    status: "done" as const,
+    status: "current" as const,
     icon: Wrench,
     description:
-      "Agent commerce, merchant onboarding, spend routing, BCE metrics. The critical stone that holds the arch together.",
+      "Core architecture is largely shipped: spend routing, merchant onboarding, BCE metrics, and scoped agent controls.",
     humanDescription: "merchants can accept payments, wallet auto-picks best way to pay",
-    timeline: "Complete",
+    timeline: "In Progress",
     tasks: [
       {
         id: "1.1",
         title: "NUT-24 ecash paywalls",
         humanTitle: "Pay for services with ecash, not just Lightning",
-        description: "Accept Cashu tokens as payment for agent services alongside L402.",
-        status: "done" as const,
+        description: "Dual L402 + Cashu flows are implemented; strict production enforcement and deeper testing are still being hardened.",
+        status: "current" as const,
       },
       {
         id: "1.2",
@@ -131,40 +153,40 @@ const phases = [
     number: 2,
     codename: "Spire",
     title: "Full Privacy + Commerce",
-    status: "done" as const,
+    status: "current" as const,
     icon: Layers,
     description:
-      "Complete privacy layer stack with production infrastructure. The structure rises.",
+      "Mixed maturity phase: some capabilities are production-ready, others are partial integrations or prototype scaffolding.",
     humanDescription: "ecash across multiple mints, tap-to-pay, real-time monitoring",
-    timeline: "Complete",
+    timeline: "In Progress",
     tasks: [
       {
         id: "2.1",
         title: "Fedimint v0.10.0 upgrade",
         humanTitle: "Latest security and performance improvements",
-        description: 'Upgraded to "Lighthouse" release. ConnectorRegistry transport.',
-        status: "done" as const,
+        description: 'Generator paths target "Lighthouse" v0.10.0; root local compose still needs full parity.',
+        status: "current" as const,
       },
       {
         id: "2.2",
         title: "Ark SDK integration",
         humanTitle: "High-privacy off-chain spending layer",
-        description: "SovereignArkClient — VTXOs for high-privacy off-chain spends.",
-        status: "done" as const,
+        description: "SovereignArkClient interface exists with stub-mode behavior pending full upstream integration.",
+        status: "current" as const,
       },
       {
         id: "2.3",
         title: "CDK cloud-native mint",
         humanTitle: "Production-grade mint with real database and monitoring",
-        description: "CDK replaces Nutshell for production. Postgres, Prometheus, structured logging.",
-        status: "done" as const,
+        description: "CDK generation path exists; default local stack still uses Nutshell for quick start.",
+        status: "current" as const,
       },
       {
         id: "2.4",
         title: "Multi-mint support (Coco)",
         humanTitle: "Spread trust across multiple ecash providers",
-        description: "Manage balances across multiple Cashu mints. Cross-mint send via LN bridge.",
-        status: "done" as const,
+        description: "Manager and swap scaffolding are in place; operational hardening and broader coverage continue.",
+        status: "current" as const,
       },
       {
         id: "2.5",
@@ -177,22 +199,22 @@ const phases = [
         id: "2.6",
         title: "Silent Payments infrastructure",
         humanTitle: "Receive Bitcoin without reusing addresses",
-        description: "BIP-352 scanner, key delegation, indexer Docker service.",
-        status: "done" as const,
+        description: "Scanner/indexer/key-delegation scaffolding is implemented with remaining protocol-level hardening.",
+        status: "current" as const,
       },
       {
         id: "2.7",
         title: "Monitoring stack",
         humanTitle: "Real-time health dashboards for community operators",
-        description: "Prometheus + Grafana. Federation uptime, mint balance, LN health.",
-        status: "done" as const,
+        description: "Prometheus/Grafana generation is implemented; deployment parity across all compose paths is ongoing.",
+        status: "current" as const,
       },
       {
         id: "2.8",
         title: "Gateway bridge",
         humanTitle: "Ecash automatically converts to Lightning when needed",
-        description: "L402 payments via Fedimint gateway — ecash auto-melts to Lightning.",
-        status: "done" as const,
+        description: "Bridge flow is implemented with placeholder preimage handling pending final production wiring.",
+        status: "current" as const,
       },
     ],
   },
@@ -200,54 +222,54 @@ const phases = [
     number: 3,
     codename: "Aether",
     title: "Advanced Features",
-    status: "done" as const,
+    status: "pending" as const,
     icon: Sparkles,
     description:
-      "Programmable ecash, ZK reissuance, governance, hardware wallets, NFC. Reaching higher.",
+      "Advanced capabilities are in experimental groundwork mode and depend on upstream protocol maturity for production use.",
     humanDescription: "programmable payments, hardware wallet support, tap-to-pay",
-    timeline: "Complete",
+    timeline: "Research / Prototype",
     tasks: [
       {
         id: "3.1",
         title: "Guardian governance",
         humanTitle: "Rules for who runs the shared vault and how",
         description: "Selection criteria, rotation policy, incident response, quorum management.",
-        status: "done" as const,
+        status: "current" as const,
       },
       {
         id: "3.2",
         title: "Programmable eCash (STARK)",
         humanTitle: "Smart contracts for ecash — escrow, subscriptions, automated payments",
         description: "Conditional tokens: escrow, subscriptions, proof-of-service.",
-        status: "done" as const,
+        status: "current" as const,
       },
       {
         id: "3.3",
         title: "ZK verified reissuance",
         humanTitle: "Cryptographic proof that agent wallets are honest",
         description: "Audit-log + ZK reissuance for stateless agent wallets.",
-        status: "done" as const,
+        status: "current" as const,
       },
       {
         id: "3.4",
         title: "Hardware wallet (BIP392)",
         humanTitle: "Sign transactions with your hardware device",
         description: "SP descriptor support and PSBT spending for hardware signing devices.",
-        status: "done" as const,
+        status: "current" as const,
       },
       {
         id: "3.5",
         title: "Advanced Cashu (NUT-28)",
         humanTitle: "Multi-mint atomic swaps and proof verification",
         description: "P2BK, background proof state verification, multi-mint atomic swaps.",
-        status: "done" as const,
+        status: "current" as const,
       },
       {
         id: "3.6",
         title: "Numo NFC merchant integration",
         humanTitle: "Tap your card to pay at any merchant",
         description: "Tap-to-pay for merchants using Numo NFC cards.",
-        status: "done" as const,
+        status: "current" as const,
       },
     ],
   },
@@ -255,60 +277,46 @@ const phases = [
     number: 4,
     codename: "Citadel",
     title: "Production + Grants",
-    status: "current" as const,
+    status: "pending" as const,
     icon: Castle,
     description:
-      "Longmont pilot, grant applications, replication playbook. The complete sovereign fortress.",
-    humanDescription: "live pilot with 30 Boulder-area merchants, replication playbook",
-    timeline: "Q2–Q3 2026",
+      "Production rollout phase: pilot deployment, grant execution, and replication at community scale.",
+    humanDescription: "pilot deployment plus grant-backed expansion",
+    timeline: "Planning + Tooling",
     tasks: [
       {
         id: "4.1",
-        title: "Milestone: First 5 merchants",
-        humanTitle: "Real shops accepting Bitcoin ecash in Boulder",
-        description: "Five Boulder-area businesses accepting ecash payments from community members.",
-        status: "pending" as const,
+        title: "Longmont pilot deployment",
+        humanTitle: "Real businesses, real customers, real sats changing hands",
+        description: "Deploy pilot with merchant and user KPIs, uptime targets, and monitored operations.",
+        status: "current" as const,
       },
       {
         id: "4.2",
-        title: "Milestone: 50 active spenders",
-        humanTitle: "Fifty real people spending sats locally every week",
-        description: "Fifty people making regular ecash purchases at local merchants.",
-        status: "pending" as const,
+        title: "Grant applications",
+        humanTitle: "Funding to scale from pilot to production",
+        description: "FBCE, OpenSats, and Fedi application templates and workflow support.",
+        status: "current" as const,
       },
       {
         id: "4.3",
-        title: "Longmont pilot deployment",
-        humanTitle: "Real businesses, real customers, real sats changing hands",
-        description: "30 merchants, 300 monthly active spenders, 99.5% uptime.",
-        status: "pending" as const,
+        title: "Grant reporting dashboard",
+        humanTitle: "Transparent progress tracking for funders",
+        description: "Export monthly/quarterly KPI snapshots and reporting artifacts.",
+        status: "current" as const,
       },
       {
         id: "4.4",
-        title: "Grant applications",
-        humanTitle: "Funding to scale from pilot to production",
-        description: "FBCE, OpenSats, Fedi — with working pilot and BCE metrics.",
-        status: "pending" as const,
+        title: "Replication playbook",
+        humanTitle: "Step-by-step guide for any community to copy this",
+        description: 'Open-source "BCE in a box" playbook generated from pilot configuration.',
+        status: "current" as const,
       },
       {
         id: "4.5",
-        title: "Grant reporting dashboard",
-        humanTitle: "Transparent progress tracking for funders",
-        description: "Built-in export: monthly progress, KPI snapshots, budget tracking.",
-        status: "pending" as const,
-      },
-      {
-        id: "4.6",
-        title: "Replication playbook",
-        humanTitle: "Step-by-step guide for any community to copy this",
-        description: 'Open-source "BCE in a box": infrastructure setup, merchant kit, governance template.',
-        status: "pending" as const,
-      },
-      {
-        id: "4.7",
         title: "Multi-city federation",
-        humanTitle: "Connect Boulder to other cities on the same rails",
-        description: "Extend from Longmont to additional cities. Inter-federation commerce via Coco.",
+        humanTitle: "Connect Longmont to other cities on the same rails",
+        description: "Expand pilot model into multi-city commerce via multi-mint and Lightning bridge routes.",
         status: "pending" as const,
       },
     ],
@@ -474,9 +482,7 @@ export default function RoadmapPage() {
 
                         <div className="mt-1 flex-shrink-0 z-10 bg-bg-base">
                           <StatusIcon
-                            status={
-                              phase.status === "done" ? "done" : phase.status === "current" ? "current" : task.status
-                            }
+                            status={task.status}
                           />
                         </div>
 
