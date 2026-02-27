@@ -316,7 +316,7 @@ export default function RoadmapPage() {
               ArxMint is open source infrastructure. Pick a task from the active phase, open a PR, or join the discussion.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="antigravity-btn !px-10 !py-4 text-lg w-full sm:w-auto">
+              <a href="https://github.com/Traviseric/arxmint" target="_blank" rel="noopener noreferrer" className="antigravity-btn !px-10 !py-4 text-lg w-full sm:w-auto">
                 <Github className="w-5 h-5 mr-3" />
                 View Repository
               </a>

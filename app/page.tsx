@@ -128,7 +128,7 @@ export default function HomePage() {
                   Initialize Environment
                   <ArrowRight className="w-4 h-4 ml-2 opacity-70" />
                 </a>
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="antigravity-btn-outline w-full sm:w-auto !py-4 text-text-secondary">
+                <a href="https://github.com/Traviseric/arxmint" target="_blank" rel="noopener noreferrer" className="antigravity-btn-outline w-full sm:w-auto !py-4 text-text-secondary">
                   <Github className="w-4 h-4 mr-2" />
                   View Source
                 </a>
@@ -416,7 +416,7 @@ export default function HomePage() {
                 Deploy Economy
               </a>
               <a
-                href="https://github.com"
+                href="https://github.com/Traviseric/arxmint"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="antigravity-btn-outline !px-10 !py-4 text-lg w-full sm:w-auto text-text-secondary"
