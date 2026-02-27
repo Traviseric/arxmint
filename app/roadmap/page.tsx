@@ -337,8 +337,10 @@ export default function RoadmapPage() {
 
       {/* Background Ambience */}
       <div className="fixed top-0 left-0 w-full h-[100vh] z-0 pointer-events-none origin-top overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/images/roadmap_bg.png')] bg-cover bg-center bg-no-repeat opacity-10" />
         <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full bg-accent/5 blur-[120px] mix-blend-screen" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[size:32px_32px] opacity-[0.03]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg-base/50 via-bg-base/80 to-bg-base" />
       </div>
 
       <div className="relative z-10 w-full">
@@ -347,7 +349,8 @@ export default function RoadmapPage() {
           <ScrollReveal>
             <div className="border-b-2 border-text-primary pb-8 mb-8 relative">
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-3xl rounded-full" />
-              <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-text-primary mb-6 uppercase !font-sans">
+              <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-text-primary mb-6 uppercase !font-sans flex items-center gap-4">
+                <img src="/images/logo.png" alt="ArxMint Citadel Logo" className="w-12 h-12 rounded-lg shadow-[0_0_15px_rgba(247,147,26,0.2)]" />
                 ArxMint: Sovereign Economy Specification
               </h1>
               <div className="flex justify-between items-end text-xs text-text-secondary uppercase tracking-widest">
@@ -416,7 +419,7 @@ export default function RoadmapPage() {
                   <div key={phase.number} className="text-left">
                     <span className="text-[10px] font-mono text-text-muted block mb-1 tracking-widest">PHASE {phase.number}.0</span>
                     <span className={`text-xs font-mono font-medium ${phase.status === "done" ? "text-green-400/70" :
-                        phase.status === "current" ? "text-accent" : "text-text-secondary"
+                      phase.status === "current" ? "text-accent" : "text-text-secondary"
                       }`}>
                       {phase.timeline}
                     </span>
@@ -438,40 +441,65 @@ export default function RoadmapPage() {
                   id={`phase-${phase.number}`}
                   className="scroll-mt-32 relative font-mono"
                 >
-                  <div className="mb-8 border-b border-border-default/50 pb-6 relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-bold text-text-primary tracking-tight !font-sans uppercase">
-                        <span className="text-text-muted mr-3 font-mono">{phase.number}.0</span>
-                        {phase.codename}: {phase.title}
-                      </h2>
-                      <div className="flex items-center gap-3">
-                        {phase.status === "done" && (
-                          <span className="text-[10px] px-2 py-1 rounded-sm flex items-center gap-1 bg-green-500/10 text-green-400 border border-green-500/20 tracking-widest uppercase">
-                            <CheckCircle2 className="w-3 h-3" /> VERIFIED
-                          </span>
-                        )}
-                        {phase.status === "current" && (
-                          <span className="text-[10px] px-2 py-1 rounded-sm flex items-center gap-1 bg-accent/10 text-accent border border-accent/20 tracking-widest uppercase">
-                            <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" /> IN PROGRESS
-                          </span>
+                  {/* Connecting Line */}
+                  {phaseIdx !== phases.length - 1 && (
+                    <div className="absolute left-[27px] top-[70px] bottom-[-130px] w-px bg-border-strong rounded-full" />
+                  )}
+
+                  <div className="flex items-start gap-6 mb-8 relative z-10 w-full">
+                    <div
+                      className={`flex-shrink-0 w-14 h-14 rounded-sm flex items-center justify-center border shadow-lg ${phase.status === "current"
+                        ? "bg-bg-base border-accent shadow-[0_0_15px_rgba(247,147,26,0.15)]"
+                        : phase.status === "done"
+                          ? "bg-bg-surface border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                          : "bg-bg-surface border-border-strong shadow-black/50"
+                        }`}
+                    >
+                      <phase.icon
+                        className={`w-6 h-6 ${phase.status === "current"
+                          ? "text-accent"
+                          : phase.status === "done"
+                            ? "text-green-400"
+                            : "text-text-muted"
+                          }`}
+                      />
+                    </div>
+
+                    <div className="flex-1 mb-[2px] border-b border-border-default/50 pb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight !font-sans uppercase">
+                          <span className="text-text-muted mr-3 font-mono">{phase.number}.0</span>
+                          {phase.codename}: {phase.title}
+                        </h2>
+                        <div className="flex items-center gap-3">
+                          {phase.status === "done" && (
+                            <span className="text-[10px] px-2 py-1 rounded-sm flex items-center gap-1 bg-green-500/10 text-green-400 border border-green-500/20 tracking-widest uppercase">
+                              <CheckCircle2 className="w-3 h-3" /> VERIFIED
+                            </span>
+                          )}
+                          {phase.status === "current" && (
+                            <span className="text-[10px] px-2 py-1 rounded-sm flex items-center gap-1 bg-accent/10 text-accent border border-accent/20 tracking-widest uppercase">
+                              <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" /> IN PROGRESS
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="pl-6 border-l-2 border-border-strong">
+                        <p className="text-text-secondary text-sm leading-relaxed max-w-2xl font-light mb-3">
+                          {phase.description}
+                        </p>
+                        {phase.humanDescription && (
+                          <p className="text-xs text-accent/80 flex items-start gap-2 max-w-2xl">
+                            <ArrowRight className="w-3 h-3 mt-[2px] flex-shrink-0" />
+                            <span>{phase.humanDescription}</span>
+                          </p>
                         )}
                       </div>
-                    </div>
-                    <div className="pl-6 border-l-2 border-border-strong">
-                      <p className="text-text-secondary text-sm leading-relaxed max-w-2xl font-light mb-3">
-                        {phase.description}
-                      </p>
-                      {phase.humanDescription && (
-                        <p className="text-xs text-accent/80 flex items-start gap-2 max-w-2xl">
-                          <ArrowRight className="w-3 h-3 mt-[2px] flex-shrink-0" />
-                          <span>{phase.humanDescription}</span>
-                        </p>
-                      )}
                     </div>
                   </div>
 
                   {/* Tasks styled as technical sub-sections */}
-                  <div className="space-y-6">
+                  <div className="space-y-6 pl-[80px]">
                     {phase.tasks.map((task) => (
                       <div
                         key={task.id}
@@ -482,12 +510,13 @@ export default function RoadmapPage() {
 
                         <div className="mt-1 flex-shrink-0 z-10 bg-bg-base">
                           <StatusIcon
-                            status={task.status}
+                            status={
+                              phase.status === "done" ? "done" : phase.status === "current" ? "current" : task.status
+                            }
                           />
                         </div>
-
                         <div className="flex-1 pb-2">
-                          <div className="flex items-baseline gap-3 mb-1">
+                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 mb-1">
                             <span className="text-xs font-semibold text-text-primary">
                               {phase.number}.{task.id.split('.')[1]} {task.title}
                             </span>
