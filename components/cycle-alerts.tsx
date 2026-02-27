@@ -1,0 +1,182 @@
+"use client";
+
+// ============================================================
+// ArxMint — Cycle Alerts Component
+// BTC cycle signals: MVRV, NUPL, supply in profit
+// "Hoard the good money, spend the bad"
+// ============================================================
+
+import { useEffect, useState } from "react";
+import { TrendingUp, TrendingDown, Minus, RefreshCw } from "lucide-react";
+import type { CycleMetrics } from "@/lib/types";
+import { SIGNAL_DESCRIPTIONS, getCycleMetrics } from "@/lib/cycle-monitor";
+import { formatSats } from "@/lib/utils";
+
+export function CycleAlerts() {
+  const [metrics, setMetrics] = useState<CycleMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMetrics = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const m = await getCycleMetrics();
+      setMetrics(m);
+    } catch (e: any) {
+      setError(e.message || "Failed to fetch cycle data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMetrics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="sovereign-card animate-pulse">
+        <div className="h-6 w-32 bg-sovereign-dark rounded mb-4" />
+        <div className="space-y-3">
+          <div className="h-16 bg-sovereign-dark rounded" />
+          <div className="h-16 bg-sovereign-dark rounded" />
+          <div className="h-16 bg-sovereign-dark rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="sovereign-card border-red-500/30">
+        <p className="text-red-400 text-sm">{error}</p>
+        <button
+          onClick={fetchMetrics}
+          className="mt-3 text-xs text-sovereign-muted hover:text-btc-orange transition-colors flex items-center gap-1"
+        >
+          <RefreshCw className="w-3 h-3" /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!metrics) return null;
+
+  const signal = SIGNAL_DESCRIPTIONS[metrics.signal];
+
+  const SignalIcon =
+    metrics.signal.includes("buy")
+      ? TrendingUp
+      : metrics.signal.includes("sell")
+        ? TrendingDown
+        : Minus;
+
+  return (
+    <div className="space-y-4">
+      {/* Signal Banner */}
+      <div
+        className="rounded-xl border px-6 py-5"
+        style={{
+          borderColor: `${signal.color}33`,
+          backgroundColor: `${signal.color}08`,
+        }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <SignalIcon className="w-6 h-6" style={{ color: signal.color }} />
+            <div>
+              <h3
+                className="text-lg font-bold"
+                style={{ color: signal.color }}
+              >
+                {signal.label}
+              </h3>
+              <p className="text-xs text-sovereign-muted">
+                BTC ${metrics.price.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={fetchMetrics}
+            className="p-2 rounded-lg hover:bg-sovereign-dark/50 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-4 h-4 text-sovereign-muted" />
+          </button>
+        </div>
+        <p className="text-sm text-sovereign-muted">{signal.action}</p>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-3 gap-3">
+        <MetricCard
+          label="MVRV Ratio"
+          value={metrics.mvrv.toFixed(2)}
+          description="Market Value / Realized Value"
+          highlight={metrics.mvrv < 1 || metrics.mvrv > 3}
+          color={metrics.mvrv < 1 ? "#00C853" : metrics.mvrv > 3 ? "#FF5252" : "#FFD54F"}
+        />
+        <MetricCard
+          label="NUPL"
+          value={(metrics.nupl * 100).toFixed(1) + "%"}
+          description="Net Unrealized Profit/Loss"
+          highlight={metrics.nupl < 0 || metrics.nupl > 0.75}
+          color={metrics.nupl < 0 ? "#00C853" : metrics.nupl > 0.75 ? "#FF5252" : "#FFD54F"}
+        />
+        <MetricCard
+          label="Supply in Profit"
+          value={(metrics.supplyInProfit * 100).toFixed(0) + "%"}
+          description="% of supply purchased below current price"
+          highlight={metrics.supplyInProfit < 0.5 || metrics.supplyInProfit > 0.95}
+          color={
+            metrics.supplyInProfit < 0.5
+              ? "#00C853"
+              : metrics.supplyInProfit > 0.95
+                ? "#FF5252"
+                : "#FFD54F"
+          }
+        />
+      </div>
+
+      {/* Gresham's Law Reminder */}
+      <div className="rounded-lg bg-sovereign-dark px-4 py-3 text-xs text-sovereign-muted">
+        <span className="text-btc-orange font-medium">Gresham&apos;s Law: </span>
+        Hoard the good money (BTC), spend the bad (USD). These signals help
+        optimize timing — not financial advice.
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  description,
+  highlight,
+  color,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  highlight: boolean;
+  color: string;
+}) {
+  return (
+    <div
+      className="rounded-lg border px-3 py-3"
+      style={{
+        borderColor: highlight ? `${color}33` : undefined,
+        backgroundColor: highlight ? `${color}08` : undefined,
+      }}
+    >
+      <div className="text-xs text-sovereign-muted mb-1">{label}</div>
+      <div className="text-xl font-bold" style={{ color }}>
+        {value}
+      </div>
+      <div className="text-xs text-sovereign-muted mt-1 leading-tight">
+        {description}
+      </div>
+    </div>
+  );
+}

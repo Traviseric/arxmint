@@ -1,0 +1,173 @@
+# ============================================================
+# ArxMint — Full Stack Docker Compose
+# Fedimint Federation + Cashu Mint + LND + Aperture L402
+# Network: testnet (change to mainnet for production)
+# ============================================================
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f
+#   docker compose down
+# ============================================================
+
+services:
+
+  # === Bitcoin + Lightning Node ===
+  lnd:
+    image: lightninglabs/lnd:v0.18.0-beta
+    container_name: sf-lnd
+    restart: unless-stopped
+    command: >
+      lnd
+      --bitcoin.active
+      --bitcoin.testnet
+      --bitcoin.node=neutrino
+      --neutrino.addpeer=faucet.lightning.community
+      --neutrino.addpeer=lnd.bitrefill.com
+      --rpclisten=0.0.0.0:10009
+      --restlisten=0.0.0.0:8080
+      --tlsextradomain=lnd
+      --noseedbackup
+      --accept-keysend
+      --protocol.wumbo-channels
+      --db.backend=sqlite
+    ports:
+      - "9735:9735"     # P2P
+      - "10009:10009"   # gRPC
+      - "8080:8080"     # REST
+    volumes:
+      - lnd-data:/root/.lnd
+    networks:
+      - sovereign
+    healthcheck:
+      test: ["CMD", "lncli", "--network=testnet", "getinfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # === Cashu Mint (Lightweight ecash) ===
+  cashu-mint:
+    image: cashubtc/nutshell:latest
+    container_name: sf-cashu
+    restart: unless-stopped
+    environment:
+      - MINT_BACKEND_BOLT11_SAT=LndRestWallet
+      - MINT_LND_REST_ENDPOINT=https://lnd:8080
+      - MINT_LND_REST_CERT=/root/.lnd/tls.cert
+      - MINT_LND_REST_MACAROON=/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon
+      - MINT_LISTEN_HOST=0.0.0.0
+      - MINT_LISTEN_PORT=3338
+      - MINT_PRIVATE_KEY=${CASHU_PRIVATE_KEY:-deadbeef00000000000000000000000000000000000000000000000000000001}
+    ports:
+      - "3338:3338"
+    volumes:
+      - lnd-data:/root/.lnd:ro
+      - cashu-data:/app/data
+    depends_on:
+      lnd:
+        condition: service_healthy
+    networks:
+      - sovereign
+
+  # === Fedimint Guardian 1 (Primary) ===
+  fedimintd-0:
+    image: fedimint/fedimintd:v0.5.0
+    container_name: sf-guardian-0
+    restart: unless-stopped
+    environment:
+      - FM_BIND_P2P=0.0.0.0:18173
+      - FM_BIND_API=0.0.0.0:18174
+      - FM_P2P_URL=fedimintd-0:18173
+      - FM_API_URL=ws://fedimintd-0:18174
+      - FM_BITCOIN_RPC_KIND=none
+    ports:
+      - "18173:18173"
+      - "18174:18174"
+    volumes:
+      - guardian-0-data:/data
+    networks:
+      - sovereign
+
+  # === Fedimint Guardian 2 ===
+  fedimintd-1:
+    image: fedimint/fedimintd:v0.5.0
+    container_name: sf-guardian-1
+    restart: unless-stopped
+    environment:
+      - FM_BIND_P2P=0.0.0.0:18175
+      - FM_BIND_API=0.0.0.0:18176
+      - FM_P2P_URL=fedimintd-1:18175
+      - FM_API_URL=ws://fedimintd-1:18176
+      - FM_BITCOIN_RPC_KIND=none
+    ports:
+      - "18175:18175"
+      - "18176:18176"
+    volumes:
+      - guardian-1-data:/data
+    networks:
+      - sovereign
+
+  # === Fedimint Guardian 3 ===
+  fedimintd-2:
+    image: fedimint/fedimintd:v0.5.0
+    container_name: sf-guardian-2
+    restart: unless-stopped
+    environment:
+      - FM_BIND_P2P=0.0.0.0:18177
+      - FM_BIND_API=0.0.0.0:18178
+      - FM_P2P_URL=fedimintd-2:18177
+      - FM_API_URL=ws://fedimintd-2:18178
+      - FM_BITCOIN_RPC_KIND=none
+    ports:
+      - "18177:18177"
+      - "18178:18178"
+    volumes:
+      - guardian-2-data:/data
+    networks:
+      - sovereign
+
+  # === Aperture L402 Reverse Proxy ===
+  aperture:
+    image: lightninglabs/aperture:latest
+    container_name: sf-aperture
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./docker/aperture.yml:/config/aperture.yml:ro
+      - lnd-data:/root/.lnd:ro
+    command: ["--configfile=/config/aperture.yml"]
+    depends_on:
+      lnd:
+        condition: service_healthy
+    networks:
+      - sovereign
+
+  # === ArxMint Web App ===
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sf-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - CASHU_MINT_URL=http://cashu-mint:3338
+      - APERTURE_URL=http://aperture:8081
+      - BITCOIN_NETWORK=testnet
+    depends_on:
+      - cashu-mint
+    networks:
+      - sovereign
+
+volumes:
+  lnd-data:
+  cashu-data:
+  guardian-0-data:
+  guardian-1-data:
+  guardian-2-data:
+
+networks:
+  sovereign:
+    driver: bridge

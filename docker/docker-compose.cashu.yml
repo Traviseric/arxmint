@@ -1,0 +1,62 @@
+# ============================================================
+# ArxMint — Lightweight Cashu-Only Stack
+# For quick setup without full Fedimint federation
+# Usage: docker compose -f docker/docker-compose.cashu.yml up -d
+# ============================================================
+
+services:
+
+  lnd:
+    image: lightninglabs/lnd:v0.18.0-beta
+    container_name: sf-lnd-lite
+    restart: unless-stopped
+    command: >
+      lnd
+      --bitcoin.active
+      --bitcoin.testnet
+      --bitcoin.node=neutrino
+      --neutrino.addpeer=faucet.lightning.community
+      --rpclisten=0.0.0.0:10009
+      --restlisten=0.0.0.0:8080
+      --tlsextradomain=lnd
+      --noseedbackup
+      --accept-keysend
+      --db.backend=sqlite
+    ports:
+      - "9735:9735"
+      - "10009:10009"
+      - "8080:8080"
+    volumes:
+      - lnd-data:/root/.lnd
+    networks:
+      - sovereign
+
+  cashu-mint:
+    image: cashubtc/nutshell:latest
+    container_name: sf-cashu-lite
+    restart: unless-stopped
+    environment:
+      - MINT_BACKEND_BOLT11_SAT=LndRestWallet
+      - MINT_LND_REST_ENDPOINT=https://lnd:8080
+      - MINT_LND_REST_CERT=/root/.lnd/tls.cert
+      - MINT_LND_REST_MACAROON=/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon
+      - MINT_LISTEN_HOST=0.0.0.0
+      - MINT_LISTEN_PORT=3338
+      - MINT_PRIVATE_KEY=${CASHU_PRIVATE_KEY:-deadbeef00000000000000000000000000000000000000000000000000000001}
+    ports:
+      - "3338:3338"
+    volumes:
+      - lnd-data:/root/.lnd:ro
+      - cashu-data:/app/data
+    depends_on:
+      - lnd
+    networks:
+      - sovereign
+
+volumes:
+  lnd-data:
+  cashu-data:
+
+networks:
+  sovereign:
+    driver: bridge

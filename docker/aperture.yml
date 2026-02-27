@@ -1,0 +1,51 @@
+# ============================================================
+# ArxMint — Aperture L402 Reverse Proxy Config
+# Gates API endpoints behind Lightning paywalls
+# Agents pay sats per request — no accounts, no KYC
+# ============================================================
+
+listenaddr: "0.0.0.0:8081"
+
+# LND connection for invoice generation
+authenticator:
+  lndhost: "lnd:10009"
+  tlspath: "/root/.lnd/tls.cert"
+  macpath: "/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon"
+
+# L402-gated services
+services:
+  # Agent API — general query endpoint
+  - name: "agent-api"
+    hostregexp: ".*"
+    pathregexp: "^/api/agent/.*$"
+    protocol: "http"
+    backendhost: "web:3000"
+    price: 100          # 100 sats per request
+    duration: 3600      # token valid for 1 hour
+
+  # Premium cycle signals
+  - name: "cycle-premium"
+    hostregexp: ".*"
+    pathregexp: "^/api/cycle/premium$"
+    protocol: "http"
+    backendhost: "web:3000"
+    price: 50           # 50 sats
+    duration: 86400     # 24 hour token
+
+  # Privacy audit endpoint
+  - name: "privacy-audit"
+    hostregexp: ".*"
+    pathregexp: "^/api/privacy/audit$"
+    protocol: "http"
+    backendhost: "web:3000"
+    price: 200          # 200 sats
+    duration: 3600
+
+  # Compute marketplace
+  - name: "compute"
+    hostregexp: ".*"
+    pathregexp: "^/api/agent/compute$"
+    protocol: "http"
+    backendhost: "web:3000"
+    price: 500          # 500 sats per compute job
+    duration: 1800      # 30 min token

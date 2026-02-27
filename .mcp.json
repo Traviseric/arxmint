@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "lightning": {
+      "command": "npx",
+      "args": ["-y", "@lightninglabs/lightning-mcp-server"],
+      "transportType": "stdio",
+      "env": {
+        "LNC_MAILBOX_SERVER": "mailbox.terminal.lightning.today:443"
+      }
+    }
+  }
+}

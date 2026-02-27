@@ -1,0 +1,40 @@
+{
+  "name": "arxmint",
+  "version": "0.1.0",
+  "description": "Your Bitcoin economy, one prompt away — private Fedimint/Cashu mints with Lightning AI agent rails",
+  "private": false,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "setup:cashu": "docker compose -f docker/docker-compose.cashu.yml up -d",
+    "setup:full": "docker compose up -d",
+    "setup:agents": "bash scripts/deploy-agent-tools.sh"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@fedimint/core": "^0.1.0",
+    "@fedimint/transport-web": "^0.1.2",
+    "@cashu/cashu-ts": "^3.5.0",
+    "@lightninglabs/lnc-web": "0.3.5-alpha",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.0",
+    "lucide-react": "^0.469.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.1.0",
+    "@tailwindcss/typography": "^0.5.0"
+  }
+}
