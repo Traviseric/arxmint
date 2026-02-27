@@ -162,6 +162,40 @@ export const SECURITY_TIER_INFO: Record<SecurityTier, {
   },
 };
 
+/** Prompt text when moving to a higher-risk Lightning tier */
+export function getTierEscalationConfirmation(
+  currentTier: SecurityTier,
+  nextTier: SecurityTier
+): string | null {
+  const tierLevel: Record<SecurityTier, number> = {
+    "watch-only": 0,
+    "pay-only": 1,
+    "admin": 2,
+  };
+
+  if (tierLevel[nextTier] <= tierLevel[currentTier]) {
+    return null;
+  }
+
+  if (nextTier === "pay-only") {
+    return (
+      'Escalate to "pay-only" tier?\n\n' +
+      "This enables invoice creation and outgoing payments.\n" +
+      "Use only with an isolated remote signer."
+    );
+  }
+
+  if (nextTier === "admin") {
+    return (
+      'Escalate to "admin" tier?\n\n' +
+      "This grants full Lightning node control, including high-risk operations.\n" +
+      "Never grant admin access to autonomous agents."
+    );
+  }
+
+  return null;
+}
+
 /** Parsed user prompt result */
 export interface ParsedPrompt {
   communityName: string;

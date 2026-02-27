@@ -11,6 +11,7 @@ import {
   Lock,
   Github,
 } from "lucide-react";
+import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
 
 export const metadata = {
   title: "Roadmap — ArxMint",
@@ -184,126 +185,135 @@ export default function RoadmapPage() {
       <div className="relative z-10 w-full">
         {/* Hero */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
-            <Lock className="w-4 h-4 text-accent" />
-            <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-              Research-driven development
-            </span>
-          </div>
+          <ScrollReveal>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
+              <Lock className="w-4 h-4 text-accent" />
+              <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+                Research-driven development
+              </span>
+            </div>
+          </ScrollReveal>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.1] mb-8">
-            The Roadmap.
-          </h1>
+          <ScrollReveal delay={0.1}>
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.1] mb-8">
+              The Roadmap.
+            </h1>
+          </ScrollReveal>
 
-          <p className="text-lg sm:text-xl text-text-secondary font-light max-w-3xl leading-relaxed">
-            Five phases from security hardening to production deployment. Every task
-            traces back to rigorous core research. Prioritized by
-            security impact.
-          </p>
+          <ScrollReveal delay={0.2}>
+            <p className="text-lg sm:text-xl text-text-secondary font-light max-w-3xl leading-relaxed">
+              Five phases from security hardening to production deployment. Every task
+              traces back to rigorous core research. Prioritized by
+              security impact.
+            </p>
+          </ScrollReveal>
         </section>
 
         {/* Phase overview bar */}
         <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          <div className="flex flex-wrap gap-3 p-2 bg-bg-surface/50 rounded-xl border border-border-default backdrop-blur-sm">
-            {phases.map((phase) => (
-              <a
-                key={phase.number}
-                href={`#phase-${phase.number}`}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-[300ms] ${phase.status === "current"
-                  ? "bg-accent/10 border border-accent/20 text-accent font-medium shadow-[0_0_15px_rgba(247,147,26,0.1)]"
-                  : "border border-transparent text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
-                  }`}
-              >
-                <span className="font-mono text-xs opacity-60">0{phase.number}</span>
-                <span>{phase.codename}</span>
-              </a>
-            ))}
-          </div>
+          <ScrollReveal delay={0.3} direction="up">
+            <div className="flex flex-wrap gap-3 p-2 bg-bg-surface/50 rounded-xl border border-border-default backdrop-blur-sm">
+              {phases.map((phase) => (
+                <a
+                  key={phase.number}
+                  href={`#phase-${phase.number}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-[300ms] ${phase.status === "current"
+                    ? "bg-accent/10 border border-accent/20 text-accent font-medium shadow-[0_0_15px_rgba(247,147,26,0.1)]"
+                    : "border border-transparent text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
+                    }`}
+                >
+                  <span className="font-mono text-xs opacity-60">0{phase.number}</span>
+                  <span>{phase.codename}</span>
+                </a>
+              ))}
+            </div>
+          </ScrollReveal>
         </section>
 
         <div className="h-px w-full bg-border-subtle" />
 
         {/* Phases */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="space-y-32">
+          <StaggerContainer className="space-y-32">
             {phases.map((phase, phaseIdx) => (
-              <section
-                key={phase.number}
-                id={`phase-${phase.number}`}
-                className="scroll-mt-32 relative"
-              >
+              <StaggerItem key={phase.number}>
+                <section
+                  id={`phase-${phase.number}`}
+                  className="scroll-mt-32 relative"
+                >
 
-                {/* Connecting Line */}
-                {phaseIdx !== phases.length - 1 && (
-                  <div className="absolute left-[27px] top-[70px] bottom-[-130px] w-px bg-border-strong rounded-full" />
-                )}
+                  {/* Connecting Line */}
+                  {phaseIdx !== phases.length - 1 && (
+                    <div className="absolute left-[27px] top-[70px] bottom-[-130px] w-px bg-border-strong rounded-full" />
+                  )}
 
-                <div className="flex items-start gap-6 mb-12 relative z-10">
-                  <div
-                    className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center border shadow-lg ${phase.status === "current"
-                      ? "bg-bg-base border-accent shadow-accent/20"
-                      : "bg-bg-surface border-border-strong shadow-black/50"
-                      }`}
-                  >
-                    <phase.icon
-                      className={`w-6 h-6 ${phase.status === "current"
-                        ? "text-accent"
-                        : "text-text-muted"
-                        }`}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm font-mono text-accent">PHASE_0{phase.number}</span>
-                      {phase.status === "current" && (
-                        <span className="text-[10px] px-2 py-0.5 rounded flex items-center gap-1 bg-accent/10 text-accent border border-accent/20 font-mono tracking-widest uppercase">
-                          <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" /> Active
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="text-3xl font-semibold text-text-primary mb-3">
-                      {phase.codename} : {phase.title}
-                    </h2>
-                    <p className="text-text-secondary text-base leading-relaxed max-w-2xl font-light">
-                      {phase.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4 pl-[80px]">
-                  {phase.tasks.map((task) => (
+                  <div className="flex items-start gap-6 mb-12 relative z-10">
                     <div
-                      key={task.id}
-                      className="glass px-5 py-4 rounded-xl border border-border-default glow-card group transition-colors hover:bg-bg-surface/80"
+                      className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center border shadow-lg ${phase.status === "current"
+                        ? "bg-bg-base border-accent shadow-accent/20"
+                        : "bg-bg-surface border-border-strong shadow-black/50"
+                        }`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="mt-0.5">
-                          <StatusIcon
-                            status={
-                              phase.status === "current" ? "current" : task.status
-                            }
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="text-sm font-semibold text-text-primary">
-                              {task.title}
-                            </h3>
-                            <span className="text-[10px] bg-bg-elevated px-1.5 py-0.5 rounded text-text-secondary font-mono border border-border-default">
-                              TK_{task.id}
-                            </span>
+                      <phase.icon
+                        className={`w-6 h-6 ${phase.status === "current"
+                          ? "text-accent"
+                          : "text-text-muted"
+                          }`}
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm font-mono text-accent">PHASE_0{phase.number}</span>
+                        {phase.status === "current" && (
+                          <span className="text-[10px] px-2 py-0.5 rounded flex items-center gap-1 bg-accent/10 text-accent border border-accent/20 font-mono tracking-widest uppercase">
+                            <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" /> Active
+                          </span>
+                        )}
+                      </div>
+                      <h2 className="text-3xl font-semibold text-text-primary mb-3">
+                        {phase.codename} : {phase.title}
+                      </h2>
+                      <p className="text-text-secondary text-base leading-relaxed max-w-2xl font-light">
+                        {phase.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4 pl-[80px]">
+                    {phase.tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="glass px-5 py-4 rounded-xl border border-border-default glow-card group transition-colors hover:bg-bg-surface/80"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="mt-0.5">
+                            <StatusIcon
+                              status={
+                                phase.status === "current" ? "current" : task.status
+                              }
+                            />
                           </div>
-                          <p className="text-[13px] text-text-secondary leading-relaxed font-light">
-                            {task.description}
-                          </p>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="text-sm font-semibold text-text-primary">
+                                {task.title}
+                              </h3>
+                              <span className="text-[10px] bg-bg-elevated px-1.5 py-0.5 rounded text-text-secondary font-mono border border-border-default">
+                                TK_{task.id}
+                              </span>
+                            </div>
+                            <p className="text-[13px] text-text-secondary leading-relaxed font-light">
+                              {task.description}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                    ))}
+                  </div>
+                </section>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
 
         {/* CTA */}

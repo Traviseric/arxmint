@@ -54,6 +54,74 @@ export interface RemoteSignerConfig {
   macaroon?: string;
 }
 
+/** Validate that a PAY_ONLY remote signer config is complete and safe */
+export function validateRemoteSignerConfig(
+  config?: RemoteSignerConfig
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!config) {
+    return {
+      valid: false,
+      errors: [
+        "missing remote signer config",
+        "signerUrl is required",
+        "tlsCert is required",
+        "macaroon is required",
+      ],
+    };
+  }
+
+  const signerUrl = config.signerUrl?.trim();
+  const tlsCert = config.tlsCert?.trim();
+  const macaroon = config.macaroon?.trim();
+
+  if (!signerUrl) {
+    errors.push("signerUrl is required");
+  } else if (!/^https?:\/\//i.test(signerUrl)) {
+    errors.push("signerUrl must start with http:// or https://");
+  } else {
+    try {
+      // Require a parseable URL so misconfigured hosts fail closed.
+      const parsed = new URL(signerUrl);
+      if (!parsed.hostname) {
+        errors.push("signerUrl must include a hostname");
+      }
+    } catch {
+      errors.push("signerUrl must be a valid URL (e.g. https://signer.local:8443)");
+    }
+  }
+
+  if (!tlsCert) {
+    errors.push("tlsCert is required");
+  }
+
+  if (!macaroon) {
+    errors.push("macaroon is required");
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate remote signer env requirements for PAY_ONLY mode.
+ * Accepts both server env keys and NEXT_PUBLIC keys for local/browser flows.
+ */
+export function validateRemoteSignerEnv(
+  env: Record<string, string | undefined>
+): { valid: boolean; errors: string[] } {
+  const tier = (env.LNC_SECURITY_TIER || "watch-only").trim().toLowerCase();
+  if (tier !== "pay-only") {
+    return { valid: true, errors: [] };
+  }
+
+  return validateRemoteSignerConfig({
+    signerUrl: env.REMOTE_SIGNER_URL || env.NEXT_PUBLIC_REMOTE_SIGNER_URL || "",
+    tlsCert: env.REMOTE_SIGNER_TLS_CERT || env.NEXT_PUBLIC_REMOTE_SIGNER_TLS_CERT,
+    macaroon: env.REMOTE_SIGNER_MACAROON || env.NEXT_PUBLIC_REMOTE_SIGNER_MACAROON,
+  });
+}
+
 /** Macaroon role for scoped credentials */
 export type MacaroonRole =
   | "read-only"
@@ -158,11 +226,14 @@ export class SovereignLightningClient {
     tier: SecurityTier = "watch-only",
     remoteSignerConfig?: RemoteSignerConfig
   ): Promise<void> {
-    if (tier === "pay-only" && !remoteSignerConfig) {
-      throw new Error(
-        "PAY_ONLY tier requires a remote signer configuration. " +
-          "Agent processes must never hold signing keys directly."
-      );
+    if (tier === "pay-only") {
+      const signerValidation = validateRemoteSignerConfig(remoteSignerConfig);
+      if (!signerValidation.valid) {
+        throw new Error(
+          "PAY_ONLY tier requires a complete remote signer configuration: " +
+            signerValidation.errors.join("; ")
+        );
+      }
     }
 
     this._securityTier = tier;
@@ -474,6 +545,20 @@ export function generateMCPConfig(mailboxServer?: string): object {
     },
   };
 }
+
+/** Test-only hooks for deterministic unit tests */
+export const __lightningAgentTestUtils = {
+  setLNCMock(lncCtor: any): void {
+    LNC = lncCtor;
+  },
+  resetLNCMock(): void {
+    LNC = null;
+  },
+  resetSingleton(): void {
+    _lnClient = null;
+    tokenCache.clear();
+  },
+};
 
 // ---- Singletons ----
 

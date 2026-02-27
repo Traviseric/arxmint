@@ -1,111 +1,152 @@
-# ArxMint
+<p align="center">
+  <img src="public/images/logo.png" alt="ArxMint" width="80" />
+</p>
 
-**Your Bitcoin economy, one prompt away.**
+<h1 align="center">ArxMint</h1>
+
+<p align="center">
+  <strong>Your Bitcoin economy, one prompt away.</strong>
+</p>
+
+<p align="center">
+  <a href="https://arxmint.com">arxmint.com</a> &middot;
+  <a href="https://arxmint.com/roadmap">Roadmap</a> &middot;
+  <a href="https://arxmint.com/agents">Agent Commerce</a> &middot;
+  <a href="https://arxmint.com/why">Why ArxMint</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Traviseric/arxmint/actions/workflows/ci.yml"><img src="https://github.com/Traviseric/arxmint/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
+  <a href="https://github.com/Traviseric/arxmint/issues"><img src="https://img.shields.io/github/issues/Traviseric/arxmint" alt="Issues" /></a>
+</p>
+
+---
 
 ArxMint lets anyone spin up a private Bitcoin circular economy — for humans and AI agents — from a single natural language prompt.
 
 Describe your community in plain English. ArxMint generates a private [Fedimint](https://fedimint.org) federation (or lightweight [Cashu](https://cashu.space) mint), Lightning AI agent rails via [L402](https://docs.lightning.engineering/the-lightning-network/l402), and built-in privacy defaults. Deploy with one Docker command. Humans and agents share the same sovereign infrastructure.
 
+**One prompt. One command. Your economy is live.**
+
 ## Why ArxMint?
 
 Wallets aren't economies. Holding Bitcoin doesn't build a community where people transact privately, merchants accept ecash, and AI agents sell services for sats.
 
-The technology exists — Fedimint, Cashu, Lightning, L402 — but stitching it together is a serious infrastructure project. ArxMint closes that gap.
+The technology exists — Fedimint, Cashu, Lightning, L402, Ark — but stitching it together is a serious infrastructure project. ArxMint closes that gap.
 
-**One prompt. One command. Your economy is live.**
+## How It Works
+
+1. **Describe your community** — _"Create a private Bitcoin community for 20 Longmont Bitcoiners with chat, private payments, and AI agents selling data."_
+2. **ArxMint generates everything** — Fedimint federation config, Lightning agent integration, privacy defaults, Docker deployment
+3. **One-command deploy** — `docker compose up` → private ecash mint, Lightning node, L402 endpoints, cycle dashboard
+4. **Humans + agents join the same loop** — Community members transact in private ecash. AI agents sell services for sats via L402. Same rails.
 
 ## Features
 
 - **Prompt-driven economy creation** — Describe your community in natural language, get a full deployment config
 - **Fedimint federation support** — Multi-guardian federated ecash with blinded Chaumian e-cash notes backed by BTC
-- **Cashu mint fallback** — Lightweight single-operator mint for faster setup
-- **Lightning AI agent integration** — L402 paywalls + MCP server live today; scoped macaroon tiers and remote signer are tracked in Phase 0/1
-- **Privacy defaults on** — Privacy dashboard covers Silent Payments (BIP352), CoinJoin, PayJoin, and Ark with backend-specific capability status
+- **Cashu mint support** — Lightweight single-operator mint, CDK cloud-native for production
+- **Lightning AI agent commerce** — L402 + NUT-24 paywalls, MCP server, scoped macaroon tiers, remote signer
+- **Privacy defaults on** — Silent Payments (BIP-352), CoinJoin, PayJoin, Ark VTXOs — with honest per-backend availability
+- **Spend router** — Auto-selects ecash → Lightning → Ark → on-chain based on amount and privacy score
 - **Cycle monitoring** — Real-time MVRV, NUPL, and supply-in-profit signals from on-chain data
-- **Merchant directory** — "Spend sats here" listings for your community's circular economy
-- **Agent marketplace** — AI agents sell data, compute, privacy audits, and cycle signals for sats via L402
-- **Docker one-command deploy** — Full stack: LND + Cashu Nutshell + Fedimint (3 guardians) + Aperture L402 proxy
+- **Merchant directory** — Onboarding flow, QR codes, NFC support, "Spend sats here" listings
+- **Agent marketplace** — AI agents sell data, compute, privacy audits, and cycle signals for sats
+- **BCE health metrics** — Community health dashboard with grant-ready export (JSON/CSV)
+- **Docker one-command deploy** — LND + CDK/Nutshell + Fedimint + Aperture + Ark + Prometheus/Grafana
 
 ## Quick Start
 
 ```bash
-# Clone the repo
-git clone https://github.com/[your-username]/arxmint.git
+git clone https://github.com/Traviseric/arxmint.git
 cd arxmint
-
-# Install dependencies
 npm install
-
-# Run the dev server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and click **Create Your Community**.
+Open [http://localhost:3000](http://localhost:3000) and click **Get Started**.
 
 ### Deploy the Full Stack
 
 ```bash
-# Copy environment template
 cp .env.example .env
 
-# Start the full Docker stack (LND + Cashu + Fedimint + Aperture)
+# Full stack (LND + Cashu + Fedimint + Aperture + monitoring)
 npm run setup:full
 
-# Or start with just a Cashu mint (lighter)
+# Or lightweight Cashu-only setup
 npm run setup:cashu
 ```
 
-## How It Works
+### Run Tests
 
-1. **Describe your community** — "Create a private Bitcoin community for 20 Longmont Bitcoiners with chat, private payments, and AI agents selling data."
-2. **ArxMint generates everything** — Fedimint federation config, Lightning agent integration, privacy defaults, Docker deployment
-3. **One-command deploy** — `docker compose up` → private ecash mint, Lightning node, L402 endpoints, cycle dashboard
-4. **Humans + agents join the same loop** — Community members transact in private ecash. AI agents sell services for sats via L402. Same rails.
+```bash
+npm test
+```
 
 ## Architecture
 
 ```
 arxmint/
-├── app/                    # Next.js 15 App Router pages
-│   ├── create/             # Prompt-driven community creation
-│   ├── dashboard/          # Privacy + cycle monitoring
-│   ├── community/[id]/     # Community view
-│   └── api/                # API routes (agent, community, cycle, l402)
+├── app/                         # Next.js 15 App Router
+│   ├── page.tsx                 # Landing page
+│   ├── create/                  # Prompt-driven community creation
+│   ├── dashboard/               # Privacy, cycle, wallet, BCE metrics
+│   ├── community/[id]/          # Agent marketplace, merchants, members
+│   ├── why/                     # Thesis page
+│   ├── agents/                  # L402 agent commerce explainer
+│   ├── roadmap/                 # Development roadmap
+│   └── api/                     # API routes (agent, community, cycle, l402)
 ├── lib/
-│   ├── fedimint-sdk.ts     # Fedimint WASM client wrapper
-│   ├── cashu-sdk.ts        # Cashu v3 client wrapper
-│   ├── lightning-agent.ts  # LNC + L402 client
-│   ├── community-generator.ts  # Prompt → Docker Compose generation
-│   ├── cycle-monitor.ts    # BTC cycle signals (CoinGecko)
-│   ├── privacy-defaults.ts # Silent Payments, CoinJoin, PayJoin, Ark
-│   └── store.ts            # Zustand global state
-├── components/             # React components
-├── docker/                 # Docker configs (Cashu, Aperture)
-├── scripts/                # Setup scripts (federation, agent tools)
-├── docker-compose.yml      # Full stack deployment
-└── docs/                   # Documentation
+│   ├── fedimint-sdk.ts          # Fedimint WASM client + gateway bridge
+│   ├── cashu-sdk.ts             # Cashu v3 + multi-mint + keyset validation
+│   ├── lightning-agent.ts       # LNC + L402 + macaroon bakery + security tiers
+│   ├── cashu-paywall.ts         # NUT-24 ecash paywall middleware
+│   ├── spend-router.ts          # Privacy-aware spend routing
+│   ├── ark-sdk.ts               # Ark VTXO client (board/spend/bridge)
+│   ├── silent-payments.ts       # BIP-352 SP scanner + key delegation
+│   ├── bce-metrics.ts           # BCE community health + grant export
+│   ├── community-generator.ts   # Prompt → Docker Compose + G-Bot
+│   ├── privacy-defaults.ts      # Privacy scoring + layer descriptions
+│   ├── cycle-monitor.ts         # BTC cycle signals (CoinGecko)
+│   └── store.ts                 # Zustand global state
+├── components/                  # React components
+├── tests/                       # Test suites
+├── docker/                      # Docker configs
+├── scripts/                     # Setup scripts
+└── docs/                        # Spec, roadmap, research cross-reference
 ```
 
 ## Tech Stack
 
-- **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
-- **Ecash:** [Fedimint SDK](https://sdk.fedimint.org/) (WASM) + [Cashu-TS](https://github.com/cashubtc/cashu-ts) v3
-- **Lightning:** [LNC-Web](https://github.com/lightninglabs/lnc-web) + [Aperture](https://github.com/lightninglabs/aperture) L402 proxy
-- **Agent Tools:** [Lightning Agent Tools](https://github.com/lightninglabs/lightning-agent-tools) MCP server
-- **Privacy:** BIP352 Silent Payments, CoinJoin, PayJoin, Ark (with backend-specific support constraints)
-- **State:** Zustand
-- **Deploy:** Docker Compose (LND + Nutshell + Fedimint + Aperture)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript, Tailwind CSS |
+| Ecash | [Fedimint SDK](https://sdk.fedimint.org/) (WASM) + [Cashu-TS](https://github.com/cashubtc/cashu-ts) v3 |
+| Lightning | [LNC-Web](https://github.com/lightninglabs/lnc-web) + [Aperture](https://github.com/lightninglabs/aperture) L402 proxy |
+| Agent Tools | [Lightning MCP Server](https://github.com/lightninglabs/lightning-agent-tools) (18 tools) |
+| Privacy | BIP-352 Silent Payments, CoinJoin, PayJoin, [Ark](https://ark-protocol.org) VTXOs |
+| State | Zustand |
+| Deploy | Docker Compose (LND + CDK/Nutshell + Fedimint + Aperture + Prometheus + Grafana) |
 
 ## Roadmap
 
-See [docs/roadmap.md](docs/roadmap.md) for the full phased plan.
-See [docs/spec.md](docs/spec.md) for the canonical product/technical spec used by roadmap and research cross-reference.
+See [docs/roadmap.md](docs/roadmap.md) for the full phased plan with research traceability.
 
-- **Phase 0 — Fortify:** Security hardening (keyset validation, agent permission tiers, remote signer)
-- **Phase 1 — Keystone:** NUT-24 paywalls, spend router, BCE metrics, merchant onboarding
-- **Phase 2 — Spire:** Fedimint v0.10.0, Ark SDK, CDK upgrade, monitoring
-- **Phase 3 — Aether:** STARK eCash, ZK reissuance, governance, hardware wallets
-- **Phase 4 — Citadel:** Longmont pilot, grant applications (FBCE/OpenSats), replication playbook
+| Phase | Codename | Status |
+|-------|----------|--------|
+| 0 | **Fortify** — Security hardening | Done |
+| 1 | **Keystone** — Core architecture (NUT-24, spend router, merchants, agents) | Done |
+| 2 | **Spire** — Full privacy + commerce (Ark, CDK, multi-mint, monitoring) | Done |
+| 3 | **Aether** — Advanced features (STARK eCash, ZK reissuance, governance, HW wallets) | Done |
+| 4 | **Citadel** — Production pilot + grants (Longmont deployment, FBCE/OpenSats) | Active |
+
+## Built On
+
+[Fedimint](https://fedimint.org) &middot; [Cashu](https://cashu.space) &middot; [Lightning Labs](https://lightning.engineering) &middot; [Ark](https://ark-protocol.org) &middot; [Docker](https://docker.com)
+
+Piloting in **Longmont, CO**. Grant-eligible: [OpenSats](https://opensats.org), [FBCE](https://www.fedi.xyz/grants), [Fedi](https://www.fedi.xyz).
 
 ## Contributing
 
@@ -117,10 +158,12 @@ ArxMint is open source under the [MIT License](LICENSE). Contributions welcome.
 4. Push to the branch (`git push origin feature/your-feature`)
 5. Open a Pull Request
 
+See [open issues](https://github.com/Traviseric/arxmint/issues) for tasks to pick up.
+
 ## License
 
 [MIT](LICENSE)
 
 ---
 
-*Sound money infrastructure for a parallel voluntary economy. Protection from hacks, overreach, and future controls. Not evasion — sovereignty.*
+_Sound money infrastructure for a parallel voluntary economy. Protection from hacks, overreach, and future controls. Not evasion — sovereignty._

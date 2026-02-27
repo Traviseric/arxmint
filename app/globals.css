@@ -5,38 +5,38 @@
 @layer base {
   :root {
     /* Backgrounds — 4 layers of depth */
-    --bg-base:     #080808;  
-    --bg-surface:  #111111;  
-    --bg-elevated: #1a1a1a;  
-    --bg-overlay:  #242424;  
+    --bg-base: #080808;
+    --bg-surface: #111111;
+    --bg-elevated: #1a1a1a;
+    --bg-overlay: #242424;
 
     /* Borders — invisible until needed */
-    --border-subtle:  rgba(255,255,255,0.04);
-    --border-default: rgba(255,255,255,0.08);
-    --border-strong:  rgba(255,255,255,0.16);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
 
     /* Text — three levels of emphasis */
-    --text-primary:   #f2f2f2;
-    --text-secondary: #888888;
-    --text-muted:     #484848;
+    --text-primary: #fafafa;
+    --text-secondary: #a3a3a3;
+    --text-muted: #737373;
 
     /* Accent — using orange for ArxMint */
-    --accent:       #F7931A;
-    --accent-dim:   rgba(247, 147, 26, 0.12);
-    --accent-glow:  rgba(247, 147, 26, 0.30);
-    --accent-rgb:   247, 147, 26;
-    
-    /* Easings */
-    --ease-out-expo:     cubic-bezier(0.16, 1, 0.3, 1);
-    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
-    --ease-spring:       cubic-bezier(0.34, 1.56, 0.64, 1);
-    --ease-silk:         cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --accent: #F7931A;
+    --accent-dim: rgba(247, 147, 26, 0.12);
+    --accent-glow: rgba(247, 147, 26, 0.30);
+    --accent-rgb: 247, 147, 26;
 
-    --duration-instant: 100ms;  
-    --duration-fast:    150ms;  
-    --duration-normal:  300ms;  
-    --duration-slow:    500ms;  
-    --duration-crawl:  1200ms;  
+    /* Easings */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-silk: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    --duration-instant: 100ms;
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
+    --duration-crawl: 1200ms;
   }
 
   html {
@@ -56,23 +56,26 @@
   ::-webkit-scrollbar {
     @apply w-1.5;
   }
+
   ::-webkit-scrollbar-track {
     @apply bg-bg-base;
   }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-border-strong rounded-full hover:bg-text-muted;
   }
 }
 
 @layer components {
+
   /* Standard glass — cards, sidebars, panels */
   .glass {
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(12px) saturate(150%);
     -webkit-backdrop-filter: blur(12px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4),
-                inset 0 1px 0 rgba(255,255,255,0.06);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   /* Heavy glass — overlays, modals, nav on scroll */
@@ -81,28 +84,26 @@
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.5),
-                inset 0 1px 0 rgba(255,255,255,0.08);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
   .glow-card {
     transition: box-shadow var(--duration-normal) var(--ease-out-expo),
-                transform var(--duration-normal) var(--ease-out-expo),
-                border-color var(--duration-fast) ease;
+      transform var(--duration-normal) var(--ease-out-expo),
+      border-color var(--duration-fast) ease;
   }
 
   .glow-card:hover {
     transform: translateY(-2px) scale(1.005);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5),
-                0 0 0 1px rgba(255,255,255,0.10),
-                0 0 20px var(--accent-glow);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.10),
+      0 0 20px var(--accent-glow);
     border-color: var(--border-strong);
   }
 
   .antigravity-btn {
-    @apply relative inline-flex items-center justify-center gap-2 px-6 py-3
-           bg-text-primary text-bg-base font-semibold rounded-md
-           transition-all duration-[300ms] overflow-hidden;
+    @apply relative inline-flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-bg-base font-semibold rounded-md transition-all duration-[300ms] overflow-hidden;
     transition-timing-function: var(--ease-out-expo);
   }
 
@@ -112,9 +113,7 @@
   }
 
   .antigravity-btn-outline {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3
-           border border-border-default text-text-primary font-semibold rounded-md
-           transition-all duration-[300ms] hover:border-border-strong hover:bg-bg-surface;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 border border-border-default text-text-primary font-semibold rounded-md transition-all duration-[300ms] hover:border-border-strong hover:bg-bg-surface;
     transition-timing-function: var(--ease-out-expo);
   }
 
@@ -125,6 +124,13 @@
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }

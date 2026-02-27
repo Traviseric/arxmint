@@ -27,9 +27,10 @@ import {
   generateCashuURI,
   generateQRDataUrl,
 } from "@/lib/cashu-sdk";
-import { getLightningClient } from "@/lib/lightning-agent";
+import { getLightningClient, validateRemoteSignerConfig } from "@/lib/lightning-agent";
 import { useSovereignStore } from "@/lib/store";
 import { formatSats } from "@/lib/utils";
+import { getTierEscalationConfirmation, type SecurityTier } from "@/lib/types";
 import {
   selectSpendPath,
   privacyColor,
@@ -874,25 +875,47 @@ function CashuConnect() {
 function LightningConnect() {
   const [phrase, setPhrase] = useState("");
   const [password, setPassword] = useState("");
-  const [tier, setTier] = useState<"watch-only" | "pay-only" | "admin">("watch-only");
+  const [tier, setTier] = useState<SecurityTier>("watch-only");
+  const [remoteSignerUrl, setRemoteSignerUrl] = useState("");
+  const [remoteSignerTlsCert, setRemoteSignerTlsCert] = useState("");
+  const [remoteSignerMacaroon, setRemoteSignerMacaroon] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const { lightningConnected, setConnected, setBalance } = useSovereignStore();
 
+  const onTierSelect = (nextTier: SecurityTier) => {
+    const escalationPrompt = getTierEscalationConfirmation(tier, nextTier);
+    if (escalationPrompt && !window.confirm(escalationPrompt)) {
+      return;
+    }
+    setTier(nextTier);
+  };
+
   const connect = async () => {
     if (!phrase.trim()) return;
+
+    const remoteSignerConfig = tier === "pay-only"
+      ? {
+          signerUrl: remoteSignerUrl.trim(),
+          tlsCert: remoteSignerTlsCert.trim(),
+          macaroon: remoteSignerMacaroon.trim(),
+        }
+      : undefined;
+
+    if (tier === "pay-only") {
+      const signerValidation = validateRemoteSignerConfig(remoteSignerConfig);
+      if (!signerValidation.valid) {
+        setStatus("error");
+        setMessage(`Pay-only tier requires remote signer config: ${signerValidation.errors.join(", ")}`);
+        return;
+      }
+    }
+
     setStatus("loading");
     setMessage(`Connecting via LNC (${tier})...`);
 
     try {
       const client = getLightningClient();
-
-      // For pay-only tier, a remote signer config would normally be provided.
-      // In demo/dev mode, we allow connection without one but log a warning.
-      const remoteSignerConfig = tier === "pay-only"
-        ? { signerUrl: "localhost:8443" } // placeholder — real config from .env
-        : undefined;
-
       await client.connect(phrase, password || "arxmint", tier, remoteSignerConfig);
       const { onchainSats, channelSats } = await client.getBalance();
       const info = await client.getInfo();
@@ -965,7 +988,7 @@ function LightningConnect() {
               {(["watch-only", "pay-only", "admin"] as const).map((t) => (
                 <button
                   key={t}
-                  onClick={() => setTier(t)}
+                  onClick={() => onTierSelect(t)}
                   className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                     tier === t
                       ? t === "admin"
@@ -980,7 +1003,7 @@ function LightningConnect() {
             </div>
             <p className="text-xs text-sovereign-muted mt-1">
               {tier === "watch-only" && "Read-only — safe for agents and exploration."}
-              {tier === "pay-only" && "Pay/invoice via remote signer — keys stay isolated."}
+              {tier === "pay-only" && "Pay/invoice via remote signer — signer URL, TLS cert, and macaroon are required."}
               {tier === "admin" && (
                 <span className="text-red-400">
                   Full access. Never grant this to autonomous agents.
@@ -988,9 +1011,50 @@ function LightningConnect() {
               )}
             </p>
           </div>
+          {tier === "pay-only" && (
+            <div className="space-y-3 rounded-lg border border-sovereign-border bg-sovereign-dark/40 p-3">
+              <p className="text-xs text-sovereign-muted">
+                Remote signer config (required for pay-only)
+              </p>
+              <div>
+                <label className="sovereign-label">Signer URL</label>
+                <input
+                  type="text"
+                  value={remoteSignerUrl}
+                  onChange={(e) => setRemoteSignerUrl(e.target.value)}
+                  placeholder="https://signer.local:8443"
+                  className="sovereign-input text-sm font-mono"
+                />
+              </div>
+              <div>
+                <label className="sovereign-label">Signer TLS Cert (base64)</label>
+                <textarea
+                  value={remoteSignerTlsCert}
+                  onChange={(e) => setRemoteSignerTlsCert(e.target.value)}
+                  placeholder="LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t..."
+                  className="sovereign-input text-xs font-mono min-h-[70px]"
+                />
+              </div>
+              <div>
+                <label className="sovereign-label">Signer Macaroon (hex)</label>
+                <input
+                  type="password"
+                  value={remoteSignerMacaroon}
+                  onChange={(e) => setRemoteSignerMacaroon(e.target.value)}
+                  placeholder="0201036c6e6402f801030a10..."
+                  className="sovereign-input text-sm font-mono"
+                />
+              </div>
+            </div>
+          )}
           <button
             onClick={connect}
-            disabled={!phrase.trim() || status === "loading"}
+            disabled={
+              !phrase.trim() ||
+              status === "loading" ||
+              (tier === "pay-only" &&
+                (!remoteSignerUrl.trim() || !remoteSignerTlsCert.trim() || !remoteSignerMacaroon.trim()))
+            }
             className="sovereign-btn w-full !py-2 text-sm"
           >
             {status === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}

@@ -243,21 +243,114 @@ export default function HomePage() {
                 <div className="space-y-6 text-sm text-text-primary flex-grow">
                   <div className="flex gap-4 items-start">
                     <Users className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                    <p>Earn sats from community work</p>
+                    <p>Earn sats from community work <span className="text-text-secondary font-light">— workshops, services, freelance gigs</span></p>
                   </div>
                   <div className="pl-2 border-l border-accent/30 ml-2 h-6 animate-[pulse_2s_ease-in-out_infinite]" />
                   <div className="flex gap-4 items-start">
                     <Shield className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                    <p>Private ecash payments to local merchants</p>
+                    <p>Private ecash payments to local merchants <span className="text-text-secondary font-light">— they scan a QR, you pay in sats</span></p>
                   </div>
                   <div className="pl-2 border-l border-accent/30 ml-2 h-6 animate-[pulse_2s_ease-in-out_infinite_500ms]" />
                   <div className="flex gap-4 items-start">
                     <Cpu className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                    <p>AI agents earn & spend via L402 parallel rails</p>
+                    <p>AI agents earn & spend via L402 parallel rails <span className="text-text-secondary font-light">— automated services that generate sats while you sleep</span></p>
                   </div>
                 </div>
                 <div className="mt-8 pt-6 border-t border-border-default font-mono text-xs text-accent/70">
                   STATUS: CIRCULAR ECONOMY ESTABLISHED
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== WHAT CHANGES DAY TO DAY ===== */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-semibold tracking-tight text-text-primary mb-4">
+              What changes day to day.
+            </h2>
+            <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+              One week living on Bitcoin rails. No exchanges. No banks. No fiat.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { day: "MON", label: "Get paid 50,000 sats for a workshop you taught", icon: DollarSign },
+              { day: "TUE", label: "Coffee costs 3,500 sats — scan the QR, done", icon: Zap },
+              { day: "WED", label: "Check the cycle dashboard — MVRV says keep stacking", icon: Activity },
+              { day: "THU", label: "Your agent earned 23,500 sats overnight selling data", icon: Cpu },
+              { day: "FRI", label: "Pay your barber in ecash — the loop closes", icon: Users },
+            ].map((item) => (
+              <div key={item.day} className="glass rounded-xl p-6 glow-card border-accent/5 text-center flex flex-col items-center">
+                <item.icon className="w-5 h-5 text-accent mb-3" />
+                <span className="text-xs font-mono text-accent tracking-widest mb-3">{item.day}</span>
+                <p className="text-sm text-text-secondary leading-relaxed">{item.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 bg-black/40 border-l-2 border-accent p-4 font-mono text-sm text-accent/80">
+            FIAT_DEPENDENCY_THIS_WEEK: <span className="text-green-400 font-semibold">ZERO</span>
+          </div>
+        </section>
+
+        {/* ===== YOU ALREADY HAVE THE HARD PART ===== */}
+        <section className="border-t border-border-subtle bg-bg-surface/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
+                  You already have the hard part.
+                </h2>
+                <div className="space-y-6 text-text-secondary text-lg leading-relaxed font-light">
+                  <p>
+                    If you own Bitcoin in cold storage, you&apos;ve already done the hardest thing — acquiring sound money and taking self-custody. Most people never get that far.
+                  </p>
+                  <p>
+                    The next step isn&apos;t selling it back to fiat. It&apos;s building the infrastructure that lets you <span className="text-text-primary font-medium">spend a fraction locally</span> while your savings stay cold. That&apos;s what a circular economy is — a spending layer on top of your savings.
+                  </p>
+                </div>
+              </div>
+
+              <div className="glass-heavy border border-border-default rounded-xl p-8 relative overflow-hidden glow-card">
+                <div className="absolute -inset-4 bg-accent/5 rounded-3xl blur-2xl -z-10" />
+                <h3 className="text-sm font-mono tracking-widest text-accent uppercase mb-8 flex items-center gap-2">
+                  <Lock className="w-4 h-4" /> From cold storage to spending
+                </h3>
+                <div className="space-y-6">
+                  <div className="flex gap-4 items-start">
+                    <Shield className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-text-primary font-medium">Cold storage stays cold</p>
+                      <p className="text-xs text-text-secondary mt-1">Your hardware wallet, your keys, untouched</p>
+                    </div>
+                  </div>
+                  <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                  <div className="flex gap-4 items-start">
+                    <Zap className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-text-primary font-medium">Peg in spending sats</p>
+                      <p className="text-xs text-text-secondary mt-1">Move a small amount into the federation — like cash from a safe</p>
+                    </div>
+                  </div>
+                  <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                  <div className="flex gap-4 items-start">
+                    <Eye className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-text-primary font-medium">Sats become ecash</p>
+                      <p className="text-xs text-text-secondary mt-1">Private, instant, untraceable tokens inside your community</p>
+                    </div>
+                  </div>
+                  <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                  <div className="flex gap-4 items-start">
+                    <Users className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-text-primary font-medium">Spend locally</p>
+                      <p className="text-xs text-text-secondary mt-1">Coffee, haircuts, workshops — sats circulate, economy grows</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

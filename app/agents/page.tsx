@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import Image from "next/image";
+import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
 
 export const metadata = {
   title: "AI Agent Commerce — ArxMint",
@@ -43,25 +44,31 @@ export default function AgentsPage() {
 
       <div className="relative z-10 w-full">
         {/* Hero */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
-            <Cpu className="w-4 h-4 text-accent animate-pulse" />
-            <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-              The leading edge
-            </span>
-          </div>
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 text-center sm:text-left">
+          <ScrollReveal delay={0.1}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
+              <Cpu className="w-4 h-4 text-accent animate-pulse" />
+              <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+                The leading edge
+              </span>
+            </div>
+          </ScrollReveal>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.1] mb-8">
-            AI agents are <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">economic actors.</span><br />
-            They need money that works.
-          </h1>
+          <ScrollReveal delay={0.2}>
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.1] mb-8">
+              AI agents are <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">economic actors.</span><br />
+              They need money that works.
+            </h1>
+          </ScrollReveal>
 
-          <p className="text-lg sm:text-xl text-text-secondary font-light max-w-3xl leading-relaxed">
-            Agents are buying compute, selling data, and paying for API access.
-            They need money that works without identity, without bank accounts,
-            without anyone&apos;s permission. Bitcoin + Lightning + ecash is the only
-            system that qualifies.
-          </p>
+          <ScrollReveal delay={0.3}>
+            <p className="text-lg sm:text-xl text-text-secondary font-light max-w-3xl leading-relaxed">
+              Agents are buying compute, selling data, and paying for API access.
+              They need money that works without identity, without bank accounts,
+              without anyone&apos;s permission. Bitcoin + Lightning + ecash is the only
+              system that qualifies.
+            </p>
+          </ScrollReveal>
         </section>
 
         {/* The Problem for Agents */}
@@ -136,72 +143,76 @@ export default function AgentsPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 grid lg:grid-cols-2 gap-16 relative z-10">
 
             {/* Left */}
-            <div>
-              <h2 className="text-3xl font-semibold tracking-tight text-text-primary mb-6">
-                How L402 Works
-              </h2>
-              <p className="text-text-secondary leading-relaxed mb-10 text-lg font-light">
-                L402 is an HTTP protocol extension from Lightning Labs. It turns any
-                API endpoint into a pay-per-request service. No accounts, no API keys,
-                no billing departments.
-              </p>
+            <ScrollReveal direction="right">
+              <div>
+                <h2 className="text-3xl font-semibold tracking-tight text-text-primary mb-6">
+                  How L402 Works
+                </h2>
+                <p className="text-text-secondary leading-relaxed mb-10 text-lg font-light">
+                  L402 is an HTTP protocol extension from Lightning Labs. It turns any
+                  API endpoint into a pay-per-request service. No accounts, no API keys,
+                  no billing departments.
+                </p>
 
-              <div className="bg-bg-black border border-border-strong rounded-xl font-mono text-xs overflow-hidden shadow-2xl">
-                <div className="px-4 py-2 border-b border-border-subtle bg-bg-surface flex gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                </div>
-                <div className="p-4 sm:p-6 space-y-4 text-text-secondary">
-                  <div>
-                    <span className="text-text-muted">1. Request resource:</span><br />
-                    <span className="text-text-primary">GET /api/agent/privacy-audit</span>
+                <div className="bg-bg-black border border-border-strong rounded-xl font-mono text-xs overflow-hidden shadow-2xl">
+                  <div className="px-4 py-2 border-b border-border-subtle bg-bg-surface flex gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
                   </div>
-                  <div>
-                    <span className="text-text-muted">2. Server 402 + Invoice:</span><br />
-                    <span className="text-accent">HTTP 402 — WWW-Authenticate: L402 macaroon="..." invoice="..."</span>
-                  </div>
-                  <div>
-                    <span className="text-text-muted">3. Agent pays LN invoice:</span><br />
-                    <span className="text-text-primary">payInvoice("lnbc500n1...")</span> → preimage
-                  </div>
-                  <div>
-                    <span className="text-text-muted">4. Retry w/ proof:</span><br />
-                    <span className="text-green-400">Authorization: L402 &lt;macaroon&gt;:&lt;preimage&gt;</span>
-                  </div>
-                  <div>
-                    <span className="text-text-muted">5. Server grants access:</span><br />
-                    <span className="text-green-400">HTTP 200 — Data Served</span>
+                  <div className="p-4 sm:p-6 space-y-4 text-text-secondary">
+                    <div>
+                      <span className="text-text-muted">1. Request resource:</span><br />
+                      <span className="text-text-primary">GET /api/agent/privacy-audit</span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted">2. Server 402 + Invoice:</span><br />
+                      <span className="text-accent">HTTP 402 — WWW-Authenticate: L402 macaroon="..." invoice="..."</span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted">3. Agent pays LN invoice:</span><br />
+                      <span className="text-text-primary">payInvoice("lnbc500n1...")</span> → preimage
+                    </div>
+                    <div>
+                      <span className="text-text-muted">4. Retry w/ proof:</span><br />
+                      <span className="text-green-400">Authorization: L402 &lt;macaroon&gt;:&lt;preimage&gt;</span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted">5. Server grants access:</span><br />
+                      <span className="text-green-400">HTTP 200 — Data Served</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Right  */}
-            <div>
-              <h2 className="text-3xl font-semibold tracking-tight text-text-primary mb-6">
-                MCP Integration
-              </h2>
-              <p className="text-text-secondary leading-relaxed mb-10 text-lg font-light">
-                When an agent connects to a Lightning MCP server, it can create invoices, pay invoices, check balances, and manage channels. It becomes a full economic participant.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { icon: Zap, title: "Create invoices", desc: "Gen Lightning invoices to get paid" },
-                  { icon: CircleDollarSign, title: "Pay invoices", desc: "Pay for compute, data, API access" },
-                  { icon: Search, title: "Check balances", desc: "Monitor channels and histories" },
-                  { icon: Radio, title: "Manage channels", desc: "Open, close, rebalance LN" },
-                  { icon: Key, title: "Scoped credentials", desc: "Pay-only or read-only limits" },
-                  { icon: MessageSquare, title: "Any agent runtime", desc: "Works with Claude, GPT, MCP" },
-                ].map((item) => (
-                  <div key={item.title} className="glass border border-border-default rounded-lg p-5 glow-card">
-                    <item.icon className="w-5 h-5 text-accent mb-3" />
-                    <h3 className="text-sm font-semibold text-text-primary mb-1">{item.title}</h3>
-                    <p className="text-xs text-text-secondary">{item.desc}</p>
-                  </div>
-                ))}
+            <ScrollReveal direction="left" delay={0.2}>
+              <div>
+                <h2 className="text-3xl font-semibold tracking-tight text-text-primary mb-6">
+                  MCP Integration
+                </h2>
+                <p className="text-text-secondary leading-relaxed mb-10 text-lg font-light">
+                  When an agent connects to a Lightning MCP server, it can create invoices, pay invoices, check balances, and manage channels. It becomes a full economic participant.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { icon: Zap, title: "Create invoices", desc: "Gen Lightning invoices to get paid" },
+                    { icon: CircleDollarSign, title: "Pay invoices", desc: "Pay for compute, data, API access" },
+                    { icon: Search, title: "Check balances", desc: "Monitor channels and histories" },
+                    { icon: Radio, title: "Manage channels", desc: "Open, close, rebalance LN" },
+                    { icon: Key, title: "Scoped credentials", desc: "Pay-only or read-only limits" },
+                    { icon: MessageSquare, title: "Any agent runtime", desc: "Works with Claude, GPT, MCP" },
+                  ].map((item, idx) => (
+                    <div key={item.title} className="glass border border-border-default rounded-lg p-5 glow-card">
+                      <item.icon className="w-5 h-5 text-accent mb-3" />
+                      <h3 className="text-sm font-semibold text-text-primary mb-1">{item.title}</h3>
+                      <p className="text-xs text-text-secondary">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
         </section>
 
@@ -297,7 +308,7 @@ export default function AgentsPage() {
           </div>
         </section>
 
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
