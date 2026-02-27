@@ -26,8 +26,10 @@ export default function WhyPage() {
 
       {/* Background Ambience */}
       <div className="fixed top-0 left-0 w-full h-[100vh] z-0 pointer-events-none origin-top overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/images/why_bg.png')] bg-cover bg-center bg-no-repeat opacity-10" />
         <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full bg-accent/5 blur-[120px] mix-blend-screen" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[size:32px_32px] opacity-[0.03]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg-base/50 via-bg-base/80 to-bg-base" />
       </div>
 
       <div className="relative z-10 w-full">
