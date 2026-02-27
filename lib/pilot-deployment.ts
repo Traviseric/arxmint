@@ -480,3 +480,283 @@ export function generatePilotDeployment(
     startDate: new Date().toISOString().split("T")[0],
   };
 }
+
+// ============================================================
+// Multi-City Federation Support (Phase 4.5)
+//
+// Extend from single pilot to multi-city inter-federation
+// commerce. Cities are connected via Coco multi-mint for
+// cross-city ecash transfers over Lightning.
+//
+// Source: Doc 7 — pilot-to-scale timeline
+// ============================================================
+
+/** City node in the multi-city network */
+export interface CityNode {
+  /** City identifier */
+  id: string;
+  /** City name */
+  name: string;
+  /** Location (city, state/country) */
+  location: string;
+  /** Pilot deployment config */
+  pilot: PilotDeployment;
+  /** City mint URL (Cashu) or federation invite code (Fedimint) */
+  mintEndpoint: string;
+  /** BCE maturity tier */
+  maturityTier: string;
+  /** Whether this city is the hub (original pilot) */
+  isHub: boolean;
+  /** Cities this node can route payments to via Lightning */
+  connectedCities: string[];
+  /** Date joined the multi-city network */
+  joinedAt: string;
+}
+
+/** Multi-city network configuration */
+export interface MultiCityNetwork {
+  /** Network name */
+  name: string;
+  /** Hub city (original pilot) */
+  hubCityId: string;
+  /** All city nodes */
+  cities: CityNode[];
+  /** Network-wide KPI aggregates */
+  aggregateKPIs: AggregateKPIs;
+  /** Network creation date */
+  createdAt: string;
+  /** Network version */
+  version: number;
+}
+
+/** Aggregate KPIs across all cities */
+export interface AggregateKPIs {
+  totalMerchants: number;
+  totalMAU: number;
+  totalCities: number;
+  avgPaymentSuccessRate: number;
+  avgUptime: number;
+  crossCityTransactions: number;
+}
+
+/** Cross-city payment route */
+export interface CrossCityRoute {
+  sourceCityId: string;
+  destCityId: string;
+  /** Route via Lightning (mint in source city melts → mint in dest city mints) */
+  routeType: "lightning-bridge";
+  /** Estimated fee in sats */
+  estimatedFeeSats: number;
+  /** Whether route is currently available */
+  available: boolean;
+}
+
+/**
+ * Create a multi-city network from a hub pilot deployment.
+ */
+export function createMultiCityNetwork(
+  name: string,
+  hubPilot: PilotDeployment,
+  hubMintEndpoint: string
+): MultiCityNetwork {
+  const hubCity: CityNode = {
+    id: `city_${Date.now().toString(36)}_hub`,
+    name: hubPilot.community.name,
+    location: hubPilot.location,
+    pilot: hubPilot,
+    mintEndpoint: hubMintEndpoint,
+    maturityTier: "nascent",
+    isHub: true,
+    connectedCities: [],
+    joinedAt: new Date().toISOString().split("T")[0],
+  };
+
+  return {
+    name,
+    hubCityId: hubCity.id,
+    cities: [hubCity],
+    aggregateKPIs: {
+      totalMerchants: 0,
+      totalMAU: 0,
+      totalCities: 1,
+      avgPaymentSuccessRate: 0,
+      avgUptime: 0,
+      crossCityTransactions: 0,
+    },
+    createdAt: new Date().toISOString().split("T")[0],
+    version: 1,
+  };
+}
+
+/**
+ * Add a city to an existing multi-city network.
+ */
+export function addCityToNetwork(
+  network: MultiCityNetwork,
+  cityName: string,
+  location: string,
+  community: CommunityConfig,
+  mintEndpoint: string,
+  customTargets?: Partial<PilotKPITargets>
+): MultiCityNetwork {
+  const pilot = generatePilotDeployment(community, location, customTargets);
+
+  const newCity: CityNode = {
+    id: `city_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    name: cityName,
+    location,
+    pilot,
+    mintEndpoint,
+    maturityTier: "nascent",
+    isHub: false,
+    connectedCities: [network.hubCityId],
+    joinedAt: new Date().toISOString().split("T")[0],
+  };
+
+  // Connect hub to new city
+  const updatedCities = network.cities.map((c) =>
+    c.id === network.hubCityId
+      ? { ...c, connectedCities: [...c.connectedCities, newCity.id] }
+      : c
+  );
+
+  return {
+    ...network,
+    cities: [...updatedCities, newCity],
+    aggregateKPIs: {
+      ...network.aggregateKPIs,
+      totalCities: updatedCities.length + 1,
+    },
+    version: network.version + 1,
+  };
+}
+
+/**
+ * Compute aggregate KPIs across all cities.
+ */
+export function computeNetworkKPIs(
+  network: MultiCityNetwork,
+  cityMetrics: Map<string, BCEMetrics>
+): AggregateKPIs {
+  let totalMerchants = 0;
+  let totalMAU = 0;
+  let successRateSum = 0;
+  let uptimeSum = 0;
+  let metricsCount = 0;
+
+  for (const city of network.cities) {
+    const metrics = cityMetrics.get(city.id);
+    if (metrics) {
+      totalMerchants += metrics.merchantCount;
+      totalMAU += metrics.mau;
+      successRateSum += metrics.paymentSuccessRate;
+      uptimeSum += metrics.uptime;
+      metricsCount++;
+    }
+  }
+
+  return {
+    totalMerchants,
+    totalMAU,
+    totalCities: network.cities.length,
+    avgPaymentSuccessRate: metricsCount > 0
+      ? Math.round((successRateSum / metricsCount) * 1000) / 1000
+      : 0,
+    avgUptime: metricsCount > 0
+      ? Math.round((uptimeSum / metricsCount) * 1000) / 1000
+      : 0,
+    crossCityTransactions: 0, // tracked separately
+  };
+}
+
+/**
+ * Get available cross-city payment routes.
+ * Routes go through Lightning: source mint melts ecash → Lightning → dest mint mints ecash.
+ */
+export function getCrossCityRoutes(network: MultiCityNetwork): CrossCityRoute[] {
+  const routes: CrossCityRoute[] = [];
+
+  for (const city of network.cities) {
+    for (const connectedId of city.connectedCities) {
+      routes.push({
+        sourceCityId: city.id,
+        destCityId: connectedId,
+        routeType: "lightning-bridge",
+        estimatedFeeSats: 10, // typical LN routing fee
+        available: true,
+      });
+      // Bidirectional
+      routes.push({
+        sourceCityId: connectedId,
+        destCityId: city.id,
+        routeType: "lightning-bridge",
+        estimatedFeeSats: 10,
+        available: true,
+      });
+    }
+  }
+
+  // Deduplicate (since connections are added from both sides)
+  const seen = new Set<string>();
+  return routes.filter((r) => {
+    const key = `${r.sourceCityId}->${r.destCityId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Generate a multi-city expansion plan.
+ */
+export function generateExpansionPlan(
+  network: MultiCityNetwork,
+  targetCities: Array<{ name: string; location: string; estimatedMembers: number }>
+): string {
+  const lines: string[] = [
+    `# ${network.name} — Multi-City Expansion Plan`,
+    "",
+    `**Current network:** ${network.cities.length} cities`,
+    `**Hub:** ${network.cities.find((c) => c.isHub)?.location || "Unknown"}`,
+    `**Generated:** ${new Date().toISOString().split("T")[0]}`,
+    "",
+    "## Current Network",
+    "",
+    "| City | Location | Maturity | Hub |",
+    "|------|----------|----------|-----|",
+  ];
+
+  network.cities.forEach((c) => {
+    lines.push(`| ${c.name} | ${c.location} | ${c.maturityTier} | ${c.isHub ? "Yes" : "No"} |`);
+  });
+
+  lines.push("");
+  lines.push("## Expansion Targets");
+  lines.push("");
+  lines.push("| City | Location | Est. Members | Backend |");
+  lines.push("|------|----------|-------------|---------|");
+
+  targetCities.forEach((t) => {
+    const backend = t.estimatedMembers > 50 ? "Fedimint" : "Cashu";
+    lines.push(`| ${t.name} | ${t.location} | ${t.estimatedMembers} | ${backend} |`);
+  });
+
+  lines.push("");
+  lines.push("## Expansion Timeline");
+  lines.push("");
+  lines.push("1. **Month 1-2:** Identify community champions in target cities");
+  lines.push("2. **Month 2-3:** Deploy ArxMint stacks using replication playbook");
+  lines.push("3. **Month 3-4:** Connect cities via multi-mint Lightning bridge");
+  lines.push("4. **Month 4-6:** Grow merchant networks and cross-city commerce");
+  lines.push("5. **Month 6+:** Evaluate and expand to additional cities");
+  lines.push("");
+  lines.push("## Cross-City Commerce");
+  lines.push("");
+  lines.push("Inter-city payments route through Lightning:");
+  lines.push("1. User in City A melts ecash to Lightning invoice");
+  lines.push("2. Lightning payment routes to City B's mint");
+  lines.push("3. City B's mint issues ecash to the recipient");
+  lines.push("4. Typical latency: <3 seconds, fee: ~10 sats");
+
+  return lines.join("\n");
+}

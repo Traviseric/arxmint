@@ -8,7 +8,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 
 Humans and AI agents share the same private commerce infrastructure. Agents sell data/compute via L402 paywalls; humans transact in ecash; both use the same Lightning-connected federation.
 
-**Status:** Phases 0-3 complete. Phase 4 (Citadel — production + grant deployment) is next. See `docs/roadmap.md`.
+**Status:** Phases 0-4 complete. All roadmap phases (Fortify → Keystone → Spire → Aether → Citadel) implemented. See `docs/roadmap.md`.
 
 ## Lookup Table
 
@@ -35,7 +35,13 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Merchant onboarding | `components/merchant-onboard.tsx` | `NuMo NFC` |
 | Agent API | `app/api/agent/route.ts` | `privacy-audit cycle-signals` |
 | L402 demo | `app/api/l402/route.ts` | `WWW-Authenticate 402` |
+| Pilot deployment | `lib/pilot-deployment.ts` | `PilotKPITargets generatePilotTimeline MultiCityNetwork` |
+| Grant templates | `lib/grant-templates.ts` | `generateFBCEApplication generateOpenSatsApplication` |
+| Replication playbook | `lib/replication-playbook.ts` | `generateReplicationPlaybook exportPlaybookMarkdown` |
 | Spec + cross-ref | `docs/spec.md`, `docs/research-crossref.md` | — |
+| Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel` |
+| Brand guide | `docs/brand.md` | `tagline voice palette audience` |
+| Docs index | `docs/README.md` | — |
 
 ## Tech Stack
 
@@ -60,14 +66,14 @@ Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark theme, `#F7931A`
 
 ## Brand
 
-ArxMint (Arx = citadel + Mint = ecash). Voice: confident builder, direct, protective. Theme: dark, minimal, fortress energy.
+ArxMint (Arx = citadel + Mint = ecash). Voice: confident builder, direct, protective. Theme: dark, minimal, fortress energy. Full guide: `docs/brand.md`.
 
 ## Running the Project
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm run build        # Production build (10 routes)
+npm run build        # Production build (14 routes)
 npm run setup:cashu  # Docker: LND + Cashu mint only
 npm run setup:full   # Docker: Full stack (LND + Cashu + Fedimint + Aperture)
 ```

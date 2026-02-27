@@ -71,6 +71,56 @@ export default function AgentsPage() {
           </ScrollReveal>
         </section>
 
+        {/* This Isn't About Robots */}
+        <section className="relative w-full border-t border-border-subtle">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+            <ScrollReveal>
+              <div className="mb-16 max-w-3xl">
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
+                  This isn&apos;t about robots.
+                </h2>
+                <p className="text-lg text-text-secondary leading-relaxed">
+                  AI agents sound abstract until you see what they do for real people in a real community.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <StaggerContainer staggerDelay={0.15}>
+              <div className="grid md:grid-cols-3 gap-6">
+                <StaggerItem>
+                  <div className="glass rounded-xl p-8 glow-card border-accent/10 transition-all h-full">
+                    <CircleDollarSign className="w-6 h-6 text-accent mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Maria&apos;s taco truck</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Maria tapes a QR code to her window. Customers scan, pay in ecash, she sees sats instantly. No chargebacks, no Square fees. A privacy-audit agent checks her setup weekly and flags anything exposed.
+                    </p>
+                  </div>
+                </StaggerItem>
+
+                <StaggerItem>
+                  <div className="glass rounded-xl p-8 glow-card border-accent/10 transition-all h-full">
+                    <Radio className="w-6 h-6 text-accent mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Jake the node runner</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Jake deployed a cycle-signals agent on his community&apos;s infrastructure. It watches on-chain metrics and sells alerts to subscribers at 200 sats per request. He earns sats while he sleeps.
+                    </p>
+                  </div>
+                </StaggerItem>
+
+                <StaggerItem>
+                  <div className="glass rounded-xl p-8 glow-card border-accent/10 transition-all h-full">
+                    <Search className="w-6 h-6 text-accent mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Sarah the organizer</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Sarah runs the Boulder Bitcoin meetup. She checks the community health dashboard before each meeting — active wallets, transaction volume, merchant count — and shares the metrics to keep everyone motivated.
+                    </p>
+                  </div>
+                </StaggerItem>
+              </div>
+            </StaggerContainer>
+          </div>
+        </section>
+
         {/* The Problem for Agents */}
         <section className="relative w-full border-t border-border-subtle bg-bg-surface/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
@@ -136,6 +186,86 @@ export default function AgentsPage() {
           </div>
         </section>
 
+        {/* Two Payment Flows */}
+        <section className="relative w-full border-t border-border-subtle bg-bg-surface/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+            <ScrollReveal>
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6 text-center">
+                Two payment flows. Same network.
+              </h2>
+              <p className="text-text-secondary text-lg text-center max-w-2xl mx-auto mb-12">
+                Humans and agents both transact in sats. The experience is different. The rails are identical.
+              </p>
+            </ScrollReveal>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <ScrollReveal direction="left" delay={0.2}>
+                <div className="glass-heavy border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
+                  <div className="absolute -inset-4 bg-accent/5 rounded-3xl blur-2xl -z-10" />
+                  <h3 className="text-sm font-mono tracking-widest text-accent uppercase mb-6 flex items-center gap-2">
+                    <Shield className="w-4 h-4" /> Human Payment
+                  </h3>
+                  <div className="space-y-4 text-sm text-text-secondary">
+                    <p>Scan QR code at counter</p>
+                    <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                    <p>Ecash sends from your wallet</p>
+                    <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                    <p>Merchant sees sats instantly</p>
+                    <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                    <p className="text-green-400">Done.</p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-border-default grid grid-cols-3 gap-4 font-mono text-xs">
+                    <div>
+                      <span className="text-text-muted block">TIME</span>
+                      <span className="text-text-primary">2 seconds</span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted block">COST</span>
+                      <span className="text-green-400">Zero</span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted block">PRIVACY</span>
+                      <span className="text-accent">Total</span>
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+
+              <ScrollReveal direction="right" delay={0.3}>
+                <div className="glass-heavy border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
+                  <div className="absolute -inset-4 bg-accent/5 rounded-3xl blur-2xl -z-10" />
+                  <h3 className="text-sm font-mono tracking-widest text-accent uppercase mb-6 flex items-center gap-2">
+                    <Cpu className="w-4 h-4" /> Agent Payment
+                  </h3>
+                  <div className="space-y-4 text-sm text-text-secondary">
+                    <p>Hit API endpoint</p>
+                    <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                    <p>Receive 402 challenge + invoice</p>
+                    <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                    <p>Pay Lightning invoice automatically</p>
+                    <div className="pl-2 border-l border-accent/30 ml-2 h-4" />
+                    <p className="text-green-400">Data served.</p>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-border-default grid grid-cols-3 gap-4 font-mono text-xs">
+                    <div>
+                      <span className="text-text-muted block">TIME</span>
+                      <span className="text-text-primary">800ms</span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted block">COST</span>
+                      <span className="text-text-primary">500 sats</span>
+                    </div>
+                    <div>
+                      <span className="text-text-muted block">IDENTITY</span>
+                      <span className="text-accent">None</span>
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+
         {/* How L402 Works & MCP Integration */}
         <section className="relative w-full border-t border-border-subtle overflow-hidden">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent/5 blur-[120px] rounded-[100%] z-0" />
@@ -149,9 +279,9 @@ export default function AgentsPage() {
                   How L402 Works
                 </h2>
                 <p className="text-text-secondary leading-relaxed mb-10 text-lg font-light">
-                  L402 is an HTTP protocol extension from Lightning Labs. It turns any
-                  API endpoint into a pay-per-request service. No accounts, no API keys,
-                  no billing departments.
+                  L402 is how machines pay each other on the internet. Think of it like a
+                  vending machine — put in sats, get the product. Any API endpoint becomes
+                  a pay-per-request service. No accounts, no API keys, no billing departments.
                 </p>
 
                 <div className="bg-bg-black border border-border-strong rounded-xl font-mono text-xs overflow-hidden shadow-2xl">
@@ -236,6 +366,7 @@ export default function AgentsPage() {
                   name: "Privacy Audit",
                   price: "500 sats",
                   desc: "Analyze wallet privacy score, identify leaks. Returns layer breakdown.",
+                  humanUse: "a security checkup for your financial privacy",
                   endpoint: "/agent?svc=privacy",
                 },
                 {
@@ -243,6 +374,7 @@ export default function AgentsPage() {
                   name: "Cycle Signals",
                   price: "200 sats",
                   desc: "On-chain cycle positioning for decision support. Live MVRV, NUPL.",
+                  humanUse: "watches the market for you, alerts when it matters",
                   endpoint: "/agent?svc=signals",
                 },
                 {
@@ -250,6 +382,7 @@ export default function AgentsPage() {
                   name: "Data Market",
                   price: "1000 sats",
                   desc: "Aggregated community metrics, merchant data, flow analysis.",
+                  humanUse: "community health metrics for organizers",
                   endpoint: "/agent?svc=data",
                 },
                 {
@@ -257,6 +390,7 @@ export default function AgentsPage() {
                   name: "Compute",
                   price: "2000 sats",
                   desc: "On-demand compute tasks: batch token operations, ZK verifications.",
+                  humanUse: "back-end infrastructure that keeps the economy running",
                   endpoint: "/agent?svc=compute",
                 },
               ].map((agent) => (
@@ -270,8 +404,11 @@ export default function AgentsPage() {
                   <h3 className="text-lg font-semibold text-text-primary mb-2 w-full flex justify-between">
                     {agent.name}
                   </h3>
-                  <p className="text-xs text-text-secondary leading-relaxed mb-4 flex-grow">
+                  <p className="text-xs text-text-secondary leading-relaxed mb-2 flex-grow">
                     {agent.desc}
+                  </p>
+                  <p className="text-[11px] text-accent/70 font-mono mb-4">
+                    → {agent.humanUse}
                   </p>
 
                   <div className="w-full mt-auto pt-4 border-t border-border-subtle flex justify-between items-center font-mono">

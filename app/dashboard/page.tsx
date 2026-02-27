@@ -14,6 +14,7 @@ import {
   Zap,
   Activity,
   Download,
+  FileText,
 } from "lucide-react";
 import { PrivacyDashboard } from "@/components/privacy-dashboard";
 import { CycleAlerts } from "@/components/cycle-alerts";
@@ -26,10 +27,13 @@ import {
   TIER_INFO,
   exportMetricsJSON,
   exportMetricsCSV,
+  generateReportSchedule,
+  generateProgressReport,
+  exportReportMarkdown,
   type BCEMetrics,
 } from "@/lib/bce-metrics";
 
-type Tab = "overview" | "privacy" | "cycle" | "wallet" | "health";
+type Tab = "overview" | "privacy" | "cycle" | "wallet" | "health" | "grants";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -44,6 +48,7 @@ export default function DashboardPage() {
     { id: "privacy" as const, label: "Privacy", icon: Shield },
     { id: "cycle" as const, label: "Cycle Signals", icon: TrendingUp },
     { id: "wallet" as const, label: "Wallet", icon: Wallet },
+    { id: "grants" as const, label: "Grant Reports", icon: FileText },
   ];
 
   return (
@@ -196,6 +201,10 @@ export default function DashboardPage() {
           <div className="max-w-2xl">
             <WalletPanel />
           </div>
+        )}
+
+        {activeTab === "grants" && (
+          <GrantReportingTab />
         )}
 
         {activeTab === "overview" && !currentCommunity && (
@@ -449,6 +458,168 @@ function MetricCard({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ---- Grant Reporting Tab ----
+
+function GrantReportingTab() {
+  const metrics = getDemoBCEMetrics();
+  const schedule = generateReportSchedule(6, new Date().toISOString().split("T")[0]);
+
+  const demoReport = generateProgressReport(
+    metrics,
+    1,
+    "Month 1",
+    {
+      merchantsTarget: 30,
+      mauTarget: 300,
+      successRateTarget: 0.98,
+      uptimeTarget: 0.995,
+      spendVelocityTarget: 2,
+    },
+    [
+      { id: 1, title: "Infrastructure Deployment", status: "in-progress" as const, percentComplete: 75, notes: "Docker stack deployed, channels being funded" },
+      { id: 2, title: "Merchant Onboarding", status: "in-progress" as const, percentComplete: 30, notes: "5 founding merchants recruited" },
+      { id: 3, title: "Growth & Circular Spend", status: "not-started" as const, percentComplete: 0, notes: "" },
+      { id: 4, title: "Evaluation & Replication", status: "not-started" as const, percentComplete: 0, notes: "" },
+    ],
+    [
+      "Docker stack deployed to production server",
+      "5 founding merchants recruited and onboarded",
+      "Monitoring dashboards configured (Prometheus + Grafana)",
+    ],
+    ["Lightning channel liquidity still below target"],
+    [
+      "Fund remaining Lightning channels to 1M+ sats",
+      "Onboard 10 more merchants",
+      "Host first community demo event",
+    ],
+    2500,
+    15000
+  );
+
+  const handleExportReport = () => {
+    const md = exportReportMarkdown(demoReport);
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `arxmint-grant-report-${demoReport.period.toLowerCase().replace(/\s+/g, "-")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="max-w-4xl space-y-6">
+      {/* Header */}
+      <div className="sovereign-card !border-btc-orange/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-sovereign-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-btc-orange" />
+              Grant Reporting
+            </h3>
+            <p className="text-sm text-sovereign-muted mt-1">
+              Progress reports matching OpenSats cadence — monthly (months 1-3), then quarterly
+            </p>
+          </div>
+          <button
+            onClick={handleExportReport}
+            className="sovereign-btn-outline !px-3 !py-1.5 text-xs"
+          >
+            <Download className="w-3 h-3" /> Export Report
+          </button>
+        </div>
+      </div>
+
+      {/* Reporting Schedule */}
+      <div className="sovereign-card">
+        <h4 className="text-sm font-bold text-sovereign-white mb-4">Reporting Schedule</h4>
+        <div className="space-y-2">
+          {schedule.map((s, i) => (
+            <div
+              key={i}
+              className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                i === 0
+                  ? "border-btc-orange/30 bg-btc-orange/5"
+                  : "border-sovereign-border bg-sovereign-dark"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className={`text-xs px-2 py-0.5 rounded ${
+                  s.cadence === "monthly"
+                    ? "bg-blue-500/20 text-blue-400"
+                    : "bg-purple-500/20 text-purple-400"
+                }`}>
+                  {s.cadence}
+                </span>
+                <span className="text-sm text-sovereign-white">{s.label}</span>
+              </div>
+              <span className="text-xs text-sovereign-muted font-mono">Due: {s.dueDate}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Current Report Preview */}
+      <div className="sovereign-card">
+        <h4 className="text-sm font-bold text-sovereign-white mb-4">
+          Current Report: {demoReport.period}
+        </h4>
+
+        {/* KPI Progress */}
+        <div className="space-y-3 mb-6">
+          {demoReport.kpiProgress.map((kpi, i) => (
+            <div key={i}>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-sovereign-muted">{kpi.kpi}</span>
+                <span className={kpi.onTrack ? "text-green-400" : "text-yellow-400"}>
+                  {kpi.current}{kpi.unit === "%" ? "%" : ""} / {kpi.target}{kpi.unit === "%" ? "%" : ` ${kpi.unit}`}
+                  {kpi.onTrack ? " — on track" : " — behind"}
+                </span>
+              </div>
+              <div className="w-full bg-sovereign-dark rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    kpi.percentComplete >= 100 ? "bg-green-400" :
+                    kpi.onTrack ? "bg-blue-400" :
+                    "bg-yellow-400"
+                  }`}
+                  style={{ width: `${Math.min(kpi.percentComplete, 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Milestones */}
+        <h5 className="text-xs font-bold text-sovereign-white mb-2">Milestones</h5>
+        <div className="space-y-2 mb-6">
+          {demoReport.milestoneProgress.map((m) => (
+            <div key={m.milestoneId} className="flex items-center gap-3 text-xs">
+              <span className={`w-2 h-2 rounded-full ${
+                m.status === "completed" ? "bg-green-400" :
+                m.status === "in-progress" ? "bg-blue-400" :
+                m.status === "delayed" ? "bg-red-400" :
+                "bg-sovereign-muted"
+              }`} />
+              <span className="text-sovereign-white flex-1">{m.title}</span>
+              <span className="text-sovereign-muted">{m.percentComplete}%</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Budget */}
+        <div className="flex items-center justify-between text-xs border-t border-sovereign-border pt-3">
+          <span className="text-sovereign-muted">Budget spent</span>
+          <span className="text-sovereign-white font-mono">
+            ${demoReport.budgetSpentUSD.toLocaleString()} / ${demoReport.totalBudgetUSD.toLocaleString()}
+            {" "}({Math.round((demoReport.budgetSpentUSD / demoReport.totalBudgetUSD) * 100)}%)
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

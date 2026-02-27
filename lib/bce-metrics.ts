@@ -246,3 +246,273 @@ export function exportMetricsCSV(metrics: BCEMetrics): string {
   ].join(",");
   return `${header}\n${row}`;
 }
+
+// ============================================================
+// Grant Reporting (Phase 4.3)
+//
+// Built-in grant progress reporting that matches OpenSats cadence:
+// monthly for first 3 months, then quarterly.
+//
+// Source: Doc 7 — OpenSats reporting requirements
+// ============================================================
+
+/** Reporting cadence type */
+export type ReportCadence = "monthly" | "quarterly";
+
+/** Grant progress report */
+export interface GrantProgressReport {
+  /** Report ID */
+  id: string;
+  /** Report period (e.g., "Month 1", "Q2 2026") */
+  period: string;
+  /** Report number (sequential) */
+  reportNumber: number;
+  /** Generated timestamp */
+  generatedAt: number;
+  /** Cadence this report follows */
+  cadence: ReportCadence;
+  /** Current BCE metrics snapshot */
+  metrics: BCEMetrics;
+  /** KPI progress (target vs actual) */
+  kpiProgress: KPIProgressItem[];
+  /** Milestone progress */
+  milestoneProgress: MilestoneProgressItem[];
+  /** Narrative progress notes */
+  progressNotes: string[];
+  /** Challenges and blockers */
+  challenges: string[];
+  /** Next period goals */
+  nextPeriodGoals: string[];
+  /** Budget spent to date (USD) */
+  budgetSpentUSD: number;
+  /** Total budget (USD) */
+  totalBudgetUSD: number;
+}
+
+/** KPI progress tracking */
+export interface KPIProgressItem {
+  kpi: string;
+  target: number;
+  current: number;
+  unit: string;
+  percentComplete: number;
+  onTrack: boolean;
+}
+
+/** Milestone progress tracking */
+export interface MilestoneProgressItem {
+  milestoneId: number;
+  title: string;
+  status: "not-started" | "in-progress" | "completed" | "delayed";
+  percentComplete: number;
+  notes: string;
+}
+
+/**
+ * Determine reporting cadence based on month number.
+ * OpenSats: monthly for first 3 months, then quarterly.
+ */
+export function getReportCadence(monthNumber: number): ReportCadence {
+  return monthNumber <= 3 ? "monthly" : "quarterly";
+}
+
+/**
+ * Generate reporting schedule for a grant period.
+ * Returns array of { month, period label, cadence }.
+ */
+export function generateReportSchedule(
+  totalMonths: number,
+  startDate: string
+): Array<{ month: number; label: string; cadence: ReportCadence; dueDate: string }> {
+  const schedule: Array<{ month: number; label: string; cadence: ReportCadence; dueDate: string }> = [];
+  const start = new Date(startDate);
+
+  // Monthly reports for months 1-3
+  for (let m = 1; m <= Math.min(3, totalMonths); m++) {
+    const due = new Date(start);
+    due.setMonth(due.getMonth() + m);
+    schedule.push({
+      month: m,
+      label: `Month ${m}`,
+      cadence: "monthly",
+      dueDate: due.toISOString().split("T")[0],
+    });
+  }
+
+  // Quarterly reports after month 3
+  if (totalMonths > 3) {
+    let quarter = 1;
+    for (let m = 6; m <= totalMonths; m += 3) {
+      quarter++;
+      const due = new Date(start);
+      due.setMonth(due.getMonth() + m);
+      schedule.push({
+        month: m,
+        label: `Q${quarter} (Month ${m})`,
+        cadence: "quarterly",
+        dueDate: due.toISOString().split("T")[0],
+      });
+    }
+  }
+
+  // Final report
+  if (totalMonths > 3) {
+    const finalDue = new Date(start);
+    finalDue.setMonth(finalDue.getMonth() + totalMonths);
+    const lastEntry = schedule[schedule.length - 1];
+    if (!lastEntry || lastEntry.month !== totalMonths) {
+      schedule.push({
+        month: totalMonths,
+        label: `Final Report (Month ${totalMonths})`,
+        cadence: "quarterly",
+        dueDate: finalDue.toISOString().split("T")[0],
+      });
+    }
+  }
+
+  return schedule;
+}
+
+/**
+ * Generate a grant progress report from current metrics.
+ */
+export function generateProgressReport(
+  metrics: BCEMetrics,
+  reportNumber: number,
+  periodLabel: string,
+  targets: {
+    merchantsTarget: number;
+    mauTarget: number;
+    successRateTarget: number;
+    uptimeTarget: number;
+    spendVelocityTarget: number;
+  },
+  milestones: Array<{ id: number; title: string; status: MilestoneProgressItem["status"]; percentComplete: number; notes: string }>,
+  notes: string[],
+  challenges: string[],
+  nextGoals: string[],
+  budgetSpentUSD: number,
+  totalBudgetUSD: number
+): GrantProgressReport {
+  const cadence = getReportCadence(reportNumber);
+
+  const kpiProgress: KPIProgressItem[] = [
+    {
+      kpi: "Merchants Onboarded",
+      target: targets.merchantsTarget,
+      current: metrics.merchantCount,
+      unit: "merchants",
+      percentComplete: Math.round((metrics.merchantCount / targets.merchantsTarget) * 100),
+      onTrack: metrics.merchantCount >= (targets.merchantsTarget * reportNumber) / 6,
+    },
+    {
+      kpi: "Monthly Active Spenders",
+      target: targets.mauTarget,
+      current: metrics.mau,
+      unit: "users",
+      percentComplete: Math.round((metrics.mau / targets.mauTarget) * 100),
+      onTrack: metrics.mau >= (targets.mauTarget * reportNumber) / 6,
+    },
+    {
+      kpi: "Payment Success Rate",
+      target: targets.successRateTarget * 100,
+      current: Math.round(metrics.paymentSuccessRate * 100 * 10) / 10,
+      unit: "%",
+      percentComplete: Math.round((metrics.paymentSuccessRate / targets.successRateTarget) * 100),
+      onTrack: metrics.paymentSuccessRate >= targets.successRateTarget * 0.95,
+    },
+    {
+      kpi: "Uptime",
+      target: targets.uptimeTarget * 100,
+      current: Math.round(metrics.uptime * 100 * 10) / 10,
+      unit: "%",
+      percentComplete: Math.round((metrics.uptime / targets.uptimeTarget) * 100),
+      onTrack: metrics.uptime >= targets.uptimeTarget * 0.95,
+    },
+    {
+      kpi: "Spend Velocity",
+      target: targets.spendVelocityTarget,
+      current: metrics.spendVelocity,
+      unit: "tx/user/month",
+      percentComplete: Math.round((metrics.spendVelocity / targets.spendVelocityTarget) * 100),
+      onTrack: metrics.spendVelocity >= targets.spendVelocityTarget * 0.7,
+    },
+  ];
+
+  return {
+    id: `report_${reportNumber}_${Date.now().toString(36)}`,
+    period: periodLabel,
+    reportNumber,
+    generatedAt: Date.now(),
+    cadence,
+    metrics,
+    kpiProgress,
+    milestoneProgress: milestones,
+    progressNotes: notes,
+    challenges,
+    nextPeriodGoals: nextGoals,
+    budgetSpentUSD,
+    totalBudgetUSD,
+  };
+}
+
+/** Export a progress report as Markdown */
+export function exportReportMarkdown(report: GrantProgressReport): string {
+  const lines: string[] = [
+    `# Grant Progress Report — ${report.period}`,
+    "",
+    `**Report #${report.reportNumber}** | ${report.cadence} cadence`,
+    `**Generated:** ${new Date(report.generatedAt).toISOString().split("T")[0]}`,
+    `**BCE Tier:** ${report.metrics.maturityTier} | Health Score: ${report.metrics.healthScore}/100`,
+    "",
+    "## KPI Progress",
+    "",
+    "| KPI | Target | Current | Progress | On Track |",
+    "|-----|--------|---------|----------|----------|",
+  ];
+
+  report.kpiProgress.forEach((k) => {
+    const bar = `${k.percentComplete}%`;
+    const status = k.onTrack ? "Yes" : "**No**";
+    lines.push(`| ${k.kpi} | ${k.target}${k.unit === "%" ? "%" : ` ${k.unit}`} | ${k.current}${k.unit === "%" ? "%" : ` ${k.unit}`} | ${bar} | ${status} |`);
+  });
+
+  lines.push("");
+  lines.push("## Milestone Progress");
+  lines.push("");
+
+  report.milestoneProgress.forEach((m) => {
+    const statusIcon = m.status === "completed" ? "[x]" : m.status === "in-progress" ? "[-]" : m.status === "delayed" ? "[!]" : "[ ]";
+    lines.push(`- ${statusIcon} **Milestone ${m.milestoneId}: ${m.title}** — ${m.percentComplete}% (${m.status})`);
+    if (m.notes) lines.push(`  - ${m.notes}`);
+  });
+
+  lines.push("");
+  lines.push("## Progress Notes");
+  lines.push("");
+  report.progressNotes.forEach((n) => lines.push(`- ${n}`));
+
+  if (report.challenges.length > 0) {
+    lines.push("");
+    lines.push("## Challenges & Blockers");
+    lines.push("");
+    report.challenges.forEach((c) => lines.push(`- ${c}`));
+  }
+
+  lines.push("");
+  lines.push("## Next Period Goals");
+  lines.push("");
+  report.nextPeriodGoals.forEach((g) => lines.push(`- ${g}`));
+
+  lines.push("");
+  lines.push("## Budget");
+  lines.push("");
+  const budgetPercent = Math.round((report.budgetSpentUSD / report.totalBudgetUSD) * 100);
+  lines.push(`- Spent to date: $${report.budgetSpentUSD.toLocaleString()} / $${report.totalBudgetUSD.toLocaleString()} (${budgetPercent}%)`);
+
+  lines.push("");
+  lines.push("---");
+  lines.push(`*Generated by ArxMint Grant Reporting — ${new Date(report.generatedAt).toISOString()}*`);
+
+  return lines.join("\n");
+}

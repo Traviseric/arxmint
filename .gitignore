@@ -32,5 +32,9 @@ Thumbs.db
 # Docker volumes (local dev)
 docker-data/
 
+# Build logs
+build_log.txt
+*.log
+
 # Claude Code
 .claude/

@@ -17,6 +17,22 @@ export const metadata: Metadata = {
   title: "ArxMint — Sovereign Bitcoin Economies",
   description:
     "Spin up your own private Bitcoin economy in minutes. Fedimint federations, Cashu mints, Lightning AI agents — censorship-resistant rails for the parallel voluntary economy.",
+  metadataBase: new URL("https://arxmint.com"),
+  openGraph: {
+    title: "ArxMint — Sovereign Bitcoin Economies",
+    description:
+      "Your Bitcoin economy, one prompt away. Private Fedimint/Cashu mints with Lightning AI agent rails.",
+    url: "https://arxmint.com",
+    siteName: "ArxMint",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ArxMint — Sovereign Bitcoin Economies",
+    description:
+      "Your Bitcoin economy, one prompt away. Private Fedimint/Cashu mints with Lightning AI agent rails.",
+  },
 };
 
 export default function RootLayout({
