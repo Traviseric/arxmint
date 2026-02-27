@@ -88,12 +88,13 @@ export default function TerminalDemo() {
     if (phase !== "output1") return;
     let i = 0;
     const interval = setInterval(() => {
-      setVisibleLines((prev) => [...prev, OUTPUT_LINES[i]]);
-      i++;
       if (i >= OUTPUT_LINES.length) {
         clearInterval(interval);
         setTimeout(() => setPhase("typing2"), 600);
+        return;
       }
+      setVisibleLines((prev) => [...prev, OUTPUT_LINES[i]]);
+      i++;
     }, 80);
     return () => clearInterval(interval);
   }, [phase]);
@@ -122,12 +123,13 @@ export default function TerminalDemo() {
     if (phase !== "output2") return;
     let i = 0;
     const interval = setInterval(() => {
-      setVisibleLines((prev) => [...prev, DEPLOY_OUTPUT[i]]);
-      i++;
       if (i >= DEPLOY_OUTPUT.length) {
         clearInterval(interval);
         setPhase("done");
+        return;
       }
+      setVisibleLines((prev) => [...prev, DEPLOY_OUTPUT[i]]);
+      i++;
     }, 120);
     return () => clearInterval(interval);
   }, [phase]);
@@ -145,7 +147,7 @@ export default function TerminalDemo() {
 
       {/* Terminal body */}
       <div className="p-4 sm:p-6 min-h-[320px] max-h-[480px] overflow-y-auto text-xs sm:text-sm leading-relaxed">
-        {visibleLines.map((line, i) => (
+        {visibleLines.filter((l): l is string => l != null).map((line, i) => (
           <div key={i} className={line.startsWith("$") ? "text-accent" : "text-text-primary"}>
             {line.includes("✓") ? (
               <span>
