@@ -11,91 +11,286 @@
 
 import {
   Wallet,
-  MintQuoteState,
   getEncodedTokenV4,
+  getKeysetIdInt,
+  verifyKeysetId,
   type Proof,
+  type MintKeys,
   type MintQuoteResponse,
   type MeltQuoteResponse,
 } from "@cashu/cashu-ts";
 
 // ---- Keyset ID Validation (NUT-13 security) ----
 
+interface RegistryEntry {
+  mintUrl: string;
+  keysetIdInt: string;
+}
+
+interface KeysetSnapshot {
+  id: string;
+  active: boolean;
+}
+
+interface KeysetValidationResult {
+  valid: boolean;
+  trustedKeysetIds: string[];
+  warnings: string[];
+  errors: string[];
+}
+
+interface RestoreValidationResult {
+  proofs: Proof[];
+  warnings: string[];
+  rejected: number;
+}
+
+const MIN_KEYSET_ID_LEN = 8;
+const KEYSET_ID_HEX_RE = /^[0-9a-f]+$/i;
+
 /** Known keyset IDs across all connected mints — used for collision detection */
-const globalKeysetRegistry = new Map<string, string>(); // keysetId → mintUrl
+const keysetRegistryById = new Map<string, RegistryEntry>(); // keysetId -> entry
+const keysetRegistryByInt = new Map<string, Set<string>>(); // keyset_id_int -> keysetIds
+
+function normalizeMintUrl(mintUrl: string): string {
+  return mintUrl.trim().replace(/\/+$/, "");
+}
+
+function isLikelyKeysetId(id: string): boolean {
+  return id.length >= MIN_KEYSET_ID_LEN && KEYSET_ID_HEX_RE.test(id);
+}
+
+/** Derive the NUT-13 `keyset_id_int` value used by deterministic secret derivation. */
+export function deriveKeysetIdInt(keysetId: string): bigint {
+  return getKeysetIdInt(keysetId);
+}
+
+function getTrustedKeysetIdsForMint(mintUrl: string): Set<string> {
+  const normalizedMint = normalizeMintUrl(mintUrl);
+  const ids = new Set<string>();
+  for (const [id, entry] of keysetRegistryById.entries()) {
+    if (entry.mintUrl === normalizedMint) {
+      ids.add(id);
+    }
+  }
+  return ids;
+}
 
 /**
- * Validate keyset IDs from a mint to prevent NUT-13 collision attacks.
- *
- * The Jan 2026 vulnerability disclosure showed that wallets using NUT-13
- * deterministic secrets derive blinding factors from a 31-bit keyset_id_int,
- * which can collide across mints. An adversarial mint can exploit this to
- * steal proofs via the /restore endpoint.
- *
- * This function checks:
- * 1. Keyset IDs are not empty or malformed
- * 2. No keyset ID collides with a different mint in our registry
- * 3. Keyset IDs have sufficient entropy (reject suspiciously short IDs)
+ * Register trusted keysets and detect namespace collisions across known mints.
  */
-function validateKeysetIds(
-  keysets: Array<{ id: string; active: boolean }>,
-  mintUrl: string
-): { valid: boolean; warnings: string[] } {
+export function validateAndRegisterKeysets(
+  mintUrl: string,
+  keysetIds: string[]
+): KeysetValidationResult {
+  const normalizedMint = normalizeMintUrl(mintUrl);
   const warnings: string[] = [];
+  const errors: string[] = [];
+  const trustedKeysetIds = new Set<string>();
 
-  for (const ks of keysets) {
-    if (!ks.id || ks.id.length < 8) {
-      return {
-        valid: false,
-        warnings: [`Keyset ID "${ks.id}" is too short — possible malicious mint`],
-      };
+  for (const keysetId of keysetIds) {
+    if (!isLikelyKeysetId(keysetId)) {
+      errors.push(`Invalid keyset ID "${keysetId}" for mint ${normalizedMint}`);
+      continue;
     }
 
-    const existingMint = globalKeysetRegistry.get(ks.id);
-    if (existingMint && existingMint !== mintUrl) {
-      return {
-        valid: false,
-        warnings: [
-          `Keyset ID "${ks.id}" collision: already registered to ${existingMint}. ` +
-            `This mint (${mintUrl}) may be adversarial. Refusing to connect.`,
-        ],
-      };
+    const existing = keysetRegistryById.get(keysetId);
+    if (existing && existing.mintUrl !== normalizedMint) {
+      errors.push(
+        `Full keyset ID collision: "${keysetId}" already belongs to ${existing.mintUrl}`
+      );
+      continue;
     }
 
-    // Check the derived keyset_id_int for collision (NUT-13 uses last 31 bits)
-    const keysetIdInt = deriveKeysetIdInt(ks.id);
-    for (const [existingId, existingUrl] of globalKeysetRegistry) {
-      if (existingUrl !== mintUrl && deriveKeysetIdInt(existingId) === keysetIdInt) {
-        warnings.push(
-          `Keyset ID int collision: "${ks.id}" (this mint) and "${existingId}" ` +
-            `(${existingUrl}) share the same 31-bit derivation integer ${keysetIdInt}. ` +
-            `NUT-13 deterministic secrets may collide. Proceeding with caution.`
+    const keysetIdInt = deriveKeysetIdInt(keysetId).toString();
+    const collidingIds = keysetRegistryByInt.get(keysetIdInt);
+    if (collidingIds) {
+      for (const collidingId of collidingIds) {
+        if (collidingId === keysetId) continue;
+        const collidingMint = keysetRegistryById.get(collidingId)?.mintUrl;
+        errors.push(
+          `31-bit keyset_id_int collision (${keysetIdInt}): "${keysetId}" ` +
+            `collides with "${collidingId}" from ${collidingMint || "unknown mint"}`
         );
       }
     }
+
+    trustedKeysetIds.add(keysetId);
   }
 
-  // Register all keyset IDs for this mint
-  for (const ks of keysets) {
-    globalKeysetRegistry.set(ks.id, mintUrl);
+  if (errors.length > 0) {
+    return { valid: false, trustedKeysetIds: [], warnings, errors };
   }
 
-  return { valid: true, warnings };
+  for (const keysetId of trustedKeysetIds) {
+    const keysetIdInt = deriveKeysetIdInt(keysetId).toString();
+    keysetRegistryById.set(keysetId, { mintUrl: normalizedMint, keysetIdInt });
+
+    const bucket = keysetRegistryByInt.get(keysetIdInt) || new Set<string>();
+    bucket.add(keysetId);
+    keysetRegistryByInt.set(keysetIdInt, bucket);
+  }
+
+  return {
+    valid: true,
+    trustedKeysetIds: [...trustedKeysetIds],
+    warnings,
+    errors: [],
+  };
 }
 
 /**
- * Derive the NUT-13 keyset_id_int from a keyset ID string.
- * NUT-13 uses: keyset_id_int = int(keyset_id, 16) % (2^31 - 1)
+ * Validate keysets from mint metadata + pubkeys before trusting a mint.
  */
-function deriveKeysetIdInt(keysetId: string): number {
-  // Parse hex keyset ID to a number, then take modulo 2^31-1
-  // This is the reduced namespace that NUT-13 uses for BIP32 derivation
-  const hex = keysetId.replace(/^00/, ""); // strip version byte if present
-  let num = 0;
-  for (let i = 0; i < Math.min(hex.length, 8); i++) {
-    num = (num * 16 + parseInt(hex[i], 16)) | 0;
+export function validateMintKeysetSnapshot(
+  mintUrl: string,
+  keysets: KeysetSnapshot[],
+  mintKeys: MintKeys[],
+  verifyFn: (keys: MintKeys) => boolean = verifyKeysetId
+): KeysetValidationResult {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+  const verifiedIds = new Set<string>();
+  const normalizedMint = normalizeMintUrl(mintUrl);
+
+  for (const mk of mintKeys) {
+    if (!isLikelyKeysetId(mk.id)) {
+      errors.push(`Mint returned malformed keyset ID "${mk.id}" in /keys response`);
+      continue;
+    }
+    if (!verifyFn(mk)) {
+      errors.push(
+        `Keyset ID verification failed for "${mk.id}" from mint ${normalizedMint}`
+      );
+      continue;
+    }
+    verifiedIds.add(mk.id);
   }
-  return Math.abs(num) % 2147483647; // 2^31 - 1
+
+  for (const ks of keysets) {
+    if (!isLikelyKeysetId(ks.id)) {
+      errors.push(`Mint metadata contains malformed keyset ID "${ks.id}"`);
+      continue;
+    }
+    if (ks.active && !verifiedIds.has(ks.id)) {
+      errors.push(
+        `Active keyset "${ks.id}" has no verifiable mint pubkeys. Refusing mint.`
+      );
+    }
+  }
+
+  if (verifiedIds.size === 0) {
+    errors.push(`Mint ${normalizedMint} exposed no verifiable keysets`);
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, trustedKeysetIds: [], warnings, errors };
+  }
+
+  const registry = validateAndRegisterKeysets(normalizedMint, [...verifiedIds]);
+  return {
+    valid: registry.valid,
+    trustedKeysetIds: registry.trustedKeysetIds,
+    warnings: [...warnings, ...registry.warnings],
+    errors: [...errors, ...registry.errors],
+  };
 }
+
+/**
+ * Validate proof payload restored from storage before trusting it.
+ */
+export function validateRestoredProofs(
+  mintUrl: string,
+  maybeProofs: unknown,
+  trustedKeysetIds: Set<string>
+): RestoreValidationResult {
+  if (!Array.isArray(maybeProofs)) {
+    return {
+      proofs: [],
+      warnings: ["Stored proofs payload is not an array. Ignoring restore payload."],
+      rejected: 0,
+    };
+  }
+
+  const warnings: string[] = [];
+  const proofs: Proof[] = [];
+  let rejected = 0;
+  const normalizedMint = normalizeMintUrl(mintUrl);
+  const seenSecrets = new Set<string>();
+
+  for (const raw of maybeProofs) {
+    const candidate = raw as Partial<Proof>;
+    const malformed =
+      !candidate ||
+      typeof candidate.id !== "string" ||
+      !isLikelyKeysetId(candidate.id) ||
+      typeof candidate.secret !== "string" ||
+      candidate.secret.length === 0 ||
+      typeof candidate.C !== "string" ||
+      candidate.C.length === 0 ||
+      typeof candidate.amount !== "number" ||
+      !Number.isFinite(candidate.amount) ||
+      candidate.amount <= 0;
+
+    if (malformed) {
+      rejected += 1;
+      warnings.push("Rejected malformed proof entry from restore payload.");
+      continue;
+    }
+
+    const proofId = candidate.id as string;
+    const proofSecret = candidate.secret as string;
+
+    if (seenSecrets.has(proofSecret)) {
+      rejected += 1;
+      warnings.push("Rejected duplicate proof secret from restore payload.");
+      continue;
+    }
+
+    if (trustedKeysetIds.size > 0 && !trustedKeysetIds.has(proofId)) {
+      rejected += 1;
+      warnings.push(
+        `Rejected proof with unknown keyset ID "${proofId}" for mint ${normalizedMint}`
+      );
+      continue;
+    }
+
+    const registered = keysetRegistryById.get(proofId);
+    if (registered && registered.mintUrl !== normalizedMint) {
+      rejected += 1;
+      warnings.push(
+        `Rejected proof with keyset ID "${proofId}" owned by ${registered.mintUrl}`
+      );
+      continue;
+    }
+
+    seenSecrets.add(proofSecret);
+    proofs.push(candidate as Proof);
+  }
+
+  return { proofs, warnings, rejected };
+}
+
+/** Test-only helpers for security validation logic. */
+export const __cashuSecurityTestUtils = {
+  resetRegistry(): void {
+    keysetRegistryById.clear();
+    keysetRegistryByInt.clear();
+  },
+  getRegistrySnapshot(): { byId: Record<string, RegistryEntry>; byInt: Record<string, string[]> } {
+    const byId: Record<string, RegistryEntry> = {};
+    for (const [key, value] of keysetRegistryById.entries()) {
+      byId[key] = { ...value };
+    }
+
+    const byInt: Record<string, string[]> = {};
+    for (const [key, value] of keysetRegistryByInt.entries()) {
+      byInt[key] = [...value];
+    }
+
+    return { byId, byInt };
+  },
+};
 
 export class SovereignCashuClient {
   private wallet: Wallet | null = null;
@@ -103,6 +298,7 @@ export class SovereignCashuClient {
   private _proofs: Proof[] = [];
   private _unit: string;
   private _keysetWarnings: string[] = [];
+  private _trustedKeysetIds = new Set<string>();
 
   constructor(mintUrl: string, unit: string = "sat") {
     this._mintUrl = mintUrl;
@@ -123,26 +319,35 @@ export class SovereignCashuClient {
     this.wallet = new Wallet(this._mintUrl, { unit: this._unit });
     await this.wallet.loadMint();
 
-    // Validate keyset IDs against the global registry (NUT-13 security)
     const keysets = this.wallet.keyChain.getKeysets();
-    if (keysets && keysets.length > 0) {
-      const keysetData = keysets.map((ks) => ({ id: ks.id, active: ks.isActive }));
-      const validation = validateKeysetIds(keysetData, this._mintUrl);
-      this._keysetWarnings = validation.warnings;
+    const mintKeys = this.wallet.keyChain.getAllKeys();
+    const snapshot = keysets.map((ks) => ({
+      id: ks.id,
+      active: Boolean(ks.isActive),
+    }));
 
-      if (!validation.valid) {
-        this.wallet = null;
-        throw new Error(
-          `Mint keyset validation failed: ${validation.warnings.join("; ")}`
-        );
-      }
+    const validation = validateMintKeysetSnapshot(
+      this._mintUrl,
+      snapshot,
+      mintKeys
+    );
 
-      if (validation.warnings.length > 0) {
-        console.warn(
-          `[ArxMint] Cashu keyset warnings for ${this._mintUrl}:`,
-          validation.warnings
-        );
-      }
+    this._keysetWarnings = validation.warnings;
+    if (!validation.valid) {
+      this.wallet = null;
+      this._trustedKeysetIds.clear();
+      throw new Error(
+        `Mint keyset validation failed: ${validation.errors.join("; ")}`
+      );
+    }
+
+    this._trustedKeysetIds = new Set(validation.trustedKeysetIds);
+
+    if (validation.warnings.length > 0) {
+      console.warn(
+        `[ArxMint] Cashu keyset warnings for ${this._mintUrl}:`,
+        validation.warnings
+      );
     }
   }
 
@@ -240,11 +445,22 @@ export class SovereignCashuClient {
   async receiveEcash(token: string): Promise<Proof[]> {
     this.requireConnected();
     const received = await this.wallet!.receive(token);
+    const normalizedMint = normalizeMintUrl(this._mintUrl);
 
     // Validate received proofs have keyset IDs we trust
     for (const proof of received) {
-      const knownMint = globalKeysetRegistry.get(proof.id);
-      if (knownMint && knownMint !== this._mintUrl) {
+      if (
+        this._trustedKeysetIds.size > 0 &&
+        !this._trustedKeysetIds.has(proof.id)
+      ) {
+        throw new Error(
+          `Received proof with unknown keyset ID "${proof.id}" for mint ${normalizedMint}. ` +
+            `Refusing to accept untrusted restore/swap output.`
+        );
+      }
+
+      const knownMint = keysetRegistryById.get(proof.id)?.mintUrl;
+      if (knownMint && knownMint !== normalizedMint) {
         throw new Error(
           `Received proof with keyset ID "${proof.id}" belongs to a different mint (${knownMint}). ` +
             `Refusing to accept — possible cross-mint token injection.`
@@ -298,13 +514,41 @@ export class SovereignCashuClient {
 
   /** Restore proofs from localStorage */
   restoreProofs(): void {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(
-        `arxmint_cashu_proofs_${this._mintUrl}`
+    if (typeof window === "undefined") return;
+
+    const storageKey = `arxmint_cashu_proofs_${this._mintUrl}`;
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) return;
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      this._proofs = [];
+      console.warn(
+        `[ArxMint] Ignoring invalid Cashu restore payload for ${this._mintUrl}: invalid JSON`
       );
-      if (stored) {
-        this._proofs = JSON.parse(stored);
-      }
+      return;
+    }
+
+    const trustedKeysetIds =
+      this._trustedKeysetIds.size > 0
+        ? this._trustedKeysetIds
+        : getTrustedKeysetIdsForMint(this._mintUrl);
+
+    const validation = validateRestoredProofs(
+      this._mintUrl,
+      parsed,
+      trustedKeysetIds
+    );
+
+    this._proofs = validation.proofs;
+
+    if (validation.warnings.length > 0) {
+      console.warn(
+        `[ArxMint] Cashu restore filtered ${validation.rejected} unsafe proof(s) for ${this._mintUrl}:`,
+        validation.warnings
+      );
     }
   }
 
@@ -463,6 +707,4 @@ export class AgentCashuWallet {
 }
 
 /** Create an ephemeral agent wallet */
-export function createAgentWallet(config: AgentWalletConfig): AgentCashuWallet {
-  return new AgentCashuWallet(config);
-}
+export function createAgentWallet(config: AgentWalletCo

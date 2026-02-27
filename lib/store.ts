@@ -24,7 +24,8 @@ interface SovereignState {
   fedimintConnected: boolean;
   cashuConnected: boolean;
   lightningConnected: boolean;
-  setConnected: (key: "fedimintConnected" | "cashuConnected" | "lightningConnected", value: boolean) => void;
+  arkConnected: boolean;
+  setConnected: (key: "fedimintConnected" | "cashuConnected" | "lightningConnected" | "arkConnected", value: boolean) => void;
 }
 
 export const useSovereignStore = create<SovereignState>((set) => ({
@@ -40,6 +41,7 @@ export const useSovereignStore = create<SovereignState>((set) => ({
     cashuSats: 0,
     lightningSats: 0,
     onchainSats: 0,
+    arkSats: 0,
     totalSats: 0,
   },
   setBalance: (b) =>
@@ -49,7 +51,8 @@ export const useSovereignStore = create<SovereignState>((set) => ({
         Math.floor(next.fedimintMsats / 1000) +
         next.cashuSats +
         next.lightningSats +
-        next.onchainSats;
+        next.onchainSats +
+        next.arkSats;
       return { balance: next };
     }),
 
@@ -59,5 +62,6 @@ export const useSovereignStore = create<SovereignState>((set) => ({
   fedimintConnected: false,
   cashuConnected: false,
   lightningConnected: false,
+  arkConnected: false,
   setConnected: (key, value) => set({ [key]: value }),
 }));

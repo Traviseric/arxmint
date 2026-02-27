@@ -10,9 +10,9 @@
 ## Roadmap Overview
 
 ```
-Phase 0: Fortify     (Security hardening)           ← YOU ARE HERE
-Phase 1: Keystone    (Core architecture upgrades)
-Phase 2: Spire       (Full privacy + commerce stack)
+Phase 0: Fortify     (Security hardening)           ✅ COMPLETE
+Phase 1: Keystone    (Core architecture upgrades)   ✅ COMPLETE
+Phase 2: Spire       (Full privacy + commerce stack) ← NEXT
 Phase 3: Aether      (Advanced features + scale)
 Phase 4: Citadel     (Production + grant deployment)
 ```

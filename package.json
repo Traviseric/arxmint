@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "lint": "next lint",
     "setup:cashu": "docker compose -f docker/docker-compose.cashu.yml up -d",
     "setup:full": "docker compose up -d",

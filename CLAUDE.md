@@ -60,10 +60,13 @@ app/
   api/l402/route.ts           # GET: L402 demo (402 challenge pattern)
 
 lib/
-  fedimint-sdk.ts             # SovereignFedimintClient — WASM wrapper, lazy-load, singleton
-  cashu-sdk.ts                # SovereignCashuClient — v3 wallet, localStorage proofs
-  lightning-agent.ts          # SovereignLightningClient — LNC + l402Fetch() + MCP config
-  community-generator.ts      # parsePrompt() → generateDeployment() (Docker + Aperture)
+  fedimint-sdk.ts             # SovereignFedimintClient + AgentFedimintWallet — WASM, lazy-load
+  cashu-sdk.ts                # SovereignCashuClient + AgentCashuWallet — v3, keyset validation
+  lightning-agent.ts          # SovereignLightningClient — LNC, l402Fetch, macaroon bakery
+  cashu-paywall.ts            # NUT-24 ecash paywall — dual L402/Cashu 402 challenges
+  spend-router.ts             # Privacy-aware spend routing (ecash→LN→Ark→on-chain)
+  bce-metrics.ts              # BCE community health metrics + grant export (JSON/CSV)
+  community-generator.ts      # parsePrompt() → generateDeployment() + G-Bot integration
   privacy-defaults.ts         # PRIVACY_PRESETS, computePrivacyScore(), layer descriptions
   cycle-monitor.ts            # getCycleMetrics() from CoinGecko, MVRV/NUPL/supply-in-profit
   store.ts                    # Zustand: balance, community, connections, cycle metrics
@@ -74,7 +77,8 @@ components/
   create-community-form.tsx   # NL prompt → config → Docker output with copy/download
   privacy-dashboard.tsx       # SVG score ring + privacy layer cards
   cycle-alerts.tsx            # Signal banner + metrics grid + auto-fetch
-  wallet-panel.tsx            # Full wallet: receive/send ecash, invoices, connect backends
+  wallet-panel.tsx            # Full wallet: receive/send ecash, invoices, spend router
+  merchant-onboard.tsx        # Multi-step merchant onboarding + directory cards
 ```
 
 ## Roadmap (read `docs/roadmap.md` for full detail)
@@ -87,28 +91,43 @@ Phase 3: Aether      (Advanced features + scale)
 Phase 4: Citadel     (Production + grant deployment)
 ```
 
-### Phase 0 — Fortify (Do This First)
+### Phase 0 — Fortify (COMPLETE)
 
-These are **security-critical** fixes. No new features until these are done.
+All 4 security-critical fixes implemented and verified.
+
+| Task | File | Status |
+|---|---|---|
+| 0.1 Cashu keyset ID validation | `lib/cashu-sdk.ts` | Done |
+| 0.2 Fix Silent Payments status | `lib/privacy-defaults.ts` | Done |
+| 0.3 Agent security tiers | `lib/lightning-agent.ts` | Done |
+| 0.4 Remote signer | `lib/lightning-agent.ts` | Done |
+
+### Phase 1 — Keystone (COMPLETE)
+
+All 7 core architecture upgrades implemented and verified.
+
+| Task | File | Status |
+|---|---|---|
+| 1.1 NUT-24 ecash paywalls | `lib/cashu-paywall.ts` | Done |
+| 1.2 Spend router | `lib/spend-router.ts` | Done |
+| 1.3 BCE metrics dashboard | `lib/bce-metrics.ts` | Done |
+| 1.4 Merchant onboarding | `components/merchant-onboard.tsx` | Done |
+| 1.5 Macaroon bakery | `lib/lightning-agent.ts` | Done |
+| 1.6 Agent wallet pattern | `lib/cashu-sdk.ts`, `lib/fedimint-sdk.ts` | Done |
+| 1.7 G-Bot integration | `lib/community-generator.ts` | Done |
+
+### Phase 2 — Spire (NEXT)
 
 | Task | File | What |
 |---|---|---|
-| 0.1 Cashu keyset ID validation | `lib/cashu-sdk.ts` | Verify keyset IDs against mint pubkeys. Prevent NUT-13 collision attacks. |
-| 0.2 Fix Silent Payments status | `lib/privacy-defaults.ts` | Show honest per-backend SP availability. Fedimint SP = "requires federation module". |
-| 0.3 Agent security tiers | `lib/lightning-agent.ts` | Add WATCH_ONLY / PAY_ONLY / ADMIN tiers. Default agents to WATCH_ONLY. |
-| 0.4 Remote signer | `lib/lightning-agent.ts` | Agents must never hold signing keys. Add `litd` remote signer support. |
-
-### Phase 1 — Keystone (After Phase 0)
-
-| Task | File | What |
-|---|---|---|
-| 1.1 NUT-24 ecash paywalls | New `lib/cashu-paywall.ts` | Accept Cashu tokens as agent payment alongside Lightning L402. |
-| 1.2 Spend router | New `lib/spend-router.ts` | Auto-select ecash→LN→Ark→on-chain by amount + privacy level. |
-| 1.3 BCE metrics dashboard | New `lib/bce-metrics.ts` | Merchant count, MAU, spend velocity, payment success rate. |
-| 1.4 Merchant onboarding | New `components/merchant-onboard.tsx` | Multi-step form, QR generation, POS setup guidance. |
-| 1.5 Macaroon bakery | `lib/lightning-agent.ts` | Generate scoped credentials (pay-only, invoice-only, read-only). |
-| 1.6 Agent wallet pattern | `lib/fedimint-sdk.ts`, `lib/cashu-sdk.ts` | Ephemeral, in-memory, auto-expire agent wallets. |
-| 1.7 G-Bot integration | `lib/community-generator.ts` | Use Fedimint's G-Bot for guided federation bootstrap. |
+| 2.1 Fedimint v0.10.0 | `docker-compose.yml` | Upgrade from v0.5.0 to v0.10.0 Lighthouse. |
+| 2.2 Ark SDK | New `lib/ark-sdk.ts` | SovereignArkClient — Ark VTXOs for high-privacy spends. |
+| 2.3 CDK mint upgrade | `docker-compose.yml` | Replace Nutshell with CDK for production Cashu mints. |
+| 2.4 Multi-mint (Coco) | `lib/cashu-sdk.ts` | Multi-mint balance management, cross-mint payments. |
+| 2.5 NUT-26 QR/NFC | `components/wallet-panel.tsx` | `cashu:` URI format, scannable QR codes for merchant POS. |
+| 2.6 SP infrastructure | New `lib/silent-payments.ts` | SP indexer Docker service, scan scheduling, key delegation. |
+| 2.7 Monitoring | `docker-compose.yml` | Prometheus + Grafana stack for operator-grade monitoring. |
+| 2.8 Gateway bridge | `lib/fedimint-sdk.ts` | Route L402 payments through Fedimint gateway (ecash → LN). |
 
 ## Cross-Reference
 

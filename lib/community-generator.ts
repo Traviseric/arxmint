@@ -134,12 +134,57 @@ export function generateDockerCompose(config: CommunityConfig): string {
 
   volumes.push("  lnd-data:");
 
-  // Cashu mint (always included as fallback)
-  services.push(`
-  # === Cashu Mint ===
+  // Cashu mint — CDK for production, Nutshell for dev/small deployments
+  const useCDK = config.memberCount > 30 || config.network === "bitcoin";
+
+  if (useCDK) {
+    services.push(`
+  # === Cashu Mint (CDK — production cloud-native) ===
+  cashu-mint:
+    image: cashubtc/cdk-mintd:latest
+    container_name: arx-cdk-mint-${config.id}
+    restart: unless-stopped
+    environment:
+      - CDK_MINT_URL=http://0.0.0.0:3338
+      - CDK_MINT_LISTEN_HOST=0.0.0.0
+      - CDK_MINT_LISTEN_PORT=3338
+      - CDK_LN_BACKEND=lnd
+      - CDK_LND_ADDRESS=https://lnd:8080
+      - CDK_LND_CERT_PATH=/root/.lnd/tls.cert
+      - CDK_LND_MACAROON_PATH=/root/.lnd/data/chain/bitcoin/${config.network === "bitcoin" ? "mainnet" : config.network}/admin.macaroon
+      - CDK_DATABASE_URL=postgres://cashu:cashu@cashu-db:5432/cashu
+      - CDK_MINT_INFO_NAME=${config.name}
+      - CDK_MINT_INFO_DESCRIPTION=ArxMint community mint
+    ports:
+      - "3338:3338"
+    volumes:
+      - lnd-data:/root/.lnd:ro
+    depends_on:
+      - lnd
+      - cashu-db
+    networks:
+      - sovereign
+
+  # === Cashu Mint Database (Postgres) ===
+  cashu-db:
+    image: postgres:16-alpine
+    container_name: arx-cashu-db-${config.id}
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=cashu
+      - POSTGRES_PASSWORD=cashu
+      - POSTGRES_DB=cashu
+    volumes:
+      - cashu-db-data:/var/lib/postgresql/data
+    networks:
+      - sovereign`);
+    volumes.push("  cashu-db-data:");
+  } else {
+    services.push(`
+  # === Cashu Mint (Nutshell — lightweight dev/small deployments) ===
   cashu-mint:
     image: cashubtc/nutshell:latest
-    container_name: sf-cashu-${config.id}
+    container_name: arx-cashu-${config.id}
     restart: unless-stopped
     environment:
       - MINT_BACKEND_BOLT11_SAT=LndRestWallet
@@ -158,28 +203,56 @@ export function generateDockerCompose(config: CommunityConfig): string {
       - lnd
     networks:
       - sovereign`);
+    volumes.push("  cashu-data:");
+  }
 
-  volumes.push("  cashu-data:");
-
-  // Fedimint (if federation backend)
-  if (config.mintBackend === "fedimint") {
-    for (let i = 0; i < config.guardianCount; i++) {
-      const port = 18173 + i;
-      const apiPort = 18174 + i * 2;
-      services.push(`
-  # === Fedimint Guardian ${i + 1} ===
-  fedimintd-${i}:
-    image: fedimint/fedimintd:v0.5.0
-    container_name: sf-guardian-${i}-${config.id}
+  // Ark server (if privacy config includes arkSpends)
+  if (config.privacy.arkSpends) {
+    services.push(`
+  # === Ark Server (VTXO off-chain privacy layer) ===
+  arkd:
+    image: arkade/arkd:latest
+    container_name: arx-arkd-${config.id}
     restart: unless-stopped
     environment:
-      - FM_BIND_P2P=0.0.0.0:${port}
+      - ARK_NETWORK=${config.network}
+      - ARK_ROUND_INTERVAL=10
+      - ARK_ROUND_LIFETIME=604800
+      - ARK_LOG_LEVEL=info
+    ports:
+      - "7070:7070"
+    volumes:
+      - arkd-data:/data
+      - lnd-data:/root/.lnd:ro
+    depends_on:
+      - lnd
+    networks:
+      - sovereign`);
+    volumes.push("  arkd-data:");
+  }
+
+  // Fedimint (if federation backend) — v0.10.0 "Lighthouse"
+  if (config.mintBackend === "fedimint") {
+    for (let i = 0; i < config.guardianCount; i++) {
+      const p2pPort = 18173 + i;
+      const apiPort = 18174 + i * 2;
+      services.push(`
+  # === Fedimint Guardian ${i + 1} (v0.10.0 Lighthouse) ===
+  fedimintd-${i}:
+    image: fedimint/fedimintd:v0.10.0
+    container_name: arx-guardian-${i}-${config.id}
+    restart: unless-stopped
+    environment:
+      - FM_BIND_P2P=0.0.0.0:${p2pPort}
       - FM_BIND_API=0.0.0.0:${apiPort}
-      - FM_P2P_URL=fedimintd-${i}:${port}
+      - FM_P2P_URL=fedimintd-${i}:${p2pPort}
       - FM_API_URL=ws://fedimintd-${i}:${apiPort}
       - FM_BITCOIN_RPC_KIND=none
+      # v0.10.0 ConnectorRegistry — Iroh networking
+      - FM_TRANSPORT=iroh
+      - FM_IROH_DISCOVERY=dns
     ports:
-      - "${port}:${port}"
+      - "${p2pPort}:${p2pPort}"
       - "${apiPort}:${apiPort}"
     volumes:
       - guardian-${i}-data:/data

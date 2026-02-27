@@ -102,6 +102,8 @@ export interface WalletBalance {
   lightningSats: number;
   /** On-chain balance in sats */
   onchainSats: number;
+  /** Ark VTXO balance in sats */
+  arkSats: number;
   /** Total in sats */
   totalSats: number;
 }

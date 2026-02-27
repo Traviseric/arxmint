@@ -120,8 +120,8 @@ export function selectSpendPath(
     viable.push({ path: "lightning", score: PRIVACY_SCORE.lightning });
   }
 
-  // Ark (not yet integrated — Phase 2.2)
-  if (availability.ark) {
+  // Ark VTXOs
+  if (availability.ark && balance.arkSats >= amountSats) {
     viable.push({ path: "ark", score: PRIVACY_SCORE.ark });
   }
 
