@@ -3,7 +3,7 @@
 // ============================================================
 
 import { create } from "zustand";
-import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance } from "./types";
+import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance, NostrUser } from "./types";
 
 interface SovereignState {
   // Community
@@ -26,6 +26,12 @@ interface SovereignState {
   lightningConnected: boolean;
   arkConnected: boolean;
   setConnected: (key: "fedimintConnected" | "cashuConnected" | "lightningConnected" | "arkConnected", value: boolean) => void;
+
+  // Nostr identity
+  nostrUser: NostrUser | null;
+  nostrConnected: boolean;
+  setNostrUser: (user: NostrUser) => void;
+  clearNostrUser: () => void;
 }
 
 export const useSovereignStore = create<SovereignState>((set) => ({
@@ -64,4 +70,34 @@ export const useSovereignStore = create<SovereignState>((set) => ({
   lightningConnected: false,
   arkConnected: false,
   setConnected: (key, value) => set({ [key]: value }),
+
+  // Nostr identity
+  nostrUser: null,
+  nostrConnected: false,
+  setNostrUser: (user) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("arxmint:nostr-user", JSON.stringify(user));
+    }
+    set({ nostrUser: user, nostrConnected: true });
+  },
+  clearNostrUser: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("arxmint:nostr-user");
+    }
+    set({ nostrUser: null, nostrConnected: false });
+  },
 }));
+
+/** Hydrate Nostr session from localStorage (call once on app mount) */
+export function hydrateNostrSession(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = localStorage.getItem("arxmint:nostr-user");
+    if (stored) {
+      const user: NostrUser = JSON.parse(stored);
+      useSovereignStore.getState().setNostrUser(user);
+    }
+  } catch {
+    localStorage.removeItem("arxmint:nostr-user");
+  }
+}

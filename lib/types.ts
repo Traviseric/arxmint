@@ -196,6 +196,18 @@ export function getTierEscalationConfirmation(
   return null;
 }
 
+/** Nostr user identity (NIP-07 login) */
+export interface NostrUser {
+  /** Hex-encoded public key */
+  pubkey: string;
+  /** Bech32-encoded npub */
+  npub: string;
+  /** Display name (truncated npub until profile fetched) */
+  displayName: string;
+  /** Timestamp when the user connected */
+  connectedAt: number;
+}
+
 /** Parsed user prompt result */
 export interface ParsedPrompt {
   communityName: string;

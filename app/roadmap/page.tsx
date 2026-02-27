@@ -387,7 +387,7 @@ export default function RoadmapPage() {
                 <a
                   key={phase.number}
                   href={`#phase-${phase.number}`}
-                  className={`flex items-center justify-between px-4 py-2 rounded-sm transition-all duration-[200ms] ${phase.status === "current"
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between items-start gap-2 sm:gap-0 px-4 py-3 sm:py-2 rounded-sm transition-all duration-[200ms] ${phase.status === "current"
                     ? "bg-accent/5 text-accent font-medium border-l-2 border-accent"
                     : phase.status === "done"
                       ? "text-text-secondary hover:bg-bg-elevated border-l-2 border-green-500/30"
@@ -414,7 +414,7 @@ export default function RoadmapPage() {
               <h3 className="text-[11px] font-mono text-accent tracking-widest uppercase mb-6 flex items-center gap-2 border-b border-border-default/50 pb-2">
                 <Clock className="w-3 h-3" /> Execution Timeline
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
                 {phases.map((phase) => (
                   <div key={phase.number} className="text-left">
                     <span className="text-[10px] font-mono text-text-muted block mb-1 tracking-widest">PHASE {phase.number}.0</span>
@@ -446,7 +446,7 @@ export default function RoadmapPage() {
                     <div className="absolute left-[27px] top-[70px] bottom-[-130px] w-px bg-border-strong rounded-full" />
                   )}
 
-                  <div className="flex items-start gap-6 mb-8 relative z-10 w-full">
+                  <div className="flex items-start gap-4 sm:gap-6 mb-8 relative z-10 w-full">
                     <div
                       className={`flex-shrink-0 w-14 h-14 rounded-sm flex items-center justify-center border shadow-lg ${phase.status === "current"
                         ? "bg-bg-base border-accent shadow-[0_0_15px_rgba(247,147,26,0.15)]"
@@ -466,7 +466,7 @@ export default function RoadmapPage() {
                     </div>
 
                     <div className="flex-1 mb-[2px] border-b border-border-default/50 pb-6">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between items-start gap-3 sm:gap-0 mb-4">
                         <h2 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight !font-sans uppercase">
                           <span className="text-text-muted mr-3 font-mono">{phase.number}.0</span>
                           {phase.codename}: {phase.title}
@@ -499,7 +499,7 @@ export default function RoadmapPage() {
                   </div>
 
                   {/* Tasks styled as technical sub-sections */}
-                  <div className="space-y-6 pl-[80px]">
+                  <div className="space-y-6 pl-[20px] sm:pl-[80px]">
                     {phase.tasks.map((task) => (
                       <div
                         key={task.id}

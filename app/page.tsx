@@ -150,7 +150,7 @@ export default function HomePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.4 }}
-                className="grid grid-cols-3 gap-8 pt-8 border-t border-border-subtle"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 pt-8 border-t border-border-subtle"
               >
                 <div>
                   <div className="text-sm text-text-secondary font-mono mb-1">NETWORK_VAL</div>
@@ -275,7 +275,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               { day: "MON", label: "Get paid 50,000 sats for a workshop you taught", icon: DollarSign },
               { day: "TUE", label: "Coffee costs 3,500 sats — scan the QR, done", icon: Zap },
@@ -299,7 +299,7 @@ export default function HomePage() {
         {/* ===== YOU ALREADY HAVE THE HARD PART ===== */}
         <section className="border-t border-border-subtle bg-bg-surface/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               <div>
                 <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
                   You already have the hard part.
@@ -314,7 +314,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="glass-heavy border border-border-default rounded-xl p-8 relative overflow-hidden glow-card">
+              <div className="glass-heavy border border-border-default rounded-xl p-6 sm:p-8 relative overflow-hidden glow-card">
                 <div className="absolute -inset-4 bg-accent/5 rounded-3xl blur-2xl -z-10" />
                 <h3 className="text-sm font-mono tracking-widest text-accent uppercase mb-8 flex items-center gap-2">
                   <Lock className="w-4 h-4" /> From cold storage to spending

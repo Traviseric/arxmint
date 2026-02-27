@@ -33,9 +33,9 @@ export default function CreatePage() {
         </div>
 
         {/* Form */}
-        <div className="glass-heavy border border-border-default rounded-xl p-8 max-w-3xl mx-auto glow-card relative overflow-hidden">
+        <div className="glass-heavy border border-border-default rounded-xl p-4 sm:p-8 max-w-3xl mx-auto glow-card relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-3xl rounded-full pointer-events-none" />
-          <div className="relative z-10">
+          <div className="relative z-10 w-full overflow-hidden">
             <CreateCommunityForm />
           </div>
         </div>

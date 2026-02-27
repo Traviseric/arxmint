@@ -99,18 +99,17 @@ export function CreateCommunityForm() {
       </div>
 
       {/* Network selector */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <label className="block text-[13px] font-medium text-text-primary mb-2 tracking-wide uppercase font-mono !mb-0">Network:</label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {(["testnet", "signet", "regtest", "bitcoin"] as const).map((n) => (
             <button
               key={n}
               onClick={() => setNetwork(n)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                network === n
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${network === n
                   ? "bg-accent text-bg-base"
                   : "border border-border-border-default text-text-text-secondary hover:border-accent/30"
-              }`}
+                }`}
             >
               {n === "bitcoin" ? "MAINNET" : n.toUpperCase()}
             </button>
@@ -193,11 +192,10 @@ export function CreateCommunityForm() {
                 ([key, val]) => (
                   <div
                     key={key}
-                    className={`px-2 py-1 rounded ${
-                      val
+                    className={`px-2 py-1 rounded ${val
                         ? "bg-green-500/10 text-green-400"
                         : "bg-bg-bg-elevated/50 text-text-text-secondary"
-                    }`}
+                      }`}
                   >
                     {key}: {val ? "ON" : "OFF"}
                   </div>
