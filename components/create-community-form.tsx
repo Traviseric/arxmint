@@ -71,14 +71,14 @@ export function CreateCommunityForm() {
     <div className="space-y-8">
       {/* Prompt Input */}
       <div>
-        <label className="sovereign-label">
+        <label className="block text-[13px] font-medium text-text-primary mb-2 tracking-wide uppercase font-mono">
           Describe your sovereign community
         </label>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Create a private Bitcoin community for 20 Longmont Bitcoiners with chat, private payments, and AI agents selling data..."
-          className="sovereign-input min-h-[140px] resize-y font-mono text-sm"
+          className="w-full bg-bg-elevated border border-border-default rounded-lg px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-[300ms] shadow-inner min-h-[140px] resize-y font-mono text-sm"
           rows={5}
         />
 
@@ -88,8 +88,8 @@ export function CreateCommunityForm() {
             <button
               key={i}
               onClick={() => setPrompt(ex)}
-              className="text-xs px-3 py-1.5 rounded-full border border-sovereign-border
-                         text-sovereign-muted hover:text-btc-orange hover:border-btc-orange/30
+              className="text-xs px-3 py-1.5 rounded-full border border-border-border-default
+                         text-text-text-secondary hover:text-accent hover:border-accent/30
                          transition-all duration-200 truncate max-w-[280px]"
             >
               {ex.slice(0, 60)}...
@@ -100,7 +100,7 @@ export function CreateCommunityForm() {
 
       {/* Network selector */}
       <div className="flex items-center gap-4">
-        <label className="sovereign-label !mb-0">Network:</label>
+        <label className="block text-[13px] font-medium text-text-primary mb-2 tracking-wide uppercase font-mono !mb-0">Network:</label>
         <div className="flex gap-2">
           {(["testnet", "signet", "regtest", "bitcoin"] as const).map((n) => (
             <button
@@ -108,8 +108,8 @@ export function CreateCommunityForm() {
               onClick={() => setNetwork(n)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 network === n
-                  ? "bg-btc-orange text-sovereign-black"
-                  : "border border-sovereign-border text-sovereign-muted hover:border-btc-orange/30"
+                  ? "bg-accent text-bg-base"
+                  : "border border-border-border-default text-text-text-secondary hover:border-accent/30"
               }`}
             >
               {n === "bitcoin" ? "MAINNET" : n.toUpperCase()}
@@ -122,11 +122,11 @@ export function CreateCommunityForm() {
       <button
         onClick={handleGenerate}
         disabled={!prompt.trim() || generating}
-        className="sovereign-btn w-full text-lg !py-4"
+        className="antigravity-btn w-full text-lg !py-4"
       >
         {generating ? (
           <>
-            <div className="w-5 h-5 border-2 border-sovereign-black/30 border-t-sovereign-black rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-bg-base/30 border-t-bg-base rounded-full animate-spin" />
             Forging your sovereign community...
           </>
         ) : (
@@ -140,36 +140,36 @@ export function CreateCommunityForm() {
       {/* Generated Output */}
       {deployment && (
         <div className="space-y-6 animate-in fade-in duration-500">
-          <div className="glow-line" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
 
           {/* Summary Card */}
-          <div className="sovereign-card !border-btc-orange/30">
-            <h3 className="text-lg font-bold text-sovereign-white mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-btc-orange" />
+          <div className="glass glow-card border border-border-default rounded-xl p-6 !border-accent/30">
+            <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-accent" />
               {deployment.community.name}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
               <div>
-                <div className="text-sovereign-muted">Backend</div>
-                <div className="text-sovereign-white font-medium capitalize">
+                <div className="text-text-text-secondary">Backend</div>
+                <div className="text-text-primary font-medium capitalize">
                   {deployment.community.mintBackend}
                 </div>
               </div>
               <div>
-                <div className="text-sovereign-muted">Members</div>
-                <div className="text-sovereign-white font-medium">
+                <div className="text-text-text-secondary">Members</div>
+                <div className="text-text-primary font-medium">
                   {deployment.community.memberCount}
                 </div>
               </div>
               <div>
-                <div className="text-sovereign-muted">Guardians</div>
-                <div className="text-sovereign-white font-medium">
+                <div className="text-text-text-secondary">Guardians</div>
+                <div className="text-text-primary font-medium">
                   {deployment.community.guardianCount}
                 </div>
               </div>
               <div>
-                <div className="text-sovereign-muted">Network</div>
-                <div className="text-sovereign-white font-medium uppercase">
+                <div className="text-text-text-secondary">Network</div>
+                <div className="text-text-primary font-medium uppercase">
                   {deployment.community.network}
                 </div>
               </div>
@@ -180,7 +180,7 @@ export function CreateCommunityForm() {
               {deployment.community.features.map((f) => (
                 <span
                   key={f}
-                  className="px-2.5 py-1 rounded-full bg-btc-orange/10 text-btc-orange text-xs"
+                  className="px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs"
                 >
                   {f}
                 </span>
@@ -196,7 +196,7 @@ export function CreateCommunityForm() {
                     className={`px-2 py-1 rounded ${
                       val
                         ? "bg-green-500/10 text-green-400"
-                        : "bg-sovereign-dark text-sovereign-muted"
+                        : "bg-bg-bg-elevated/50 text-text-text-secondary"
                     }`}
                   >
                     {key}: {val ? "ON" : "OFF"}
@@ -215,29 +215,29 @@ export function CreateCommunityForm() {
             onToggle={setExpandedSection}
           >
             <div className="relative">
-              <pre className="bg-sovereign-dark rounded-lg p-4 text-xs text-sovereign-text overflow-x-auto max-h-[500px]">
+              <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[500px]">
                 {deployment.dockerCompose}
               </pre>
               <div className="absolute top-2 right-2 flex gap-2">
                 <button
                   onClick={() => copyToClipboard(deployment.dockerCompose, "docker")}
-                  className="p-2 rounded-lg bg-sovereign-panel hover:bg-sovereign-border transition-colors"
+                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
                   title="Copy"
                 >
                   {copied === "docker" ? (
                     <Check className="w-4 h-4 text-green-400" />
                   ) : (
-                    <Copy className="w-4 h-4 text-sovereign-muted" />
+                    <Copy className="w-4 h-4 text-text-text-secondary" />
                   )}
                 </button>
                 <button
                   onClick={() =>
                     downloadFile(deployment.dockerCompose, "docker-compose.yml")
                   }
-                  className="p-2 rounded-lg bg-sovereign-panel hover:bg-sovereign-border transition-colors"
+                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
                   title="Download"
                 >
-                  <Download className="w-4 h-4 text-sovereign-muted" />
+                  <Download className="w-4 h-4 text-text-text-secondary" />
                 </button>
               </div>
             </div>
@@ -253,7 +253,7 @@ export function CreateCommunityForm() {
               onToggle={setExpandedSection}
             >
               <div className="relative">
-                <pre className="bg-sovereign-dark rounded-lg p-4 text-xs text-sovereign-text overflow-x-auto max-h-[400px]">
+                <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[400px]">
                   {generateApertureConfig(deployment.community)}
                 </pre>
                 <div className="absolute top-2 right-2 flex gap-2">
@@ -264,12 +264,12 @@ export function CreateCommunityForm() {
                         "aperture"
                       )
                     }
-                    className="p-2 rounded-lg bg-sovereign-panel hover:bg-sovereign-border transition-colors"
+                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
                   >
                     {copied === "aperture" ? (
                       <Check className="w-4 h-4 text-green-400" />
                     ) : (
-                      <Copy className="w-4 h-4 text-sovereign-muted" />
+                      <Copy className="w-4 h-4 text-text-text-secondary" />
                     )}
                   </button>
                   <button
@@ -279,9 +279,9 @@ export function CreateCommunityForm() {
                         "aperture.yml"
                       )
                     }
-                    className="p-2 rounded-lg bg-sovereign-panel hover:bg-sovereign-border transition-colors"
+                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
                   >
-                    <Download className="w-4 h-4 text-sovereign-muted" />
+                    <Download className="w-4 h-4 text-text-text-secondary" />
                   </button>
                 </div>
               </div>
@@ -301,20 +301,20 @@ export function CreateCommunityForm() {
                 {deployment.l402Endpoints.map((ep) => (
                   <div
                     key={ep.path}
-                    className="flex items-center justify-between bg-sovereign-dark rounded-lg px-4 py-3"
+                    className="flex items-center justify-between bg-bg-bg-elevated/50 rounded-lg px-4 py-3"
                   >
                     <div>
-                      <code className="text-btc-orange text-sm">{ep.path}</code>
-                      <p className="text-xs text-sovereign-muted mt-1">
+                      <code className="text-accent text-sm">{ep.path}</code>
+                      <p className="text-xs text-text-text-secondary mt-1">
                         {ep.description}
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-sovereign-white">
+                      <div className="text-sm font-medium text-text-primary">
                         {ep.priceSats} sats
                       </div>
                       {ep.agentOnly && (
-                        <span className="text-xs text-btc-orange">agent-only</span>
+                        <span className="text-xs text-accent">agent-only</span>
                       )}
                     </div>
                   </div>
@@ -332,7 +332,7 @@ export function CreateCommunityForm() {
             onToggle={setExpandedSection}
           >
             <div className="prose prose-invert prose-sm max-w-none">
-              <pre className="bg-sovereign-dark rounded-lg p-4 text-xs text-sovereign-text whitespace-pre-wrap">
+              <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary whitespace-pre-wrap">
                 {deployment.instructions.join("\n")}
               </pre>
             </div>
@@ -363,19 +363,19 @@ function CollapsibleSection({
   const isOpen = expanded === id;
 
   return (
-    <div className="sovereign-card !p-0 overflow-hidden">
+    <div className="glass glow-card border border-border-default rounded-xl p-6 !p-0 overflow-hidden">
       <button
         onClick={() => onToggle(isOpen ? null : id)}
-        className="w-full flex items-center justify-between px-6 py-4 hover:bg-sovereign-dark/50 transition-colors"
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-bg-elevated/50/50 transition-colors"
       >
-        <div className="flex items-center gap-2 text-sovereign-white font-medium">
-          <span className="text-btc-orange">{icon}</span>
+        <div className="flex items-center gap-2 text-text-primary font-medium">
+          <span className="text-accent">{icon}</span>
           {title}
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-sovereign-muted" />
+          <ChevronUp className="w-4 h-4 text-text-text-secondary" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-sovereign-muted" />
+          <ChevronDown className="w-4 h-4 text-text-text-secondary" />
         )}
       </button>
       {isOpen && <div className="px-6 pb-6">{children}</div>}
