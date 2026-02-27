@@ -118,7 +118,7 @@ export default function DashboardPage() {
                 <Shield className="w-5 h-5 text-btc-orange" />
                 Privacy
               </h3>
-              <PrivacyDashboard config={privacyConfig} />
+              <PrivacyDashboard config={privacyConfig} backend={currentCommunity?.mintBackend || "cashu"} />
             </div>
 
             {/* Cycle Signals */}
@@ -168,7 +168,7 @@ export default function DashboardPage() {
 
         {activeTab === "privacy" && (
           <div className="max-w-2xl">
-            <PrivacyDashboard config={privacyConfig} />
+            <PrivacyDashboard config={privacyConfig} backend={currentCommunity?.mintBackend || "cashu"} />
           </div>
         )}
 

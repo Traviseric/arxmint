@@ -19,8 +19,8 @@ The technology exists — Fedimint, Cashu, Lightning, L402 — but stitching it 
 - **Prompt-driven economy creation** — Describe your community in natural language, get a full deployment config
 - **Fedimint federation support** — Multi-guardian federated ecash with blinded Chaumian e-cash notes backed by BTC
 - **Cashu mint fallback** — Lightweight single-operator mint for faster setup
-- **Lightning AI agent integration** — L402 paywalls, scoped macaroons, MCP server — agents are first-class participants
-- **Privacy defaults on** — Silent Payments (BIP352), CoinJoin, PayJoin, Ark — enabled by default with a privacy dashboard
+- **Lightning AI agent integration** — L402 paywalls + MCP server live today; scoped macaroon tiers and remote signer are tracked in Phase 0/1
+- **Privacy defaults on** — Privacy dashboard covers Silent Payments (BIP352), CoinJoin, PayJoin, and Ark with backend-specific capability status
 - **Cycle monitoring** — Real-time MVRV, NUPL, and supply-in-profit signals from on-chain data
 - **Merchant directory** — "Spend sats here" listings for your community's circular economy
 - **Agent marketplace** — AI agents sell data, compute, privacy audits, and cycle signals for sats via L402
@@ -92,13 +92,14 @@ arxmint/
 - **Ecash:** [Fedimint SDK](https://sdk.fedimint.org/) (WASM) + [Cashu-TS](https://github.com/cashubtc/cashu-ts) v3
 - **Lightning:** [LNC-Web](https://github.com/lightninglabs/lnc-web) + [Aperture](https://github.com/lightninglabs/aperture) L402 proxy
 - **Agent Tools:** [Lightning Agent Tools](https://github.com/lightninglabs/lightning-agent-tools) MCP server
-- **Privacy:** BIP352 Silent Payments, CoinJoin, PayJoin, Ark
+- **Privacy:** BIP352 Silent Payments, CoinJoin, PayJoin, Ark (with backend-specific support constraints)
 - **State:** Zustand
 - **Deploy:** Docker Compose (LND + Nutshell + Fedimint + Aperture)
 
 ## Roadmap
 
 See [docs/roadmap.md](docs/roadmap.md) for the full phased plan.
+See [docs/spec.md](docs/spec.md) for the canonical product/technical spec used by roadmap and research cross-reference.
 
 - **Phase 0 — Fortify:** Security hardening (keyset validation, agent permission tiers, remote signer)
 - **Phase 1 — Keystone:** NUT-24 paywalls, spend router, BCE metrics, merchant onboarding

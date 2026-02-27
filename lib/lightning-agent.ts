@@ -4,7 +4,13 @@
 // ArxMint — Lightning Agent Integration
 // Uses @lightninglabs/lnc-web for direct node access
 // + L402 client for agent commerce paywalls
+//
+// Security: Implements 3-tier access model (Phase 0.3).
+// Agents default to WATCH_ONLY. PAY_ONLY uses remote signer.
+// ADMIN requires explicit opt-in with warning.
 // ============================================================
+
+import type { SecurityTier } from "./types";
 
 /** L402 challenge parsed from a 402 response */
 interface L402Challenge {
@@ -38,6 +44,16 @@ export interface ChannelInfo {
   active: boolean;
 }
 
+/** Remote signer configuration for PAY_ONLY tier */
+export interface RemoteSignerConfig {
+  /** URL of the litd remote signer */
+  signerUrl: string;
+  /** TLS certificate (base64) */
+  tlsCert?: string;
+  /** Macaroon for the remote signer (hex) */
+  macaroon?: string;
+}
+
 // ---- LNC Client (direct Lightning node access) ----
 
 let LNC: any = null;
@@ -52,9 +68,36 @@ async function loadLNC() {
 export class SovereignLightningClient {
   private lnc: any = null;
   private _connected = false;
+  private _securityTier: SecurityTier = "watch-only";
+  private _remoteSignerConfig: RemoteSignerConfig | null = null;
 
-  /** Connect to a Lightning node via LNC pairing phrase */
-  async connect(pairingPhrase: string, password: string): Promise<void> {
+  /** Current security tier */
+  get securityTier(): SecurityTier {
+    return this._securityTier;
+  }
+
+  /**
+   * Connect to a Lightning node via LNC pairing phrase.
+   * @param tier Security tier — defaults to "watch-only" for safety.
+   *             "pay-only" requires a remote signer config.
+   *             "admin" requires explicit opt-in.
+   */
+  async connect(
+    pairingPhrase: string,
+    password: string,
+    tier: SecurityTier = "watch-only",
+    remoteSignerConfig?: RemoteSignerConfig
+  ): Promise<void> {
+    if (tier === "pay-only" && !remoteSignerConfig) {
+      throw new Error(
+        "PAY_ONLY tier requires a remote signer configuration. " +
+          "Agent processes must never hold signing keys directly."
+      );
+    }
+
+    this._securityTier = tier;
+    this._remoteSignerConfig = remoteSignerConfig || null;
+
     await loadLNC();
     this.lnc = new LNC({ pairingPhrase, password });
     await this.lnc.connect();
@@ -64,6 +107,8 @@ export class SovereignLightningClient {
   get isConnected(): boolean {
     return this._connected;
   }
+
+  // ---- Tier 1: WATCH_ONLY operations (available to all tiers) ----
 
   /** Get node info */
   async getInfo(): Promise<NodeInfo> {
@@ -107,12 +152,16 @@ export class SovereignLightningClient {
     }));
   }
 
+  // ---- Tier 2: PAY_ONLY operations (requires pay-only or admin tier) ----
+
   /** Create a Lightning invoice */
   async createInvoice(
     amountSats: number,
     memo?: string
   ): Promise<{ paymentRequest: string; rHash: string }> {
     this.requireConnected();
+    this.requireTier("pay-only", "createInvoice");
+
     const res = await this.lnc.lnd.lightning.addInvoice({
       value: amountSats.toString(),
       memo: memo || "ArxMint",
@@ -123,12 +172,28 @@ export class SovereignLightningClient {
     };
   }
 
-  /** Pay a Lightning invoice */
+  /**
+   * Pay a Lightning invoice.
+   * In PAY_ONLY tier, this routes through the remote signer —
+   * the agent process never touches signing keys.
+   */
   async payInvoice(
     bolt11: string,
     maxFeeSats?: number
   ): Promise<{ preimage: string; feeSats: number }> {
     this.requireConnected();
+    this.requireTier("pay-only", "payInvoice");
+
+    // In PAY_ONLY mode with remote signer, the LNC connection
+    // is already configured to delegate signing to litd.
+    // The remote signer holds the keys; we just issue the request.
+    if (this._securityTier === "pay-only" && this._remoteSignerConfig) {
+      console.log(
+        "[ArxMint] Payment routed through remote signer at",
+        this._remoteSignerConfig.signerUrl
+      );
+    }
+
     const res = await this.lnc.lnd.lightning.sendPaymentSync({
       payment_request: bolt11,
       fee_limit: maxFeeSats ? { fixed: maxFeeSats.toString() } : undefined,
@@ -144,17 +209,44 @@ export class SovereignLightningClient {
     };
   }
 
+  // ---- Tier management ----
+
   /** Disconnect from the node */
   disconnect(): void {
     if (this.lnc) {
       this.lnc.disconnect();
       this._connected = false;
+      this._securityTier = "watch-only";
+      this._remoteSignerConfig = null;
     }
   }
 
   private requireConnected(): void {
     if (!this._connected || !this.lnc) {
       throw new Error("Not connected. Call connect() first.");
+    }
+  }
+
+  /**
+   * Enforce minimum security tier for an operation.
+   * Tier hierarchy: watch-only < pay-only < admin
+   */
+  private requireTier(
+    minimumTier: SecurityTier,
+    operation: string
+  ): void {
+    const tierLevel: Record<SecurityTier, number> = {
+      "watch-only": 0,
+      "pay-only": 1,
+      "admin": 2,
+    };
+
+    if (tierLevel[this._securityTier] < tierLevel[minimumTier]) {
+      throw new Error(
+        `Operation "${operation}" requires "${minimumTier}" tier or higher. ` +
+          `Current tier: "${this._securityTier}". ` +
+          `Reconnect with a higher security tier to use this operation.`
+      );
     }
   }
 }

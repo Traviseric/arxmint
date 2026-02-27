@@ -13,28 +13,31 @@
     "setup:agents": "bash scripts/deploy-agent-tools.sh"
   },
   "dependencies": {
+    "@cashu/cashu-ts": "^3.5.0",
+    "@fedimint/core": "^0.1.0",
+    "@fedimint/transport-web": "^0.1.2",
+    "@gsap/react": "^2.1.2",
+    "@lightninglabs/lnc-web": "0.3.5-alpha",
+    "clsx": "^2.1.0",
+    "framer-motion": "^12.34.3",
+    "gsap": "^3.14.2",
+    "lucide-react": "^0.469.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@fedimint/core": "^0.1.0",
-    "@fedimint/transport-web": "^0.1.2",
-    "@cashu/cashu-ts": "^3.5.0",
-    "@lightninglabs/lnc-web": "0.3.5-alpha",
-    "clsx": "^2.1.0",
     "tailwind-merge": "^2.2.0",
-    "lucide-react": "^0.469.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "@tailwindcss/typography": "^0.5.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8.4.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.1.0",
-    "@tailwindcss/typography": "^0.5.0"
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.7.0"
   }
 }

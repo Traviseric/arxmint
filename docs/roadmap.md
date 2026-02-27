@@ -2,6 +2,7 @@
 
 **Version:** 1.0 — February 27, 2026
 **Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md`
+**Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Codename convention:** Phase names follow the brand versioning from positioning doc (Keystone → Spire → Aether)
 
 ---
@@ -22,6 +23,7 @@ Phase 4: Citadel     (Production + grant deployment)
 
 **Goal:** Fix all P0 security issues identified by research. No new features until the foundation is safe.
 **Research drivers:** Doc 2 (agent security), Doc 5 (SP misrepresentation), Doc 6 (NUT-13 vulnerability)
+**Exit gate:** Every item must satisfy `docs/spec.md` §10 acceptance criteria and required verification.
 
 ### 0.1 — Cashu Keyset ID Validation (P0)
 **Source:** Doc 6 — Jan 2026 Cashu vulnerability disclosure
@@ -79,6 +81,7 @@ Phase 4: Citadel     (Production + grant deployment)
 
 **Goal:** Upgrade foundations informed by latest research. Agent commerce + merchant + spend routing.
 **Research drivers:** Doc 2 (macaroon bakery), Doc 3 (NUT-24), Doc 4 (spend router), Doc 7 (BCE metrics, merchant onboarding)
+**Exit gate:** Every item must satisfy `docs/spec.md` §10 acceptance criteria and required verification.
 
 ### 1.1 — NUT-24 Ecash Paywalls (P1)
 **Source:** Doc 3 — Cashu native HTTP 402
@@ -272,6 +275,21 @@ Phase 4: Citadel     (Production + grant deployment)
 
 ---
 
+## Research Watchlist (Non-Blocking, Track Continuously)
+
+These items are intentionally tracked outside active delivery phases. Promote to roadmap work only when upstream conditions change.
+
+1. **BIP352 `K_max` / scan-hardening proposals (Doc 5)**  
+   Trigger to promote: the proposal lands in spec or major implementations enforce limits by default.
+2. **Ark non-interactive receive via CTV+CSFS capability set (Doc 6)**  
+   Trigger to promote: Bitcoin soft-fork path and implementation maturity become concrete.
+3. **covenant-less Ark (clArk) compatibility strategy (Doc 4)**  
+   Trigger to promote: required for interoperability target deployments or SDK parity gaps block integration.
+4. **Research citation normalization**  
+   Trigger to promote: unresolved placeholder citations block P0/P1 closure; follow `docs/research-citation-policy.md`.
+
+---
+
 ## Phase 4: Citadel — Production + Grant Deployment
 
 **Goal:** Production hardening, Longmont pilot, grant applications, replication.
@@ -341,6 +359,7 @@ Phase 4 (Citadel) depends on:
 ## Research → Roadmap Traceability
 
 Every roadmap item traces back to at least one research document:
+Spec references for these items are in `docs/spec.md`.
 
 | Roadmap Item | Doc 1 | Doc 2 | Doc 3 | Doc 4 | Doc 5 | Doc 6 | Doc 7 |
 |---|---|---|---|---|---|---|---|

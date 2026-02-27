@@ -128,6 +128,38 @@ export interface AgentService {
   category: "data" | "compute" | "storage" | "privacy" | "analytics" | "other";
 }
 
+/**
+ * Lightning agent security tier.
+ * Agents should NEVER get ADMIN access by default.
+ * See Doc 2 (Lightning Labs AI Agent Tooling) for the 3-tier model.
+ */
+export type SecurityTier = "watch-only" | "pay-only" | "admin";
+
+/** Security tier descriptions for UI */
+export const SECURITY_TIER_INFO: Record<SecurityTier, {
+  label: string;
+  description: string;
+  permissions: string[];
+  warning?: string;
+}> = {
+  "watch-only": {
+    label: "Watch Only",
+    description: "Read-only access to node state. Cannot send or receive payments.",
+    permissions: ["getInfo", "getBalance", "listChannels"],
+  },
+  "pay-only": {
+    label: "Pay Only",
+    description: "Can create and pay invoices via remote signer. Cannot manage channels or access admin functions.",
+    permissions: ["getInfo", "getBalance", "listChannels", "createInvoice", "payInvoice"],
+  },
+  "admin": {
+    label: "Admin",
+    description: "Full access to all Lightning node functions. Only for trusted, human-operated connections.",
+    permissions: ["all"],
+    warning: "Admin access gives full control of your Lightning node including channel management and fund movement. Never grant this to autonomous agents.",
+  },
+};
+
 /** Parsed user prompt result */
 export interface ParsedPrompt {
   communityName: string;

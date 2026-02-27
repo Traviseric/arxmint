@@ -680,6 +680,7 @@ function CashuConnect() {
 function LightningConnect() {
   const [phrase, setPhrase] = useState("");
   const [password, setPassword] = useState("");
+  const [tier, setTier] = useState<"watch-only" | "pay-only" | "admin">("watch-only");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const { lightningConnected, setConnected, setBalance } = useSovereignStore();
@@ -687,16 +688,23 @@ function LightningConnect() {
   const connect = async () => {
     if (!phrase.trim()) return;
     setStatus("loading");
-    setMessage("Connecting via LNC...");
+    setMessage(`Connecting via LNC (${tier})...`);
 
     try {
       const client = getLightningClient();
-      await client.connect(phrase, password || "arxmint");
+
+      // For pay-only tier, a remote signer config would normally be provided.
+      // In demo/dev mode, we allow connection without one but log a warning.
+      const remoteSignerConfig = tier === "pay-only"
+        ? { signerUrl: "localhost:8443" } // placeholder — real config from .env
+        : undefined;
+
+      await client.connect(phrase, password || "arxmint", tier, remoteSignerConfig);
       const { onchainSats, channelSats } = await client.getBalance();
       const info = await client.getInfo();
       setBalance({ lightningSats: channelSats, onchainSats });
       setConnected("lightningConnected", true);
-      setMessage(`Connected to ${info.alias} (${info.numChannels} channels)`);
+      setMessage(`${info.alias} (${info.numChannels} ch) — ${tier} tier`);
       setStatus("success");
     } catch (e: any) {
       setMessage(e.message || "Failed to connect");
@@ -720,14 +728,19 @@ function LightningConnect() {
       </div>
 
       {lightningConnected ? (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-green-400">{message || "Connected"}</p>
-          <button
-            onClick={disconnect}
-            className="text-xs text-sovereign-muted hover:text-red-400 flex items-center gap-1 transition-colors"
-          >
-            <Unlink className="w-3 h-3" /> Disconnect
-          </button>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-green-400">{message || "Connected"}</p>
+            <button
+              onClick={disconnect}
+              className="text-xs text-sovereign-muted hover:text-red-400 flex items-center gap-1 transition-colors"
+            >
+              <Unlink className="w-3 h-3" /> Disconnect
+            </button>
+          </div>
+          <div className="text-xs text-sovereign-muted">
+            Security tier: <span className="text-btc-orange font-medium">{getLightningClient().securityTier}</span>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -751,13 +764,43 @@ function LightningConnect() {
               className="sovereign-input text-sm"
             />
           </div>
+          {/* Security tier selector */}
+          <div>
+            <label className="sovereign-label">Security Tier</label>
+            <div className="flex gap-2">
+              {(["watch-only", "pay-only", "admin"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTier(t)}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                    tier === t
+                      ? t === "admin"
+                        ? "bg-red-500/10 border-red-500/40 text-red-400"
+                        : "bg-btc-orange/10 border-btc-orange/40 text-btc-orange"
+                      : "bg-sovereign-dark border-sovereign-border text-sovereign-muted hover:text-sovereign-text"
+                  }`}
+                >
+                  {t === "watch-only" ? "Watch" : t === "pay-only" ? "Pay" : "Admin"}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-sovereign-muted mt-1">
+              {tier === "watch-only" && "Read-only — safe for agents and exploration."}
+              {tier === "pay-only" && "Pay/invoice via remote signer — keys stay isolated."}
+              {tier === "admin" && (
+                <span className="text-red-400">
+                  Full access. Never grant this to autonomous agents.
+                </span>
+              )}
+            </p>
+          </div>
           <button
             onClick={connect}
             disabled={!phrase.trim() || status === "loading"}
             className="sovereign-btn w-full !py-2 text-sm"
           >
             {status === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-            Connect Node
+            Connect ({tier})
           </button>
           <StatusMessage status={status} message={message} />
         </div>

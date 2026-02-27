@@ -1,7 +1,10 @@
 # ArxMint — Research Cross-Reference Matrix
 
-**Version:** 1.0 — February 27, 2026
+**Version:** 1.1 — February 27, 2026
 **Purpose:** Maps all 7 research documents to spec sections, implementation files, and identifies gaps + required actions.
+**Canonical spec reference:** `docs/spec.md` (all `Spec §X` citations in this matrix point there).
+**Citation policy:** `docs/research-citation-policy.md`
+**Current tracked gaps:** 36
 
 ---
 
@@ -88,7 +91,7 @@
 | Cashu SP is wallet-layer (implementable) | Not differentiated in spec | `lib/cashu-sdk.ts` | GAP | P2 | For on-chain sends via Cashu wallet, SP address parsing is wallet-side work. Add `sp1q` address support. |
 | `@silent-pay/core` + `@silent-pay/wallet` TypeScript packages | Not in spec | Not in `package.json` | GAP | P2 | Pre-alpha but functional. Add as optional dependency for SP sending. |
 | Scanning infrastructure (indexer required for receiving) | Not in spec | Not in Docker stack | GAP | P2 | Receiving SPs requires `silent-pay-indexer` or `silentiumd`. Add to Docker compose for full SP support. |
-| Feature flags (`SOVEREIGNFORGE_SP_ENABLED`, `SP_SCAN_MODE`, etc.) | Not in spec | `.env.example` | GAP | P2 | Doc 5 recommends specific env vars for SP config. Add to `.env.example`. |
+| Feature flags (`ARXMINT_SP_ENABLED`, `ARXMINT_SP_SCAN_MODE`, etc.) | Not in spec | `.env.example` | PARTIAL | P2 | Env flags are now standardized in `.env.example`; remaining work is wiring these flags into runtime behavior. |
 | K_max scanning limit (Feb 2026 proposal) | Not in spec | Not implemented | GAP | P3 | Future constraint. Design APIs to enforce configurable caps. |
 | BIP392 descriptors + BIP376 PSBT spending | Not in spec | Not implemented | GAP | P3 | Needed for hardware wallet support and recovery. Future phase. |
 | Scan key delegation (scan/spend separation) | Not in spec | Not implemented | GAP | P2 | Mobile wallets need scan key on hot device, spend key cold. Important for security. |
@@ -117,7 +120,7 @@
 | OpenSats Wave 16 funding CDK, cashu-ts/Coco, Nutshell | Spec §4 Core Integrations | `package.json` | PARTIAL | P2 | We use cashu-ts but not CDK or Coco. Track upstream releases. |
 | BCE maturity metrics (merchant count, MAU, spend velocity, payment success rate) | Not in spec | Not in dashboard | GAP | P1 | Dashboard shows privacy score and cycle signals but no BCE health metrics. Add community KPI tracking. |
 | KPI framework for circular economies | Spec §9 Success Metrics (basic) | Not implemented | GAP | P1 | Spec has high-level metrics (10 communities, 5 agents, 0.5 BTC/month). Need per-community operational KPIs in the dashboard. |
-| Grant application template (tailored to ArxMint/ArxMint) | Not in codebase | Not implemented | GAP | P2 | Doc 7 provides a complete template. Should be a built-in export from the dashboard or a doc. |
+| Grant application template (tailored to ArxMint) | Not in codebase | Not implemented | GAP | P2 | Doc 7 provides a complete template. Should be a built-in export from the dashboard or a doc. |
 | Indonesia deployment (10-20k users, Fedi + Bitcoin Indonesia) | Validates spec concept | N/A (validation) | DONE | — | Proves the model at scale. Reference in pitch materials. |
 | Fedimint "second-party trust" and guardian governance | Spec §3 Feature 1 | `lib/community-generator.ts` | PARTIAL | P2 | Generator creates guardian configs but no governance framework (rotation, incident response, quorum policy). |
 | Monitoring/observability (Prometheus, Grafana) | Not in spec | Not in Docker stack | GAP | P2 | CDK and OpenSats both emphasize operator-grade monitoring. Add Prometheus + Grafana to Docker stack. |
@@ -162,7 +165,7 @@
 | 18 | Ark SDK integration (`@arkade-os/sdk`) | Doc 4 | New: `lib/ark-sdk.ts` |
 | 19 | Ark VTXOs in wallet balance + Docker service | Doc 4 | `lib/types.ts`, `lib/store.ts`, `docker-compose.yml` |
 | 20 | SP indexer in Docker stack | Doc 5 | `docker-compose.yml` |
-| 21 | SP feature flags in .env.example | Doc 5 | `.env.example` |
+| 21 | Wire SP feature flags from `.env.example` into runtime behavior | Doc 5 | `.env.example`, SP runtime modules |
 | 22 | Fedimint gateway → L402 preimage bridge | Doc 2 | `lib/fedimint-sdk.ts`, `lib/lightning-agent.ts` |
 | 23 | ZK verified reissuance / ephemeral proof handling | Doc 6 | `lib/cashu-sdk.ts` |
 | 24 | Prometheus + Grafana monitoring stack | Doc 3, Doc 7 | `docker-compose.yml` |

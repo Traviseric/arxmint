@@ -3,21 +3,25 @@
 // ============================================================
 // ArxMint — Privacy Dashboard Component
 // Shows privacy score, layer status, and recommendations
+// Displays honest per-backend availability (Phase 0.2)
 // ============================================================
 
-import { Shield, Check, AlertTriangle } from "lucide-react";
+import { Shield, Check, AlertTriangle, Info } from "lucide-react";
 import {
   computePrivacyScore,
+  isLayerAvailable,
   PRIVACY_DESCRIPTIONS,
 } from "@/lib/privacy-defaults";
-import type { PrivacyConfig } from "@/lib/types";
+import type { PrivacyConfig, MintBackend } from "@/lib/types";
 
 interface Props {
   config: PrivacyConfig;
+  /** Current mint backend — affects which layers are actually available */
+  backend?: MintBackend;
 }
 
-export function PrivacyDashboard({ config }: Props) {
-  const score = computePrivacyScore(config);
+export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
+  const score = computePrivacyScore(config, backend);
 
   const scoreColor =
     score >= 80
@@ -82,20 +86,26 @@ export function PrivacyDashboard({ config }: Props) {
           ][]
         ).map(([key, info]) => {
           const enabled = config[key];
+          const available = isLayerAvailable(key, backend);
+          const effectivelyOn = enabled && available;
 
           return (
             <div
               key={key}
               className={`rounded-lg border px-4 py-3 transition-all ${
-                enabled
+                effectivelyOn
                   ? "border-green-500/30 bg-green-500/5"
-                  : "border-sovereign-border bg-sovereign-dark"
+                  : enabled && !available
+                    ? "border-yellow-500/30 bg-yellow-500/5"
+                    : "border-sovereign-border bg-sovereign-dark"
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {enabled ? (
+                  {effectivelyOn ? (
                     <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                  ) : enabled && !available ? (
+                    <Info className="w-4 h-4 text-yellow-400 flex-shrink-0" />
                   ) : (
                     <AlertTriangle className="w-4 h-4 text-sovereign-muted flex-shrink-0" />
                   )}
@@ -122,13 +132,23 @@ export function PrivacyDashboard({ config }: Props) {
                   </span>
                   <span
                     className={`text-xs font-medium ${
-                      enabled ? "text-green-400" : "text-sovereign-muted"
+                      effectivelyOn
+                        ? "text-green-400"
+                        : enabled && !available
+                          ? "text-yellow-400"
+                          : "text-sovereign-muted"
                     }`}
                   >
-                    {enabled ? "ON" : "OFF"}
+                    {effectivelyOn ? "ON" : enabled && !available ? "LIMITED" : "OFF"}
                   </span>
                 </div>
               </div>
+              {/* Backend availability warning */}
+              {enabled && !available && info.backendWarning && (
+                <div className="mt-2 ml-7 text-xs text-yellow-400/80 leading-relaxed">
+                  {info.backendWarning}
+                </div>
+              )}
             </div>
           );
         })}

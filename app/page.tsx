@@ -1,3 +1,9 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion } from "framer-motion";
 import {
   Shield,
   Cpu,
@@ -6,240 +12,423 @@ import {
   Lock,
   ArrowRight,
   Globe,
+  Eye,
+  Activity,
+  Box,
+  Github,
+  ArrowDown,
+  DollarSign,
+  Ban,
+  Radio
 } from "lucide-react";
+import TerminalDemo from "@/components/terminal-demo";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export default function HomePage() {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const heroBgRef = useRef<HTMLDivElement>(null);
+  const [liveVolume, setLiveVolume] = useState(1284.45);
+  const [activeNodes, setActiveNodes] = useState(312);
+
+  // Auto-updating metric simulation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveVolume(prev => prev + (Math.random() * 2.5));
+      if (Math.random() > 0.7) {
+        setActiveNodes(prev => prev + (Math.random() > 0.5 ? 1 : -1));
+      }
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  // GSAP Scroll Arc Pattern
+  useEffect(() => {
+    if (!heroBgRef.current || !heroRef.current) return;
+
+    // Smooth zoom out and blur on scroll
+    gsap.to(heroBgRef.current, {
+      scale: 1,
+      filter: "blur(12px)",
+      opacity: 0.6,
+      scrollTrigger: {
+        trigger: heroRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: true,
+      }
+    });
+  }, []);
+
   return (
-    <div className="relative">
-      {/* Hero */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-[600px] h-[600px] rounded-full bg-btc-orange/5 blur-[120px]" />
-        </div>
+    <div className="relative bg-bg-base text-text-primary overflow-x-hidden selection:bg-accent/30">
 
-        <div className="relative max-w-5xl mx-auto px-4 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-btc-orange/30 bg-btc-orange/5 text-btc-orange text-sm mb-8">
-            <Zap className="w-4 h-4" />
-            <span>Built on Lightning + Fedimint + Cashu — Feb 2026</span>
-          </div>
+      {/* Background Ambience */}
+      <div
+        ref={heroBgRef}
+        className="fixed top-0 left-0 w-full h-[120vh] z-0 pointer-events-none origin-top"
+        style={{ transform: "scale(1.1)" }}
+      >
+        <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full bg-accent/5 blur-[120px] mix-blend-screen" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-[150px] mix-blend-screen" />
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[size:32px_32px] opacity-[0.03]" />
+      </div>
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-sovereign-white leading-tight mb-6">
-            Spin up your own{" "}
-            <span className="text-btc-orange">private Bitcoin economy</span>{" "}
-            in minutes
-          </h1>
+      <div className="relative z-10 w-full">
 
-          <p className="text-lg sm:text-xl text-sovereign-muted max-w-3xl mx-auto mb-10 leading-relaxed">
-            One prompt. Private Fedimint federations, Cashu mints, Lightning AI
-            agent rails, and built-in privacy defaults. The parallel voluntary
-            economy — for humans and autonomous agents.
-          </p>
+        {/* ===== SECTION 1: HERO OBSERVATORY ===== */}
+        <section ref={heroRef} className="relative min-h-[90vh] flex flex-col justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+          <div className="grid lg:grid-cols-12 gap-12 items-center">
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <a href="/create" className="sovereign-btn text-lg !px-8 !py-4">
-              Create Your Community
-              <ArrowRight className="w-5 h-5" />
-            </a>
-            <a href="/dashboard" className="sovereign-btn-outline text-lg !px-8 !py-4">
-              View Dashboard
-            </a>
-          </div>
+            {/* Left: Copy & Actions */}
+            <div className="lg:col-span-6 space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+                  System Live — LND + Cashu + Fedimint
+                </span>
+              </motion.div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
-            <div>
-              <div className="text-2xl font-bold text-btc-orange">21M</div>
-              <div className="text-xs text-sovereign-muted mt-1">
-                Fixed supply
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-btc-orange">L402</div>
-              <div className="text-xs text-sovereign-muted mt-1">
-                Agent commerce
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-btc-orange">0 KYC</div>
-              <div className="text-xs text-sovereign-muted mt-1">
-                No identity required
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1] mb-6">
+                  Build the <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">
+                    Citadel.
+                  </span>
+                </h1>
 
-      <div className="glow-line" />
-
-      {/* Three pillars */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <h2 className="text-3xl font-bold text-center text-sovereign-white mb-4">
-          The sovereign bridge
-        </h2>
-        <p className="text-center text-sovereign-muted mb-16 max-w-2xl mx-auto">
-          Not another wallet. The actual exit ramp — private money rails where
-          humans and AI agents share the same sovereign infrastructure.
-        </p>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* For Humans */}
-          <div className="sovereign-card group">
-            <div className="w-12 h-12 rounded-xl bg-btc-orange/10 flex items-center justify-center mb-4 group-hover:bg-btc-orange/20 transition-colors">
-              <Shield className="w-6 h-6 text-btc-orange" />
-            </div>
-            <h3 className="text-xl font-bold text-sovereign-white mb-3">
-              For Humans
-            </h3>
-            <p className="text-sovereign-muted text-sm leading-relaxed mb-4">
-              Self-custody ecash backed by real BTC. Private transactions inside
-              your community. No surveillance, no KYC, no banks. Fedimint
-              federations with trusted local guardians.
-            </p>
-            <ul className="space-y-2 text-sm text-sovereign-muted">
-              <li className="flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-btc-orange" />
-                Silent Payments + CoinJoin defaults
-              </li>
-              <li className="flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-btc-orange" />
-                Federated e-cash (untraceable inside mint)
-              </li>
-              <li className="flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-btc-orange" />
-                Local circular economy directory
-              </li>
-            </ul>
-          </div>
-
-          {/* For Agents */}
-          <div className="sovereign-card group border-btc-orange/20">
-            <div className="w-12 h-12 rounded-xl bg-btc-orange/10 flex items-center justify-center mb-4 group-hover:bg-btc-orange/20 transition-colors">
-              <Cpu className="w-6 h-6 text-btc-orange" />
-            </div>
-            <h3 className="text-xl font-bold text-sovereign-white mb-3">
-              For AI Agents
-            </h3>
-            <p className="text-sovereign-muted text-sm leading-relaxed mb-4">
-              Native Lightning rails via MCP. Agents sell data, buy compute, and
-              transact in sats — no identity, no banks, no permission needed.
-              L402 paywalls for machine-to-machine commerce.
-            </p>
-            <ul className="space-y-2 text-sm text-sovereign-muted">
-              <li className="flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-btc-orange" />
-                Lightning Agent Kit (7 skills)
-              </li>
-              <li className="flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-btc-orange" />
-                L402 paywalls (pay-per-request)
-              </li>
-              <li className="flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-btc-orange" />
-                MCP server for Claude / any agent
-              </li>
-            </ul>
-          </div>
-
-          {/* For Communities */}
-          <div className="sovereign-card group">
-            <div className="w-12 h-12 rounded-xl bg-btc-orange/10 flex items-center justify-center mb-4 group-hover:bg-btc-orange/20 transition-colors">
-              <Users className="w-6 h-6 text-btc-orange" />
-            </div>
-            <h3 className="text-xl font-bold text-sovereign-white mb-3">
-              For Communities
-            </h3>
-            <p className="text-sovereign-muted text-sm leading-relaxed mb-4">
-              Spin a full private economy for your meetup, town, or network.
-              One-click Fedimint federation with chat, merchant directory, and
-              agent marketplace. The Bitcoin Beach model, automated.
-            </p>
-            <ul className="space-y-2 text-sm text-sovereign-muted">
-              <li className="flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-btc-orange" />
-                Prompt-driven community creation
-              </li>
-              <li className="flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-btc-orange" />
-                Docker one-command deploy
-              </li>
-              <li className="flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-btc-orange" />
-                0.2% mint fee = income in sats
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <div className="glow-line" />
-
-      {/* How it works */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <h2 className="text-3xl font-bold text-center text-sovereign-white mb-16">
-          How it works
-        </h2>
-
-        <div className="space-y-12">
-          {[
-            {
-              step: "01",
-              title: "Describe your community",
-              desc: 'Type a natural language prompt: "Create a private Bitcoin community for 20 Longmont Bitcoiners with chat, private payments, and AI agents selling data."',
-            },
-            {
-              step: "02",
-              title: "ArxMint generates everything",
-              desc: "AI parses your prompt and generates a full Fedimint federation config (or lightweight Cashu mint), Lightning agent integration, privacy defaults, and Docker deployment.",
-            },
-            {
-              step: "03",
-              title: "One-command deploy",
-              desc: "Run docker compose up. Your sovereign economy is live — private ecash mint, Lightning node, L402 agent endpoints, cycle dashboard. Share the invite link.",
-            },
-            {
-              step: "04",
-              title: "Humans + agents join the same loop",
-              desc: "Community members transact in private ecash. AI agents sell services for sats via L402. The same rails, no distinction. The parallel voluntary economy — running.",
-            },
-          ].map((item) => (
-            <div key={item.step} className="flex gap-6 items-start">
-              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-btc-orange/10 flex items-center justify-center text-btc-orange font-bold">
-                {item.step}
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-sovereign-white mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-sovereign-muted leading-relaxed">
-                  {item.desc}
+                <p className="text-xl sm:text-2xl text-text-secondary font-light max-w-lg leading-relaxed">
+                  Your Bitcoin economy, one prompt away.
                 </p>
+                <p className="text-text-muted max-w-lg mt-4 leading-relaxed font-mono text-sm">
+                  ArxMint generates private Fedimint federations, Cashu mints,
+                  Lightning agent rails, and deploys them instantly. Humans and AI agents share the same sovereign infrastructure.
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="flex flex-col sm:flex-row items-center gap-4 pt-4"
+              >
+                <a href="/create" className="antigravity-btn w-full sm:w-auto !py-4">
+                  Initialize Environment
+                  <ArrowRight className="w-4 h-4 ml-2 opacity-70" />
+                </a>
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="antigravity-btn-outline w-full sm:w-auto !py-4 text-text-secondary">
+                  <Github className="w-4 h-4 mr-2" />
+                  View Source
+                </a>
+              </motion.div>
+
+              {/* Telemetry Footer */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 0.4 }}
+                className="grid grid-cols-3 gap-8 pt-8 border-t border-border-subtle"
+              >
+                <div>
+                  <div className="text-sm text-text-secondary font-mono mb-1">NETWORK_VAL</div>
+                  <div className="text-xl font-mono text-text-primary">
+                    ${liveVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-secondary font-mono mb-1">ACTIVE_NODES</div>
+                  <div className="text-xl font-mono text-text-primary flex items-center gap-2">
+                    {activeNodes} <ArrowDown className="w-3 h-3 text-red-400 rotate-180" />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-secondary font-mono mb-1">KYC_REQS</div>
+                  <div className="text-xl font-mono text-green-400 font-semibold">ZERO</div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Right: Terminal Feed */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="lg:col-span-6 relative z-10"
+            >
+              <div className="absolute -inset-4 bg-accent/5 rounded-3xl blur-2xl -z-10" />
+              <TerminalDemo />
+            </motion.div>
+
+          </div>
+        </section>
+
+        {/* ===== SECTION 2: THE SPLIT (Problem) ===== */}
+        <section className="relative w-full border-y border-border-subtle bg-bg-surface/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+
+            <div className="mb-20 text-center max-w-3xl mx-auto">
+              <h2 className="text-4xl font-semibold tracking-tight mb-6 text-text-primary">
+                Wallets aren&apos;t economies.
+              </h2>
+              <p className="text-lg text-text-secondary leading-relaxed">
+                Cold storage is step one, not the endgame. Without spending, earning, and trading in Bitcoin, there&apos;s no economy — just a savings account reliant on fiat rails.
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8 items-stretch">
+              {/* Fiat Loop */}
+              <div className="glass p-8 rounded-xl border border-red-500/10 flex flex-col relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/0 via-red-500/50 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <h3 className="flex items-center gap-3 text-red-400 font-mono text-sm tracking-wider uppercase mb-8">
+                  <Ban className="w-4 h-4" /> The Fiat Trap
+                </h3>
+
+                <div className="space-y-6 text-sm text-text-secondary flex-grow">
+                  <div className="flex gap-4 items-start">
+                    <DollarSign className="w-5 h-5 text-red-500/50 shrink-0 mt-0.5" />
+                    <p>Earn in fiat from employer</p>
+                  </div>
+                  <div className="pl-2 border-l border-red-500/20 ml-2 h-6" />
+                  <div className="flex gap-4 items-start">
+                    <Activity className="w-5 h-5 text-red-500/50 shrink-0 mt-0.5" />
+                    <p>Spend at surveilled merchants</p>
+                  </div>
+                  <div className="pl-2 border-l border-red-500/20 ml-2 h-6" />
+                  <div className="flex gap-4 items-start">
+                    <Lock className="w-5 h-5 text-red-500/50 shrink-0 mt-0.5" />
+                    <p>KYC exchange → buy BTC → cold storage forever</p>
+                  </div>
+                </div>
+                <div className="mt-8 pt-6 border-t border-border-default font-mono text-xs text-text-muted">
+                  STATUS: DEPENDENT ON LEGACY INFRASTRUCTURE
+                </div>
+              </div>
+
+              {/* Sovereign Loop */}
+              <div className="glass-heavy p-8 rounded-xl border border-border-strong relative overflow-hidden group glow-card">
+                <div className="absolute top-0 right-0 p-4">
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-mono">
+                    <Radio className="w-3 h-3 animate-pulse" />
+                    LIVE
+                  </div>
+                </div>
+
+                <h3 className="flex items-center gap-3 text-accent font-mono text-sm tracking-wider uppercase mb-8">
+                  <Zap className="w-4 h-4" /> The Sovereign Loop
+                </h3>
+
+                <div className="space-y-6 text-sm text-text-primary flex-grow">
+                  <div className="flex gap-4 items-start">
+                    <Users className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <p>Earn sats from community work</p>
+                  </div>
+                  <div className="pl-2 border-l border-accent/30 ml-2 h-6 animate-[pulse_2s_ease-in-out_infinite]" />
+                  <div className="flex gap-4 items-start">
+                    <Shield className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <p>Private ecash payments to local merchants</p>
+                  </div>
+                  <div className="pl-2 border-l border-accent/30 ml-2 h-6 animate-[pulse_2s_ease-in-out_infinite_500ms]" />
+                  <div className="flex gap-4 items-start">
+                    <Cpu className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                    <p>AI agents earn & spend via L402 parallel rails</p>
+                  </div>
+                </div>
+                <div className="mt-8 pt-6 border-t border-border-default font-mono text-xs text-accent/70">
+                  STATUS: CIRCULAR ECONOMY ESTABLISHED
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <div className="glow-line" />
+        {/* ===== SECTION 3: THREE PILLARS (GLOW CARDS) ===== */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl font-semibold tracking-tight text-text-primary mb-4">
+              The Sovereign Bridge.
+            </h2>
+            <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+              Not another wallet. A private money rail where humans and AI agents share the same infrastructure.
+            </p>
+          </div>
 
-      {/* CTA */}
-      <section className="max-w-3xl mx-auto px-4 py-24 text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold text-sovereign-white mb-6">
-          The parallel system is being built.
-          <br />
-          <span className="text-btc-orange">Be the one who builds it.</span>
-        </h2>
-        <p className="text-sovereign-muted mb-10 max-w-xl mx-auto">
-          Sound money infrastructure for a parallel voluntary economy.
-          Protection from hacks, overreach, and future controls. Not evasion —
-          sovereignty.
-        </p>
-        <a href="/create" className="sovereign-btn text-lg !px-10 !py-4">
-          Launch Your Sovereign Community
-          <ArrowRight className="w-5 h-5" />
-        </a>
-      </section>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Humans */}
+            <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card group relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/5 rounded-full blur-2xl group-hover:bg-accent/10 transition-colors" />
+              <div className="w-12 h-12 rounded-md bg-bg-surface border border-border-strong flex items-center justify-center mb-8">
+                <Shield className="w-5 h-5 text-text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-text-primary mb-4">For Humans</h3>
+              <p className="text-text-secondary text-sm leading-relaxed mb-8">
+                Self-custody ecash backed by real BTC. Private transactions inside your community. No surveillance, no KYC, no banks.
+              </p>
+              <ul className="space-y-3 font-mono text-xs text-text-muted">
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Silent Payments + CoinJoin
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Federated e-cash privacy
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Local merchant directory
+                </li>
+              </ul>
+            </div>
+
+            {/* AI Agents */}
+            <div className="bg-bg-elevated border border-accent/20 rounded-xl p-8 glow-card group relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl transition-colors" />
+
+              <div className="w-12 h-12 rounded-md bg-accent/10 border border-accent/20 flex items-center justify-center mb-8">
+                <Cpu className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold text-text-primary mb-4">For AI Agents</h3>
+              <p className="text-text-secondary text-sm leading-relaxed mb-8">
+                Native Lightning rails via MCP. Agents sell data, buy compute, and transact in sats — no identity, no banks.
+              </p>
+              <ul className="space-y-3 font-mono text-xs text-text-muted">
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Lightning Agent Kit
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  L402 paywalls (pay-per-request)
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  MCP server framework
+                </li>
+              </ul>
+            </div>
+
+            {/* Communities */}
+            <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card group relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/5 rounded-full blur-2xl group-hover:bg-accent/10 transition-colors" />
+              <div className="w-12 h-12 rounded-md bg-bg-surface border border-border-strong flex items-center justify-center mb-8">
+                <Globe className="w-5 h-5 text-text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-text-primary mb-4">For Communities</h3>
+              <p className="text-text-secondary text-sm leading-relaxed mb-8">
+                Spin a full private economy for your town. One-click Fedimint federation with merchant directory.
+              </p>
+              <ul className="space-y-3 font-mono text-xs text-text-muted">
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Prompt-driven creation
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Docker one-command deploy
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  0.2% mint fee community income
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== SECTION 4: ASYMMETRIC GRID (FEATURES) ===== */}
+        <section className="border-t border-border-subtle bg-bg-surface/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+            <h2 className="text-3xl font-semibold text-text-primary mb-20 text-center">
+              Infrastructure batteries included.
+            </h2>
+
+            <div className="grid lg:grid-cols-12 gap-8">
+              {/* Large Feature Card (Col 7) */}
+              <div className="lg:col-span-7 glass border border-border-default rounded-2xl p-8 lg:p-12 relative overflow-hidden glow-card group">
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-accent/5 blur-3xl rounded-full -mr-20 -mt-20 group-hover:bg-accent/10 transition-all duration-700" />
+                <Eye className="w-8 h-8 text-accent mb-6" />
+                <h3 className="text-2xl font-semibold text-text-primary mb-4">Privacy by Default</h3>
+                <p className="text-text-secondary leading-relaxed mb-8 max-w-md">
+                  We don't just offer privacy as an option. CoinJoin, Tor routing, and silent payments are hardcoded defaults at the protocol level.
+                </p>
+                <div className="bg-bg-base/80 border border-border-strong rounded-lg p-6 font-mono text-xs">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-text-muted">ROUTING</span>
+                    <span className="text-green-400 font-semibold">[TOR ACTIVE]</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-muted">OBFUSCATION</span>
+                    <span className="text-accent font-semibold">[COINJOIN: 50+]</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stacked Small Cards (Col 5) */}
+              <div className="lg:col-span-5 flex flex-col gap-8">
+
+                <div className="glass border border-border-default rounded-2xl p-8 flex-1 glow-card flex flex-col justify-center">
+                  <Activity className="w-6 h-6 text-text-primary mb-4" />
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">Cycle Architecture</h3>
+                  <p className="text-text-secondary text-sm">
+                    Live MVRV, NUPL, and supply-in-profit alerts built into the operator dashboard.
+                  </p>
+                </div>
+
+                <div className="glass border border-border-default rounded-2xl p-8 flex-1 glow-card flex flex-col justify-center">
+                  <Box className="w-6 h-6 text-text-primary mb-4" />
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">Containerized Deploy</h3>
+                  <p className="text-text-secondary text-sm">
+                    LND, Cashu, Fedimint, and Aperture. Spun up with a single Docker composition.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== SECTION 5: CTA FOCUS ===== */}
+        <section className="relative py-32 border-t border-border-subtle overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-bg-base to-bg-surface z-0" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent/10 blur-[100px] rounded-[100%] z-0" />
+
+          <div className="relative z-10 max-w-2xl mx-auto px-4 text-center">
+            <h2 className="text-4xl sm:text-5xl font-semibold text-text-primary mb-6 tracking-tight">
+              The parallel system is being built.
+            </h2>
+            <p className="text-text-secondary text-lg mb-12">
+              Sound money infrastructure for a parallel voluntary economy. Protection from hacks, overreach, and controls. Not evasion — sovereignty.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a href="/create" className="antigravity-btn !px-10 !py-4 text-lg w-full sm:w-auto">
+                Deploy Economy
+              </a>
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="antigravity-btn-outline !px-10 !py-4 text-lg w-full sm:w-auto text-text-secondary"
+              >
+                <Github className="w-5 h-5 mr-3" />
+                Audit Code
+              </a>
+            </div>
+          </div>
+        </section>
+
+      </div>
     </div>
   );
 }
