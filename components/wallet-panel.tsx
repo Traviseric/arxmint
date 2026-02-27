@@ -24,6 +24,12 @@ import { createCashuClient, SovereignCashuClient } from "@/lib/cashu-sdk";
 import { getLightningClient } from "@/lib/lightning-agent";
 import { useSovereignStore } from "@/lib/store";
 import { formatSats } from "@/lib/utils";
+import {
+  selectSpendPath,
+  privacyColor,
+  type SpendRoute,
+  type PrivacyPreference,
+} from "@/lib/spend-router";
 
 type ActiveView = "overview" | "send" | "receive" | "invoice";
 
@@ -222,10 +228,25 @@ function ReceivePanel() {
 function SendPanel() {
   const [method, setMethod] = useState<"cashu" | "fedimint">("cashu");
   const [amount, setAmount] = useState("");
+  const [privacyPref, setPrivacyPref] = useState<PrivacyPreference>("auto");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
-  const { cashuConnected, fedimintConnected, setBalance } = useSovereignStore();
+  const { cashuConnected, fedimintConnected, lightningConnected, balance, setBalance } = useSovereignStore();
+
+  // Compute route suggestion when amount changes
+  const routeSuggestion: SpendRoute | null = (() => {
+    const sats = parseInt(amount);
+    if (!sats || sats <= 0) return null;
+    return selectSpendPath(sats, balance, {
+      cashu: cashuConnected,
+      fedimint: fedimintConnected,
+      lightning: lightningConnected,
+      ark: false,
+      onchain: lightningConnected,
+      silentPayments: false,
+    }, "cashu", privacyPref);
+  })();
 
   const handleSend = async () => {
     const sats = parseInt(amount);
@@ -297,6 +318,53 @@ function SendPanel() {
           className="sovereign-input text-sm"
         />
       </div>
+
+      {/* Privacy preference */}
+      <div className="mb-3">
+        <label className="sovereign-label">Privacy</label>
+        <div className="flex gap-1.5">
+          {(["auto", "standard", "high", "maximum"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPrivacyPref(p)}
+              className={`flex-1 px-2 py-1 rounded text-xs font-medium transition-all border ${
+                privacyPref === p
+                  ? "bg-btc-orange/10 border-btc-orange/40 text-btc-orange"
+                  : "bg-sovereign-dark border-sovereign-border text-sovereign-muted"
+              }`}
+            >
+              {p.charAt(0).toUpperCase() + p.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Route suggestion */}
+      {routeSuggestion && (
+        <div className={`mb-3 rounded-lg border px-3 py-2 text-xs ${
+          routeSuggestion.available
+            ? "border-sovereign-border bg-sovereign-dark"
+            : "border-red-500/30 bg-red-500/5"
+        }`}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sovereign-muted">Recommended path:</span>
+            <span className={`font-medium ${privacyColor(routeSuggestion.privacy)}`}>
+              {routeSuggestion.label}
+            </span>
+          </div>
+          <p className="text-sovereign-muted leading-relaxed">{routeSuggestion.reason}</p>
+          {routeSuggestion.estimatedFeeSats > 0 && (
+            <p className="text-sovereign-muted mt-1">
+              Est. fee: ~{routeSuggestion.estimatedFeeSats} sats
+            </p>
+          )}
+          {routeSuggestion.alternatives.length > 0 && (
+            <p className="text-sovereign-muted mt-1">
+              Also available: {routeSuggestion.alternatives.join(", ")}
+            </p>
+          )}
+        </div>
+      )}
 
       <button
         onClick={handleSend}

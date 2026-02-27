@@ -394,3 +394,181 @@ export function generateDeployment(
     l402Endpoints,
   };
 }
+
+// ============================================================
+// G-Bot Integration (Phase 1.7)
+//
+// Fedimint's G-Bot automates guardian coordination, peer
+// discovery, and consensus setup. When available, it replaces
+// raw Docker scripting for federation bootstrap.
+//
+// Source: Doc 1 — Fedimint official federation setup service
+// ============================================================
+
+/** G-Bot API status */
+export interface GBotStatus {
+  available: boolean;
+  version?: string;
+  endpoint?: string;
+  message: string;
+}
+
+/** G-Bot federation setup request */
+export interface GBotSetupRequest {
+  /** Human-readable federation name */
+  name: string;
+  /** Number of guardians */
+  guardianCount: number;
+  /** Bitcoin network */
+  network: "bitcoin" | "testnet" | "signet" | "regtest";
+  /** Guardian contact info (for coordination) */
+  guardians: Array<{
+    alias: string;
+    /** How to reach this guardian (Nostr, email, etc.) */
+    contact?: string;
+  }>;
+}
+
+/** G-Bot federation setup response */
+export interface GBotSetupResult {
+  /** Whether G-Bot was used or we fell back to Docker */
+  method: "gbot" | "docker";
+  /** Federation ID (if setup completed) */
+  federationId?: string;
+  /** Invite code for members to join */
+  inviteCode?: string;
+  /** Setup instructions for guardians */
+  guardianInstructions: string[];
+  /** Docker compose (if Docker fallback) */
+  dockerCompose?: string;
+}
+
+/** Default G-Bot API endpoint (Fedimint official) */
+const GBOT_DEFAULT_ENDPOINT = "https://gbot.fedimint.org/api/v1";
+
+/**
+ * Check if G-Bot API is available.
+ * G-Bot is Fedimint's guided federation setup service.
+ * It may not have a public API yet — this checks and falls back gracefully.
+ */
+export async function checkGBotAvailability(
+  endpoint: string = GBOT_DEFAULT_ENDPOINT
+): Promise<GBotStatus> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(`${endpoint}/status`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        available: true,
+        version: data.version,
+        endpoint,
+        message: `G-Bot v${data.version} available`,
+      };
+    }
+
+    return {
+      available: false,
+      message: `G-Bot returned ${response.status} — falling back to Docker`,
+    };
+  } catch {
+    return {
+      available: false,
+      message: "G-Bot not reachable — using Docker Compose for federation setup",
+    };
+  }
+}
+
+/**
+ * Set up a federation, preferring G-Bot when available.
+ * Falls back to Docker Compose generation if G-Bot is unavailable.
+ */
+export async function setupFederation(
+  config: CommunityConfig,
+  gbotEndpoint?: string
+): Promise<GBotSetupResult> {
+  // Only attempt G-Bot for Fedimint backend
+  if (config.mintBackend !== "fedimint") {
+    return {
+      method: "docker",
+      guardianInstructions: [
+        "Cashu backend does not require federation setup.",
+        "Run `docker compose up -d` to start the Cashu mint.",
+      ],
+      dockerCompose: generateDockerCompose(config),
+    };
+  }
+
+  // Check G-Bot availability
+  const gbotStatus = await checkGBotAvailability(gbotEndpoint);
+
+  if (gbotStatus.available && gbotStatus.endpoint) {
+    try {
+      return await setupViaGBot(config, gbotStatus.endpoint);
+    } catch (e: any) {
+      console.warn(
+        "[ArxMint] G-Bot setup failed, falling back to Docker:",
+        e.message
+      );
+    }
+  }
+
+  // Fallback: Docker Compose
+  return {
+    method: "docker",
+    guardianInstructions: generateInstructions(config),
+    dockerCompose: generateDockerCompose(config),
+  };
+}
+
+/**
+ * Attempt federation setup via G-Bot API.
+ * This is the preferred path when G-Bot is available.
+ */
+async function setupViaGBot(
+  config: CommunityConfig,
+  endpoint: string
+): Promise<GBotSetupResult> {
+  const request: GBotSetupRequest = {
+    name: config.name,
+    guardianCount: config.guardianCount,
+    network: config.network,
+    guardians: Array.from({ length: config.guardianCount }, (_, i) => ({
+      alias: `Guardian ${i + 1}`,
+    })),
+  };
+
+  const response = await fetch(`${endpoint}/federation/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`G-Bot API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    method: "gbot",
+    federationId: data.federation_id,
+    inviteCode: data.invite_code,
+    guardianInstructions: [
+      `Federation "${config.name}" created via G-Bot.`,
+      `Federation ID: ${data.federation_id}`,
+      `Invite code: ${data.invite_code}`,
+      "",
+      "Share the invite code with community members.",
+      "Guardians should each confirm their node is running via G-Bot dashboard.",
+      "",
+      `G-Bot dashboard: ${endpoint.replace("/api/v1", "")}/federation/${data.federation_id}`,
+    ],
+  };
+}

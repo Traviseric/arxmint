@@ -321,3 +321,148 @@ export function createCashuClient(
 ): SovereignCashuClient {
   return new SovereignCashuClient(mintUrl);
 }
+
+// ---- Agent Wallet Pattern (Phase 1.6) ----
+
+/** Configuration for ephemeral agent wallets */
+export interface AgentWalletConfig {
+  /** Mint URL for this agent wallet */
+  mintUrl: string;
+  /** Time-to-live in seconds (auto-expire after this) */
+  ttlSeconds: number;
+  /** Maximum balance this wallet can hold (sats) */
+  maxBalanceSats: number;
+  /** Community/scope this wallet is restricted to */
+  scope?: string;
+  /** Unit (default: "sat") */
+  unit?: string;
+}
+
+/**
+ * Ephemeral Cashu wallet for agent processes.
+ * - In-memory only — no localStorage persistence
+ * - Auto-expires after configured TTL
+ * - Balance limits enforced
+ * - Clean teardown on disconnect
+ *
+ * Source: Doc 1 (ecash as bearer value), Doc 6 (transaction independence)
+ */
+export class AgentCashuWallet {
+  private wallet: Wallet | null = null;
+  private _proofs: Proof[] = [];
+  private _config: AgentWalletConfig;
+  private _createdAt: number;
+  private _expireTimer: ReturnType<typeof setTimeout> | null = null;
+  private _destroyed = false;
+
+  constructor(config: AgentWalletConfig) {
+    this._config = config;
+    this._createdAt = Date.now();
+
+    // Set auto-expire timer
+    this._expireTimer = setTimeout(() => {
+      this.destroy();
+    }, config.ttlSeconds * 1000);
+  }
+
+  get isExpired(): boolean {
+    return this._destroyed || Date.now() > this._createdAt + this._config.ttlSeconds * 1000;
+  }
+
+  get balance(): number {
+    return this._proofs.reduce((sum, p) => sum + p.amount, 0);
+  }
+
+  get scope(): string | undefined {
+    return this._config.scope;
+  }
+
+  get timeRemaining(): number {
+    const remaining = (this._createdAt + this._config.ttlSeconds * 1000) - Date.now();
+    return Math.max(0, remaining);
+  }
+
+  /** Connect to the mint (in-memory only) */
+  async connect(): Promise<void> {
+    this.requireAlive();
+    this.wallet = new Wallet(this._config.mintUrl, {
+      unit: this._config.unit || "sat",
+    });
+    await this.wallet.loadMint();
+  }
+
+  /** Receive an ecash token (with balance limit enforcement) */
+  async receive(token: string): Promise<Proof[]> {
+    this.requireAlive();
+    this.requireConnected();
+
+    const proofs = await this.wallet!.receive(token);
+    const incoming = proofs.reduce((s, p) => s + p.amount, 0);
+
+    if (this.balance + incoming > this._config.maxBalanceSats) {
+      throw new Error(
+        `Agent wallet balance limit exceeded: ${this.balance + incoming} > ${this._config.maxBalanceSats} sats`
+      );
+    }
+
+    this._proofs.push(...proofs);
+    return proofs;
+  }
+
+  /** Send ecash (creates a token) */
+  async send(amountSats: number): Promise<string> {
+    this.requireAlive();
+    this.requireConnected();
+
+    const { keep, send } = await this.wallet!.send(amountSats, this._proofs);
+    this._proofs = [...keep];
+
+    return getEncodedTokenV4({
+      mint: this._config.mintUrl,
+      proofs: send,
+    });
+  }
+
+  /** Pay a Lightning invoice via melt */
+  async payInvoice(bolt11: string): Promise<boolean> {
+    this.requireAlive();
+    this.requireConnected();
+
+    const quote = await this.wallet!.createMeltQuoteBolt11(bolt11);
+    const needed = quote.amount + quote.fee_reserve;
+    const { keep, send } = await this.wallet!.send(needed, this._proofs, {
+      includeFees: true,
+    });
+    const result = await this.wallet!.meltProofs(quote, send);
+    this._proofs = [...keep, ...(result.change || [])];
+    return !!result.quote.payment_preimage;
+  }
+
+  /** Destroy the wallet — clear all proofs from memory */
+  destroy(): void {
+    if (this._expireTimer) {
+      clearTimeout(this._expireTimer);
+      this._expireTimer = null;
+    }
+    this._proofs = [];
+    this.wallet = null;
+    this._destroyed = true;
+  }
+
+  private requireAlive(): void {
+    if (this.isExpired) {
+      throw new Error("Agent wallet has expired. Create a new one.");
+    }
+  }
+
+  private requireConnected(): void {
+    if (!this.wallet) {
+      throw new Error("Agent wallet not connected. Call connect() first.");
+    }
+  }
+}
+
+/** Create an ephemeral agent wallet */
+export function createAgentWallet(config: AgentWalletConfig): AgentCashuWallet {
+  return new AgentCashuWallet(config);
+}

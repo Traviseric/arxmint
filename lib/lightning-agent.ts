@@ -54,6 +54,76 @@ export interface RemoteSignerConfig {
   macaroon?: string;
 }
 
+/** Macaroon role for scoped credentials */
+export type MacaroonRole =
+  | "read-only"
+  | "invoice-only"
+  | "pay-only"
+  | "agent-commerce";
+
+/** Configuration for baking a scoped macaroon */
+export interface MacaroonBakeConfig {
+  /** Role determines the permission set */
+  role: MacaroonRole;
+  /** Time-to-live in seconds (optional — no expiry if omitted) */
+  ttlSeconds?: number;
+  /** Maximum payment amount in sats (enforced client-side) */
+  amountLimitSats?: number;
+  /** Restrict to specific API endpoints (enforced client-side) */
+  allowedEndpoints?: string[];
+}
+
+/** Baked macaroon with metadata */
+export interface BakedMacaroon {
+  /** Hex-encoded macaroon */
+  macaroon: string;
+  /** Role this macaroon was baked for */
+  role: MacaroonRole;
+  /** Human-readable permission list */
+  permissions: string[];
+  /** Expiry timestamp (ms) or undefined for no expiry */
+  expiresAt?: number;
+  /** Client-side amount limit */
+  amountLimitSats?: number;
+  /** Client-side endpoint restrictions */
+  allowedEndpoints?: string[];
+  /** When this macaroon was created (ms) */
+  createdAt: number;
+}
+
+/** LND permission sets per role */
+const MACAROON_ROLE_PERMISSIONS: Record<
+  MacaroonRole,
+  Array<{ entity: string; action: string }>
+> = {
+  "read-only": [
+    { entity: "info", action: "read" },
+    { entity: "offchain", action: "read" },
+    { entity: "onchain", action: "read" },
+  ],
+  "invoice-only": [
+    { entity: "info", action: "read" },
+    { entity: "offchain", action: "read" },
+    { entity: "onchain", action: "read" },
+    { entity: "invoices", action: "read" },
+    { entity: "invoices", action: "write" },
+  ],
+  "pay-only": [
+    { entity: "info", action: "read" },
+    { entity: "offchain", action: "read" },
+    { entity: "offchain", action: "write" },
+    { entity: "onchain", action: "read" },
+  ],
+  "agent-commerce": [
+    { entity: "info", action: "read" },
+    { entity: "offchain", action: "read" },
+    { entity: "offchain", action: "write" },
+    { entity: "onchain", action: "read" },
+    { entity: "invoices", action: "read" },
+    { entity: "invoices", action: "write" },
+  ],
+};
+
 // ---- LNC Client (direct Lightning node access) ----
 
 let LNC: any = null;
@@ -206,6 +276,50 @@ export class SovereignLightningClient {
     return {
       preimage: Buffer.from(res.payment_preimage, "base64").toString("hex"),
       feeSats: Number(res.payment_route?.total_fees || 0),
+    };
+  }
+
+  // ---- Macaroon Bakery (Phase 1.5) ----
+
+  /**
+   * Bake a scoped macaroon credential.
+   * Uses LND's bakeMacaroon RPC to create role-specific credentials.
+   *
+   * Roles:
+   * - read-only: node info, balance, channel list
+   * - invoice-only: read-only + create invoices
+   * - pay-only: read-only + pay invoices (via remote signer)
+   * - agent-commerce: pay + invoice (standard for agent services)
+   *
+   * Requires ADMIN tier to bake macaroons.
+   */
+  async bakeMacaroon(config: MacaroonBakeConfig): Promise<BakedMacaroon> {
+    this.requireConnected();
+    this.requireTier("admin", "bakeMacaroon");
+
+    const permissions = MACAROON_ROLE_PERMISSIONS[config.role];
+
+    const res = await this.lnc.lnd.lightning.bakeMacaroon({
+      permissions,
+      root_key_id: "0",
+      allow_external_permissions: false,
+    });
+
+    const macaroon = res.macaroon;
+    const expiresAt = config.ttlSeconds
+      ? Date.now() + config.ttlSeconds * 1000
+      : undefined;
+
+    return {
+      macaroon,
+      role: config.role,
+      permissions: permissions.map(
+        (p: { entity: string; action: string }) => `${p.entity}:${p.action}`
+      ),
+      expiresAt,
+      amountLimitSats: config.amountLimitSats,
+      allowedEndpoints: config.allowedEndpoints,
+      createdAt: Date.now(),
     };
   }
 

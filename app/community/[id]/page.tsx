@@ -21,6 +21,11 @@ import {
 import { useSovereignStore } from "@/lib/store";
 import { l402Fetch, getLightningClient } from "@/lib/lightning-agent";
 import type { AgentService } from "@/lib/types";
+import {
+  MerchantOnboard,
+  MerchantCard,
+  type MerchantListing,
+} from "@/components/merchant-onboard";
 
 // Demo agent services (will be real when agents are live)
 const DEMO_AGENTS: AgentService[] = [
@@ -188,19 +193,7 @@ export default function CommunityPage() {
 
         {/* Merchants */}
         {activeTab === "merchants" && (
-          <div className="sovereign-card text-center py-12">
-            <ShoppingBag className="w-12 h-12 text-sovereign-muted mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-sovereign-white mb-2">
-              Merchant Directory
-            </h3>
-            <p className="text-sovereign-muted text-sm max-w-md mx-auto">
-              Community businesses that accept sats. Add your business to the
-              circular economy — private ecash payments, no surveillance.
-            </p>
-            <button className="sovereign-btn-outline mt-6">
-              + List Your Business
-            </button>
-          </div>
+          <MerchantDirectory />
         )}
 
         {/* Members */}
@@ -239,6 +232,82 @@ export default function CommunityPage() {
 }
 
 // ---- Agent Card with L402 Payment Flow ----
+
+// ---- Merchant Directory with Onboarding ----
+
+function MerchantDirectory() {
+  const [showOnboard, setShowOnboard] = useState(false);
+  const [merchants, setMerchants] = useState<MerchantListing[]>([
+    // Demo merchants
+    {
+      id: "m_demo1",
+      name: "Bitcoin Brews",
+      category: "food-drink",
+      description: "Craft coffee and pastries. Pay with sats, no surveillance.",
+      location: "Longmont, CO",
+      paymentMethods: ["cashu", "lightning"],
+      createdAt: Date.now() - 86400000 * 7,
+      active: true,
+    },
+    {
+      id: "m_demo2",
+      name: "Sovereign Supplements",
+      category: "health",
+      description: "Vitamins, nootropics, and wellness products for Bitcoiners.",
+      location: "Longmont, CO",
+      paymentMethods: ["cashu", "lightning", "onchain"],
+      createdAt: Date.now() - 86400000 * 3,
+      active: true,
+    },
+  ]);
+
+  const handleComplete = (merchant: MerchantListing) => {
+    setMerchants((prev) => [...prev, merchant]);
+  };
+
+  if (showOnboard) {
+    return (
+      <MerchantOnboard
+        onComplete={handleComplete}
+        onCancel={() => setShowOnboard(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-sovereign-muted">
+          {merchants.length} business{merchants.length !== 1 ? "es" : ""} accepting sats in this community
+        </p>
+        <button
+          onClick={() => setShowOnboard(true)}
+          className="sovereign-btn !px-4 !py-2 text-sm"
+        >
+          <ShoppingBag className="w-4 h-4" />
+          + List Your Business
+        </button>
+      </div>
+      {merchants.length > 0 ? (
+        <div className="grid md:grid-cols-2 gap-4">
+          {merchants.map((m) => (
+            <MerchantCard key={m.id} merchant={m} />
+          ))}
+        </div>
+      ) : (
+        <div className="sovereign-card text-center py-12">
+          <ShoppingBag className="w-12 h-12 text-sovereign-muted mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-sovereign-white mb-2">
+            No merchants yet
+          </h3>
+          <p className="text-sovereign-muted text-sm max-w-md mx-auto">
+            Be the first to list your business in the circular economy.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AgentCard({ agent }: { agent: AgentService }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");

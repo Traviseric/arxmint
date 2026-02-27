@@ -203,3 +203,139 @@ export function getFedimintClient(): SovereignFedimintClient {
   }
   return _instance;
 }
+
+// ---- Agent Wallet Pattern (Phase 1.6) ----
+
+/** Configuration for ephemeral Fedimint agent wallets */
+export interface FedimintAgentWalletConfig {
+  /** Federation invite code */
+  inviteCode: string;
+  /** Time-to-live in seconds */
+  ttlSeconds: number;
+  /** Maximum balance in msats */
+  maxBalanceMsats: number;
+  /** Community/scope restriction */
+  scope?: string;
+}
+
+/**
+ * Ephemeral Fedimint wallet for agent processes.
+ * - In-memory only — no persistent state
+ * - Auto-expires after configured TTL
+ * - Balance limits enforced
+ * - Clean teardown on disconnect
+ */
+export class AgentFedimintWallet {
+  private client: SovereignFedimintClient | null = null;
+  private _config: FedimintAgentWalletConfig;
+  private _createdAt: number;
+  private _expireTimer: ReturnType<typeof setTimeout> | null = null;
+  private _destroyed = false;
+  private _balanceMsats = 0;
+
+  constructor(config: FedimintAgentWalletConfig) {
+    this._config = config;
+    this._createdAt = Date.now();
+
+    this._expireTimer = setTimeout(() => {
+      this.destroy();
+    }, config.ttlSeconds * 1000);
+  }
+
+  get isExpired(): boolean {
+    return this._destroyed || Date.now() > this._createdAt + this._config.ttlSeconds * 1000;
+  }
+
+  get balanceMsats(): number {
+    return this._balanceMsats;
+  }
+
+  get balanceSats(): number {
+    return Math.floor(this._balanceMsats / 1000);
+  }
+
+  get scope(): string | undefined {
+    return this._config.scope;
+  }
+
+  get timeRemaining(): number {
+    const remaining = (this._createdAt + this._config.ttlSeconds * 1000) - Date.now();
+    return Math.max(0, remaining);
+  }
+
+  /** Initialize and join federation (in-memory) */
+  async connect(): Promise<void> {
+    this.requireAlive();
+    this.client = new SovereignFedimintClient();
+    await this.client.init();
+    await this.client.joinFederation(this._config.inviteCode);
+  }
+
+  /** Receive ecash notes (with balance limit enforcement) */
+  async receive(notes: string): Promise<void> {
+    this.requireAlive();
+    this.requireConnected();
+
+    const parsed = await this.client!.parseNotes(notes);
+    if (this._balanceMsats + parsed.total_amount > this._config.maxBalanceMsats) {
+      throw new Error(
+        `Agent wallet balance limit exceeded: ` +
+        `${this._balanceMsats + parsed.total_amount} > ${this._config.maxBalanceMsats} msats`
+      );
+    }
+
+    await this.client!.receiveEcash(notes);
+    this._balanceMsats = await this.client!.getBalance();
+  }
+
+  /** Spend ecash notes */
+  async spend(amountMsats: number): Promise<string> {
+    this.requireAlive();
+    this.requireConnected();
+    const notes = await this.client!.spendEcash(amountMsats);
+    this._balanceMsats = await this.client!.getBalance();
+    return notes;
+  }
+
+  /** Pay a Lightning invoice */
+  async payInvoice(bolt11: string): Promise<{ operationId: string }> {
+    this.requireAlive();
+    this.requireConnected();
+    const result = await this.client!.payInvoice(bolt11);
+    this._balanceMsats = await this.client!.getBalance();
+    return result;
+  }
+
+  /** Destroy the wallet — clean up WASM resources */
+  async destroy(): Promise<void> {
+    if (this._expireTimer) {
+      clearTimeout(this._expireTimer);
+      this._expireTimer = null;
+    }
+    if (this.client) {
+      await this.client.cleanup();
+      this.client = null;
+    }
+    this._balanceMsats = 0;
+    this._destroyed = true;
+  }
+
+  private requireAlive(): void {
+    if (this.isExpired) {
+      throw new Error("Agent wallet has expired. Create a new one.");
+    }
+  }
+
+  private requireConnected(): void {
+    if (!this.client || !this.client.isOpen) {
+      throw new Error("Agent wallet not connected. Call connect() first.");
+    }
+  }
+}
+
+/** Create an ephemeral Fedimint agent wallet */
+export function createFedimintAgentWallet(
+  config: FedimintAgentWalletConfig
+): AgentFedimintWallet {
+  return new AgentFedimintWallet(config);
+}
