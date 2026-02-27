@@ -20,7 +20,13 @@ import {
   Unlink,
 } from "lucide-react";
 import { getFedimintClient } from "@/lib/fedimint-sdk";
-import { createCashuClient, SovereignCashuClient } from "@/lib/cashu-sdk";
+import {
+  createCashuClient,
+  SovereignCashuClient,
+  createPaymentRequest,
+  generateCashuURI,
+  generateQRDataUrl,
+} from "@/lib/cashu-sdk";
 import { getLightningClient } from "@/lib/lightning-agent";
 import { useSovereignStore } from "@/lib/store";
 import { formatSats } from "@/lib/utils";
@@ -135,10 +141,16 @@ export function WalletPanel() {
 // ---- Receive Panel ----
 
 function ReceivePanel() {
+  const [tab, setTab] = useState<"token" | "qr">("token");
   const [method, setMethod] = useState<"cashu" | "fedimint">("cashu");
   const [token, setToken] = useState("");
+  const [qrAmount, setQrAmount] = useState("");
+  const [qrMemo, setQrMemo] = useState("");
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrUri, setQrUri] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [copied, setCopied] = useState(false);
   const { cashuConnected, fedimintConnected, setBalance } = useSovereignStore();
 
   const handleReceive = async () => {
@@ -175,6 +187,25 @@ function ReceivePanel() {
     setTimeout(() => setStatus("idle"), 3000);
   };
 
+  const handleGenerateQR = () => {
+    const sats = parseInt(qrAmount);
+    if (!sats || sats <= 0) return;
+    const request = createPaymentRequest(sats, "http://localhost:3338", {
+      description: qrMemo || undefined,
+      ttlSeconds: 600,
+    });
+    const uri = generateCashuURI(request);
+    setQrUri(uri);
+    setQrDataUrl(generateQRDataUrl(uri, 200));
+  };
+
+  const copyUri = async () => {
+    if (!qrUri) return;
+    await navigator.clipboard.writeText(qrUri);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="sovereign-card">
       <h4 className="text-sm font-bold text-sovereign-white mb-3 flex items-center gap-2">
@@ -182,41 +213,136 @@ function ReceivePanel() {
         Receive Ecash
       </h4>
 
+      {/* Tab toggle: Token paste vs QR request */}
       <div className="flex gap-2 mb-3">
-        {(["cashu", "fedimint"] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMethod(m)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              method === m
-                ? "bg-btc-orange text-sovereign-black"
-                : "border border-sovereign-border text-sovereign-muted"
-            }`}
-          >
-            {m.toUpperCase()}
-          </button>
-        ))}
+        <button
+          onClick={() => setTab("token")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            tab === "token"
+              ? "bg-green-500/20 text-green-400 border border-green-500/30"
+              : "border border-sovereign-border text-sovereign-muted"
+          }`}
+        >
+          Paste Token
+        </button>
+        <button
+          onClick={() => setTab("qr")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            tab === "qr"
+              ? "bg-green-500/20 text-green-400 border border-green-500/30"
+              : "border border-sovereign-border text-sovereign-muted"
+          }`}
+        >
+          QR Request
+        </button>
       </div>
 
-      <textarea
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-        placeholder={method === "cashu" ? "Paste cashuB... token" : "Paste Fedimint ecash notes..."}
-        className="sovereign-input text-sm font-mono min-h-[80px] mb-3"
-      />
+      {tab === "token" && (
+        <>
+          <div className="flex gap-2 mb-3">
+            {(["cashu", "fedimint"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMethod(m)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  method === m
+                    ? "bg-btc-orange text-sovereign-black"
+                    : "border border-sovereign-border text-sovereign-muted"
+                }`}
+              >
+                {m.toUpperCase()}
+              </button>
+            ))}
+          </div>
 
-      <button
-        onClick={handleReceive}
-        disabled={!token.trim() || status === "loading"}
-        className="sovereign-btn w-full"
-      >
-        {status === "loading" ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <ArrowDownLeft className="w-4 h-4" />
-        )}
-        Receive
-      </button>
+          <textarea
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder={method === "cashu" ? "Paste cashuB... token" : "Paste Fedimint ecash notes..."}
+            className="sovereign-input text-sm font-mono min-h-[80px] mb-3"
+          />
+
+          <button
+            onClick={handleReceive}
+            disabled={!token.trim() || status === "loading"}
+            className="sovereign-btn w-full"
+          >
+            {status === "loading" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowDownLeft className="w-4 h-4" />
+            )}
+            Receive
+          </button>
+        </>
+      )}
+
+      {tab === "qr" && (
+        <>
+          <div className="space-y-3 mb-3">
+            <div>
+              <label className="sovereign-label">Amount (sats)</label>
+              <input
+                type="number"
+                value={qrAmount}
+                onChange={(e) => { setQrAmount(e.target.value); setQrDataUrl(null); }}
+                placeholder="1000"
+                min="1"
+                className="sovereign-input text-sm"
+              />
+            </div>
+            <div>
+              <label className="sovereign-label">Memo (optional)</label>
+              <input
+                type="text"
+                value={qrMemo}
+                onChange={(e) => { setQrMemo(e.target.value); setQrDataUrl(null); }}
+                placeholder="Coffee payment"
+                className="sovereign-input text-sm"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={handleGenerateQR}
+            disabled={!qrAmount || parseInt(qrAmount) <= 0}
+            className="sovereign-btn w-full mb-3"
+          >
+            <ArrowDownLeft className="w-4 h-4" />
+            Generate Payment QR
+          </button>
+
+          {qrDataUrl && (
+            <div className="flex flex-col items-center gap-3">
+              <div className="bg-sovereign-dark rounded-lg p-3 border border-sovereign-border">
+                <img src={qrDataUrl} alt="Cashu payment QR" className="w-[200px] h-[200px]" />
+              </div>
+              {qrUri && (
+                <div className="w-full">
+                  <div className="relative">
+                    <pre className="bg-sovereign-dark rounded-lg p-2 text-[10px] text-sovereign-muted font-mono break-all max-h-[60px] overflow-y-auto">
+                      {qrUri}
+                    </pre>
+                    <button
+                      onClick={copyUri}
+                      className="absolute top-1 right-1 p-1 rounded bg-sovereign-panel hover:bg-sovereign-border transition-colors"
+                    >
+                      {copied ? (
+                        <Check className="w-3 h-3 text-green-400" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-sovereign-muted" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-sovereign-muted mt-1 text-center">
+                    NUT-26 cashu: URI — scannable by Cashu wallets
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
 
       <StatusMessage status={status} message={message} />
     </div>

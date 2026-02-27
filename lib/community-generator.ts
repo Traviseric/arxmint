@@ -231,6 +231,34 @@ export function generateDockerCompose(config: CommunityConfig): string {
     volumes.push("  arkd-data:");
   }
 
+  // Silent Payments indexer (if SP enabled)
+  if (config.privacy.silentPayments) {
+    services.push(`
+  # === Silent Payments Indexer (BIP-352) ===
+  sp-indexer:
+    image: silentpayments/indexer:latest
+    container_name: arx-sp-indexer-${config.id}
+    restart: unless-stopped
+    environment:
+      - SP_NETWORK=${config.network}
+      - SP_BITCOIN_RPC_HOST=lnd
+      - SP_BITCOIN_RPC_PORT=8080
+      - SP_INDEX_FROM_HEIGHT=0
+      - SP_LOG_LEVEL=info
+      - SP_API_HOST=0.0.0.0
+      - SP_API_PORT=8100
+    ports:
+      - "8100:8100"
+    volumes:
+      - sp-indexer-data:/data
+      - lnd-data:/root/.lnd:ro
+    depends_on:
+      - lnd
+    networks:
+      - sovereign`);
+    volumes.push("  sp-indexer-data:");
+  }
+
   // Fedimint (if federation backend) — v0.10.0 "Lighthouse"
   if (config.mintBackend === "fedimint") {
     for (let i = 0; i < config.guardianCount; i++) {
@@ -261,6 +289,44 @@ export function generateDockerCompose(config: CommunityConfig): string {
       volumes.push(`  guardian-${i}-data:`);
     }
   }
+
+  // Monitoring stack: Prometheus + Grafana (operator-grade observability)
+  services.push(`
+  # === Monitoring: Prometheus ===
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: arx-prometheus-${config.id}
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - sovereign
+
+  # === Monitoring: Grafana ===
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: arx-grafana-${config.id}
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=\${GRAFANA_PASSWORD:-arxmint}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - sovereign`);
+  volumes.push("  prometheus-data:");
+  volumes.push("  grafana-data:");
 
   // Aperture L402 proxy (if agents enabled)
   if (config.agents.enabled) {
@@ -335,6 +401,64 @@ services:
     backendhost: "localhost:3000"
     price: 200
     duration: 3600
+`;
+}
+
+/** Generate Prometheus scrape config */
+export function generatePrometheusConfig(config: CommunityConfig): string {
+  const scrapeConfigs: string[] = [];
+
+  // LND metrics
+  scrapeConfigs.push(`  - job_name: "lnd"
+    static_configs:
+      - targets: ["lnd:8080"]
+    metrics_path: /metrics`);
+
+  // Cashu mint metrics (CDK exposes Prometheus endpoint)
+  const useCDK = config.memberCount > 30 || config.network === "bitcoin";
+  if (useCDK) {
+    scrapeConfigs.push(`  - job_name: "cashu-mint"
+    static_configs:
+      - targets: ["cashu-mint:3338"]
+    metrics_path: /metrics`);
+  }
+
+  // Fedimint guardian metrics
+  if (config.mintBackend === "fedimint") {
+    for (let i = 0; i < config.guardianCount; i++) {
+      const apiPort = 18174 + i * 2;
+      scrapeConfigs.push(`  - job_name: "fedimint-guardian-${i}"
+    static_configs:
+      - targets: ["fedimintd-${i}:${apiPort}"]
+    metrics_path: /metrics`);
+    }
+  }
+
+  // Ark server metrics
+  if (config.privacy.arkSpends) {
+    scrapeConfigs.push(`  - job_name: "arkd"
+    static_configs:
+      - targets: ["arkd:7070"]
+    metrics_path: /metrics`);
+  }
+
+  // SP indexer metrics
+  if (config.privacy.silentPayments) {
+    scrapeConfigs.push(`  - job_name: "sp-indexer"
+    static_configs:
+      - targets: ["sp-indexer:8100"]
+    metrics_path: /metrics`);
+  }
+
+  return `# ArxMint Prometheus Config — ${config.name}
+# Auto-generated — do not edit manually
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+${scrapeConfigs.join("\n\n")}
 `;
 }
 
@@ -514,6 +638,335 @@ export interface GBotSetupResult {
   guardianInstructions: string[];
   /** Docker compose (if Docker fallback) */
   dockerCompose?: string;
+}
+
+// ============================================================
+// Guardian Governance Framework (Phase 3.1)
+//
+// Guardian selection criteria, rotation policy, incident response,
+// quorum management, and treasury use policy.
+//
+// Source: Doc 7 — BCE governance patterns
+// ============================================================
+
+/** Guardian role within the federation */
+export type GuardianRole = "lead" | "guardian" | "backup";
+
+/** Guardian status */
+export type GuardianStatus = "active" | "probation" | "rotated-out" | "emergency-removed";
+
+/** Individual guardian profile */
+export interface GuardianProfile {
+  id: string;
+  alias: string;
+  role: GuardianRole;
+  status: GuardianStatus;
+  /** How to reach this guardian (Nostr npub, email, Signal, etc.) */
+  contact: string;
+  /** Date guardian was onboarded (ms) */
+  onboardedAt: number;
+  /** Last time guardian confirmed liveness (ms) */
+  lastLivenessCheck: number;
+  /** Uptime percentage (0-100) */
+  uptimePercent: number;
+  /** Whether this guardian holds a veto on treasury spends */
+  treasuryVeto: boolean;
+}
+
+/** Guardian selection criteria — minimum requirements */
+export interface GuardianSelectionCriteria {
+  /** Minimum months of community involvement */
+  minCommunityMonths: number;
+  /** Must have verified identity (Nostr, PGP, etc.) */
+  requireVerifiedIdentity: boolean;
+  /** Must have technical ability to run a node */
+  requireTechnicalCompetence: boolean;
+  /** Must have a stake in the community (merchant, employer, etc.) */
+  requireCommunityStake: boolean;
+  /** Maximum number of other federations this guardian can serve */
+  maxConcurrentFederations: number;
+  /** Require geographic diversity (no two guardians in same city) */
+  requireGeoDiversity: boolean;
+}
+
+/** Guardian rotation policy */
+export interface RotationPolicy {
+  /** Maximum term length in months before mandatory rotation */
+  maxTermMonths: number;
+  /** How many guardians can rotate in a single cycle */
+  maxSimultaneousRotations: number;
+  /** Cool-down period in months before a rotated guardian can re-serve */
+  cooldownMonths: number;
+  /** Whether re-election is allowed */
+  allowReElection: boolean;
+  /** Minimum overlap days between outgoing and incoming guardian */
+  handoverDays: number;
+}
+
+/** Incident response procedures */
+export interface IncidentResponsePolicy {
+  /** Severity levels and response times */
+  severityLevels: Array<{
+    level: "critical" | "high" | "medium" | "low";
+    description: string;
+    /** Maximum response time in hours */
+    responseTimeHours: number;
+    /** Quorum needed to act */
+    quorumRequired: number;
+  }>;
+  /** Communication channels for incidents (priority order) */
+  communicationChannels: string[];
+  /** Whether automatic alerts are enabled */
+  autoAlertsEnabled: boolean;
+  /** Guardian liveness check interval in hours */
+  livenessCheckIntervalHours: number;
+  /** Hours of missed liveness before escalation */
+  escalationAfterHours: number;
+}
+
+/** Quorum management rules */
+export interface QuorumPolicy {
+  /** Total guardians in the federation */
+  totalGuardians: number;
+  /** Minimum guardians needed for consensus (e.g., 3 of 5) */
+  consensusThreshold: number;
+  /** Minimum for emergency actions (may be higher) */
+  emergencyThreshold: number;
+  /** Minimum for treasury spends */
+  treasuryThreshold: number;
+  /** Whether a single guardian can veto (only for critical actions) */
+  singleVetoAllowed: boolean;
+}
+
+/** Treasury use policy */
+export interface TreasuryPolicy {
+  /** Maximum single spend without vote (sats) */
+  maxUnilateralSpendSats: number;
+  /** Spending categories that need full quorum */
+  fullQuorumCategories: string[];
+  /** Required documentation for each spend */
+  requireSpendJustification: boolean;
+  /** Transparency: publish spends to community */
+  publishSpends: boolean;
+  /** Reserve ratio: minimum % of treasury that must remain */
+  minReservePercent: number;
+}
+
+/** Complete governance configuration for a federation */
+export interface GovernanceConfig {
+  /** Guardian profiles */
+  guardians: GuardianProfile[];
+  /** Selection criteria for new guardians */
+  selectionCriteria: GuardianSelectionCriteria;
+  /** Rotation policy */
+  rotation: RotationPolicy;
+  /** Incident response */
+  incidentResponse: IncidentResponsePolicy;
+  /** Quorum rules */
+  quorum: QuorumPolicy;
+  /** Treasury policy */
+  treasury: TreasuryPolicy;
+  /** When this governance config was adopted (ms) */
+  adoptedAt: number;
+  /** Version (increment on amendments) */
+  version: number;
+}
+
+/**
+ * Generate default governance config for a community.
+ * Scales thresholds based on guardian count.
+ */
+export function generateGovernanceConfig(
+  guardianCount: number,
+  communityName: string
+): GovernanceConfig {
+  // Byzantine fault tolerance: need 2f+1 guardians for f faults
+  const consensusThreshold = Math.ceil((guardianCount * 2) / 3);
+  const emergencyThreshold = Math.min(guardianCount, consensusThreshold + 1);
+  const treasuryThreshold = consensusThreshold;
+
+  const guardians: GuardianProfile[] = Array.from(
+    { length: guardianCount },
+    (_, i) => ({
+      id: `g_${i}_${Date.now().toString(36)}`,
+      alias: `Guardian ${i + 1}`,
+      role: i === 0 ? ("lead" as const) : ("guardian" as const),
+      status: "active" as const,
+      contact: "",
+      onboardedAt: Date.now(),
+      lastLivenessCheck: Date.now(),
+      uptimePercent: 100,
+      treasuryVeto: i === 0, // Lead guardian has veto
+    })
+  );
+
+  return {
+    guardians,
+    selectionCriteria: {
+      minCommunityMonths: 3,
+      requireVerifiedIdentity: true,
+      requireTechnicalCompetence: true,
+      requireCommunityStake: true,
+      maxConcurrentFederations: 3,
+      requireGeoDiversity: guardianCount >= 5,
+    },
+    rotation: {
+      maxTermMonths: 12,
+      maxSimultaneousRotations: Math.max(1, Math.floor(guardianCount / 3)),
+      cooldownMonths: 6,
+      allowReElection: true,
+      handoverDays: 14,
+    },
+    incidentResponse: {
+      severityLevels: [
+        {
+          level: "critical",
+          description: "Federation down, funds at risk, or guardian key compromise",
+          responseTimeHours: 1,
+          quorumRequired: emergencyThreshold,
+        },
+        {
+          level: "high",
+          description: "Service degraded, payment failures > 5%, guardian unreachable > 24h",
+          responseTimeHours: 4,
+          quorumRequired: consensusThreshold,
+        },
+        {
+          level: "medium",
+          description: "Non-critical service issue, elevated error rates",
+          responseTimeHours: 24,
+          quorumRequired: Math.ceil(guardianCount / 2),
+        },
+        {
+          level: "low",
+          description: "Minor issue, cosmetic, documentation update needed",
+          responseTimeHours: 72,
+          quorumRequired: 1,
+        },
+      ],
+      communicationChannels: [
+        "Signal group (primary)",
+        "Nostr DM (backup)",
+        "Email (non-urgent)",
+      ],
+      autoAlertsEnabled: true,
+      livenessCheckIntervalHours: 6,
+      escalationAfterHours: 24,
+    },
+    quorum: {
+      totalGuardians: guardianCount,
+      consensusThreshold,
+      emergencyThreshold,
+      treasuryThreshold,
+      singleVetoAllowed: guardianCount <= 5,
+    },
+    treasury: {
+      maxUnilateralSpendSats: 50_000,
+      fullQuorumCategories: [
+        "infrastructure",
+        "compensation",
+        "external-services",
+        "grants",
+      ],
+      requireSpendJustification: true,
+      publishSpends: true,
+      minReservePercent: 20,
+    },
+    adoptedAt: Date.now(),
+    version: 1,
+  };
+}
+
+/**
+ * Generate a human-readable governance document.
+ * Useful for community transparency and grant applications.
+ */
+export function generateGovernanceDocument(
+  config: GovernanceConfig,
+  communityName: string
+): string {
+  const lines: string[] = [
+    `# ${communityName} — Federation Governance Policy`,
+    `Version ${config.version} — Adopted ${new Date(config.adoptedAt).toISOString().split("T")[0]}`,
+    "",
+    "## Guardian Council",
+    "",
+    `| # | Alias | Role | Status |`,
+    `|---|---|---|---|`,
+  ];
+
+  config.guardians.forEach((g, i) => {
+    lines.push(`| ${i + 1} | ${g.alias} | ${g.role} | ${g.status} |`);
+  });
+
+  lines.push("");
+  lines.push("## Quorum Rules");
+  lines.push(`- Total guardians: ${config.quorum.totalGuardians}`);
+  lines.push(`- Consensus threshold: ${config.quorum.consensusThreshold} of ${config.quorum.totalGuardians}`);
+  lines.push(`- Emergency threshold: ${config.quorum.emergencyThreshold} of ${config.quorum.totalGuardians}`);
+  lines.push(`- Treasury threshold: ${config.quorum.treasuryThreshold} of ${config.quorum.totalGuardians}`);
+
+  lines.push("");
+  lines.push("## Guardian Selection Criteria");
+  lines.push(`- Minimum community involvement: ${config.selectionCriteria.minCommunityMonths} months`);
+  lines.push(`- Verified identity required: ${config.selectionCriteria.requireVerifiedIdentity ? "Yes" : "No"}`);
+  lines.push(`- Technical competence required: ${config.selectionCriteria.requireTechnicalCompetence ? "Yes" : "No"}`);
+  lines.push(`- Geographic diversity: ${config.selectionCriteria.requireGeoDiversity ? "Required" : "Preferred"}`);
+
+  lines.push("");
+  lines.push("## Rotation Policy");
+  lines.push(`- Maximum term: ${config.rotation.maxTermMonths} months`);
+  lines.push(`- Cooldown before re-election: ${config.rotation.cooldownMonths} months`);
+  lines.push(`- Handover period: ${config.rotation.handoverDays} days`);
+
+  lines.push("");
+  lines.push("## Incident Response");
+  for (const level of config.incidentResponse.severityLevels) {
+    lines.push(`- **${level.level.toUpperCase()}**: ${level.description} — respond within ${level.responseTimeHours}h, quorum ${level.quorumRequired}`);
+  }
+
+  lines.push("");
+  lines.push("## Treasury Policy");
+  lines.push(`- Max unilateral spend: ${config.treasury.maxUnilateralSpendSats.toLocaleString()} sats`);
+  lines.push(`- Minimum reserve: ${config.treasury.minReservePercent}%`);
+  lines.push(`- Spend justification required: ${config.treasury.requireSpendJustification ? "Yes" : "No"}`);
+  lines.push(`- Spends published to community: ${config.treasury.publishSpends ? "Yes" : "No"}`);
+
+  return lines.join("\n");
+}
+
+/** Check if a guardian needs rotation based on policy */
+export function checkGuardianRotation(
+  guardian: GuardianProfile,
+  policy: RotationPolicy
+): { needsRotation: boolean; reason?: string } {
+  const termMs = policy.maxTermMonths * 30 * 24 * 60 * 60 * 1000;
+  const timeSinceOnboard = Date.now() - guardian.onboardedAt;
+
+  if (timeSinceOnboard > termMs) {
+    return {
+      needsRotation: true,
+      reason: `Term limit exceeded (${policy.maxTermMonths} months)`,
+    };
+  }
+
+  if (guardian.uptimePercent < 90) {
+    return {
+      needsRotation: true,
+      reason: `Uptime below 90% (currently ${guardian.uptimePercent}%)`,
+    };
+  }
+
+  const livenessGap = Date.now() - guardian.lastLivenessCheck;
+  const maxLivenessGap = 72 * 60 * 60 * 1000; // 72 hours
+  if (livenessGap > maxLivenessGap) {
+    return {
+      needsRotation: true,
+      reason: `No liveness check in ${Math.floor(livenessGap / (60 * 60 * 1000))} hours`,
+    };
+  }
+
+  return { needsRotation: false };
 }
 
 /** Default G-Bot API endpoint (Fedimint official) */

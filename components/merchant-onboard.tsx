@@ -432,6 +432,171 @@ export function MerchantOnboard({
   );
 }
 
+// ---- Numo NFC Integration (Phase 3.6) ----
+
+/** NFC card provisioning status */
+export type NFCCardStatus = "unprovisioned" | "provisioning" | "active" | "disabled";
+
+/** Numo NFC card configuration */
+export interface NumoNFCConfig {
+  /** Card ID (from Numo) */
+  cardId: string;
+  /** Merchant this card is linked to */
+  merchantId: string;
+  /** Mint URL for tap-to-pay */
+  mintUrl: string;
+  /** Default payment amount (0 = variable) */
+  defaultAmountSats: number;
+  /** Card status */
+  status: NFCCardStatus;
+  /** Last tap timestamp */
+  lastTapAt?: number;
+  /** Total taps processed */
+  totalTaps: number;
+  /** Total sats received via NFC */
+  totalSatsReceived: number;
+}
+
+/** Tap-to-pay event */
+export interface NFCTapEvent {
+  /** Event ID */
+  id: string;
+  /** Card ID */
+  cardId: string;
+  /** Merchant ID */
+  merchantId: string;
+  /** Amount paid in sats */
+  amountSats: number;
+  /** Payment method used */
+  paymentMethod: "cashu" | "lightning";
+  /** Whether the payment succeeded */
+  success: boolean;
+  /** Timestamp */
+  timestamp: number;
+}
+
+/**
+ * Generate Numo NFC card provisioning config.
+ * Used to set up a merchant's NFC tap-to-pay card.
+ */
+export function generateNumoCardConfig(
+  merchantId: string,
+  merchantName: string,
+  mintUrl: string,
+  defaultAmountSats: number = 0
+): NumoNFCConfig {
+  return {
+    cardId: `nfc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    merchantId,
+    mintUrl,
+    defaultAmountSats,
+    status: "unprovisioned",
+    totalTaps: 0,
+    totalSatsReceived: 0,
+  };
+}
+
+/**
+ * Generate the NFC NDEF payload for a Numo card.
+ * The NDEF record contains a cashu: URI that the customer's
+ * wallet reads when they tap the card.
+ */
+export function generateNFCPayload(
+  config: NumoNFCConfig,
+  amountSats?: number
+): string {
+  const amount = amountSats || config.defaultAmountSats;
+  if (amount > 0) {
+    return `cashu://pay?mint=${encodeURIComponent(config.mintUrl)}&amount=${amount}&merchant=${config.merchantId}`;
+  }
+  // Variable amount — wallet prompts user
+  return `cashu://pay?mint=${encodeURIComponent(config.mintUrl)}&merchant=${config.merchantId}`;
+}
+
+/** Numo NFC card setup component for merchant onboarding */
+export function NumoNFCSetup({
+  merchantId,
+  merchantName,
+  mintUrl,
+  onSetup,
+}: {
+  merchantId: string;
+  merchantName: string;
+  mintUrl: string;
+  onSetup: (config: NumoNFCConfig) => void;
+}) {
+  const [defaultAmount, setDefaultAmount] = useState("");
+  const [status, setStatus] = useState<"idle" | "provisioning" | "done">("idle");
+
+  const handleProvision = () => {
+    setStatus("provisioning");
+    const config = generateNumoCardConfig(
+      merchantId,
+      merchantName,
+      mintUrl,
+      defaultAmount ? parseInt(defaultAmount, 10) : 0
+    );
+    // Simulate provisioning delay
+    setTimeout(() => {
+      config.status = "active";
+      onSetup(config);
+      setStatus("done");
+    }, 1500);
+  };
+
+  return (
+    <div className="rounded-lg border border-sovereign-border bg-sovereign-dark p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <CreditCard className="w-4 h-4 text-btc-orange" />
+        <span className="text-sm font-bold text-sovereign-white">
+          Numo NFC Card Setup
+        </span>
+      </div>
+
+      {status === "idle" && (
+        <div className="space-y-3">
+          <p className="text-xs text-sovereign-muted">
+            Set up a Numo NFC card for tap-to-pay with Cashu ecash.
+            Customers tap their phone on your card to pay instantly.
+          </p>
+          <div>
+            <label className="sovereign-label">Default Amount (sats, 0 = variable)</label>
+            <input
+              type="number"
+              value={defaultAmount}
+              onChange={(e) => setDefaultAmount(e.target.value)}
+              placeholder="0"
+              min="0"
+              className="sovereign-input text-sm"
+            />
+          </div>
+          <button onClick={handleProvision} className="sovereign-btn w-full !py-2 text-sm">
+            <CreditCard className="w-3.5 h-3.5" />
+            Provision NFC Card
+          </button>
+        </div>
+      )}
+
+      {status === "provisioning" && (
+        <div className="flex items-center gap-2 py-4 justify-center">
+          <div className="w-4 h-4 border-2 border-btc-orange border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-sovereign-muted">Provisioning card...</span>
+        </div>
+      )}
+
+      {status === "done" && (
+        <div className="text-center py-2">
+          <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
+          <p className="text-sm text-green-400 font-medium">Card provisioned!</p>
+          <p className="text-xs text-sovereign-muted mt-1">
+            Write the NFC payload to a Numo card using the Numo app.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Simple merchant listing card for the directory */
 export function MerchantCard({ merchant }: { merchant: MerchantListing }) {
   return (

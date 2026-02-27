@@ -39,11 +39,12 @@ export type PrivacyLevel = keyof typeof PRIVACY_PRESETS;
 
 /** Where a privacy layer is actually available */
 export type BackendSupport =
-  | "all"            // works on all backends
-  | "on-chain"       // on-chain transactions only
-  | "cashu-onchain"  // Cashu wallet + on-chain (wallet-layer SP sending)
-  | "ecash-only"     // only within ecash (Fedimint/Cashu)
-  | "requires-federation-module"; // needs server-side Fedimint changes
+  | "all" // works on all backends
+  | "cashu-only" // implemented at wallet layer for Cashu backend only
+  | "on-chain-only" // on-chain transactions only
+  | "ecash-only" // only within ecash (Fedimint/Cashu)
+  | "requires-federation-module" // needs server-side Fedimint changes
+  | "not-yet-implemented"; // tracked but currently unavailable
 
 /** Human-readable description of each privacy layer */
 export interface PrivacyLayerInfo {
@@ -66,7 +67,7 @@ export const PRIVACY_DESCRIPTIONS: Record<keyof PrivacyConfig, PrivacyLayerInfo>
       "derives a new address from the receiver's public key, so no address " +
       "reuse is visible on-chain. Protects recipient privacy without interaction.",
     status: "maturing",
-    supportedBy: "cashu-onchain",
+    supportedBy: "cashu-only",
     backendWarning:
       "Silent Payments for Fedimint peg-outs requires a server-side federation " +
       "wallet module (not yet available). Currently works for Cashu wallet and " +
@@ -80,7 +81,7 @@ export const PRIVACY_DESCRIPTIONS: Record<keyof PrivacyConfig, PrivacyLayerInfo>
       "making it computationally expensive to trace which inputs fund which " +
       "outputs. Breaks the chain analysis heuristic that links sender to receiver.",
     status: "live",
-    supportedBy: "on-chain",
+    supportedBy: "on-chain-only",
   },
   payJoin: {
     name: "PayJoin",
@@ -90,7 +91,7 @@ export const PRIVACY_DESCRIPTIONS: Record<keyof PrivacyConfig, PrivacyLayerInfo>
       "the common-input-ownership heuristic. Looks like a normal transaction " +
       "but obscures the actual payment amount from chain observers.",
     status: "live",
-    supportedBy: "on-chain",
+    supportedBy: "on-chain-only",
   },
   arkSpends: {
     name: "Ark Spends",
@@ -100,7 +101,7 @@ export const PRIVACY_DESCRIPTIONS: Record<keyof PrivacyConfig, PrivacyLayerInfo>
       "through an Ark Service Provider. Transactions settle on-chain in " +
       "batches, providing privacy through aggregation. Uses the Arkade SDK.",
     status: "experimental",
-    supportedBy: "on-chain",
+    supportedBy: "not-yet-implemented",
     backendWarning:
       "Ark SDK integration is planned but not yet implemented. " +
       "VTXOs require an Ark Service Provider to be running.",
@@ -120,14 +121,16 @@ export function isLayerAvailable(
   switch (info.supportedBy) {
     case "all":
       return true;
-    case "on-chain":
+    case "cashu-only":
+      return backend === "cashu";
+    case "on-chain-only":
       return true; // on-chain is always available regardless of mint backend
-    case "cashu-onchain":
-      return backend === "cashu"; // SP sending works at wallet layer for Cashu
     case "ecash-only":
       return true;
     case "requires-federation-module":
       return false; // not yet implemented at the federation level
+    case "not-yet-implemented":
+      return false;
     default:
       return true;
   }

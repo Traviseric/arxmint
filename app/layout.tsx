@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import Image from "next/image";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,9 +31,13 @@ export default function RootLayout({
         <nav className="fixed top-0 w-full z-50 border-b border-border-default glass-heavy">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <a href="/" className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-bg-base font-bold text-sm tracking-tighter">
-                AM
-              </div>
+              <Image
+                src="/images/logo.png"
+                alt="ArxMint Logo"
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-md"
+              />
               <span className="text-lg font-bold text-text-primary">
                 Arx<span className="text-accent">Mint</span>
               </span>

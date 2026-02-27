@@ -13,6 +13,8 @@ import {
   Zap,
 } from "lucide-react";
 
+import Image from "next/image";
+
 export const metadata = {
   title: "AI Agent Commerce — ArxMint",
   description:
@@ -25,8 +27,18 @@ export default function AgentsPage() {
 
       {/* Background Ambience */}
       <div className="fixed top-0 left-0 w-full h-[100vh] z-0 pointer-events-none origin-top overflow-hidden">
+        <Image
+          src="/images/agent_commerce.png"
+          alt="Cinematic agent landscape"
+          fill
+          className="object-cover opacity-20 mix-blend-screen grayscale-[50%]"
+          priority
+        />
         <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full bg-accent/5 blur-[120px] mix-blend-screen" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[size:32px_32px] opacity-[0.03]" />
+
+        {/* Gradient Fade up */}
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-base/90 via-transparent to-transparent z-10" />
       </div>
 
       <div className="relative z-10 w-full">

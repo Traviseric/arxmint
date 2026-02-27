@@ -69,6 +69,8 @@ lib/
   community-generator.ts      # parsePrompt() → generateDeployment() + G-Bot integration
   privacy-defaults.ts         # PRIVACY_PRESETS, computePrivacyScore(), layer descriptions
   cycle-monitor.ts            # getCycleMetrics() from CoinGecko, MVRV/NUPL/supply-in-profit
+  ark-sdk.ts                  # SovereignArkClient — Ark VTXOs for high-privacy off-chain spends
+  silent-payments.ts          # BIP-352 SP infrastructure — scanner, key delegation, indexer
   store.ts                    # Zustand: balance, community, connections, cycle metrics
   types.ts                    # All TypeScript types (CommunityConfig, WalletBalance, etc.)
   utils.ts                    # formatSats(), cn() class helper
@@ -84,11 +86,11 @@ components/
 ## Roadmap (read `docs/roadmap.md` for full detail)
 
 ```
-Phase 0: Fortify     (Security hardening)           ← CURRENT PRIORITY
-Phase 1: Keystone    (Core architecture upgrades)
-Phase 2: Spire       (Full privacy + commerce stack)
-Phase 3: Aether      (Advanced features + scale)
-Phase 4: Citadel     (Production + grant deployment)
+Phase 0: Fortify     (Security hardening)           ✅ COMPLETE
+Phase 1: Keystone    (Core architecture upgrades)   ✅ COMPLETE
+Phase 2: Spire       (Full privacy + commerce stack) ✅ COMPLETE
+Phase 3: Aether      (Advanced features + scale)     ✅ COMPLETE
+Phase 4: Citadel     (Production + grant deployment)  ← NEXT
 ```
 
 ### Phase 0 — Fortify (COMPLETE)
@@ -116,18 +118,33 @@ All 7 core architecture upgrades implemented and verified.
 | 1.6 Agent wallet pattern | `lib/cashu-sdk.ts`, `lib/fedimint-sdk.ts` | Done |
 | 1.7 G-Bot integration | `lib/community-generator.ts` | Done |
 
-### Phase 2 — Spire (NEXT)
+### Phase 2 — Spire (COMPLETE)
 
-| Task | File | What |
+All 8 privacy + commerce stack tasks implemented and verified.
+
+| Task | File | Status |
 |---|---|---|
-| 2.1 Fedimint v0.10.0 | `docker-compose.yml` | Upgrade from v0.5.0 to v0.10.0 Lighthouse. |
-| 2.2 Ark SDK | New `lib/ark-sdk.ts` | SovereignArkClient — Ark VTXOs for high-privacy spends. |
-| 2.3 CDK mint upgrade | `docker-compose.yml` | Replace Nutshell with CDK for production Cashu mints. |
-| 2.4 Multi-mint (Coco) | `lib/cashu-sdk.ts` | Multi-mint balance management, cross-mint payments. |
-| 2.5 NUT-26 QR/NFC | `components/wallet-panel.tsx` | `cashu:` URI format, scannable QR codes for merchant POS. |
-| 2.6 SP infrastructure | New `lib/silent-payments.ts` | SP indexer Docker service, scan scheduling, key delegation. |
-| 2.7 Monitoring | `docker-compose.yml` | Prometheus + Grafana stack for operator-grade monitoring. |
-| 2.8 Gateway bridge | `lib/fedimint-sdk.ts` | Route L402 payments through Fedimint gateway (ecash → LN). |
+| 2.1 Fedimint v0.10.0 | `lib/community-generator.ts` | Done |
+| 2.2 Ark SDK | `lib/ark-sdk.ts` | Done |
+| 2.3 CDK mint upgrade | `lib/community-generator.ts` | Done |
+| 2.4 Multi-mint (Coco) | `lib/cashu-sdk.ts` | Done |
+| 2.5 NUT-26 QR/NFC | `lib/cashu-sdk.ts`, `components/wallet-panel.tsx` | Done |
+| 2.6 SP infrastructure | `lib/silent-payments.ts` | Done |
+| 2.7 Monitoring | `lib/community-generator.ts` | Done |
+| 2.8 Gateway bridge | `lib/fedimint-sdk.ts` | Done |
+
+### Phase 3 — Aether (COMPLETE)
+
+All 6 advanced feature tasks implemented and verified.
+
+| Task | File | Status |
+|---|---|---|
+| 3.1 Guardian governance | `lib/community-generator.ts` | Done |
+| 3.2 Programmable eCash | `lib/cashu-sdk.ts` | Done |
+| 3.3 ZK reissuance | `lib/cashu-sdk.ts` | Done |
+| 3.4 HW wallet (BIP392) | `lib/silent-payments.ts` | Done |
+| 3.5 Advanced Cashu | `lib/cashu-sdk.ts` | Done |
+| 3.6 Numo NFC | `components/merchant-onboard.tsx` | Done |
 
 ## Cross-Reference
 

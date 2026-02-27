@@ -84,4 +84,6 @@ test("validateRestoredProofs filters malformed, unknown, and cross-mint proofs",
 
   assert.equal(restored.proofs.length, 1);
   assert.equal(restored.proofs[0].id, trustedId);
- 
+  assert.equal(restored.rejected, 4);
+  assert.ok(restored.warnings.length >= 4);
+});
