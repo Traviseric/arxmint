@@ -22,9 +22,15 @@ interface SovereignState {
   balance: WalletBalance;
   setBalance: (b: Partial<WalletBalance>) => void;
 
-  // Cashu proof storage (for cross-session recovery)
+  // Cashu proof storage (in-memory; sourced from encrypted vault or localStorage fallback)
   cashuProofs: Proof[];
   setCashuProofs: (proofs: Proof[]) => void;
+
+  // Vault state (client-side encrypted IndexedDB vault)
+  vaultUnlocked: boolean;
+  vaultInitialized: boolean;
+  setVaultUnlocked: (value: boolean) => void;
+  setVaultInitialized: (value: boolean) => void;
 
   // Transaction ledger (in-memory cache, sourced from DB)
   transactions: StoredTransaction[];
@@ -94,6 +100,11 @@ export const useSovereignStore = create<SovereignState>((set, get) => ({
   cashuProofs: [],
   setCashuProofs: (proofs) => set({ cashuProofs: proofs }),
 
+  vaultUnlocked: false,
+  vaultInitialized: false,
+  setVaultUnlocked: (value) => set({ vaultUnlocked: value }),
+  setVaultInitialized: (value) => set({ vaultInitialized: value }),
+
   transactions: [],
   addTransaction: (tx) =>
     set((state) => ({ transactions: [tx, ...state.transactions].slice(0, 100) })),
@@ -141,7 +152,11 @@ export const useSovereignStore = create<SovereignState>((set, get) => ({
   setAuthenticated: (value) => set({ isAuthenticated: value }),
 }));
 
-/** Hydrate Cashu proofs from localStorage (call once on app mount) */
+/**
+ * Hydrate Cashu proofs from localStorage (legacy unencrypted fallback).
+ * Used when the encrypted vault is not yet initialized or unlocked.
+ * Call once on app mount.
+ */
 export function hydrateCashuSession(): void {
   if (typeof window === "undefined") return;
   try {
@@ -176,6 +191,39 @@ export function hydrateCashuSession(): void {
     store.setBalance({ cashuSats });
   } catch {
     // Ignore storage read errors
+  }
+}
+
+/**
+ * Hydrate Cashu proofs from the encrypted vault for the given mint URLs.
+ * The vault must be unlocked before calling this.
+ * Updates cashuProofs and balance in the Zustand store.
+ */
+export async function hydrateVaultProofs(mintUrls: string[]): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const { vault } = await import("./cashu-vault");
+    if (!vault.isUnlocked()) return;
+
+    const allProofs: Proof[] = [];
+    for (const mintUrl of mintUrls) {
+      try {
+        const proofs = await vault.getProofs(mintUrl);
+        allProofs.push(...proofs);
+      } catch {
+        // Skip mints that fail — don't block hydration for all
+      }
+    }
+
+    if (allProofs.length === 0) return;
+
+    const cashuSats = allProofs.reduce((sum, p) => sum + p.amount, 0);
+    const store = useSovereignStore.getState();
+    store.setCashuProofs(allProofs);
+    store.setBalance({ cashuSats });
+    store.setVaultUnlocked(true);
+  } catch {
+    // Ignore vault read errors
   }
 }
 
