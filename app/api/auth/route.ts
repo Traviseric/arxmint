@@ -53,6 +53,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate tag VALUES against the actual request (prevents cross-endpoint replay)
+    const expectedUrl = `${process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin}/api/auth`;
+    if (urlTag[1] !== expectedUrl) {
+      return NextResponse.json(
+        { error: "NIP-98 URL mismatch — token not issued for this endpoint" },
+        { status: 401 }
+      );
+    }
+    if (methodTag[1] !== "POST") {
+      return NextResponse.json(
+        { error: "NIP-98 method mismatch — expected POST" },
+        { status: 401 }
+      );
+    }
+
     // Cryptographic signature verification via nostr-tools
     const valid = verifyEvent(signedEvent);
     if (!valid) {
