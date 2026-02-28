@@ -20,7 +20,8 @@ import {
   ArrowDown,
   DollarSign,
   Ban,
-  Radio
+  Radio,
+  ExternalLink
 } from "lucide-react";
 import TerminalDemo from "@/components/terminal-demo";
 
@@ -142,9 +143,10 @@ export default function HomePage() {
                   Initialize Environment
                   <ArrowRight className="w-4 h-4 ml-2 opacity-70" aria-hidden="true" />
                 </a>
-                <a href="https://github.com/Traviseric/arxmint" target="_blank" rel="noopener noreferrer" className="antigravity-btn-outline w-full sm:w-auto !py-4 text-text-secondary">
-                  <Github className="w-4 h-4 mr-2" />
+                <a href="https://github.com/Traviseric/arxmint" target="_blank" rel="noopener noreferrer" className="antigravity-btn-outline w-full sm:w-auto !py-4 text-text-secondary" aria-label="View Source on GitHub (opens in new window)">
+                  <Github className="w-4 h-4 mr-2" aria-hidden="true" />
                   View Source
+                  <ExternalLink className="w-3 h-3 inline ml-1" aria-hidden="true" />
                 </a>
               </motion.div>
 
@@ -527,9 +529,11 @@ export default function HomePage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="antigravity-btn-outline !px-10 !py-4 text-lg w-full sm:w-auto text-text-secondary"
+                aria-label="Audit Code on GitHub (opens in new window)"
               >
-                <Github className="w-5 h-5 mr-3" />
+                <Github className="w-5 h-5 mr-3" aria-hidden="true" />
                 Audit Code
+                <ExternalLink className="w-3 h-3 inline ml-1" aria-hidden="true" />
               </a>
             </div>
           </div>
