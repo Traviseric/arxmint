@@ -4,7 +4,7 @@
 
 import { create } from "zustand";
 import type { Proof } from "@cashu/cashu-ts";
-import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance, NostrUser } from "./types";
+import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance, NostrUser, StoredTransaction } from "./types";
 
 interface SovereignState {
   // Community
@@ -25,6 +25,11 @@ interface SovereignState {
   // Cashu proof storage (for cross-session recovery)
   cashuProofs: Proof[];
   setCashuProofs: (proofs: Proof[]) => void;
+
+  // Transaction ledger (in-memory cache, sourced from DB)
+  transactions: StoredTransaction[];
+  addTransaction: (tx: StoredTransaction) => void;
+  setTransactions: (txs: StoredTransaction[]) => void;
 
   // Cycle
   cycleMetrics: CycleMetrics | null;
@@ -80,6 +85,11 @@ export const useSovereignStore = create<SovereignState>((set) => ({
 
   cashuProofs: [],
   setCashuProofs: (proofs) => set({ cashuProofs: proofs }),
+
+  transactions: [],
+  addTransaction: (tx) =>
+    set((state) => ({ transactions: [tx, ...state.transactions].slice(0, 100) })),
+  setTransactions: (txs) => set({ transactions: txs }),
 
   cycleMetrics: null,
   setCycleMetrics: (m) => set({ cycleMetrics: m }),

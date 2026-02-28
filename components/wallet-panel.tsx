@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Link,
   Unlink,
+  History,
 } from "lucide-react";
 import { getFedimintClient } from "@/lib/fedimint-sdk";
 import {
@@ -29,6 +30,7 @@ import {
 } from "@/lib/cashu-sdk";
 import { getLightningClient, validateRemoteSignerConfig } from "@/lib/lightning-agent";
 import { useSovereignStore } from "@/lib/store";
+import type { StoredTransaction } from "@/lib/types";
 import { formatSats } from "@/lib/utils";
 import { getTierEscalationConfirmation, type SecurityTier } from "@/lib/types";
 import {
@@ -39,6 +41,34 @@ import {
 } from "@/lib/spend-router";
 
 type ActiveView = "overview" | "send" | "receive" | "invoice";
+
+// ---- Transaction recording helper ----
+
+async function recordTransaction(params: {
+  type: "send" | "receive" | "swap";
+  amount: number;
+  backend: "cashu" | "lightning" | "fedimint";
+  status: "pending" | "completed" | "failed";
+  counterparty?: string;
+}): Promise<StoredTransaction | null> {
+  const communityId =
+    useSovereignStore.getState().currentCommunity?.id ?? "unknown";
+  try {
+    const res = await fetch("/api/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ communityId, ...params }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const tx: StoredTransaction = data.transaction;
+    useSovereignStore.getState().addTransaction(tx);
+    return tx;
+  } catch {
+    // Never block the UI on ledger write failure
+    return null;
+  }
+}
 
 export function WalletPanel() {
   const [view, setView] = useState<ActiveView>("overview");
@@ -131,6 +161,9 @@ export function WalletPanel() {
       {view === "send" && <SendPanel />}
       {view === "invoice" && <InvoicePanel />}
 
+      {/* Transaction History */}
+      <TransactionHistory />
+
       {/* Connection Panels */}
       <FedimintConnect />
       <CashuConnect />
@@ -167,14 +200,17 @@ function ReceivePanel() {
         setBalance({ cashuSats: client.balance });
         setMessage(`Received ${formatSats(received)}`);
         setStatus("success");
+        recordTransaction({ type: "receive", amount: received, backend: "cashu", status: "completed" });
       } else if (method === "fedimint" && fedimintConnected) {
         const client = getFedimintClient();
         const parsed = await client.parseNotes(token);
         await client.receiveEcash(token);
         const bal = await client.getBalance();
         setBalance({ fedimintMsats: bal });
-        setMessage(`Received ${formatSats(Math.floor(parsed.total_amount / 1000))}`);
+        const receivedSats = Math.floor(parsed.total_amount / 1000);
+        setMessage(`Received ${formatSats(receivedSats)}`);
         setStatus("success");
+        recordTransaction({ type: "receive", amount: receivedSats, backend: "fedimint", status: "completed" });
       } else {
         setMessage(`Connect to ${method} first`);
         setStatus("error");
@@ -388,6 +424,7 @@ function SendPanel() {
         setResult(token);
         setBalance({ cashuSats: client.balance });
         setStatus("success");
+        recordTransaction({ type: "send", amount: sats, backend: "cashu", status: "completed" });
       } else if (method === "fedimint" && fedimintConnected) {
         const client = getFedimintClient();
         const notes = await client.spendEcash(sats * 1000); // msats
@@ -395,6 +432,7 @@ function SendPanel() {
         const bal = await client.getBalance();
         setBalance({ fedimintMsats: bal });
         setStatus("success");
+        recordTransaction({ type: "send", amount: sats, backend: "fedimint", status: "completed" });
       } else {
         setResult(`Connect to ${method} first`);
         setStatus("error");
@@ -579,14 +617,23 @@ function InvoicePanel() {
         setBalance({ fedimintMsats: bal });
         setResult("Invoice paid successfully");
         setStatus("success");
+        recordTransaction({
+          type: "send", amount: 0, backend: "fedimint", status: "completed",
+          counterparty: bolt11Input.slice(0, 32),
+        });
       } else if (cashuConnected) {
         const client = createCashuClient();
         client.restoreProofs();
         const quote = await client.createMeltQuote(bolt11Input);
         const { paid } = await client.meltProofs(quote);
         setBalance({ cashuSats: client.balance });
+        const txStatus = paid ? "completed" : "pending";
         setResult(paid ? "Invoice paid successfully" : "Payment pending");
         setStatus("success");
+        recordTransaction({
+          type: "send", amount: 0, backend: "cashu", status: txStatus,
+          counterparty: bolt11Input.slice(0, 32),
+        });
       } else {
         setResult("Connect to Fedimint or Cashu first");
         setStatus("error");
@@ -716,6 +763,99 @@ function InvoicePanel() {
       )}
 
       <StatusMessage status={status} message={status === "error" ? result : status === "success" && tab === "pay" ? result : ""} />
+    </div>
+  );
+}
+
+// ---- Transaction History ----
+
+function TransactionHistory() {
+  const { currentCommunity, transactions, setTransactions } = useSovereignStore();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const communityId = currentCommunity?.id;
+    const url = communityId
+      ? `/api/transactions?communityId=${encodeURIComponent(communityId)}&limit=20`
+      : `/api/transactions?limit=20`;
+
+    fetch(url)
+      .then((r) => r.json())
+      .then((data: { transactions?: StoredTransaction[] }) => {
+        if (Array.isArray(data.transactions)) {
+          setTransactions(data.transactions);
+        }
+      })
+      .catch(() => {/* DB unavailable — ignore */})
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCommunity?.id]);
+
+  if (loading) return null; // Don't flash empty state on first load
+  if (transactions.length === 0) return null; // Hide when empty — no clutter
+
+  return (
+    <div className="sovereign-card">
+      <h4 className="text-sm font-bold text-sovereign-white mb-3 flex items-center gap-2">
+        <History className="w-4 h-4 text-btc-orange" />
+        Transaction History
+      </h4>
+      <div className="space-y-1.5">
+        {transactions.slice(0, 20).map((tx) => (
+          <TxRow key={tx.id} tx={tx} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TxRow({ tx }: { tx: StoredTransaction }) {
+  const isReceive = tx.type === "receive";
+  const date = new Date(tx.timestamp);
+  const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const timeStr = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-sovereign-border/40 last:border-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <div
+          className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+            isReceive ? "bg-green-500/10" : "bg-btc-orange/10"
+          }`}
+        >
+          {isReceive ? (
+            <ArrowDownLeft className="w-3 h-3 text-green-400" />
+          ) : (
+            <ArrowUpRight className="w-3 h-3 text-btc-orange" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs font-medium text-sovereign-white capitalize">{tx.type}</div>
+          <div className="text-[10px] text-sovereign-muted font-mono truncate">
+            {tx.backend} · {dateStr} {timeStr}
+          </div>
+        </div>
+      </div>
+      <div className="text-right flex-shrink-0 ml-2">
+        <div
+          className={`text-sm font-mono font-medium ${
+            isReceive ? "text-green-400" : "text-sovereign-text"
+          }`}
+        >
+          {isReceive ? "+" : "−"}{tx.amount > 0 ? formatSats(tx.amount) : "invoice"}
+        </div>
+        <div
+          className={`text-[10px] ${
+            tx.status === "completed"
+              ? "text-sovereign-muted"
+              : tx.status === "failed"
+              ? "text-red-400"
+              : "text-yellow-400"
+          }`}
+        >
+          {tx.status}
+        </div>
+      </div>
     </div>
   );
 }

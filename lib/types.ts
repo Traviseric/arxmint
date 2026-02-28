@@ -196,6 +196,18 @@ export function getTierEscalationConfirmation(
   return null;
 }
 
+/** Persisted transaction record (mirrors the DB Transaction model) */
+export interface StoredTransaction {
+  id: string;
+  communityId: string;
+  type: "send" | "receive" | "swap";
+  amount: number;
+  backend: "cashu" | "lightning" | "fedimint";
+  timestamp: string; // ISO date string
+  status: "pending" | "completed" | "failed";
+  counterparty?: string | null;
+}
+
 /** Nostr user identity (NIP-07 login) */
 export interface NostrUser {
   /** Hex-encoded public key */
