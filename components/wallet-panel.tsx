@@ -243,6 +243,7 @@ function ReceivePanel() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [copied, setCopied] = useState(false);
+  const [txRecordError, setTxRecordError] = useState<string | null>(null);
   const { cashuConnected, fedimintConnected, setBalance } = useSovereignStore();
 
   const handleReceive = async () => {
@@ -258,7 +259,8 @@ function ReceivePanel() {
         setBalance({ cashuSats: client.balance });
         setMessage(`Received ${formatSats(received)}`);
         setStatus("success");
-        recordTransaction({ type: "receive", amount: received, backend: "cashu", status: "completed" });
+        const rec1 = await recordTransaction({ type: "receive", amount: received, backend: "cashu", status: "completed" });
+        if (!rec1) setTxRecordError("Payment succeeded, but transaction wasn't saved to history.");
       } else if (method === "fedimint" && fedimintConnected) {
         const client = getFedimintClient();
         const parsed = await client.parseNotes(token);
@@ -268,7 +270,8 @@ function ReceivePanel() {
         const receivedSats = Math.floor(parsed.total_amount / 1000);
         setMessage(`Received ${formatSats(receivedSats)}`);
         setStatus("success");
-        recordTransaction({ type: "receive", amount: receivedSats, backend: "fedimint", status: "completed" });
+        const rec2 = await recordTransaction({ type: "receive", amount: receivedSats, backend: "fedimint", status: "completed" });
+        if (!rec2) setTxRecordError("Payment succeeded, but transaction wasn't saved to history.");
       } else {
         setMessage(`Connect to ${method} first`);
         setStatus("error");
@@ -461,6 +464,16 @@ function ReceivePanel() {
         </div>
       )}
 
+      {txRecordError && (
+        <div className="mt-2 flex items-start justify-between gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-400">
+          <span>{txRecordError}</span>
+          <button
+            onClick={() => setTxRecordError(null)}
+            aria-label="Dismiss warning"
+            className="shrink-0 hover:text-yellow-200 transition-colors"
+          >✕</button>
+        </div>
+      )}
       <StatusMessage status={status} message={message} />
     </div>
   );
@@ -475,6 +488,7 @@ function SendPanel() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
+  const [txRecordError, setTxRecordError] = useState<string | null>(null);
   const { cashuConnected, fedimintConnected, lightningConnected, balance, setBalance } = useSovereignStore();
 
   // Compute route suggestion when amount changes
@@ -504,7 +518,8 @@ function SendPanel() {
         setResult(token);
         setBalance({ cashuSats: client.balance });
         setStatus("success");
-        recordTransaction({ type: "send", amount: sats, backend: "cashu", status: "completed" });
+        const sent1 = await recordTransaction({ type: "send", amount: sats, backend: "cashu", status: "completed" });
+        if (!sent1) setTxRecordError("Payment succeeded, but transaction wasn't saved to history.");
       } else if (method === "fedimint" && fedimintConnected) {
         const client = getFedimintClient();
         const notes = await client.spendEcash(sats * 1000); // msats
@@ -512,7 +527,8 @@ function SendPanel() {
         const bal = await client.getBalance();
         setBalance({ fedimintMsats: bal });
         setStatus("success");
-        recordTransaction({ type: "send", amount: sats, backend: "fedimint", status: "completed" });
+        const sent2 = await recordTransaction({ type: "send", amount: sats, backend: "fedimint", status: "completed" });
+        if (!sent2) setTxRecordError("Payment succeeded, but transaction wasn't saved to history.");
       } else {
         setResult(`Connect to ${method} first`);
         setStatus("error");
@@ -644,6 +660,16 @@ function SendPanel() {
       )}
 
       {status === "error" && <StatusMessage status="error" message={result} />}
+      {txRecordError && (
+        <div className="mt-2 flex items-start justify-between gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-400">
+          <span>{txRecordError}</span>
+          <button
+            onClick={() => setTxRecordError(null)}
+            aria-label="Dismiss warning"
+            className="shrink-0 hover:text-yellow-200 transition-colors"
+          >✕</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -658,6 +684,7 @@ function InvoicePanel() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
+  const [txRecordError, setTxRecordError] = useState<string | null>(null);
   const { cashuConnected, fedimintConnected, setBalance } = useSovereignStore();
 
   const handleCreateInvoice = async () => {
@@ -698,10 +725,11 @@ function InvoicePanel() {
         setBalance({ fedimintMsats: bal });
         setResult("Invoice paid successfully");
         setStatus("success");
-        recordTransaction({
+        const pay1 = await recordTransaction({
           type: "send", amount: 0, backend: "fedimint", status: "completed",
           counterparty: bolt11Input.slice(0, 32),
         });
+        if (!pay1) setTxRecordError("Payment succeeded, but transaction wasn't saved to history.");
       } else if (cashuConnected) {
         const client = createCashuClient();
         client.restoreProofs();
@@ -711,10 +739,11 @@ function InvoicePanel() {
         const txStatus = paid ? "completed" : "pending";
         setResult(paid ? "Invoice paid successfully" : "Payment pending");
         setStatus("success");
-        recordTransaction({
+        const pay2 = await recordTransaction({
           type: "send", amount: 0, backend: "cashu", status: txStatus,
           counterparty: bolt11Input.slice(0, 32),
         });
+        if (!pay2) setTxRecordError("Payment succeeded, but transaction wasn't saved to history.");
       } else {
         setResult("Connect to Fedimint or Cashu first");
         setStatus("error");
@@ -846,6 +875,16 @@ function InvoicePanel() {
         </>
       )}
 
+      {txRecordError && (
+        <div className="mt-2 flex items-start justify-between gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-400">
+          <span>{txRecordError}</span>
+          <button
+            onClick={() => setTxRecordError(null)}
+            aria-label="Dismiss warning"
+            className="shrink-0 hover:text-yellow-200 transition-colors"
+          >✕</button>
+        </div>
+      )}
       <StatusMessage status={status} message={status === "error" ? result : status === "success" && tab === "pay" ? result : ""} />
     </div>
   );
