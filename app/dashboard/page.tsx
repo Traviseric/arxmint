@@ -80,6 +80,34 @@ export default function DashboardPage() {
     { id: "grants" as const, label: "Grant Reports", icon: FileText },
   ];
 
+  const handleTabClick = (tabId: Tab) => {
+    setActiveTab(tabId);
+    setTimeout(() => document.getElementById(`panel-${tabId}`)?.focus(), 0);
+  };
+
+  const handleTablistKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const tabIds = tabs.map((t) => t.id);
+    const idx = tabIds.indexOf(activeTab);
+    let next: Tab | undefined;
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      next = tabIds[(idx + 1) % tabIds.length];
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      next = tabIds[(idx - 1 + tabIds.length) % tabIds.length];
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      next = tabIds[0];
+    } else if (e.key === "End") {
+      e.preventDefault();
+      next = tabIds[tabIds.length - 1];
+    }
+    if (next) {
+      setActiveTab(next);
+      setTimeout(() => document.getElementById(`tab-${next}`)?.focus(), 0);
+    }
+  };
+
   return (
     <div className="min-h-screen py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -96,12 +124,22 @@ export default function DashboardPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-sovereign-dark rounded-xl mb-8 overflow-x-auto">
+        <div
+          role="tablist"
+          aria-label="Dashboard sections"
+          className="flex gap-1 p-1 bg-sovereign-dark rounded-xl mb-8 overflow-x-auto scrollbar-thin scrollbar-thumb-sovereign-panel pb-1"
+          onKeyDown={handleTablistKeyDown}
+        >
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+              role="tab"
+              id={`tab-${tab.id}`}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`panel-${tab.id}`}
+              tabIndex={activeTab === tab.id ? 0 : -1}
+              onClick={() => handleTabClick(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap flex-shrink-0 transition-all ${
                 activeTab === tab.id
                   ? "bg-sovereign-panel text-btc-orange shadow-sm"
                   : "text-sovereign-muted hover:text-sovereign-text"
@@ -115,6 +153,12 @@ export default function DashboardPage() {
 
         {/* Tab Content */}
         {activeTab === "overview" && (
+          <div
+            role="tabpanel"
+            id="panel-overview"
+            aria-labelledby="tab-overview"
+            tabIndex={-1}
+          >
           <div className="grid md:grid-cols-2 gap-6">
             {/* Quick Stats */}
             <div className="sovereign-card">
@@ -208,70 +252,102 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+          {!currentCommunity && (
+            <div className="mt-6 space-y-4">
+              {communities.length > 0 ? (
+                <div className="rounded-xl border border-sovereign-border bg-sovereign-panel p-6">
+                  <h3 className="text-sm font-bold text-sovereign-white mb-3">
+                    Your saved communities
+                  </h3>
+                  <div className="space-y-2">
+                    {communities.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => setCurrentCommunity(c)}
+                        className="w-full flex items-center justify-between rounded-lg border border-sovereign-border bg-sovereign-dark px-4 py-3 text-left hover:border-btc-orange/40 transition-colors"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-sovereign-white">{c.name}</div>
+                          <div className="text-xs text-sovereign-muted mt-0.5">
+                            {c.mintBackend} · {c.network} · {c.memberCount} members
+                          </div>
+                        </div>
+                        <span className="text-xs text-btc-orange">Select →</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-btc-orange/20 bg-btc-orange/5 px-6 py-4 text-center">
+                  <p className="text-sm text-sovereign-muted">
+                    No community connected yet.{" "}
+                    <a href="/create" className="text-btc-orange hover:underline font-medium">
+                      Create one
+                    </a>{" "}
+                    or connect your wallet below to get started.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          </div>
         )}
 
         {activeTab === "privacy" && (
-          <div className="max-w-2xl">
+          <div
+            role="tabpanel"
+            id="panel-privacy"
+            aria-labelledby="tab-privacy"
+            tabIndex={-1}
+            className="max-w-2xl"
+          >
             <PrivacyDashboard config={privacyConfig} backend={currentCommunity?.mintBackend || "cashu"} />
           </div>
         )}
 
         {activeTab === "cycle" && (
-          <div className="max-w-3xl">
+          <div
+            role="tabpanel"
+            id="panel-cycle"
+            aria-labelledby="tab-cycle"
+            tabIndex={-1}
+            className="max-w-3xl"
+          >
             <CycleAlerts />
           </div>
         )}
 
         {activeTab === "health" && (
-          <CommunityHealthTab />
+          <div
+            role="tabpanel"
+            id="panel-health"
+            aria-labelledby="tab-health"
+            tabIndex={-1}
+          >
+            <CommunityHealthTab />
+          </div>
         )}
 
         {activeTab === "wallet" && (
-          <div className="max-w-2xl">
+          <div
+            role="tabpanel"
+            id="panel-wallet"
+            aria-labelledby="tab-wallet"
+            tabIndex={-1}
+            className="max-w-2xl"
+          >
             <WalletPanel />
           </div>
         )}
 
         {activeTab === "grants" && (
-          <GrantReportingTab />
-        )}
-
-        {activeTab === "overview" && !currentCommunity && (
-          <div className="mt-6 space-y-4">
-            {communities.length > 0 ? (
-              <div className="rounded-xl border border-sovereign-border bg-sovereign-panel p-6">
-                <h3 className="text-sm font-bold text-sovereign-white mb-3">
-                  Your saved communities
-                </h3>
-                <div className="space-y-2">
-                  {communities.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => setCurrentCommunity(c)}
-                      className="w-full flex items-center justify-between rounded-lg border border-sovereign-border bg-sovereign-dark px-4 py-3 text-left hover:border-btc-orange/40 transition-colors"
-                    >
-                      <div>
-                        <div className="text-sm font-medium text-sovereign-white">{c.name}</div>
-                        <div className="text-xs text-sovereign-muted mt-0.5">
-                          {c.mintBackend} · {c.network} · {c.memberCount} members
-                        </div>
-                      </div>
-                      <span className="text-xs text-btc-orange">Select →</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-btc-orange/20 bg-btc-orange/5 px-6 py-4 text-center">
-                <p className="text-sm text-sovereign-muted">
-                  No community connected yet.{" "}
-                  <a href="/create" className="text-btc-orange hover:underline font-medium">
-                    Create one
-                  </a>{" "}
-                  or connect your wallet below to get started.
-                </p>
-              </div>
-            )}
+          <div
+            role="tabpanel"
+            id="panel-grants"
+            aria-labelledby="tab-grants"
+            tabIndex={-1}
+          >
+            <GrantReportingTab />
           </div>
         )}
       </div>
@@ -352,8 +428,14 @@ function CommunityHealthTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="text-sovereign-muted text-sm animate-pulse">Loading metrics…</div>
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Loading community health metrics"
+        className="flex items-center justify-center py-16"
+      >
+        <span className="sr-only">Loading…</span>
+        <div aria-busy="true" className="text-sovereign-muted text-sm animate-pulse" aria-hidden="true">Loading metrics…</div>
       </div>
     );
   }
@@ -580,8 +662,14 @@ function GrantReportingTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="text-sovereign-muted text-sm animate-pulse">Loading report data…</div>
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Loading grant report data"
+        className="flex items-center justify-center py-16"
+      >
+        <span className="sr-only">Loading…</span>
+        <div aria-busy="true" className="text-sovereign-muted text-sm animate-pulse" aria-hidden="true">Loading report data…</div>
       </div>
     );
   }

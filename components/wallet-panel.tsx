@@ -119,8 +119,17 @@ export function WalletPanel() {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-2">
+        <div
+          role="tablist"
+          aria-label="Wallet actions"
+          className="grid grid-cols-3 gap-2"
+        >
           <button
+            role="tab"
+            id="wallet-tab-receive"
+            aria-selected={view === "receive"}
+            aria-controls="wallet-panel-receive"
+            tabIndex={view === "receive" || view === "overview" ? 0 : -1}
             onClick={() => setView(view === "receive" ? "overview" : "receive")}
             className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
               view === "receive"
@@ -132,6 +141,11 @@ export function WalletPanel() {
             Receive
           </button>
           <button
+            role="tab"
+            id="wallet-tab-send"
+            aria-selected={view === "send"}
+            aria-controls="wallet-panel-send"
+            tabIndex={view === "send" ? 0 : -1}
             onClick={() => setView(view === "send" ? "overview" : "send")}
             className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
               view === "send"
@@ -143,6 +157,11 @@ export function WalletPanel() {
             Send
           </button>
           <button
+            role="tab"
+            id="wallet-tab-invoice"
+            aria-selected={view === "invoice"}
+            aria-controls="wallet-panel-invoice"
+            tabIndex={view === "invoice" ? 0 : -1}
             onClick={() => setView(view === "invoice" ? "overview" : "invoice")}
             className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
               view === "invoice"
@@ -157,9 +176,36 @@ export function WalletPanel() {
       </div>
 
       {/* Dynamic View */}
-      {view === "receive" && <ReceivePanel />}
-      {view === "send" && <SendPanel />}
-      {view === "invoice" && <InvoicePanel />}
+      {view === "receive" && (
+        <div
+          role="tabpanel"
+          id="wallet-panel-receive"
+          aria-labelledby="wallet-tab-receive"
+          tabIndex={-1}
+        >
+          <ReceivePanel />
+        </div>
+      )}
+      {view === "send" && (
+        <div
+          role="tabpanel"
+          id="wallet-panel-send"
+          aria-labelledby="wallet-tab-send"
+          tabIndex={-1}
+        >
+          <SendPanel />
+        </div>
+      )}
+      {view === "invoice" && (
+        <div
+          role="tabpanel"
+          id="wallet-panel-invoice"
+          aria-labelledby="wallet-tab-invoice"
+          tabIndex={-1}
+        >
+          <InvoicePanel />
+        </div>
+      )}
 
       {/* Transaction History */}
       <TransactionHistory />
@@ -251,8 +297,13 @@ function ReceivePanel() {
       </h4>
 
       {/* Tab toggle: Token paste vs QR request */}
-      <div className="flex gap-2 mb-3">
+      <div role="tablist" aria-label="Receive method" className="flex gap-2 mb-3">
         <button
+          role="tab"
+          id="receive-tab-token"
+          aria-selected={tab === "token"}
+          aria-controls="receive-panel-token"
+          tabIndex={tab === "token" ? 0 : -1}
           onClick={() => setTab("token")}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
             tab === "token"
@@ -263,6 +314,11 @@ function ReceivePanel() {
           Paste Token
         </button>
         <button
+          role="tab"
+          id="receive-tab-qr"
+          aria-selected={tab === "qr"}
+          aria-controls="receive-panel-qr"
+          tabIndex={tab === "qr" ? 0 : -1}
           onClick={() => setTab("qr")}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
             tab === "qr"
@@ -275,7 +331,12 @@ function ReceivePanel() {
       </div>
 
       {tab === "token" && (
-        <>
+        <div
+          role="tabpanel"
+          id="receive-panel-token"
+          aria-labelledby="receive-tab-token"
+          tabIndex={-1}
+        >
           <div className="flex gap-2 mb-3">
             {(["cashu", "fedimint"] as const).map((m) => (
               <button
@@ -311,11 +372,16 @@ function ReceivePanel() {
             )}
             Receive
           </button>
-        </>
+        </div>
       )}
 
       {tab === "qr" && (
-        <>
+        <div
+          role="tabpanel"
+          id="receive-panel-qr"
+          aria-labelledby="receive-tab-qr"
+          tabIndex={-1}
+        >
           <div className="space-y-3 mb-3">
             <div>
               <label className="sovereign-label">Amount (sats)</label>
@@ -378,7 +444,7 @@ function ReceivePanel() {
               )}
             </div>
           )}
-        </>
+        </div>
       )}
 
       <StatusMessage status={status} message={message} />
