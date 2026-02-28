@@ -48,6 +48,7 @@ model Merchant {
   category         String?
   cashuAddress     String?
   lightningAddress String?
+  metadata         Json?     // location, paymentMethods[], contactInfo, etc.
   createdAt        DateTime  @default(now())
 
   @@map("merchants")

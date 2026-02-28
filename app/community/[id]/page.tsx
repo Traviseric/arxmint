@@ -5,7 +5,7 @@
 // Members, agent marketplace, circular economy directory
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   Cpu,
@@ -18,6 +18,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useSovereignStore } from "@/lib/store";
 import { l402Fetch, getLightningClient } from "@/lib/lightning-agent";
 import type { AgentService } from "@/lib/types";
@@ -77,6 +78,8 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<Tab>("agents");
   const [copied, setCopied] = useState(false);
   const { currentCommunity } = useSovereignStore();
+  const params = useParams();
+  const communityId = typeof params?.id === "string" ? params.id : (currentCommunity?.id ?? "demo");
 
   const community = currentCommunity || {
     id: "demo",
@@ -193,7 +196,7 @@ export default function CommunityPage() {
 
         {/* Merchants */}
         {activeTab === "merchants" && (
-          <MerchantDirectory />
+          <MerchantDirectory communityId={communityId} />
         )}
 
         {/* Members */}
@@ -235,41 +238,50 @@ export default function CommunityPage() {
 
 // ---- Merchant Directory with Onboarding ----
 
-function MerchantDirectory() {
+function MerchantDirectory({ communityId }: { communityId: string }) {
   const [showOnboard, setShowOnboard] = useState(false);
-  const [merchants, setMerchants] = useState<MerchantListing[]>([
-    // Demo merchants
-    {
-      id: "m_demo1",
-      name: "Bitcoin Brews",
-      category: "food-drink",
-      description: "Craft coffee and pastries. Pay with sats, no surveillance.",
-      location: "Longmont, CO",
-      paymentMethods: ["cashu", "lightning"],
-      createdAt: Date.now() - 86400000 * 7,
-      active: true,
-    },
-    {
-      id: "m_demo2",
-      name: "Sovereign Supplements",
-      category: "health",
-      description: "Vitamins, nootropics, and wellness products for Bitcoiners.",
-      location: "Longmont, CO",
-      paymentMethods: ["cashu", "lightning", "onchain"],
-      createdAt: Date.now() - 86400000 * 3,
-      active: true,
-    },
-  ]);
+  const [merchants, setMerchants] = useState<MerchantListing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load merchants from DB on mount
+  useEffect(() => {
+    fetch(`/api/merchants?communityId=${encodeURIComponent(communityId)}`)
+      .then((r) => r.json())
+      .then((data: { merchants?: Array<Record<string, unknown>> }) => {
+        if (Array.isArray(data.merchants)) {
+          const mapped: MerchantListing[] = data.merchants.map((m) => {
+            const meta = (m.metadata as Record<string, unknown>) ?? {};
+            return {
+              id: m.id as string,
+              name: m.name as string,
+              category: (m.category as MerchantListing["category"]) ?? "other",
+              description: (m.description as string) ?? "",
+              location: (meta.location as string) ?? "",
+              paymentMethods: (meta.paymentMethods as MerchantListing["paymentMethods"]) ?? [],
+              contactInfo: (meta.contactInfo as string | undefined) ?? undefined,
+              createdAt: new Date(m.createdAt as string).getTime(),
+              active: true,
+            };
+          });
+          setMerchants(mapped);
+        }
+      })
+      .catch(() => {
+        // DB unavailable — show empty state
+      })
+      .finally(() => setLoading(false));
+  }, [communityId]);
 
   const handleComplete = (merchant: MerchantListing) => {
-    setMerchants((prev) => [...prev, merchant]);
+    setMerchants((prev) => [merchant, ...prev]);
   };
 
   if (showOnboard) {
     return (
       <MerchantOnboard
-        onComplete={handleComplete}
+        onComplete={(m) => { handleComplete(m); setShowOnboard(false); }}
         onCancel={() => setShowOnboard(false)}
+        communityId={communityId}
       />
     );
   }
@@ -288,7 +300,12 @@ function MerchantDirectory() {
           + List Your Business
         </button>
       </div>
-      {merchants.length > 0 ? (
+      {loading ? (
+        <div className="sovereign-card text-center py-12">
+          <div className="w-6 h-6 border-2 border-btc-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-sovereign-muted">Loading merchant directory…</p>
+        </div>
+      ) : merchants.length > 0 ? (
         <div className="grid md:grid-cols-2 gap-4">
           {merchants.map((m) => (
             <MerchantCard key={m.id} merchant={m} />

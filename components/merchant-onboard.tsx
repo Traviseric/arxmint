@@ -61,12 +61,14 @@ interface MerchantOnboardProps {
   onComplete: (merchant: MerchantListing) => void;
   onCancel: () => void;
   mintUrl?: string;
+  communityId?: string;
 }
 
 export function MerchantOnboard({
   onComplete,
   onCancel,
   mintUrl = "http://localhost:3338",
+  communityId,
 }: MerchantOnboardProps) {
   const [step, setStep] = useState<Step>("info");
   const [name, setName] = useState("");
@@ -79,6 +81,8 @@ export function MerchantOnboard({
     "lightning",
   ]);
   const [copied, setCopied] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const togglePayment = (method: PaymentMethod) => {
     setPaymentMethods((prev) =>
@@ -343,17 +347,62 @@ export function MerchantOnboard({
             </div>
           </div>
 
+          {submitError && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+              {submitError}
+            </div>
+          )}
+
           <div className="flex justify-between pt-2">
             <button onClick={() => setStep("payment")} className="sovereign-btn-outline !py-2 text-sm">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
             <button
-              onClick={() => {
-                onComplete(merchant);
-                setStep("complete");
+              disabled={submitting}
+              onClick={async () => {
+                setSubmitting(true);
+                setSubmitError(null);
+                try {
+                  const res = await fetch("/api/merchants", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      communityId: communityId ?? "unknown",
+                      name,
+                      description,
+                      category,
+                      location,
+                      contactInfo: contactInfo || null,
+                      paymentMethods,
+                      cashuAddress: paymentMethods.includes("cashu") ? paymentUri : null,
+                      lightningAddress: paymentMethods.includes("lightning") ? contactInfo || null : null,
+                    }),
+                  });
+                  if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || "Failed to save merchant");
+                  }
+                  const data = await res.json();
+                  const savedMerchant: MerchantListing = {
+                    ...merchant,
+                    id: data.merchant?.id ?? merchant.id,
+                  };
+                  onComplete(savedMerchant);
+                  setStep("complete");
+                } catch (err: any) {
+                  // Fallback: complete locally even if DB save fails
+                  setSubmitError(`Note: ${err.message} — listing shown locally only`);
+                  onComplete(merchant);
+                  setStep("complete");
+                } finally {
+                  setSubmitting(false);
+                }
               }}
               className="sovereign-btn !py-2 text-sm"
             >
+              {submitting ? (
+                <div className="w-3.5 h-3.5 border-2 border-sovereign-black/30 border-t-sovereign-black rounded-full animate-spin" />
+              ) : null}
               List Business
             </button>
           </div>
@@ -536,12 +585,12 @@ export function NumoNFCSetup({
       mintUrl,
       defaultAmount ? parseInt(defaultAmount, 10) : 0
     );
-    // Simulate provisioning delay
-    setTimeout(() => {
-      config.status = "active";
-      onSetup(config);
-      setStatus("done");
-    }, 1500);
+    // TODO: Real NFC provisioning requires Web NFC API (navigator.nfc.write)
+    // and Numo NFC card backend integration. Currently queues card setup
+    // for manual fulfillment.
+    // See: https://developer.mozilla.org/en-US/docs/Web/API/Web_NFC_API
+    onSetup(config);
+    setStatus("done");
   };
 
   return (
@@ -586,10 +635,11 @@ export function NumoNFCSetup({
 
       {status === "done" && (
         <div className="text-center py-2">
-          <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
-          <p className="text-sm text-green-400 font-medium">Card provisioned!</p>
+          <CheckCircle className="w-6 h-6 text-btc-orange mx-auto mb-2" />
+          <p className="text-sm text-btc-orange font-medium">Card setup queued</p>
           <p className="text-xs text-sovereign-muted mt-1">
-            Write the NFC payload to a Numo card using the Numo app.
+            Numo will contact you to complete NFC card provisioning.
+            In the meantime, use the QR code above for payments.
           </p>
         </div>
       )}
