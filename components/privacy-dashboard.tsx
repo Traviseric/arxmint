@@ -42,7 +42,13 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
       {/* Score Ring */}
       <div className="flex items-center gap-6">
         <div className="relative w-24 h-24 flex-shrink-0">
-          <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
+          <svg
+            className="w-24 h-24 -rotate-90"
+            viewBox="0 0 36 36"
+            role="img"
+            aria-labelledby="privacy-score-title"
+          >
+            <title id="privacy-score-title">Privacy score: {score} out of 100</title>
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
@@ -59,7 +65,7 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
               strokeLinecap="round"
             />
           </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
             <span className={`text-2xl font-bold ${scoreColor}`}>{score}</span>
           </div>
         </div>
@@ -111,11 +117,11 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {effectivelyOn ? (
-                    <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <Check className="w-4 h-4 text-green-400 flex-shrink-0" aria-hidden="true" />
                   ) : backendDisabled ? (
-                    <Info className="w-4 h-4 text-sovereign-muted flex-shrink-0" />
+                    <Info className="w-4 h-4 text-sovereign-muted flex-shrink-0" aria-hidden="true" />
                   ) : (
-                    <AlertTriangle className="w-4 h-4 text-sovereign-muted flex-shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-sovereign-muted flex-shrink-0" aria-hidden="true" />
                   )}
                   <div>
                     <div className="flex items-center gap-2 text-sm font-medium text-sovereign-white">
@@ -158,7 +164,13 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
                           : "text-sovereign-muted"
                     }`}
                   >
-                    {comingSoon || backendDisabled ? "—" : effectivelyOn ? "ON" : "OFF"}
+                    {comingSoon
+                      ? "Coming Soon"
+                      : backendDisabled
+                        ? "Unavailable"
+                        : effectivelyOn
+                          ? "Enabled"
+                          : "Disabled"}
                   </span>
                 </div>
               </div>

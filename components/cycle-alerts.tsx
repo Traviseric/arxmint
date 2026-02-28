@@ -84,7 +84,7 @@ export function CycleAlerts() {
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <SignalIcon className="w-6 h-6" style={{ color: signal.color }} />
+            <SignalIcon className="w-6 h-6" style={{ color: signal.color }} aria-hidden="true" />
             <div>
               <h3
                 className="text-lg font-bold"
@@ -116,6 +116,7 @@ export function CycleAlerts() {
           description="Market Value / Realized Value"
           highlight={metrics.mvrv < 1 || metrics.mvrv > 3}
           color={metrics.mvrv < 1 ? "#00C853" : metrics.mvrv > 3 ? "#FF5252" : "#FFD54F"}
+          zone={metrics.mvrv > 3.5 ? "High" : metrics.mvrv > 1 ? "Mid" : "Low"}
         />
         <MetricCard
           label="NUPL"
@@ -123,6 +124,7 @@ export function CycleAlerts() {
           description="Net Unrealized Profit/Loss"
           highlight={metrics.nupl < 0 || metrics.nupl > 0.75}
           color={metrics.nupl < 0 ? "#00C853" : metrics.nupl > 0.75 ? "#FF5252" : "#FFD54F"}
+          zone={metrics.nupl > 0.75 ? "High" : metrics.nupl > 0 ? "Mid" : "Low"}
         />
         <MetricCard
           label="Supply in Profit"
@@ -136,6 +138,7 @@ export function CycleAlerts() {
                 ? "#FF5252"
                 : "#FFD54F"
           }
+          zone={metrics.supplyInProfit > 0.95 ? "High" : metrics.supplyInProfit > 0.5 ? "Mid" : "Low"}
         />
       </div>
 
@@ -155,26 +158,32 @@ function MetricCard({
   description,
   highlight,
   color,
+  zone,
 }: {
   label: string;
   value: string;
   description: string;
   highlight: boolean;
   color: string;
+  zone: string;
 }) {
   return (
     <div
       className="rounded-lg border px-3 py-3"
+      aria-label={`${label}: ${value} — ${zone}`}
       style={{
         borderColor: highlight ? `${color}33` : undefined,
         backgroundColor: highlight ? `${color}08` : undefined,
       }}
     >
-      <div className="text-xs text-sovereign-muted mb-1">{label}</div>
-      <div className="text-xl font-bold" style={{ color }}>
+      <div className="text-xs text-sovereign-muted mb-1" aria-hidden="true">{label}</div>
+      <div className="text-xl font-bold" style={{ color }} aria-hidden="true">
         {value}
       </div>
-      <div className="text-xs text-sovereign-muted mt-1 leading-tight">
+      <div className="text-xs font-medium text-sovereign-muted mt-0.5" aria-hidden="true">
+        {zone}
+      </div>
+      <div className="text-xs text-sovereign-muted mt-1 leading-tight" aria-hidden="true">
         {description}
       </div>
     </div>
