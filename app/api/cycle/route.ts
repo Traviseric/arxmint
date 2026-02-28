@@ -5,6 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { getCycleMetrics, fetchMarketData } from "@/lib/cycle-monitor";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -26,8 +27,10 @@ export async function GET() {
         athDate: market.athDate,
       },
     });
-  } catch (error: any) {
-    console.error("[ArxMint] GET /api/cycle error:", error.message, error.stack);
+  } catch (error: unknown) {
+    logger.error("GET /api/cycle error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
