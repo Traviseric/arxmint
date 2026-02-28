@@ -11,6 +11,16 @@
 // ============================================================
 
 import type { SecurityTier } from "./types";
+// Re-export server-safe validators so tests importing from this file still work.
+export {
+  type RemoteSignerConfig,
+  validateRemoteSignerConfig,
+  validateRemoteSignerEnv,
+} from "./lightning-validator.ts";
+import {
+  type RemoteSignerConfig,
+  validateRemoteSignerConfig,
+} from "./lightning-validator.ts";
 
 /** L402 challenge parsed from a 402 response */
 interface L402Challenge {
@@ -42,84 +52,6 @@ export interface ChannelInfo {
   localBalance: number;
   remoteBalance: number;
   active: boolean;
-}
-
-/** Remote signer configuration for PAY_ONLY tier */
-export interface RemoteSignerConfig {
-  /** URL of the litd remote signer */
-  signerUrl: string;
-  /** TLS certificate (base64) */
-  tlsCert?: string;
-  /** Macaroon for the remote signer (hex) */
-  macaroon?: string;
-}
-
-/** Validate that a PAY_ONLY remote signer config is complete and safe */
-export function validateRemoteSignerConfig(
-  config?: RemoteSignerConfig
-): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-
-  if (!config) {
-    return {
-      valid: false,
-      errors: [
-        "missing remote signer config",
-        "signerUrl is required",
-        "tlsCert is required",
-        "macaroon is required",
-      ],
-    };
-  }
-
-  const signerUrl = config.signerUrl?.trim();
-  const tlsCert = config.tlsCert?.trim();
-  const macaroon = config.macaroon?.trim();
-
-  if (!signerUrl) {
-    errors.push("signerUrl is required");
-  } else if (!/^https?:\/\//i.test(signerUrl)) {
-    errors.push("signerUrl must start with http:// or https://");
-  } else {
-    try {
-      // Require a parseable URL so misconfigured hosts fail closed.
-      const parsed = new URL(signerUrl);
-      if (!parsed.hostname) {
-        errors.push("signerUrl must include a hostname");
-      }
-    } catch {
-      errors.push("signerUrl must be a valid URL (e.g. https://signer.local:8443)");
-    }
-  }
-
-  if (!tlsCert) {
-    errors.push("tlsCert is required");
-  }
-
-  if (!macaroon) {
-    errors.push("macaroon is required");
-  }
-
-  return { valid: errors.length === 0, errors };
-}
-
-/**
- * Validate remote signer env requirements for PAY_ONLY mode.
- * Accepts both server env keys and NEXT_PUBLIC keys for local/browser flows.
- */
-export function validateRemoteSignerEnv(
-  env: Record<string, string | undefined>
-): { valid: boolean; errors: string[] } {
-  const tier = (env.LNC_SECURITY_TIER || "watch-only").trim().toLowerCase();
-  if (tier !== "pay-only") {
-    return { valid: true, errors: [] };
-  }
-
-  return validateRemoteSignerConfig({
-    signerUrl: env.REMOTE_SIGNER_URL || env.NEXT_PUBLIC_REMOTE_SIGNER_URL || "",
-    tlsCert: env.REMOTE_SIGNER_TLS_CERT || env.NEXT_PUBLIC_REMOTE_SIGNER_TLS_CERT,
-    macaroon: env.REMOTE_SIGNER_MACAROON || env.NEXT_PUBLIC_REMOTE_SIGNER_MACAROON,
-  });
 }
 
 /** Macaroon role for scoped credentials */
@@ -196,6 +128,14 @@ const MACAROON_ROLE_PERMISSIONS: Record<
 
 let LNC: any = null;
 
+/**
+ * Overridable probe function for the litd remote signer.
+ * Set to a no-op in tests (auto-installed by __lightningAgentTestUtils.setLNCMock).
+ * null = use the real network probe.
+ */
+let _remoteSignerProber: ((config: RemoteSignerConfig) => Promise<void>) | null =
+  null;
+
 async function loadLNC() {
   if (!LNC) {
     const mod = await import("@lightninglabs/lnc-web");
@@ -208,10 +148,19 @@ export class SovereignLightningClient {
   private _connected = false;
   private _securityTier: SecurityTier = "watch-only";
   private _remoteSignerConfig: RemoteSignerConfig | null = null;
+  private _signerMode: "local" | "remote" = "local";
 
   /** Current security tier */
   get securityTier(): SecurityTier {
     return this._securityTier;
+  }
+
+  /**
+   * Whether the client is operating in remote signer mode.
+   * In remote mode signing keys are held by litd, not this process.
+   */
+  isRemoteSignerMode(): boolean {
+    return this._signerMode === "remote";
   }
 
   /**
@@ -234,10 +183,15 @@ export class SovereignLightningClient {
             signerValidation.errors.join("; ")
         );
       }
+      // Hard probe — fail closed if litd is unreachable.
+      // Signing keys must NEVER reside in this process in remote mode.
+      await this.probeRemoteSigner(remoteSignerConfig!);
     }
 
     this._securityTier = tier;
     this._remoteSignerConfig = remoteSignerConfig || null;
+    this._signerMode =
+      tier === "pay-only" && remoteSignerConfig ? "remote" : "local";
 
     await loadLNC();
     this.lnc = new LNC({ pairingPhrase, password });
@@ -325,13 +279,14 @@ export class SovereignLightningClient {
     this.requireConnected();
     this.requireTier("pay-only", "payInvoice");
 
-    // In PAY_ONLY mode with remote signer, the LNC connection
-    // is already configured to delegate signing to litd.
-    // The remote signer holds the keys; we just issue the request.
-    if (this._securityTier === "pay-only" && this._remoteSignerConfig) {
+    // In remote signer mode, HTLC signing is delegated to litd.
+    // This process never holds signing keys — the LND node forwards
+    // all sign operations to the litd endpoint established at connect().
+    if (this._signerMode === "remote") {
       console.log(
-        "[ArxMint] Payment routed through remote signer at",
-        this._remoteSignerConfig.signerUrl
+        "[ArxMint] Payment signing delegated to litd at",
+        this._remoteSignerConfig!.signerUrl,
+        "— no keys held in agent process"
       );
     }
 
@@ -403,6 +358,50 @@ export class SovereignLightningClient {
       this._connected = false;
       this._securityTier = "watch-only";
       this._remoteSignerConfig = null;
+      this._signerMode = "local";
+    }
+  }
+
+  /**
+   * Probe the litd remote signer REST endpoint to verify connectivity.
+   * Throws a hard error if the signer is unreachable — we refuse to connect
+   * in pay-only mode without confirmed signer reachability.
+   *
+   * In tests, _remoteSignerProber is set to a no-op by setLNCMock().
+   */
+  private async probeRemoteSigner(config: RemoteSignerConfig): Promise<void> {
+    if (_remoteSignerProber !== null) {
+      return _remoteSignerProber(config);
+    }
+
+    const signerUrl = config.signerUrl.replace(/\/$/, "");
+    const headers: Record<string, string> = {};
+    if (config.macaroon) {
+      headers["Grpc-Metadata-macaroon"] = config.macaroon;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(`${signerUrl}/v1/state`, {
+        method: "GET",
+        headers,
+        signal: controller.signal,
+      });
+      // 200 = reachable and authenticated
+      // 401 = reachable but auth issue (config problem, not connectivity)
+      // anything else = unexpected — fail closed
+      if (!response.ok && response.status !== 401) {
+        throw new Error(`Remote signer probe returned HTTP ${response.status}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Remote signer at ${signerUrl} is not reachable: ${message}. ` +
+          `Refusing to connect in pay-only mode — signing keys must not be held locally.`
+      );
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -550,13 +549,23 @@ export function generateMCPConfig(mailboxServer?: string): object {
 export const __lightningAgentTestUtils = {
   setLNCMock(lncCtor: any): void {
     LNC = lncCtor;
+    // Auto-install a no-op prober so tests never make real network calls
+    // to the remote signer endpoint.
+    _remoteSignerProber = async () => {};
   },
   resetLNCMock(): void {
     LNC = null;
+    _remoteSignerProber = null;
   },
   resetSingleton(): void {
     _lnClient = null;
     tokenCache.clear();
+  },
+  /** Override the remote signer probe (pass null to restore the real probe) */
+  setRemoteSignerProber(
+    fn: ((config: RemoteSignerConfig) => Promise<void>) | null
+  ): void {
+    _remoteSignerProber = fn;
   },
 };
 

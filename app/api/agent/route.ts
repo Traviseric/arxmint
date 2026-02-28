@@ -15,6 +15,20 @@ import {
   buildCashuChallenge,
   type CashuPaywallConfig,
 } from "@/lib/cashu-paywall";
+import { validateRemoteSignerEnv } from "@/lib/lightning-validator";
+
+// Hard validation at module init — refuse to start if remote signer is
+// misconfigured. Prevents agents from running without key isolation when
+// REMOTE_SIGNER_URL or LNC_SECURITY_TIER=pay-only is set.
+const _signerEnvCheck = validateRemoteSignerEnv(
+  process.env as Record<string, string | undefined>
+);
+if (!_signerEnvCheck.valid) {
+  throw new Error(
+    `[ArxMint] Remote signer misconfigured — agent route cannot start: ${_signerEnvCheck.errors.join("; ")}`
+  );
+}
+
 /** Default paywall config — matches .env.example CASHU_MINT_URL */
 const PAYWALL_CONFIG: CashuPaywallConfig = {
   priceSats: Number(process.env.L402_PRICE_SATS) || 100,
