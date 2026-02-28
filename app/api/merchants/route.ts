@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ merchant }, { status: 201 });
   } catch (error: any) {
-    console.warn("Could not save merchant to DB:", error.message);
+    console.error("[ArxMint] POST /api/merchants error:", error.message, error.stack);
     return NextResponse.json(
-      { error: error.message || "Failed to save merchant" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

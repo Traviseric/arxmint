@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 /** In-memory store: base64-macaroon → { rHashBase64, expiresAt } */
 const pendingL402 = new Map<
@@ -157,6 +158,14 @@ async function createLNDInvoice(
  */
 export async function GET(request: NextRequest) {
   pruneExpired();
+
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  if (!checkRateLimit(`l402:${ip}`, 20, 60_000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   const authHeader = request.headers.get("Authorization");
 

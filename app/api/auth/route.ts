@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyEvent } from "nostr-tools";
 import { createSession } from "@/lib/auth-middleware";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 const NIP98_KIND = 27235;
 const MAX_AGE_SEC = 60; // event must be fresh within 60 seconds
@@ -13,6 +14,14 @@ const SESSION_COOKIE = "arxmint_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
 export async function POST(request: NextRequest) {
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  if (!checkRateLimit(`auth:${ip}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const body = await request.json();
     const { pubkey, signedEvent } = body;
@@ -88,8 +97,9 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error: any) {
+    console.error("[ArxMint] POST /api/auth error:", error.message, error.stack);
     return NextResponse.json(
-      { error: error.message || "Auth failed" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

@@ -27,8 +27,9 @@ export async function GET() {
       },
     });
   } catch (error: any) {
+    console.error("[ArxMint] GET /api/cycle error:", error.message, error.stack);
     return NextResponse.json(
-      { error: error.message || "Failed to fetch cycle data" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

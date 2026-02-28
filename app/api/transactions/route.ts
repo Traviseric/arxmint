@@ -75,9 +75,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ transaction }, { status: 201 });
   } catch (error: any) {
-    console.warn("Could not save transaction to DB:", error.message);
+    console.error("[ArxMint] POST /api/transactions error:", error.message, error.stack);
     return NextResponse.json(
-      { error: error.message || "Failed to record transaction" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

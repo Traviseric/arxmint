@@ -7,8 +7,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { computeBCEMetrics } from "@/lib/bce-metrics";
+import { requireAuth } from "@/lib/auth-middleware";
 
 export async function GET(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(request.url);
     const communityId = searchParams.get("communityId");

@@ -65,8 +65,9 @@ export async function POST(request: NextRequest) {
       ...(savedId ? { id: savedId } : {}),
     });
   } catch (error: any) {
+    console.error("[ArxMint] POST /api/community error:", error.message, error.stack);
     return NextResponse.json(
-      { error: error.message || "Failed to generate community" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
