@@ -165,6 +165,38 @@ test("admin tier is required for bakeMacaroon", async () => {
   assert.ok(baked.permissions.includes("info:read"));
 });
 
+test("remote signer mode: isRemoteSignerMode() reflects signer delegation state", async () => {
+  // Watch-only: no remote signer
+  const watchClient = new SovereignLightningClient();
+  await watchClient.connect("pairing phrase words", "pw", "watch-only");
+  assert.equal(watchClient.isRemoteSignerMode(), false);
+
+  // Pay-only with remote signer: signing should be delegated
+  const payClient = new SovereignLightningClient();
+  await payClient.connect("pairing phrase words", "pw", "pay-only", {
+    signerUrl: "https://signer.local:8443",
+    tlsCert: "base64cert",
+    macaroon: "00aa11bb",
+  });
+  assert.equal(payClient.isRemoteSignerMode(), true);
+  assert.equal(payClient.securityTier, "pay-only");
+
+  // Admin (local): no remote signer
+  const adminClient = new SovereignLightningClient();
+  await adminClient.connect("pairing phrase words", "pw", "admin");
+  assert.equal(adminClient.isRemoteSignerMode(), false);
+});
+
+test("remote signer: SovereignLightningClient exposes no private key material", () => {
+  const client = new SovereignLightningClient();
+  // Verify the client surface has no properties that could hold private key material
+  const proto = Object.getOwnPropertyNames(Object.getPrototypeOf(client));
+  const noKeyLeakage = ["seed", "privkey", "privateKey", "mnemonic", "secret", "entropy"].every(
+    (name) => !proto.includes(name)
+  );
+  assert.ok(noKeyLeakage, "SovereignLightningClient must not expose private key properties");
+});
+
 test("tier escalation helper prompts only on risk escalation", () => {
   assert.match(
     getTierEscalationConfirmation("watch-only", "pay-only") || "",
