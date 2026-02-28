@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth-middleware";
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,6 +27,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const {
