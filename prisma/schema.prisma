@@ -1,0 +1,77 @@
+// ============================================================
+// ArxMint — Prisma Schema
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Community {
+  id        String   @id @default(cuid())
+  name      String
+  prompt    String
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  walletProofs WalletProof[]
+  merchants    Merchant[]
+  transactions Transaction[]
+
+  @@map("communities")
+}
+
+model WalletProof {
+  id          String    @id @default(cuid())
+  communityId String
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  mintUrl     String
+  proofData   Json
+  amount      Int
+  isSpent     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@map("wallet_proofs")
+}
+
+model Merchant {
+  id               String    @id @default(cuid())
+  communityId      String
+  community        Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  category         String?
+  cashuAddress     String?
+  lightningAddress String?
+  createdAt        DateTime  @default(now())
+
+  @@map("merchants")
+}
+
+model Transaction {
+  id          String    @id @default(cuid())
+  communityId String
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  type        String    // send | receive | swap
+  amount      Int
+  backend     String    // cashu | lightning | fedimint
+  timestamp   DateTime  @default(now())
+  status      String    // pending | confirmed | failed
+  counterparty String?
+  proofData   Json?
+
+  @@map("transactions")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  nostrPubkey String   @unique
+  createdAt   DateTime @default(now())
+
+  @@map("users")
+}
