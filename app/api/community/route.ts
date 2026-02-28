@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateDeployment, generateApertureConfig } from "@/lib/community-generator";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
+import { validatePrompt, errorResponse, errorStatus } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -29,14 +31,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt, network = "testnet" } = body;
+    const { network = "testnet" } = body;
 
-    if (!prompt || typeof prompt !== "string" || prompt.trim().length < 10) {
+    const prompt = validatePrompt(body.prompt);
+    if (prompt.length < 10)
       return NextResponse.json(
-        { error: "Prompt must be at least 10 characters" },
+        { error: "Prompt must be at least 10 characters", code: "VALIDATION_PROMPT" },
         { status: 400 }
       );
-    }
 
     const deployment = generateDeployment(prompt, network);
     const apertureConfig = deployment.community.agents.enabled
@@ -64,11 +66,12 @@ export async function POST(request: NextRequest) {
       apertureConfig,
       ...(savedId ? { id: savedId } : {}),
     });
-  } catch (error: any) {
-    console.error("[ArxMint] POST /api/community error:", error.message, error.stack);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (!(error instanceof Error) || error.name !== "ValidationError") {
+      logger.error("POST /api/community error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return NextResponse.json(errorResponse(error), { status: errorStatus(error) });
   }
 }

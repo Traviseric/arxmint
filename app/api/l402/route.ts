@@ -10,6 +10,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import { logger } from "@/lib/logger";
 
 /** In-memory store: base64-macaroon → { rHashBase64, expiresAt } */
 const pendingL402 = new Map<
@@ -296,6 +298,17 @@ export async function GET(request: NextRequest) {
   // ── Challenge path: no valid token — generate invoice and return 402 ──
   const amountSats = Number(process.env.L402_PRICE_SATS) || 100;
 
+  try {
+    checkSingleTxCap(amountSats);
+  } catch (e: unknown) {
+    if (e instanceof ValueCapError) {
+      return NextResponse.json(
+        { error: e.message, code: "VALUE_CAP_EXCEEDED" },
+        { status: 400 }
+      );
+    }
+  }
+
   // Unique macaroon identifier — ties this challenge to one rHash
   const macaroonId = randomBytes(16).toString("hex");
   const macaroonPayload = {
@@ -346,6 +359,12 @@ export async function GET(request: NextRequest) {
   pendingL402.set(macaroon, {
     rHashBase64: rHash,
     expiresAt: Date.now() + TTL_MS,
+  });
+
+  logger.payment("l402_challenge_created", {
+    amount: amountSats,
+    backend: "lightning",
+    status: "pending",
   });
 
   const response = NextResponse.json(

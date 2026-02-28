@@ -7,6 +7,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
+import { validateAmount, errorResponse, errorStatus } from "@/lib/validation";
+import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,11 +64,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const validatedAmount = validateAmount(amount);
+    checkSingleTxCap(validatedAmount);
+
     const transaction = await db.transaction.create({
       data: {
         communityId,
         type,
-        amount: Math.round(amount ?? 0),
+        amount: validatedAmount,
         backend,
         status,
         counterparty: counterparty ?? null,
@@ -74,11 +80,18 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ transaction }, { status: 201 });
-  } catch (error: any) {
-    console.error("[ArxMint] POST /api/transactions error:", error.message, error.stack);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof ValueCapError) {
+      return NextResponse.json(
+        { error: error.message, code: "VALUE_CAP_EXCEEDED" },
+        { status: 400 }
+      );
+    }
+    if (!(error instanceof Error) || error.name !== "ValidationError") {
+      logger.error("POST /api/transactions error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return NextResponse.json(errorResponse(error), { status: errorStatus(error) });
   }
 }

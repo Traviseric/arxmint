@@ -10,6 +10,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Wallet } from "@cashu/cashu-ts";
 import { db } from "@/lib/db";
+import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import { logger } from "@/lib/logger";
 
 // ---- Types --------------------------------------------------
 
@@ -148,6 +150,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  try {
+    checkSingleTxCap(feeAmount);
+  } catch (e: unknown) {
+    if (e instanceof ValueCapError) {
+      return NextResponse.json(
+        { error: e.message, code: "VALUE_CAP_EXCEEDED" },
+        { status: 400 }
+      );
+    }
+  }
+
   // ---- Idempotency ----
   const existing = await findExistingSettlement(saleId);
   if (existing) {
@@ -249,6 +262,12 @@ export async function POST(request: NextRequest) {
 
   // Cache in-process for idempotency
   _settlements.set(saleId, record);
+
+  logger.payment("settlement_initiated", {
+    amount: feeAmount,
+    backend: method,
+    status,
+  });
 
   const response: Record<string, unknown> = {
     settlementId: txId,

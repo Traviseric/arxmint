@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
+import { validateCommunityName, errorResponse, errorStatus } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,13 +47,11 @@ export async function POST(request: NextRequest) {
       contactInfo,
     } = body;
 
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json({ error: "name is required" }, { status: 400 });
-    }
+    const validatedName = validateCommunityName(name);
 
     if (!communityId || typeof communityId !== "string") {
       return NextResponse.json(
-        { error: "communityId is required" },
+        { error: "communityId is required", code: "VALIDATION_COMMUNITYID" },
         { status: 400 }
       );
     }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const merchant = await db.merchant.create({
       data: {
         communityId,
-        name: name.trim(),
+        name: validatedName,
         description: description?.trim() ?? null,
         category: category ?? null,
         cashuAddress: cashuAddress ?? null,
@@ -73,11 +73,12 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ merchant }, { status: 201 });
-  } catch (error: any) {
-    console.error("[ArxMint] POST /api/merchants error:", error.message, error.stack);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (!(error instanceof Error) || error.name !== "ValidationError") {
+      logger.error("POST /api/merchants error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return NextResponse.json(errorResponse(error), { status: errorStatus(error) });
   }
 }

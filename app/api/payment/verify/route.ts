@@ -13,6 +13,8 @@ import {
 } from "@/lib/payment-sdk";
 import { _challenges } from "@/app/api/payment/route";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
+import { validateCashuToken } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   // Optional: identify the caller (ArxMint session cookie or marketplace Bearer JWT)
@@ -66,22 +68,23 @@ export async function POST(request: NextRequest) {
   }
 
   if (type === "cashu") {
-    const token = String(body.token ?? "");
+    let token: string;
+    try {
+      token = validateCashuToken(body.token);
+    } catch (e: unknown) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "Invalid token", code: "VALIDATION_TOKEN" },
+        { status: 400 }
+      );
+    }
     const mintUrl = String(
       body.mintUrl ?? process.env.CASHU_MINT_URL ?? "http://localhost:3338"
     );
     const expectedAmount = Number(body.expectedAmount ?? 0);
 
-    if (!token) {
-      return NextResponse.json(
-        { error: "token is required for Cashu verification" },
-        { status: 400 }
-      );
-    }
-
     if (expectedAmount <= 0) {
       return NextResponse.json(
-        { error: "expectedAmount must be a positive number of sats" },
+        { error: "expectedAmount must be a positive number of sats", code: "VALIDATION_EXPECTEDAMOUNT" },
         { status: 400 }
       );
     }
@@ -98,6 +101,12 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    logger.payment("verify", {
+      amount: expectedAmount,
+      backend: "cashu",
+      status: result.success ? "paid" : "failed",
+    });
 
     return NextResponse.json({
       success: result.success,

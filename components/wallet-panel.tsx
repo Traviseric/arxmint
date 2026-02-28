@@ -178,6 +178,15 @@ export function WalletPanel() {
         </div>
       </div>
 
+      {/* Pilot limits notice */}
+      <p className="text-sovereign-muted text-xs text-center -mt-4">
+        Pilot limits: max{" "}
+        {(Number(process.env.NEXT_PUBLIC_MAX_SINGLE_TX_SATS) || 10_000).toLocaleString()}{" "}
+        sats per transaction ·{" "}
+        {(Number(process.env.NEXT_PUBLIC_MAX_DAILY_VOLUME_SATS) || 100_000).toLocaleString()}{" "}
+        sats per day
+      </p>
+
       {/* Dynamic View */}
       {view === "receive" && (
         <div

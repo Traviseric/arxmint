@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyEvent } from "nostr-tools";
 import { createSession } from "@/lib/auth-middleware";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { logger } from "@/lib/logger";
 
 const NIP98_KIND = 27235;
 const MAX_AGE_SEC = 60; // event must be fresh within 60 seconds
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
     // Create server-side session
     const token = createSession(pubkey);
 
+    logger.auth("login", { ip, pubkey: pubkey.slice(0, 8), success: true });
+
     const response = NextResponse.json({ success: true, pubkey });
     response.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
@@ -96,11 +99,12 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
-    console.error("[ArxMint] POST /api/auth error:", error.message, error.stack);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    logger.auth("login_failed", {
+      ip,
+      success: false,
+      reason: error instanceof Error ? error.message : "unknown",
+    });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

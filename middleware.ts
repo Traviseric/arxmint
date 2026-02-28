@@ -6,6 +6,8 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
@@ -90,6 +92,44 @@ export async function middleware(request: NextRequest) {
   const isProtectedPage = PROTECTED_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix)
   );
+
+  // ---- Rate limiting (API routes only) ----
+  if (isApiRoute) {
+    const ip =
+      request.headers.get("x-forwarded-for") ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+
+    let rateConfig = RATE_LIMITS.public;
+    let rateBucket = "public";
+
+    if (
+      pathname.startsWith("/api/l402") ||
+      pathname.startsWith("/api/payment") ||
+      pathname.startsWith("/api/agent") ||
+      pathname.startsWith("/api/settlement")
+    ) {
+      rateConfig = RATE_LIMITS.payment;
+      rateBucket = "payment";
+    } else if (pathname.startsWith("/api/auth")) {
+      rateConfig = RATE_LIMITS.auth;
+      rateBucket = "auth";
+    }
+
+    const rateLimitKey = `${ip}:${rateBucket}`;
+    const { allowed, retryAfter } = checkRateLimit(rateLimitKey, rateConfig);
+
+    if (!allowed) {
+      logger.rateLimit(ip, pathname, retryAfter ?? 60);
+      return new NextResponse("Too Many Requests", {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfter ?? 60),
+          "Content-Type": "text/plain",
+        },
+      });
+    }
+  }
 
   // ---- Session gate for protected page routes ----
   if (isProtectedPage) {

@@ -15,6 +15,9 @@ import {
   type PaymentChallenge,
 } from "@/lib/payment-sdk";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
+import { validateAmount, errorResponse } from "@/lib/validation";
+import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import { logger } from "@/lib/logger";
 
 /** In-process challenge registry (process lifetime) */
 export const _challenges = new Map<
@@ -48,12 +51,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const amount = Number(body.amount);
-  if (!amount || amount <= 0) {
-    return NextResponse.json(
-      { error: "amount must be a positive number of sats" },
-      { status: 400 }
-    );
+  let amount: number;
+  try {
+    amount = validateAmount(body.amount);
+    checkSingleTxCap(amount);
+  } catch (e: unknown) {
+    if (e instanceof ValueCapError) {
+      return NextResponse.json(
+        { error: e.message, code: "VALUE_CAP_EXCEEDED" },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json(errorResponse(e), { status: 400 });
   }
 
   const typeParam = String(body.type ?? "auto");
@@ -103,6 +112,12 @@ export async function POST(request: NextRequest) {
       createdAt: Date.now(),
     });
 
+    logger.payment("challenge_created", {
+      amount,
+      backend: challengeType === "l402" ? "lightning" : "cashu",
+      status: "pending",
+    });
+
     return NextResponse.json({
       challengeId,
       challenge,
@@ -118,10 +133,12 @@ export async function POST(request: NextRequest) {
               "2. Submit it via: POST /api/payment/verify { type: 'cashu', token, mintUrl, expectedAmount }",
             ],
     });
-  } catch (error: any) {
-    console.error("[ArxMint] Payment challenge creation failed:", error.message);
+  } catch (error: unknown) {
+    logger.error("Payment challenge creation failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
-      { error: "Failed to create payment challenge", details: error.message },
+      { error: "Failed to create payment challenge", code: "INTERNAL_ERROR" },
       { status: 500 }
     );
   }
