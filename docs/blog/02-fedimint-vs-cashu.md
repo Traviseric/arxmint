@@ -50,10 +50,10 @@ This isn't theoretical — the wallet panel shows both balances and the privacy 
 |---------|----------|-------|
 | Trust model | Federated (m-of-n) | Single mint |
 | Setup complexity | Higher (multiple guardians) | Lower (one server) |
-| Latency | ~500ms (consensus round) | ~50ms (single signature) |
+| Latency | Sub-second (consensus round) | Near-instant (single signature) |
 | Privacy | Mint federation can't link spender to receiver | Mint can't link spender to receiver |
 | Best for | Community custody, savings | Payments, agents, paywalls |
-| SDK | @fedimint/core (WASM) | cashu-ts v3 (pure TS) |
+| SDK | @fedimint/core + @fedimint/transport-web (WASM) | cashu-ts v3 (pure TS) |
 | ArxMint integration | Full wallet + peg-in/out | Full wallet + NUT-24 + NUT-26 |
 
 ## The Bottom Line

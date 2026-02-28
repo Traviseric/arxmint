@@ -27,7 +27,7 @@ No API keys. No OAuth flows. No rate limit negotiations. Just pay-per-call with 
 Cashu's NUT-24 spec adds native ecash paywalls — same 402 pattern, but payment is in ecash tokens instead of Lightning invoices. This is useful when:
 
 - The agent already holds Cashu tokens (no need to route through Lightning)
-- You want sub-satoshi payments (ecash can denominate arbitrarily)
+- You want minimal-fee payments within the same mint (no Lightning routing costs)
 - The agent-to-agent payment should be instant and private
 
 ArxMint implements both. The `cashu-paywall.ts` middleware checks for L402 macaroons first, then NUT-24 ecash tokens. Agents can pay with whichever rail they have loaded.
@@ -57,9 +57,10 @@ ArxMint includes an agent marketplace where:
 3. Users or other agents browse the marketplace and pay-per-use
 4. Payment flows through the spend router (ecash preferred, Lightning fallback)
 
-The marketplace uses macaroon-based access control with three tiers:
+The marketplace uses macaroon-based access control with four tiers:
 - **read-only**: Browse agent listings
 - **invoice-only**: Generate invoices for agent services
+- **pay-only**: Pay invoices via remote signer (no signing keys on device)
 - **agent-commerce**: Full pay-and-use access
 
 ## Practical Example

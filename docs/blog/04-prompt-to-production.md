@@ -81,7 +81,7 @@ ArxMint is a Next.js 15 application using:
 - **cashu-ts v3** — Pure TypeScript Cashu wallet and mint interaction
 - **lnc-web** — Lightning Node Connect for browser-based Lightning
 - **Zustand** — State management for wallet and privacy state
-- **Tailwind + shadcn-style components** — UI
+- **Tailwind + custom component classes** — UI (`.sovereign-card`, `.sovereign-btn`, etc.)
 
 Everything runs client-side except the Docker generation and API routes. The Fedimint and Cashu SDKs are client libraries — they connect to existing infrastructure, they don't create it. Federation creation requires `fedimintd` guardian nodes, which the Docker Compose provides.
 

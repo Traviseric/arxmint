@@ -52,7 +52,7 @@ BIP-352 Silent Payments solve the address reuse problem. Instead of publishing a
 
 ## Layer 3: Fedimint Over Tor (Network Privacy)
 
-Even with ecash, your IP address can reveal your identity. Fedimint guardians can run as Tor hidden services. Client connections route through Tor, so the guardian federation doesn't know the IP addresses of its members.
+Even with ecash, your IP address can reveal your identity. Fedimint guardians can be configured to run as Tor hidden services. Client connections would route through Tor, so the guardian federation wouldn't know the IP addresses of its members. This is on the ArxMint roadmap but not yet implemented in the Docker deployment.
 
 ## The Sovereign Stack
 
@@ -65,7 +65,7 @@ Combining all three layers gives you the sovereign stack:
 | Network | Tor + Fedimint | IP address and location |
 | Custody | Fedimint federation | No single custodian has all keys |
 
-ArxMint's privacy dashboard scores each transaction across these layers. A fully private transaction (ecash over Tor to a federation member) scores 100. An on-chain transaction to a reused address scores much lower.
+ArxMint's privacy dashboard scores each transaction across these layers. A fully private transaction using ecash with CoinJoin and Silent Payments scores up to 80 today, with a path to 100 as Ark matures. An on-chain transaction to a reused address scores much lower.
 
 ## For AI Agents
 
@@ -89,7 +89,7 @@ ArxMint is applying for an OpenSats grant to continue development on:
 - ZK reissuance for auditable-but-private agent spending
 - Multi-city federation networking
 
-If you're building on Fedimint, Cashu, or Silent Payments, check out the [ArxMint repo](https://github.com/arxmint/arxmint) and the upstream projects we contribute to.
+If you're building on Fedimint, Cashu, or Silent Payments, check out the [ArxMint repo](https://github.com/Traviseric/arxmint) and the upstream projects we contribute to.
 
 ---
 

@@ -24,7 +24,7 @@ Three technologies make this practical today:
 
 A community of 30 people — a neighborhood, a co-working space, a local market — can spin up:
 
-- 3-5 Fedimint guardians running on cheap VPS or Raspberry Pi
+- 3-7 Fedimint guardians running on cheap VPS or Raspberry Pi
 - A Cashu mint for quick, low-trust payments between members
 - A Lightning gateway so members can pay any Lightning invoice
 - A merchant onboarding flow so the local coffee shop accepts ecash
@@ -57,7 +57,7 @@ The result is a private, censorship-resistant payment system that your community
 
 - [Fedimint documentation](https://fedimint.org)
 - [Cashu protocol specification](https://github.com/cashubtc/nuts)
-- [ArxMint on GitHub](https://github.com/arxmint/arxmint)
+- [ArxMint on GitHub](https://github.com/Traviseric/arxmint)
 
 ---
 
