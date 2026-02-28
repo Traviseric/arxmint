@@ -156,13 +156,13 @@ export default function HomePage() {
                 className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 pt-8 border-t border-border-subtle"
               >
                 <div>
-                  <div className="text-sm text-text-secondary font-mono mb-1">NETWORK_VAL</div>
+                  <div className="text-sm text-text-secondary font-mono mb-1">NETWORK_VAL <span className="text-text-muted">(demo)</span></div>
                   <div className="text-xl font-mono text-text-primary">
                     ${liveVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-text-secondary font-mono mb-1">ACTIVE_NODES</div>
+                  <div className="text-sm text-text-secondary font-mono mb-1">ACTIVE_NODES <span className="text-text-muted">(demo)</span></div>
                   <div className="text-xl font-mono text-text-primary flex items-center gap-2">
                     {activeNodes} <ArrowDown className="w-3 h-3 text-red-400 rotate-180" aria-hidden="true" />
                   </div>
