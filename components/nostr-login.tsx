@@ -21,6 +21,8 @@ export function NostrLogin() {
   const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -33,16 +35,24 @@ export function NostrLogin() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Focus first focusable element when login panel opens
+  // Return focus to trigger button when dropdown closes
   useEffect(() => {
-    if (!open || nostrConnected) return;
+    if (wasOpenRef.current && !open) {
+      triggerRef.current?.focus();
+    }
+    wasOpenRef.current = open;
+  }, [open]);
+
+  // Focus first focusable element when dropdown opens
+  useEffect(() => {
+    if (!open) return;
     const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
     focusable?.[0]?.focus();
-  }, [open, nostrConnected]);
+  }, [open]);
 
-  // Check for extension when dropdown opens
+  // Check for extension when login dropdown opens
   useEffect(() => {
     if (!open || nostrConnected) return;
 
@@ -59,6 +69,35 @@ export function NostrLogin() {
       setChecking(false);
     });
   }, [open, nostrConnected]);
+
+  // Focus trap: cycle focus within dropdown, close on Escape
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+    if (e.key !== "Tab") return;
+
+    const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable || focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
 
   async function handleConnect() {
     setConnecting(true);
@@ -112,7 +151,10 @@ export function NostrLogin() {
     return (
       <div className="relative" ref={dropdownRef}>
         <button
+          ref={triggerRef}
           onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-haspopup="true"
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-xs sm:text-sm"
         >
           {nostrUser.picture ? (
@@ -130,7 +172,14 @@ export function NostrLogin() {
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-border-default bg-bg-surface p-3 shadow-xl z-50">
+          <div
+            ref={panelRef}
+            onKeyDown={handleKeyDown}
+            role="dialog"
+            aria-modal="true"
+            aria-label="User account"
+            className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-border-default bg-bg-surface p-3 shadow-xl z-50"
+          >
             {nostrUser.name && (
               <p className="text-sm font-semibold text-text-primary mb-1">{nostrUser.name}</p>
             )}
@@ -170,7 +219,10 @@ export function NostrLogin() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-xs sm:text-sm text-text-secondary hover:text-text-primary"
       >
         <Zap className="w-3.5 h-3.5" />
@@ -180,6 +232,7 @@ export function NostrLogin() {
       {open && (
         <div
           ref={panelRef}
+          onKeyDown={handleKeyDown}
           role="dialog"
           aria-modal="true"
           aria-labelledby="nostr-login-title"

@@ -5,12 +5,15 @@
 // Extracted from layout.tsx to support Zustand-based Nostr login.
 // ============================================================
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Menu } from "lucide-react";
 import { NostrLogin } from "@/components/nostr-login";
 import { hydrateNostrSession } from "@/lib/store";
 
 export function NavBar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   // Hydrate Nostr session from localStorage on mount
   useEffect(() => {
     hydrateNostrSession();
@@ -87,8 +90,40 @@ export function NavBar() {
           >
             Get Started
           </a>
+
+          {/* Mobile hamburger trigger */}
+          <button
+            className="block sm:hidden p-2 rounded-lg hover:bg-sovereign-panel transition-colors"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle mobile menu"
+            aria-expanded={mobileOpen}
+          >
+            <Menu className="w-5 h-5 text-sovereign-muted" />
+          </button>
         </div>
       </div>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="sm:hidden absolute top-full left-0 right-0 bg-sovereign-panel border-b border-white/10 z-50">
+          <div className="flex flex-col p-4 gap-3">
+            <a
+              href="/why"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
+            >
+              Why
+            </a>
+            <a
+              href="/whitepaper"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
+            >
+              Whitepaper
+            </a>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

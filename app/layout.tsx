@@ -44,11 +44,17 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} min-h-screen bg-bg-base text-text-primary font-sans selection:bg-accent/30 selection:text-white`}>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-btc-orange focus:text-black focus:font-medium focus:text-sm"
+        >
+          Skip to main content
+        </a>
         <StorageHydrator />
         <NavBar />
 
         {/* Main content */}
-        <main className="pt-16">{children}</main>
+        <main id="main" className="pt-16">{children}</main>
 
         {/* Footer */}
         <footer className="border-t border-border-default py-8 mt-20">
