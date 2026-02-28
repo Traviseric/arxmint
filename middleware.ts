@@ -22,12 +22,21 @@ const PROTECTED_PREFIXES = ["/dashboard", "/wallet", "/merchant", "/admin"];
 // Mirrors the HMAC-signed token format in lib/auth-middleware.ts.
 // Uses Web Crypto API (crypto.subtle) which runs on Edge Runtime.
 
+// Ephemeral key used only in development when NEXTAUTH_SECRET is absent.
+const _DEV_EPHEMERAL_SECRET = `dev-ephemeral-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
 function getSecret(): string {
-  return (
-    process.env.NEXTAUTH_SECRET ??
-    process.env.AUTH_SECRET ??
-    "dev-secret-change-in-production"
-  );
+  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[ArxMint] FATAL: NEXTAUTH_SECRET is not set. " +
+          "Generate one with: openssl rand -hex 32"
+      );
+    }
+    return _DEV_EPHEMERAL_SECRET;
+  }
+  return secret;
 }
 
 function hexToUint8Array(hex: string): Uint8Array {

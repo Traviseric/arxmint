@@ -27,11 +27,31 @@ const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
  */
 const MACAROON_ROOT_KEY = process.env.MACAROON_ROOT_KEY;
 if (!MACAROON_ROOT_KEY) {
-  console.error(
-    "[ArxMint] FATAL: MACAROON_ROOT_KEY is not set. " +
-      "L402 macaroon signing is disabled — tokens are unsigned and forgeable. " +
-      "Set MACAROON_ROOT_KEY in your environment (openssl rand -hex 32)."
-  );
+  if (process.env.NODE_ENV === "production") {
+    logger.error(
+      { action: "l402_misconfigured" },
+      "MACAROON_ROOT_KEY not set in production — L402 endpoint will return 503"
+    );
+  } else {
+    console.warn(
+      "[ArxMint] DEV: MACAROON_ROOT_KEY is not set. " +
+        "Using unsigned macaroons (development only). Set MACAROON_ROOT_KEY for production."
+    );
+  }
+}
+
+/**
+ * Guard: return 503 in production if MACAROON_ROOT_KEY is not configured.
+ * Returns a NextResponse to return early, or null to continue.
+ */
+function requireMacaroonKey(): NextResponse | null {
+  if (!MACAROON_ROOT_KEY && process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "Service temporarily unavailable — payment system misconfigured" },
+      { status: 503 }
+    );
+  }
+  return null;
 }
 
 /** Remove expired pending invoices to keep the map lean */
@@ -194,6 +214,9 @@ async function createLNDInvoice(
  * the L402 flow transparently for agents using lnget.
  */
 export async function GET(request: NextRequest) {
+  const macaroonGuard = requireMacaroonKey();
+  if (macaroonGuard) return macaroonGuard;
+
   pruneExpired();
 
   const ip =
@@ -317,12 +340,15 @@ export async function GET(request: NextRequest) {
     caveats: ["service=agent-api", "tier=premium"],
   };
 
-  // Sign the macaroon with HMAC-SHA256; fall back to unsigned if key not configured
+  // Sign the macaroon with HMAC-SHA256.
+  // In production MACAROON_ROOT_KEY is required (requireMacaroonKey() gates above);
+  // in dev, fall back to an unsigned macaroon with an explicit console warning.
   let macaroon: string;
   try {
     macaroon = signMacaroon(macaroonPayload);
   } catch {
-    // MACAROON_ROOT_KEY not set — already logged as FATAL at module load
+    // MACAROON_ROOT_KEY not set — only reachable in development (production blocked above)
+    console.warn("[ArxMint] DEV: issuing unsigned macaroon. Set MACAROON_ROOT_KEY for production.");
     macaroon = Buffer.from(JSON.stringify(macaroonPayload)).toString("base64");
   }
 

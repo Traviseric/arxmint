@@ -20,22 +20,43 @@ import { NextRequest, NextResponse } from "next/server";
 const SESSION_TTL_SEC = 7 * 24 * 60 * 60; // 7 days
 const SESSION_COOKIE = "arxmint_session";
 
+// Ephemeral key used only in development when NEXTAUTH_SECRET is absent.
+// Regenerated on each server start — sessions won't survive restarts, which is acceptable in dev.
+const _DEV_EPHEMERAL_SECRET = `dev-ephemeral-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
 function getSecret(): string {
-  return (
-    process.env.NEXTAUTH_SECRET ??
-    process.env.AUTH_SECRET ??
-    "dev-secret-change-in-production"
-  );
+  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[ArxMint] FATAL: NEXTAUTH_SECRET is not set. " +
+          "Generate one with: openssl rand -hex 32"
+      );
+    }
+    console.warn(
+      "[ArxMint] DEV: NEXTAUTH_SECRET is not set. " +
+        "Using ephemeral key — sessions will not survive server restarts."
+    );
+    return _DEV_EPHEMERAL_SECRET;
+  }
+  return secret;
 }
 
 /** Shared secret used for cross-project token verification with Teneo Marketplace */
 function getSharedSecret(): string {
-  return (
+  const secret =
     process.env.AUTH_SHARED_SECRET ??
     process.env.NEXTAUTH_SECRET ??
-    process.env.AUTH_SECRET ??
-    "dev-secret-change-in-production"
-  );
+    process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[ArxMint] FATAL: AUTH_SHARED_SECRET or NEXTAUTH_SECRET is not set."
+      );
+    }
+    return _DEV_EPHEMERAL_SECRET;
+  }
+  return secret;
 }
 
 function computeHmac(pubkey: string, exp: number): string {
@@ -188,9 +209,10 @@ export function verifySharedSession(token: string): { pubkey: string } | null {
  * Accepts (in priority order):
  * 1. ArxMint session cookie (`arxmint_session`)
  * 2. Teneo Marketplace Bearer JWT (`Authorization: Bearer <token>`)
+ * 3. Server-to-server `X-Marketplace-Secret` header (Teneo Marketplace backend calls)
  *
- * Returns the caller's Nostr pubkey, or null if unauthenticated.
- * Does NOT reject the request — callers decide whether auth is required.
+ * Returns the caller's Nostr pubkey (or "marketplace-system" for server-to-server),
+ * or null if unauthenticated. Does NOT reject the request — callers decide.
  */
 export function getCallerFromRequest(request: NextRequest): string | null {
   // 1. ArxMint native session cookie
@@ -203,6 +225,17 @@ export function getCallerFromRequest(request: NextRequest): string | null {
     const bearerToken = authHeader.slice(7).trim();
     const result = verifySharedSession(bearerToken);
     if (result) return result.pubkey;
+  }
+
+  // 3. Server-to-server: X-Marketplace-Secret header (Teneo Marketplace backend → ArxMint)
+  const marketplaceSecret = request.headers.get("X-Marketplace-Secret");
+  const expectedMarketplaceSecret = process.env.MARKETPLACE_SHARED_SECRET;
+  if (
+    marketplaceSecret &&
+    expectedMarketplaceSecret &&
+    marketplaceSecret === expectedMarketplaceSecret
+  ) {
+    return "marketplace-system";
   }
 
   return null;

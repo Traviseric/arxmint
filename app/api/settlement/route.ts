@@ -12,6 +12,7 @@ import { Wallet } from "@cashu/cashu-ts";
 import { db } from "@/lib/db";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
+import { getCallerFromRequest } from "@/lib/auth-middleware";
 
 // ---- Types --------------------------------------------------
 
@@ -102,9 +103,12 @@ async function createCashuMintQuote(
 // ---- POST /api/settlement -----------------------------------
 
 export async function POST(request: NextRequest) {
-  // Auth is optional here: marketplace tokens accepted via getCallerFromRequest
-  // but we don't block unauthenticated calls for the settlement endpoint
-  // (called by server-to-server from Teneo Marketplace).
+  // Require auth: accept ArxMint session cookie, Bearer JWT, or X-Marketplace-Secret
+  // header (server-to-server from Teneo Marketplace via MARKETPLACE_SHARED_SECRET).
+  const caller = getCallerFromRequest(request);
+  if (!caller) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
 
   let body: Partial<SettlementRequest>;
   try {

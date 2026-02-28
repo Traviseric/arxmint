@@ -16,11 +16,11 @@ const REQUIRED_PROD_VARS = [
   "DATABASE_URL",
   "NEXTAUTH_SECRET",
   "CASHU_PRIVATE_KEY",
+  "MACAROON_ROOT_KEY",
 ];
 
 // Variables that SHOULD be set (warn in dev, error in prod)
 const RECOMMENDED_VARS = [
-  "MACAROON_ROOT_KEY",
   "POSTGRES_PASSWORD",
   "CASHU_MINT_URL",
 ];
