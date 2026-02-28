@@ -19,7 +19,7 @@ import {
 import { PrivacyDashboard } from "@/components/privacy-dashboard";
 import { CycleAlerts } from "@/components/cycle-alerts";
 import { WalletPanel } from "@/components/wallet-panel";
-import { useSovereignStore } from "@/lib/store";
+import { useSovereignStore, hydrateMerchantsFromStorage } from "@/lib/store";
 import type { CommunityConfig } from "@/lib/types";
 import { PRIVACY_PRESETS, getBackendAwarePrivacyConfig } from "@/lib/privacy-defaults";
 import { formatSats } from "@/lib/utils";
@@ -39,6 +39,11 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const { balance, currentCommunity, communities, setCommunities, setCurrentCommunity } =
     useSovereignStore();
+
+  // Hydrate merchant listings from localStorage on mount
+  useEffect(() => {
+    hydrateMerchantsFromStorage();
+  }, []);
 
   // Load saved communities from DB on mount
   useEffect(() => {

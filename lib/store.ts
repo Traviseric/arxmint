@@ -4,7 +4,7 @@
 
 import { create } from "zustand";
 import type { Proof } from "@cashu/cashu-ts";
-import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance, NostrUser, StoredTransaction } from "./types";
+import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance, NostrUser, StoredTransaction, MerchantListing } from "./types";
 
 interface SovereignState {
   // Community
@@ -42,6 +42,12 @@ interface SovereignState {
   arkConnected: boolean;
   setConnected: (key: "fedimintConnected" | "cashuConnected" | "lightningConnected" | "arkConnected", value: boolean) => void;
 
+  // Merchants (localStorage-persisted until DB is available)
+  merchants: MerchantListing[];
+  addMerchant: (merchant: MerchantListing) => void;
+  removeMerchant: (id: string) => void;
+  saveMerchantsToStorage: () => void;
+
   // Nostr identity
   nostrUser: NostrUser | null;
   nostrConnected: boolean;
@@ -51,7 +57,9 @@ interface SovereignState {
   setAuthenticated: (value: boolean) => void;
 }
 
-export const useSovereignStore = create<SovereignState>((set) => ({
+const MERCHANT_STORAGE_KEY = "arxmint_merchants";
+
+export const useSovereignStore = create<SovereignState>((set, get) => ({
   currentCommunity: null,
   deployment: null,
   setDeployment: (d) =>
@@ -99,6 +107,20 @@ export const useSovereignStore = create<SovereignState>((set) => ({
   lightningConnected: false,
   arkConnected: false,
   setConnected: (key, value) => set({ [key]: value }),
+
+  // Merchants
+  merchants: [],
+  addMerchant: (merchant) =>
+    set((state) => ({ merchants: [...state.merchants, merchant] })),
+  removeMerchant: (id) =>
+    set((state) => ({ merchants: state.merchants.filter((m) => m.id !== id) })),
+  saveMerchantsToStorage: () => {
+    if (typeof window === "undefined") return;
+    try {
+      const { merchants } = get();
+      localStorage.setItem(MERCHANT_STORAGE_KEY, JSON.stringify(merchants));
+    } catch { /* storage full or unavailable */ }
+  },
 
   // Nostr identity
   nostrUser: null,
@@ -154,6 +176,22 @@ export function hydrateCashuSession(): void {
     store.setBalance({ cashuSats });
   } catch {
     // Ignore storage read errors
+  }
+}
+
+/** Hydrate merchant listings from localStorage (call once on app mount) */
+export function hydrateMerchantsFromStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(MERCHANT_STORAGE_KEY);
+    if (raw) {
+      const merchants = JSON.parse(raw);
+      if (Array.isArray(merchants)) {
+        useSovereignStore.setState({ merchants });
+      }
+    }
+  } catch {
+    // Corrupt data — ignore, start fresh
   }
 }
 

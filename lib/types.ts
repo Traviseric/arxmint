@@ -224,6 +224,32 @@ export interface NostrUser {
   connectedAt: number;
 }
 
+/** Merchant category */
+export type MerchantCategory =
+  | "food-drink"
+  | "retail"
+  | "services"
+  | "health"
+  | "entertainment"
+  | "technology"
+  | "other";
+
+/** Payment methods a merchant can accept */
+export type PaymentMethod = "cashu" | "lightning" | "onchain" | "fedimint";
+
+/** Merchant listing in the community directory */
+export interface MerchantListing {
+  id: string;
+  name: string;
+  category: MerchantCategory;
+  description: string;
+  location: string;
+  paymentMethods: PaymentMethod[];
+  contactInfo?: string;
+  createdAt: number;
+  active: boolean;
+}
+
 /** Parsed user prompt result */
 export interface ParsedPrompt {
   communityName: string;

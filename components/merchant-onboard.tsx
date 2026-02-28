@@ -18,16 +18,9 @@ import {
   Check,
   QrCode,
 } from "lucide-react";
-
-/** Merchant categories */
-export type MerchantCategory =
-  | "food-drink"
-  | "retail"
-  | "services"
-  | "health"
-  | "entertainment"
-  | "technology"
-  | "other";
+import { useSovereignStore } from "@/lib/store";
+import type { MerchantCategory, PaymentMethod, MerchantListing } from "@/lib/types";
+export type { MerchantCategory, PaymentMethod, MerchantListing };
 
 const CATEGORY_LABELS: Record<MerchantCategory, string> = {
   "food-drink": "Food & Drink",
@@ -38,22 +31,6 @@ const CATEGORY_LABELS: Record<MerchantCategory, string> = {
   technology: "Technology",
   other: "Other",
 };
-
-/** Payment methods a merchant can accept */
-export type PaymentMethod = "cashu" | "lightning" | "onchain" | "fedimint";
-
-/** Merchant listing data */
-export interface MerchantListing {
-  id: string;
-  name: string;
-  category: MerchantCategory;
-  description: string;
-  location: string;
-  paymentMethods: PaymentMethod[];
-  contactInfo?: string;
-  createdAt: number;
-  active: boolean;
-}
 
 type Step = "info" | "payment" | "review" | "complete";
 
@@ -81,6 +58,7 @@ export function MerchantOnboard({
   mintUrl = "http://localhost:3338",
   communityId,
 }: MerchantOnboardProps) {
+  const { addMerchant, saveMerchantsToStorage } = useSovereignStore();
   const [step, setStep] = useState<Step>("info");
   const [name, setName] = useState("");
   const [category, setCategory] = useState<MerchantCategory>("food-drink");
@@ -452,11 +430,15 @@ export function MerchantOnboard({
                     ...merchant,
                     id: data.merchant?.id ?? merchant.id,
                   };
+                  addMerchant(savedMerchant);
+                  saveMerchantsToStorage();
                   onComplete(savedMerchant);
                   setStep("complete");
                 } catch (err: any) {
                   // Fallback: complete locally even if DB save fails
                   setSubmitError(`Note: ${err.message} — listing shown locally only`);
+                  addMerchant(merchant);
+                  saveMerchantsToStorage();
                   onComplete(merchant);
                   setStep("complete");
                 } finally {
