@@ -1,5 +1,6 @@
 import { CreateCommunityForm } from "@/components/create-community-form";
 import { Zap } from "lucide-react";
+import { ScrollReveal } from "@/components/scroll-reveal";
 
 export default function CreatePage() {
   return (
@@ -16,32 +17,42 @@ export default function CreatePage() {
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
-            <Zap className="w-4 h-4 text-accent animate-pulse" />
-            <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-              Prompt-Driven Creation
-            </span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-6">
-            Forge your{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">
-              sovereign community.
-            </span>
-          </h1>
-          <p className="text-lg sm:text-xl text-text-secondary font-light max-w-2xl mx-auto leading-relaxed">
-            Describe your community in plain English. ArxMint generates a
-            complete Fedimint/Cashu deployment with Lightning agent rails,
-            privacy defaults, and Docker configuration — ready to launch.
-          </p>
+          <ScrollReveal delay={0.1}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
+              <Zap className="w-4 h-4 text-accent animate-pulse" />
+              <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+                Prompt-Driven Creation
+              </span>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.2}>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-6 drop-shadow-md">
+              Forge your{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">
+                sovereign community.
+              </span>
+            </h1>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.3}>
+            <p className="text-lg sm:text-xl text-text-primary font-medium max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+              Describe your community in plain English. ArxMint generates a
+              complete Fedimint/Cashu deployment with Lightning agent rails,
+              privacy defaults, and Docker configuration — ready to launch.
+            </p>
+          </ScrollReveal>
         </div>
 
         {/* Form */}
-        <div className="glass-heavy border border-border-default rounded-xl p-4 sm:p-8 max-w-3xl mx-auto glow-card relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-3xl rounded-full pointer-events-none" />
-          <div className="relative z-10 w-full overflow-hidden">
-            <CreateCommunityForm />
+        <ScrollReveal delay={0.4} direction="up">
+          <div className="glass-heavy border border-border-default rounded-xl p-4 sm:p-8 max-w-3xl mx-auto glow-card relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-3xl rounded-full pointer-events-none" />
+            <div className="relative z-10 w-full overflow-hidden">
+              <CreateCommunityForm />
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
       </div>
     </div>
   );
