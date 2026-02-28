@@ -3,7 +3,7 @@
 // ============================================================
 
 import { npubEncode } from "nostr-tools/nip19";
-import { verifyEvent } from "nostr-tools";
+import { verifyEvent, SimplePool } from "nostr-tools";
 import type { NostrUser } from "./types";
 
 // NIP-07 window.nostr type declarations
