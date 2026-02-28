@@ -9,6 +9,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Zap, AlertCircle } from "lucide-react";
 import { useSovereignStore } from "@/lib/store";
+import { pubkeyToNpub, truncateNpub } from "@/lib/nostr-auth";
 
 function LoginContent() {
   const router = useRouter();
@@ -79,8 +80,9 @@ function LoginContent() {
         throw new Error(data.error ?? "Authentication failed");
       }
 
-      // Update Zustand store
-      setNostrUser({ pubkey, name: undefined, picture: undefined, nip05: undefined });
+      // Update Zustand store with properly-typed NostrUser
+      const npub = pubkeyToNpub(pubkey);
+      setNostrUser({ pubkey, npub, displayName: truncateNpub(npub), connectedAt: Date.now() });
       setAuthenticated(true);
 
       // Redirect to intended destination
