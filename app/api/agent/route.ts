@@ -1,8 +1,10 @@
 // ============================================================
 // ArxMint — Agent API Endpoints
 // Dual paywall: L402 (Lightning) + NUT-24 (Cashu ecash)
-// In production: gated behind Aperture L402 + Cashu verification
-// In dev: returns demo data with payment instructions
+// In production: gated behind Aperture L402 + Cashu verification.
+//
+// Payment is required by default. To bypass in dev/testing:
+//   SKIP_PAYMENT_VERIFY=true (env var — explicit override only)
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
@@ -32,17 +34,36 @@ const SERVICE_PRICES: Record<string, number> = {
 
 /**
  * Verify payment from either L402 or Cashu NUT-24.
- * Returns { authenticated, method } or a 402 response.
+ *
+ * Returns:
+ *  - { authenticated: true }  — valid payment, proceed
+ *  - { authenticated: false, response402 }  — invalid payment, return the 402
+ *  - { authenticated: false }  — no payment header present (caller builds 402)
+ *
+ * Dev bypass: SKIP_PAYMENT_VERIFY=true skips all checks (explicit override only).
  */
 async function checkPayment(
   request: NextRequest,
   serviceName: string
 ): Promise<{
   authenticated: boolean;
-  method: "l402" | "cashu" | "none";
+  method: "l402" | "cashu" | "none" | "skip";
   response402?: NextResponse;
 }> {
-  const authHeader = request.headers.get("Authorization");
+  // Explicit dev/test bypass — must be opted in, not on by default
+  if (process.env.SKIP_PAYMENT_VERIFY === "true") {
+    console.warn(
+      "[ArxMint] SKIP_PAYMENT_VERIFY=true — skipping payment verification. " +
+        "Do not use this in production."
+    );
+    return { authenticated: true, method: "skip" };
+  }
+
+  // Support both standard Authorization and X-Cashu alternative header
+  const authHeader =
+    request.headers.get("Authorization") ??
+    request.headers.get("X-Cashu");
+
   const { method, token } = detectPaymentMethod(authHeader);
 
   // L402: In production, Aperture handles verification upstream.
@@ -51,7 +72,7 @@ async function checkPayment(
     return { authenticated: true, method: "l402" };
   }
 
-  // Cashu NUT-24: We verify the ecash token directly.
+  // Cashu NUT-24: Verify the ecash token directly against the mint.
   if (method === "cashu" && token) {
     const price = SERVICE_PRICES[serviceName] || PAYWALL_CONFIG.priceSats;
     const result = await verifyCashuPayment(token, {
@@ -76,7 +97,7 @@ async function checkPayment(
           received: result.amountSats,
         },
         {
-          status: 402,
+          status: 401,
           headers: {
             "WWW-Authenticate": buildCashuChallenge(config),
           },
@@ -85,16 +106,20 @@ async function checkPayment(
     };
   }
 
-  // No payment — return 402 with dual challenge
-  // In dev mode, we still serve data but mark it as unauthenticated
+  // No payment header present — caller will build 402
   return { authenticated: false, method: "none" };
 }
 
 /**
  * GET /api/agent — Main agent query endpoint
- * Accepts payment via:
+ *
+ * Payment required (unless SKIP_PAYMENT_VERIFY=true in env):
  *   - L402 (Lightning): Authorization: L402 <macaroon>:<preimage>
- *   - Cashu NUT-24: Authorization: Cashu <cashuB...token>
+ *   - Cashu NUT-24:     Authorization: Cashu <cashuB...token>
+ *                   or: X-Cashu: <cashuB...token>
+ *
+ * Returns 402 with NUT-24 challenge when no payment is provided.
+ * Returns 401 when an invalid or spent Cashu token is provided.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -102,12 +127,37 @@ export async function GET(request: NextRequest) {
 
   const payment = await checkPayment(request, service);
 
-  // If we got a 402 response back (failed Cashu payment), return it
+  // Cashu payment present but invalid/spent → 401
   if (payment.response402) {
     return payment.response402;
   }
 
-  const hasAuth = payment.authenticated;
+  // No payment at all → 402 with NUT-24 + instructions
+  if (!payment.authenticated) {
+    const price = SERVICE_PRICES[service] || PAYWALL_CONFIG.priceSats;
+    const config = { ...PAYWALL_CONFIG, priceSats: price };
+    return NextResponse.json(
+      {
+        error: "Payment required",
+        message:
+          "Pay via Cashu ecash (NUT-24) or Lightning (L402) to access this service.",
+        price_sats: price,
+        payment_methods: [
+          "Cashu NUT-24: Authorization: Cashu <cashuB_token>",
+          "Cashu NUT-24 (alt): X-Cashu: <cashuB_token>",
+          "L402 Lightning: Authorization: L402 <macaroon>:<preimage>",
+        ],
+        hint: `Obtain a Cashu token from your mint at ${PAYWALL_CONFIG.mintUrl}`,
+      },
+      {
+        status: 402,
+        headers: {
+          "WWW-Authenticate": buildCashuChallenge(config),
+        },
+      }
+    );
+  }
+
   const paymentMethod = payment.method;
 
   // Route to the right agent service
@@ -115,7 +165,6 @@ export async function GET(request: NextRequest) {
     case "privacy-audit":
       return NextResponse.json({
         service: "privacy-audit",
-        authenticated: hasAuth,
         paymentMethod,
         audit: {
           score: 78,
@@ -140,7 +189,6 @@ export async function GET(request: NextRequest) {
         const metrics = await getCycleMetrics();
         return NextResponse.json({
           service: "cycle-signals",
-          authenticated: hasAuth,
           paymentMethod,
           signals: {
             ...metrics,
@@ -168,7 +216,6 @@ export async function GET(request: NextRequest) {
     case "compute":
       return NextResponse.json({
         service: "compute",
-        authenticated: hasAuth,
         paymentMethod,
         result: {
           jobId: `job_${Date.now().toString(36)}`,
@@ -183,7 +230,6 @@ export async function GET(request: NextRequest) {
     case "data":
       return NextResponse.json({
         service: "data-marketplace",
-        authenticated: hasAuth,
         paymentMethod,
         datasets: [
           {
@@ -207,7 +253,6 @@ export async function GET(request: NextRequest) {
     default:
       return NextResponse.json({
         service: "agent-query",
-        authenticated: hasAuth,
         paymentMethod,
         message: "ArxMint Agent API",
         available_services: [
@@ -226,9 +271,6 @@ export async function GET(request: NextRequest) {
           "L402 (Lightning): Pay BOLT11 invoice, include preimage in Authorization header",
           "Cashu NUT-24: Send ecash token in Authorization: Cashu <token>",
         ],
-        note: hasAuth
-          ? `Authenticated via ${paymentMethod} — full access granted`
-          : "Unauthenticated — pay via L402 or Cashu ecash for premium data",
         timestamp: Date.now(),
       });
   }
