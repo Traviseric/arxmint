@@ -2,7 +2,7 @@
 // ArxMint — Nostr Auth (NIP-07 + NIP-98)
 // ============================================================
 
-import { nip19 } from "nostr-tools";
+import { npubEncode } from "nostr-tools/nip19";
 import type { NostrUser } from "./types";
 
 // NIP-07 window.nostr type declarations
@@ -58,7 +58,7 @@ export function waitForExtension(timeoutMs = 2000): Promise<boolean> {
 
 /** Convert hex pubkey to bech32 npub */
 export function pubkeyToNpub(pubkey: string): string {
-  return nip19.npubEncode(pubkey);
+  return npubEncode(pubkey);
 }
 
 /** Truncate npub for display: npub1abc...xyz */

@@ -147,6 +147,13 @@ const phases: RoadmapPhase[] = [
         description: "Fedimint G-Bot API for guided federation bootstrap with Docker fallback.",
         status: "done" as const,
       },
+      {
+        id: "1.8",
+        title: "Nostr login (NIP-07)",
+        humanTitle: "Sign in with your Nostr identity — no passwords, no database",
+        description: "NIP-07 browser extension auth (Alby, nos2x). Session persists via localStorage. NIP-98 HTTP auth utilities for future API protection.",
+        status: "done" as const,
+      },
     ],
   },
   {
