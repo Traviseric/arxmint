@@ -15,7 +15,6 @@ import {
   buildCashuChallenge,
   type CashuPaywallConfig,
 } from "@/lib/cashu-paywall";
-
 /** Default paywall config — matches .env.example CASHU_MINT_URL */
 const PAYWALL_CONFIG: CashuPaywallConfig = {
   priceSats: Number(process.env.L402_PRICE_SATS) || 100,
