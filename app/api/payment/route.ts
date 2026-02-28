@@ -14,6 +14,7 @@ import {
   routePayment,
   type PaymentChallenge,
 } from "@/lib/payment-sdk";
+import { getCallerFromRequest } from "@/lib/auth-middleware";
 
 /** In-process challenge registry (process lifetime) */
 export const _challenges = new Map<
@@ -31,6 +32,9 @@ function prune() {
 
 export async function POST(request: NextRequest) {
   prune();
+
+  // Optional: identify the caller (ArxMint session cookie or marketplace Bearer JWT)
+  const callerPubkey = getCallerFromRequest(request);
 
   let body: {
     amount?: unknown;
@@ -102,6 +106,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       challengeId,
       challenge,
+      ...(callerPubkey && { callerPubkey }),
       instructions:
         challengeType === "l402"
           ? [

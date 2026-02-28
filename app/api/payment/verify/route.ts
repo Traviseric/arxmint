@@ -12,8 +12,12 @@ import {
   verifyCashuPayment,
 } from "@/lib/payment-sdk";
 import { _challenges } from "@/app/api/payment/route";
+import { getCallerFromRequest } from "@/lib/auth-middleware";
 
 export async function POST(request: NextRequest) {
+  // Optional: identify the caller (ArxMint session cookie or marketplace Bearer JWT)
+  const callerPubkey = getCallerFromRequest(request);
+
   let body: {
     type?: unknown;
     macaroon?: unknown;
@@ -56,6 +60,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: result.success,
       type: "l402",
+      ...(callerPubkey && { callerPubkey }),
       ...(result.error && { error: result.error }),
     });
   }
@@ -97,6 +102,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: result.success,
       type: "cashu",
+      ...(callerPubkey && { callerPubkey }),
       ...(result.error && { error: result.error }),
     });
   }

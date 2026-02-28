@@ -6,6 +6,12 @@
 // and Edge middleware (Web Crypto API compatible format).
 //
 // Token format: {pubkeyHex}.{expUnixSec}.{hmacHex}
+//
+// Cross-project session compatibility:
+// Both arxmint and teneo-marketplace use the same token format.
+// Share AUTH_SHARED_SECRET between both deployments.
+// A user logged in at marketplace can call arxmint /api/payment/*
+// with their marketplace JWT and be recognized via verifySharedSession().
 // ============================================================
 
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -16,6 +22,16 @@ const SESSION_COOKIE = "arxmint_session";
 
 function getSecret(): string {
   return (
+    process.env.NEXTAUTH_SECRET ??
+    process.env.AUTH_SECRET ??
+    "dev-secret-change-in-production"
+  );
+}
+
+/** Shared secret used for cross-project token verification with Teneo Marketplace */
+function getSharedSecret(): string {
+  return (
+    process.env.AUTH_SHARED_SECRET ??
     process.env.NEXTAUTH_SECRET ??
     process.env.AUTH_SECRET ??
     "dev-secret-change-in-production"
@@ -112,4 +128,82 @@ export function getAuthPubkey(request: NextRequest): string | null {
   const token = getSessionFromRequest(request);
   if (!token) return null;
   return getSession(token);
+}
+
+/**
+ * Verify a shared session token from Teneo Marketplace or another ArxMint instance.
+ *
+ * Accepts the same HMAC-signed token format as createSession(), but verifies
+ * using AUTH_SHARED_SECRET (which should be set identically in both apps).
+ * Falls back to NEXTAUTH_SECRET if AUTH_SHARED_SECRET is not configured.
+ *
+ * Usage:
+ *   const result = verifySharedSession(bearerToken);
+ *   if (result) { // result.pubkey is the verified Nostr pubkey }
+ */
+export function verifySharedSession(token: string): { pubkey: string } | null {
+  if (!token) return null;
+
+  // Try local secret first (handles tokens issued by this ArxMint instance)
+  const localPubkey = getSession(token);
+  if (localPubkey) return { pubkey: localPubkey };
+
+  // Try shared secret (handles tokens issued by Teneo Marketplace)
+  const sharedSecret = getSharedSecret();
+  // Skip if shared secret is the same as local (avoid redundant check)
+  if (sharedSecret === getSecret()) return null;
+
+  try {
+    const dotCount = (token.match(/\./g) ?? []).length;
+    if (dotCount !== 2) return null;
+
+    const lastDot = token.lastIndexOf(".");
+    const secondLastDot = token.lastIndexOf(".", lastDot - 1);
+
+    const pubkey = token.substring(0, secondLastDot);
+    const expStr = token.substring(secondLastDot + 1, lastDot);
+    const sig = token.substring(lastDot + 1);
+
+    const exp = parseInt(expStr, 10);
+    if (isNaN(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+
+    const expectedSig = createHmac("sha256", sharedSecret)
+      .update(`${pubkey}.${exp}`)
+      .digest("hex");
+
+    const sigBuf = Buffer.from(sig, "hex");
+    const expectedBuf = Buffer.from(expectedSig, "hex");
+    if (sigBuf.length !== expectedBuf.length) return null;
+    if (!timingSafeEqual(sigBuf, expectedBuf)) return null;
+
+    return { pubkey };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract caller identity from a request.
+ *
+ * Accepts (in priority order):
+ * 1. ArxMint session cookie (`arxmint_session`)
+ * 2. Teneo Marketplace Bearer JWT (`Authorization: Bearer <token>`)
+ *
+ * Returns the caller's Nostr pubkey, or null if unauthenticated.
+ * Does NOT reject the request — callers decide whether auth is required.
+ */
+export function getCallerFromRequest(request: NextRequest): string | null {
+  // 1. ArxMint native session cookie
+  const cookiePubkey = getAuthPubkey(request);
+  if (cookiePubkey) return cookiePubkey;
+
+  // 2. Marketplace cross-auth: Authorization: Bearer <token>
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const bearerToken = authHeader.slice(7).trim();
+    const result = verifySharedSession(bearerToken);
+    if (result) return result.pubkey;
+  }
+
+  return null;
 }
