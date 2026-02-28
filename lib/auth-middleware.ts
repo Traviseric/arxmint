@@ -4,20 +4,44 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+interface SessionEntry {
+  pubkey: string;
+  expiresAt: number;
+}
+
 // In-memory session store (prototype — no DB, resets on server restart)
-// Maps sessionToken → nostrPubkey
-const sessions = new Map<string, string>();
+// Maps sessionToken → { pubkey, expiresAt }
+const sessions = new Map<string, SessionEntry>();
+
+// Prune expired sessions every hour to prevent unbounded memory growth
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, entry] of sessions) {
+    if (now > entry.expiresAt) sessions.delete(token);
+  }
+}, 60 * 60 * 1000);
 
 /** Create a new session for a verified Nostr pubkey */
 export function createSession(nostrPubkey: string): string {
   const token = crypto.randomUUID();
-  sessions.set(token, nostrPubkey);
+  sessions.set(token, {
+    pubkey: nostrPubkey,
+    expiresAt: Date.now() + SESSION_TTL_MS,
+  });
   return token;
 }
 
-/** Look up the pubkey for a session token */
+/** Look up the pubkey for a session token — returns null if missing or expired */
 export function getSession(token: string): string | null {
-  return sessions.get(token) ?? null;
+  const entry = sessions.get(token);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    sessions.delete(token); // Prune on access
+    return null;
+  }
+  return entry.pubkey;
 }
 
 /** Remove a session (logout) */
