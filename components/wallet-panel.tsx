@@ -1092,11 +1092,15 @@ function CashuConnect() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [seedWords, setSeedWords] = useState<string[] | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectStatus, setConnectStatus] = useState("");
   const { cashuConnected, setConnected, setBalance } = useSovereignStore();
 
   const connect = async () => {
     if (!mintUrl.trim()) return;
     setStatus("loading");
+    setIsConnecting(true);
+    setConnectStatus("Connecting to Cashu mint...");
     setMessage("Connecting to mint...");
 
     try {
@@ -1106,10 +1110,14 @@ function CashuConnect() {
       setBalance({ cashuSats: client.balance });
       setConnected("cashuConnected", true);
       setMessage(`Connected to ${mintUrl}`);
+      setConnectStatus("Connected");
       setStatus("success");
     } catch (e: unknown) {
       setMessage(e instanceof Error ? e.message : "Failed to connect");
+      setConnectStatus("Connection failed");
       setStatus("error");
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -1170,13 +1178,19 @@ function CashuConnect() {
             placeholder="http://localhost:3338"
             className="sovereign-input text-sm font-mono"
           />
+          {isConnecting && (
+            <div className="flex items-center gap-2 text-sm text-sovereign-muted py-1" aria-live="polite">
+              <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" aria-hidden="true" />
+              <span>{connectStatus}</span>
+            </div>
+          )}
           <button
             onClick={connect}
             disabled={!mintUrl.trim() || status === "loading"}
             className="sovereign-btn w-full !py-2 text-sm"
           >
             {status === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link className="w-3.5 h-3.5" />}
-            Connect
+            {status === "loading" ? "Connecting..." : "Connect"}
           </button>
           <StatusMessage status={status} message={message} />
         </div>
@@ -1194,6 +1208,8 @@ function LightningConnect() {
   const [remoteSignerMacaroon, setRemoteSignerMacaroon] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectStatus, setConnectStatus] = useState("");
   const { lightningConnected, setConnected, setBalance } = useSovereignStore();
 
   const onTierSelect = (nextTier: SecurityTier) => {
@@ -1225,6 +1241,8 @@ function LightningConnect() {
     }
 
     setStatus("loading");
+    setIsConnecting(true);
+    setConnectStatus(`Connecting via LNC (${tier})...`);
     setMessage(`Connecting via LNC (${tier})...`);
 
     try {
@@ -1235,10 +1253,14 @@ function LightningConnect() {
       setBalance({ lightningSats: channelSats, onchainSats });
       setConnected("lightningConnected", true);
       setMessage(`${info.alias} (${info.numChannels} ch) — ${tier} tier`);
+      setConnectStatus("Connected");
       setStatus("success");
     } catch (e: unknown) {
       setMessage(e instanceof Error ? e.message : "Failed to connect");
+      setConnectStatus("Connection failed");
       setStatus("error");
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -1365,6 +1387,12 @@ function LightningConnect() {
               </div>
             </div>
           )}
+          {isConnecting && (
+            <div className="flex items-center gap-2 text-sm text-sovereign-muted py-1" aria-live="polite">
+              <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" aria-hidden="true" />
+              <span>{connectStatus}</span>
+            </div>
+          )}
           <button
             onClick={connect}
             disabled={
@@ -1376,7 +1404,7 @@ function LightningConnect() {
             className="sovereign-btn w-full !py-2 text-sm"
           >
             {status === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-            Connect ({tier})
+            {status === "loading" ? "Connecting..." : `Connect (${tier})`}
           </button>
           <StatusMessage status={status} message={message} />
         </div>
