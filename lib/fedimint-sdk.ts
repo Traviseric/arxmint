@@ -143,7 +143,43 @@ export class SovereignFedimintClient {
   /** Pay a Lightning invoice (send via LN) */
   async payInvoice(bolt11: string): Promise<{ operationId: string }> {
     this.requireOpen();
-    return await this.wallet.lightning.payInvoice(bolt11);
+    // SDK returns OutgoingLightningPayment: { payment_type, contract_id, fee }
+    // The operationId lives inside payment_type as either { lightning: id } or { internal: id }
+    const result = await this.wallet.lightning.payInvoice(bolt11);
+    const pt = result.payment_type as any;
+    const operationId: string = pt.lightning ?? pt.internal ?? result.contract_id;
+    if (!operationId) {
+      throw new Error("payInvoice: could not extract operationId from SDK response");
+    }
+    return { operationId };
+  }
+
+  /**
+   * Wait for a lightning payment operation to complete and return the real preimage.
+   * Uses wallet.lightning.waitForPay() which streams LnPayState until success or failure.
+   * The returned preimage satisfies SHA256(preimage) === rHash (required for L402 tokens).
+   */
+  async waitForLightningPayment(
+    operationId: string,
+    timeoutMs = 60_000
+  ): Promise<{ preimage: string }> {
+    this.requireOpen();
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Fedimint payment timeout after ${timeoutMs}ms for operation ${operationId}`)),
+        timeoutMs
+      )
+    );
+    const result = await Promise.race([
+      this.wallet.lightning.waitForPay(operationId),
+      timeoutPromise,
+    ]);
+    if (!result.success) {
+      throw new Error(
+        `Fedimint lightning payment failed: ${result.error ?? "unknown error"}`
+      );
+    }
+    return { preimage: result.data.preimage };
   }
 
   /** Parse a BOLT11 invoice */
@@ -348,6 +384,8 @@ export interface GatewayBridgeConfig {
   fedimintClient: SovereignFedimintClient;
   /** Maximum sats to auto-pay per request */
   maxAutoPaySats: number;
+  /** Timeout in ms to wait for the lightning payment result (default: 60_000) */
+  paymentTimeoutMs?: number;
 }
 
 /** L402 challenge from a 402 response */
@@ -383,8 +421,10 @@ export class FedimintGatewayBridge {
    * Fetch an L402-gated URL, paying with Fedimint ecash via gateway.
    * If the server returns 402, automatically pays the Lightning invoice
    * through the Fedimint gateway and retries.
+   *
+   * @param timeoutMs - How long to wait for the lightning payment to settle (default: 60s).
    */
-  async fetch(url: string, options: RequestInit = {}): Promise<Response> {
+  async fetch(url: string, options: RequestInit = {}, timeoutMs?: number): Promise<Response> {
     if (!this._config.fedimintClient.isOpen) {
       throw new Error("Fedimint client not connected. Call joinFederation() first.");
     }
@@ -431,10 +471,10 @@ export class FedimintGatewayBridge {
       challenge.invoice
     );
 
-    // Extract preimage from the payment result
-    // In production, we'd await the operation and extract the preimage.
-    // For now, use the operation ID as a placeholder preimage lookup.
-    const preimage = operationId;
+    // Wait for the lightning payment to complete and extract the real preimage.
+    // SHA256(preimage) === rHash must hold for the L402 token to be accepted by the server.
+    const paymentTimeoutMs = timeoutMs ?? this._config.paymentTimeoutMs ?? 60_000;
+    const { preimage } = await this.waitForLightningPayment(operationId, paymentTimeoutMs);
 
     // Cache the token
     this._tokenCache.set(domain, {
@@ -455,6 +495,18 @@ export class FedimintGatewayBridge {
   /** Clear the L402 token cache */
   clearCache(): void {
     this._tokenCache.clear();
+  }
+
+  /**
+   * Wait for a Fedimint lightning payment operation to finish and return the preimage.
+   * Delegates to SovereignFedimintClient.waitForLightningPayment() which uses
+   * the SDK's waitForPay() stream internally.
+   */
+  private async waitForLightningPayment(
+    operationId: string,
+    timeoutMs: number
+  ): Promise<{ preimage: string }> {
+    return this._config.fedimintClient.waitForLightningPayment(operationId, timeoutMs);
   }
 
   /** Parse L402 or Cashu challenge from WWW-Authenticate header */
