@@ -11,7 +11,12 @@ interface SovereignState {
   currentCommunity: CommunityConfig | null;
   deployment: DeploymentConfig | null;
   setDeployment: (d: DeploymentConfig) => void;
+  setCurrentCommunity: (c: CommunityConfig) => void;
   clearDeployment: () => void;
+
+  // Saved communities (loaded from DB on dashboard mount)
+  communities: CommunityConfig[];
+  setCommunities: (communities: CommunityConfig[]) => void;
 
   // Wallet
   balance: WalletBalance;
@@ -35,8 +40,10 @@ interface SovereignState {
   // Nostr identity
   nostrUser: NostrUser | null;
   nostrConnected: boolean;
+  isAuthenticated: boolean;
   setNostrUser: (user: NostrUser) => void;
   clearNostrUser: () => void;
+  setAuthenticated: (value: boolean) => void;
 }
 
 export const useSovereignStore = create<SovereignState>((set) => ({
@@ -44,8 +51,12 @@ export const useSovereignStore = create<SovereignState>((set) => ({
   deployment: null,
   setDeployment: (d) =>
     set({ deployment: d, currentCommunity: d.community }),
+  setCurrentCommunity: (c) => set({ currentCommunity: c }),
   clearDeployment: () =>
     set({ deployment: null, currentCommunity: null }),
+
+  communities: [],
+  setCommunities: (communities) => set({ communities }),
 
   balance: {
     fedimintMsats: 0,
@@ -82,6 +93,7 @@ export const useSovereignStore = create<SovereignState>((set) => ({
   // Nostr identity
   nostrUser: null,
   nostrConnected: false,
+  isAuthenticated: false,
   setNostrUser: (user) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("arxmint:nostr-user", JSON.stringify(user));
@@ -92,8 +104,9 @@ export const useSovereignStore = create<SovereignState>((set) => ({
     if (typeof window !== "undefined") {
       localStorage.removeItem("arxmint:nostr-user");
     }
-    set({ nostrUser: null, nostrConnected: false });
+    set({ nostrUser: null, nostrConnected: false, isAuthenticated: false });
   },
+  setAuthenticated: (value) => set({ isAuthenticated: value }),
 }));
 
 /** Hydrate Cashu proofs from localStorage (call once on app mount) */

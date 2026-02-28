@@ -7,10 +7,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Copy, LogOut, Check, Zap } from "lucide-react";
 import { useSovereignStore } from "@/lib/store";
-import { hasNostrExtension, waitForExtension, connectNostr, truncateNpub } from "@/lib/nostr-auth";
+import { hasNostrExtension, waitForExtension, connectNostr, truncateNpub, createNip98AuthEvent } from "@/lib/nostr-auth";
 
 export function NostrLogin() {
-  const { nostrUser, nostrConnected, setNostrUser, clearNostrUser } =
+  const { nostrUser, nostrConnected, isAuthenticated, setNostrUser, clearNostrUser, setAuthenticated } =
     useSovereignStore();
 
   const [open, setOpen] = useState(false);
@@ -56,6 +56,24 @@ export function NostrLogin() {
     try {
       const user = await connectNostr();
       setNostrUser(user);
+
+      // Create NIP-98 signed event and verify with the server to establish a session
+      const authUrl = `${window.location.origin}/api/auth`;
+      const signedEvent = await createNip98AuthEvent(authUrl, "POST");
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pubkey: user.pubkey, signedEvent }),
+      });
+
+      if (res.ok) {
+        setAuthenticated(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        // Session creation failed — still keep the NIP-07 connection but warn
+        console.warn("Session creation failed:", data.error);
+      }
+
       setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Connection failed");
@@ -64,7 +82,9 @@ export function NostrLogin() {
     }
   }
 
-  function handleDisconnect() {
+  async function handleDisconnect() {
+    // Clear server-side session
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     clearNostrUser();
     setExtensionReady(false);
     setOpen(false);

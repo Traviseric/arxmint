@@ -163,6 +163,31 @@ export async function createNip98Auth(
 }
 
 /**
+ * Create a NIP-98 HTTP auth event and return the raw signed event object.
+ * Used when submitting to POST /api/auth (server verifies the signature).
+ */
+export async function createNip98AuthEvent(
+  url: string,
+  method: string
+): Promise<NostrSignedEvent> {
+  if (!window.nostr) {
+    throw new Error("No NIP-07 extension for NIP-98 signing.");
+  }
+
+  const event: NostrUnsignedEvent = {
+    kind: NIP98_KIND,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ["u", url],
+      ["method", method.toUpperCase()],
+    ],
+    content: "",
+  };
+
+  return await window.nostr.signEvent(event);
+}
+
+/**
  * Verify a NIP-98 auth token from an Authorization header.
  * Server-side — stateless verification.
  */
