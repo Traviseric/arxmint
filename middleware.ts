@@ -113,15 +113,22 @@ export async function middleware(request: NextRequest) {
   // Handle preflight OPTIONS requests
   if (request.method === "OPTIONS") {
     const response = new NextResponse(null, { status: 204 });
-    if (ALLOWED_ORIGINS.includes(origin)) {
+    const marketplaceOriginsOpts = [
+      process.env.TENEO_MARKETPLACE_URL,
+      "http://localhost:3001",
+    ].filter(Boolean) as string[];
+    const isPaymentOpts = pathname.startsWith("/api/payment");
+    if (ALLOWED_ORIGINS.includes(origin) || (isPaymentOpts && marketplaceOriginsOpts.includes(origin))) {
       response.headers.set("Access-Control-Allow-Origin", origin);
+      response.headers.set("Access-Control-Allow-Credentials", "true");
+    } else if (isPaymentOpts) {
+      response.headers.set("Access-Control-Allow-Origin", "*");
     }
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     response.headers.set(
       "Access-Control-Allow-Headers",
       "Content-Type, Authorization, Cookie"
     );
-    response.headers.set("Access-Control-Allow-Credentials", "true");
     response.headers.set("Access-Control-Max-Age", "86400");
     return response;
   }
@@ -129,12 +136,25 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Agent/public API endpoints — allow broader CORS access
+  const marketplaceOrigins = [
+    process.env.TENEO_MARKETPLACE_URL,
+    "http://localhost:3001", // local dev
+  ].filter(Boolean) as string[];
+
   const isAgentRoute =
     pathname.startsWith("/api/agent") ||
     pathname.startsWith("/api/l402") ||
     pathname.startsWith("/api/cycle");
 
+  const isPaymentRoute = pathname.startsWith("/api/payment");
+
   if (isAgentRoute) {
+    response.headers.set("Access-Control-Allow-Origin", "*");
+  } else if (isPaymentRoute && marketplaceOrigins.includes(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+  } else if (isPaymentRoute && !origin) {
+    // Allow server-to-server calls without Origin header
     response.headers.set("Access-Control-Allow-Origin", "*");
   } else if (ALLOWED_ORIGINS.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
