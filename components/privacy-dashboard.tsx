@@ -88,16 +88,19 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
           const enabled = config[key];
           const available = isLayerAvailable(key, backend);
           const effectivelyOn = enabled && available;
+          const comingSoon = info.supportedBy === "not-yet-implemented";
 
           return (
             <div
               key={key}
               className={`rounded-lg border px-4 py-3 transition-all ${
-                effectivelyOn
-                  ? "border-green-500/30 bg-green-500/5"
-                  : enabled && !available
-                    ? "border-yellow-500/30 bg-yellow-500/5"
-                    : "border-sovereign-border bg-sovereign-dark"
+                comingSoon
+                  ? "border-sovereign-border bg-sovereign-dark opacity-60"
+                  : effectivelyOn
+                    ? "border-green-500/30 bg-green-500/5"
+                    : enabled && !available
+                      ? "border-yellow-500/30 bg-yellow-500/5"
+                      : "border-sovereign-border bg-sovereign-dark"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -119,32 +122,46 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      info.status === "live"
-                        ? "bg-green-500/10 text-green-400"
-                        : info.status === "maturing"
-                          ? "bg-yellow-500/10 text-yellow-400"
-                          : "bg-blue-500/10 text-blue-400"
-                    }`}
-                  >
-                    {info.status}
-                  </span>
+                  {comingSoon ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-sovereign-border/40 text-sovereign-muted">
+                      coming soon
+                    </span>
+                  ) : (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        info.status === "live"
+                          ? "bg-green-500/10 text-green-400"
+                          : info.status === "maturing"
+                            ? "bg-yellow-500/10 text-yellow-400"
+                            : "bg-blue-500/10 text-blue-400"
+                      }`}
+                    >
+                      {info.status}
+                    </span>
+                  )}
                   <span
                     className={`text-xs font-medium ${
-                      effectivelyOn
-                        ? "text-green-400"
-                        : enabled && !available
-                          ? "text-yellow-400"
-                          : "text-sovereign-muted"
+                      comingSoon
+                        ? "text-sovereign-muted"
+                        : effectivelyOn
+                          ? "text-green-400"
+                          : enabled && !available
+                            ? "text-yellow-400"
+                            : "text-sovereign-muted"
                     }`}
                   >
-                    {effectivelyOn ? "ON" : enabled && !available ? "LIMITED" : "OFF"}
+                    {comingSoon ? "—" : effectivelyOn ? "ON" : enabled && !available ? "LIMITED" : "OFF"}
                   </span>
                 </div>
               </div>
-              {/* Backend availability warning */}
-              {enabled && !available && info.backendWarning && (
+              {/* Coming Soon note for unimplemented layers */}
+              {comingSoon && info.backendWarning && (
+                <div className="mt-2 ml-7 text-xs text-sovereign-muted leading-relaxed">
+                  {info.backendWarning}
+                </div>
+              )}
+              {/* Backend availability warning for partially-available layers */}
+              {!comingSoon && enabled && !available && info.backendWarning && (
                 <div className="mt-2 ml-7 text-xs text-yellow-400/80 leading-relaxed">
                   {info.backendWarning}
                 </div>

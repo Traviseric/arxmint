@@ -120,7 +120,7 @@ export function selectSpendPath(
     viable.push({ path: "lightning", score: PRIVACY_SCORE.lightning });
   }
 
-  // Ark VTXOs
+  // Ark VTXOs — availability.ark is always false until @arkade-os/sdk is released
   if (availability.ark && balance.arkSats >= amountSats) {
     viable.push({ path: "ark", score: PRIVACY_SCORE.ark });
   }
@@ -192,7 +192,7 @@ export function selectSpendPath(
         : "Only available path";
     }
   } else if (amountSats < 1_000_000) {
-    // Prefer Ark for large amounts (when available)
+    // Prefer Ark for large amounts — reserved for when @arkade-os/sdk is available
     if (viable.find((v) => v.path === "ark")) {
       selected = "ark";
       reason = "Large amount — Ark VTXOs provide high privacy off-chain";

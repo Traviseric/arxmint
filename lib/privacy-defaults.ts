@@ -31,7 +31,7 @@ export const PRIVACY_PRESETS = {
     silentPayments: true,
     coinJoin: true,
     payJoin: true,
-    arkSpends: true,
+    arkSpends: false, // Ark SDK not yet available — @arkade-os/sdk unreleased
   } satisfies PrivacyConfig,
 } as const;
 
