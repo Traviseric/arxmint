@@ -98,6 +98,41 @@ function verifyMacaroon(token: string): { identifier: string } | null {
 }
 
 /**
+ * Look up an invoice by payment hash via LND REST API.
+ * Returns null if LND is not configured or the call fails (fail-open: allow cached preimage check to decide).
+ */
+async function lookupLNDInvoice(
+  rHashBase64: string
+): Promise<{ settled: boolean } | null> {
+  const lndRestUrl = process.env.LND_REST_URL;
+  const lndMacaroon = process.env.LND_MACAROON_HEX;
+
+  if (!lndRestUrl || !lndMacaroon) return null;
+
+  try {
+    // LND REST /v1/invoice/{r_hash} requires URL-safe base64 (no padding)
+    const rHashUrlSafe = rHashBase64
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    const res = await fetch(`${lndRestUrl}/v1/invoice/${rHashUrlSafe}`, {
+      headers: { "Grpc-Metadata-Macaroon": lndMacaroon },
+    });
+
+    if (!res.ok) {
+      console.warn(`[ArxMint] LND invoice lookup failed: HTTP ${res.status}`);
+      return null;
+    }
+
+    const data = await res.json();
+    return { settled: data.settled === true };
+  } catch (e: any) {
+    console.warn("[ArxMint] LND invoice lookup error:", e.message);
+    return null;
+  }
+}
+
+/**
  * Create a real BOLT11 invoice via LND REST API.
  * Returns null if LND is not configured or call fails.
  */
@@ -192,7 +227,23 @@ export async function GET(request: NextRequest) {
       const pending = pendingL402.get(macaroon);
 
       if (pending && verifyPreimage(preimage, pending.rHashBase64)) {
-        // Valid preimage — consume the token and serve the protected resource
+        // Preimage is cryptographically valid (SHA-256 check passed).
+        // Also verify with LND that the invoice is settled, if LND is available.
+        const lndStatus = await lookupLNDInvoice(pending.rHashBase64);
+        if (lndStatus && !lndStatus.settled) {
+          // Preimage hashes correctly but LND hasn't settled the invoice yet.
+          // Payment may be in-flight — ask the client to retry shortly.
+          return NextResponse.json(
+            {
+              error: "Payment Required",
+              message:
+                "Invoice not yet settled — payment may be in-flight. Retry in a few seconds.",
+            },
+            { status: 402 }
+          );
+        }
+
+        // Valid preimage confirmed — consume the token and serve the protected resource
         pendingL402.delete(macaroon);
         return NextResponse.json({
           success: true,
@@ -234,9 +285,10 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Preimage does not match stored rHash — payment not verified, require fresh payment
       return NextResponse.json(
-        { error: "Invalid L402 token — preimage does not match payment hash" },
-        { status: 401 }
+        { error: "Payment Required", message: "Invalid or unpaid preimage — please pay the invoice and retry." },
+        { status: 402 }
       );
     }
   }

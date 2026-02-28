@@ -268,6 +268,26 @@ export class SovereignLightningClient {
   }
 
   /**
+   * Look up an invoice by its payment hash (r_hash).
+   * Useful for checking if a payment was received without subscribing to a stream.
+   *
+   * @param rHash - base64-encoded payment hash
+   */
+  async lookupInvoice(
+    rHash: string
+  ): Promise<{ settled: boolean; amountSats: number; memo: string }> {
+    this.requireConnected();
+    this.requireTier("pay-only", "lookupInvoice");
+
+    const res = await this.lnc.lnd.lightning.lookupInvoice({ r_hash_str: rHash });
+    return {
+      settled: res.settled,
+      amountSats: Number(res.value),
+      memo: res.memo || "",
+    };
+  }
+
+  /**
    * Pay a Lightning invoice.
    * In PAY_ONLY tier, this routes through the remote signer —
    * the agent process never touches signing keys.
