@@ -64,6 +64,17 @@ interface MerchantOnboardProps {
   communityId?: string;
 }
 
+const MAX_DESC_CHARS = 200;
+
+const STEPS: Step[] = ["info", "payment", "review", "complete"];
+
+const STEP_LABELS: Record<Step, string> = {
+  info: "Business Info",
+  payment: "Payment Methods",
+  review: "Review",
+  complete: "Complete",
+};
+
 export function MerchantOnboard({
   onComplete,
   onCancel,
@@ -83,6 +94,17 @@ export function MerchantOnboard({
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setStep("info");
+    setName("");
+    setCategory("food-drink");
+    setDescription("");
+    setLocation("");
+    setContactInfo("");
+    setPaymentMethods(["cashu", "lightning"]);
+    setSubmitError(null);
+  };
 
   const togglePayment = (method: PaymentMethod) => {
     setPaymentMethods((prev) =>
@@ -115,52 +137,63 @@ export function MerchantOnboard({
   const canProceedInfo = name.trim() && description.trim() && location.trim();
   const canProceedPayment = paymentMethods.length > 0;
 
+  const currentStepIndex = STEPS.indexOf(step);
+
   return (
     <div className="sovereign-card max-w-lg mx-auto">
       {/* Progress Steps */}
-      <div className="flex items-center justify-between mb-6">
-        {(["info", "payment", "review", "complete"] as Step[]).map(
-          (s, i) => (
-            <div key={s} className="flex items-center">
+      <nav aria-label="Form progress">
+        <ol className="flex items-center justify-between mb-6">
+          {STEPS.map((s, i) => (
+            <li key={s} className="flex items-center">
               <div
+                aria-current={step === s ? "step" : undefined}
+                aria-label={`Step ${i + 1} of ${STEPS.length}: ${STEP_LABELS[s]}${step === s ? " (current)" : currentStepIndex > i ? " (completed)" : ""}`}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                   step === s
                     ? "bg-btc-orange text-sovereign-black"
-                    : (["info", "payment", "review", "complete"].indexOf(step) >
-                      i)
+                    : currentStepIndex > i
                       ? "bg-green-500/20 text-green-400"
                       : "bg-sovereign-dark text-sovereign-muted"
                 }`}
               >
-                {(["info", "payment", "review", "complete"].indexOf(step) > i)
-                  ? <CheckCircle className="w-4 h-4" />
-                  : i + 1}
+                {currentStepIndex > i ? (
+                  <CheckCircle className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  i + 1
+                )}
               </div>
-              {i < 3 && (
+              {i < STEPS.length - 1 && (
                 <div
+                  aria-hidden="true"
                   className={`w-8 sm:w-12 h-0.5 mx-1 ${
-                    (["info", "payment", "review", "complete"].indexOf(step) > i)
+                    currentStepIndex > i
                       ? "bg-green-500/40"
                       : "bg-sovereign-border"
                   }`}
                 />
               )}
-            </div>
-          )
-        )}
-      </div>
+            </li>
+          ))}
+        </ol>
+      </nav>
 
       {/* Step 1: Business Info */}
       {step === "info" && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-sovereign-white flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-btc-orange" />
+            <ShoppingBag className="w-5 h-5 text-btc-orange" aria-hidden="true" />
             Business Information
           </h3>
 
           <div>
-            <label className="sovereign-label">Business Name</label>
+            <label htmlFor="business-name" className="sovereign-label">
+              Business Name
+              <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+              <span className="sr-only">(required)</span>
+            </label>
             <input
+              id="business-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -169,13 +202,19 @@ export function MerchantOnboard({
             />
           </div>
 
-          <div>
-            <label className="sovereign-label">Category</label>
-            <div className="grid grid-cols-2 gap-2">
+          <fieldset>
+            <legend className="sovereign-label mb-2">
+              Category
+              <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+              <span className="sr-only">(required)</span>
+            </legend>
+            <div role="radiogroup" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {(Object.entries(CATEGORY_LABELS) as [MerchantCategory, string][]).map(
                 ([key, label]) => (
                   <button
                     key={key}
+                    role="radio"
+                    aria-checked={category === key}
                     onClick={() => setCategory(key)}
                     className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
                       category === key
@@ -188,24 +227,41 @@ export function MerchantOnboard({
                 )
               )}
             </div>
-          </div>
+          </fieldset>
 
           <div>
-            <label className="sovereign-label">Description</label>
+            <label htmlFor="business-description" className="sovereign-label">
+              Description
+              <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+              <span className="sr-only">(required)</span>
+            </label>
             <textarea
+              id="business-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What does your business offer?"
+              maxLength={MAX_DESC_CHARS}
+              aria-describedby="desc-counter"
               className="sovereign-input text-sm min-h-[60px]"
             />
+            <p
+              id="desc-counter"
+              className="text-xs text-sovereign-muted mt-1 text-right"
+              aria-live="polite"
+            >
+              {description.length}/{MAX_DESC_CHARS} characters
+            </p>
           </div>
 
           <div>
-            <label className="sovereign-label">
-              <MapPin className="w-3 h-3 inline mr-1" />
+            <label htmlFor="business-location" className="sovereign-label">
+              <MapPin className="w-3 h-3 inline mr-1" aria-hidden="true" />
               Location
+              <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+              <span className="sr-only">(required)</span>
             </label>
             <input
+              id="business-location"
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -215,8 +271,12 @@ export function MerchantOnboard({
           </div>
 
           <div>
-            <label className="sovereign-label">Contact (optional)</label>
+            <label htmlFor="contact-info" className="sovereign-label">
+              Contact
+              <span className="text-sovereign-muted text-xs ml-1">(optional)</span>
+            </label>
             <input
+              id="contact-info"
               type="text"
               value={contactInfo}
               onChange={(e) => setContactInfo(e.target.value)}
@@ -234,7 +294,7 @@ export function MerchantOnboard({
               disabled={!canProceedInfo}
               className="sovereign-btn !py-2 text-sm"
             >
-              Next <ArrowRight className="w-3.5 h-3.5" />
+              Next <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -244,7 +304,7 @@ export function MerchantOnboard({
       {step === "payment" && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-sovereign-white flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-btc-orange" />
+            <CreditCard className="w-5 h-5 text-btc-orange" aria-hidden="true" />
             Payment Methods
           </h3>
           <p className="text-sm text-sovereign-muted">
@@ -257,47 +317,52 @@ export function MerchantOnboard({
               { id: "lightning" as const, label: "Lightning", desc: "Fast, low-fee payments via Lightning Network." },
               { id: "fedimint" as const, label: "Fedimint Ecash", desc: "Federation-backed ecash. Private within the community." },
               { id: "onchain" as const, label: "On-chain", desc: "Standard Bitcoin transactions. Best for large amounts." },
-            ]).map((pm) => (
-              <button
-                key={pm.id}
-                onClick={() => togglePayment(pm.id)}
-                className={`w-full text-left px-4 py-3 rounded-lg border transition-all ${
-                  paymentMethods.includes(pm.id)
-                    ? "border-btc-orange/40 bg-btc-orange/5"
-                    : "border-sovereign-border bg-sovereign-dark"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-sovereign-white">
-                    {pm.label}
-                  </span>
-                  <div
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                      paymentMethods.includes(pm.id)
-                        ? "border-btc-orange bg-btc-orange"
-                        : "border-sovereign-border"
-                    }`}
-                  >
-                    {paymentMethods.includes(pm.id) && (
-                      <Check className="w-3 h-3 text-sovereign-black" />
-                    )}
+            ]).map((pm) => {
+              const isChecked = paymentMethods.includes(pm.id);
+              return (
+                <button
+                  key={pm.id}
+                  aria-pressed={isChecked}
+                  onClick={() => togglePayment(pm.id)}
+                  className={`w-full text-left px-4 py-3 rounded-lg border transition-all ${
+                    isChecked
+                      ? "border-btc-orange/40 bg-btc-orange/5"
+                      : "border-sovereign-border bg-sovereign-dark"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-sovereign-white">
+                      {pm.label}
+                    </span>
+                    <div
+                      aria-hidden="true"
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        isChecked
+                          ? "border-btc-orange bg-btc-orange"
+                          : "border-sovereign-border"
+                      }`}
+                    >
+                      {isChecked && (
+                        <Check className="w-3 h-3 text-sovereign-black" />
+                      )}
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-sovereign-muted mt-1">{pm.desc}</p>
-              </button>
-            ))}
+                  <p className="text-xs text-sovereign-muted mt-1">{pm.desc}</p>
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex justify-between pt-2">
             <button onClick={() => setStep("info")} className="sovereign-btn-outline !py-2 text-sm">
-              <ArrowLeft className="w-3.5 h-3.5" /> Back
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" /> Back
             </button>
             <button
               onClick={() => setStep("review")}
               disabled={!canProceedPayment}
               className="sovereign-btn !py-2 text-sm"
             >
-              Next <ArrowRight className="w-3.5 h-3.5" />
+              Next <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -307,7 +372,7 @@ export function MerchantOnboard({
       {step === "review" && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-sovereign-white flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-btc-orange" />
+            <CheckCircle className="w-5 h-5 text-btc-orange" aria-hidden="true" />
             Review Listing
           </h3>
 
@@ -348,14 +413,14 @@ export function MerchantOnboard({
           </div>
 
           {submitError && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+            <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
               {submitError}
             </div>
           )}
 
           <div className="flex justify-between pt-2">
             <button onClick={() => setStep("payment")} className="sovereign-btn-outline !py-2 text-sm">
-              <ArrowLeft className="w-3.5 h-3.5" /> Back
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" /> Back
             </button>
             <button
               disabled={submitting}
@@ -401,7 +466,10 @@ export function MerchantOnboard({
               className="sovereign-btn !py-2 text-sm"
             >
               {submitting ? (
-                <div className="w-3.5 h-3.5 border-2 border-sovereign-black/30 border-t-sovereign-black rounded-full animate-spin" />
+                <div
+                  aria-hidden="true"
+                  className="w-3.5 h-3.5 border-2 border-sovereign-black/30 border-t-sovereign-black rounded-full animate-spin"
+                />
               ) : null}
               List Business
             </button>
@@ -413,7 +481,7 @@ export function MerchantOnboard({
       {step === "complete" && (
         <div className="text-center py-6 space-y-4">
           <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-400" />
+            <CheckCircle className="w-8 h-8 text-green-400" aria-hidden="true" />
           </div>
           <h3 className="text-lg font-bold text-sovereign-white">
             Listed!
@@ -426,7 +494,7 @@ export function MerchantOnboard({
           {/* Payment URI */}
           <div className="rounded-lg border border-sovereign-border bg-sovereign-dark p-4">
             <div className="flex items-center gap-2 mb-2">
-              <QrCode className="w-4 h-4 text-btc-orange" />
+              <QrCode className="w-4 h-4 text-btc-orange" aria-hidden="true" />
               <span className="text-xs text-sovereign-muted">
                 Payment URI (for QR code generation)
               </span>
@@ -437,12 +505,13 @@ export function MerchantOnboard({
               </code>
               <button
                 onClick={handleCopyUri}
+                aria-label={copied ? "Copied!" : "Copy payment URI"}
                 className="p-1.5 rounded bg-sovereign-panel hover:bg-sovereign-border transition-colors"
               >
                 {copied ? (
-                  <Check className="w-3.5 h-3.5 text-green-400" />
+                  <Check className="w-3.5 h-3.5 text-green-400" aria-hidden="true" />
                 ) : (
-                  <Copy className="w-3.5 h-3.5 text-sovereign-muted" />
+                  <Copy className="w-3.5 h-3.5 text-sovereign-muted" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -472,9 +541,17 @@ export function MerchantOnboard({
             </ul>
           </div>
 
-          <button onClick={onCancel} className="sovereign-btn !py-2 text-sm">
-            Done
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button
+              className="sovereign-btn-outline !py-2 text-sm"
+              onClick={resetForm}
+            >
+              Create Another Listing
+            </button>
+            <button onClick={onCancel} className="sovereign-btn !py-2 text-sm">
+              Done
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -596,7 +673,7 @@ export function NumoNFCSetup({
   return (
     <div className="rounded-lg border border-sovereign-border bg-sovereign-dark p-4">
       <div className="flex items-center gap-2 mb-3">
-        <CreditCard className="w-4 h-4 text-btc-orange" />
+        <CreditCard className="w-4 h-4 text-btc-orange" aria-hidden="true" />
         <span className="text-sm font-bold text-sovereign-white">
           Numo NFC Card Setup
         </span>
@@ -609,8 +686,11 @@ export function NumoNFCSetup({
             Customers tap their phone on your card to pay instantly.
           </p>
           <div>
-            <label className="sovereign-label">Default Amount (sats, 0 = variable)</label>
+            <label htmlFor="nfc-default-amount" className="sovereign-label">
+              Default Amount (sats, 0 = variable)
+            </label>
             <input
+              id="nfc-default-amount"
               type="number"
               value={defaultAmount}
               onChange={(e) => setDefaultAmount(e.target.value)}
@@ -620,7 +700,7 @@ export function NumoNFCSetup({
             />
           </div>
           <button onClick={handleProvision} className="sovereign-btn w-full !py-2 text-sm">
-            <CreditCard className="w-3.5 h-3.5" />
+            <CreditCard className="w-3.5 h-3.5" aria-hidden="true" />
             Provision NFC Card
           </button>
         </div>
@@ -628,14 +708,14 @@ export function NumoNFCSetup({
 
       {status === "provisioning" && (
         <div className="flex items-center gap-2 py-4 justify-center">
-          <div className="w-4 h-4 border-2 border-btc-orange border-t-transparent rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-btc-orange border-t-transparent rounded-full animate-spin" aria-hidden="true" />
           <span className="text-sm text-sovereign-muted">Provisioning card...</span>
         </div>
       )}
 
       {status === "done" && (
         <div className="text-center py-2">
-          <CheckCircle className="w-6 h-6 text-btc-orange mx-auto mb-2" />
+          <CheckCircle className="w-6 h-6 text-btc-orange mx-auto mb-2" aria-hidden="true" />
           <p className="text-sm text-btc-orange font-medium">Card setup queued</p>
           <p className="text-xs text-sovereign-muted mt-1">
             Numo will contact you to complete NFC card provisioning.
@@ -659,6 +739,7 @@ export function MerchantCard({ merchant }: { merchant: MerchantListing }) {
           </span>
         </div>
         <div
+          aria-hidden="true"
           className={`w-2.5 h-2.5 rounded-full mt-1 ${
             merchant.active ? "bg-green-400" : "bg-sovereign-muted"
           }`}
@@ -668,7 +749,7 @@ export function MerchantCard({ merchant }: { merchant: MerchantListing }) {
         {merchant.description}
       </p>
       <div className="flex items-center gap-2 text-xs text-sovereign-muted mb-2">
-        <MapPin className="w-3 h-3" />
+        <MapPin className="w-3 h-3" aria-hidden="true" />
         {merchant.location}
       </div>
       <div className="flex gap-1.5">
