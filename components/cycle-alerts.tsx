@@ -112,17 +112,19 @@ export function CycleAlerts() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-3 gap-3">
         <MetricCard
-          label="MVRV Ratio"
+          label="MVRV (approx.)"
           value={metrics.mvrv.toFixed(2)}
-          description="Market Value / Realized Value"
+          description="Price / 200-day SMA (price-based approx.)"
+          tooltip="Approximation using 200-day price SMA. Real MVRV uses on-chain realized cap (Glassnode)."
           highlight={metrics.mvrv < 1 || metrics.mvrv > 3}
           color={metrics.mvrv < 1 ? "#00C853" : metrics.mvrv > 3 ? "#FF5252" : "#FFD54F"}
           zone={metrics.mvrv > 3.5 ? "High" : metrics.mvrv > 1 ? "Mid" : "Low"}
         />
         <MetricCard
-          label="NUPL"
+          label="NUPL (approx.)"
           value={(metrics.nupl * 100).toFixed(1) + "%"}
-          description="Net Unrealized Profit/Loss"
+          description="Price deviation from 1-yr avg (price-based approx.)"
+          tooltip="Approximation using 1-year price average. Real NUPL uses on-chain UTXO profit data (Glassnode)."
           highlight={metrics.nupl < 0 || metrics.nupl > 0.75}
           color={metrics.nupl < 0 ? "#00C853" : metrics.nupl > 0.75 ? "#FF5252" : "#FFD54F"}
           zone={metrics.nupl > 0.75 ? "High" : metrics.nupl > 0 ? "Mid" : "Low"}
@@ -142,6 +144,9 @@ export function CycleAlerts() {
           zone={metrics.supplyInProfit > 0.95 ? "High" : metrics.supplyInProfit > 0.5 ? "Mid" : "Low"}
         />
       </div>
+      <p className="text-xs text-sovereign-muted mt-1">
+        * MVRV and NUPL are price-based approximations (SMA ratios). On-chain UTXO data requires Glassnode API.
+      </p>
 
       {/* Gresham's Law Reminder */}
       <div className="rounded-lg bg-sovereign-dark px-4 py-3 text-xs text-sovereign-muted">
@@ -157,6 +162,7 @@ function MetricCard({
   label,
   value,
   description,
+  tooltip,
   highlight,
   color,
   zone,
@@ -164,6 +170,7 @@ function MetricCard({
   label: string;
   value: string;
   description: string;
+  tooltip?: string;
   highlight: boolean;
   color: string;
   zone: string;
@@ -177,7 +184,18 @@ function MetricCard({
         backgroundColor: highlight ? `${color}08` : undefined,
       }}
     >
-      <div className="text-xs text-sovereign-muted mb-1" aria-hidden="true">{label}</div>
+      <div className="text-xs text-sovereign-muted mb-1" aria-hidden="true">
+        {tooltip ? (
+          <span
+            title={tooltip}
+            className="cursor-help underline decoration-dotted decoration-sovereign-muted"
+          >
+            {label}
+          </span>
+        ) : (
+          label
+        )}
+      </div>
       <div className="text-xl font-bold" style={{ color }} aria-hidden="true">
         {value}
       </div>
