@@ -16,6 +16,7 @@ import {
   type CashuPaywallConfig,
 } from "@/lib/cashu-paywall";
 import { validateRemoteSignerEnv } from "@/lib/lightning-validator";
+import { logger } from "@/lib/logger";
 
 /** Default paywall config — matches .env.example CASHU_MINT_URL */
 const PAYWALL_CONFIG: CashuPaywallConfig = {
@@ -53,11 +54,18 @@ async function checkPayment(
 }> {
   // Explicit dev/test bypass — must be opted in, not on by default
   if (process.env.SKIP_PAYMENT_VERIFY === "true") {
-    console.warn(
-      "[ArxMint] SKIP_PAYMENT_VERIFY=true — skipping payment verification. " +
-        "Do not use this in production."
-    );
-    return { authenticated: true, method: "skip" };
+    if (process.env.NODE_ENV === "production") {
+      // FATAL: never bypass payment verification in production
+      logger.error("SKIP_PAYMENT_VERIFY=true is not allowed in production — ignoring.", {
+        action: "payment_bypass_blocked",
+      });
+      // Fall through to normal payment verification
+    } else {
+      console.warn(
+        "[ArxMint] DEV: SKIP_PAYMENT_VERIFY=true — skipping payment verification."
+      );
+      return { authenticated: true, method: "skip" };
+    }
   }
 
   // Support both standard Authorization and X-Cashu alternative header
@@ -67,10 +75,17 @@ async function checkPayment(
 
   const { method, token } = detectPaymentMethod(authHeader);
 
-  // L402: In production, Aperture handles verification upstream.
-  // If the L402 header reaches us, it's already been validated by the proxy.
+  // L402: Verify Aperture upstream proxy validated the payment.
+  // Aperture sets X-Aperture-Verified header with APERTURE_SHARED_SECRET after
+  // successful verification. Without a matching header the L402 token is not trusted.
   if (method === "l402") {
-    return { authenticated: true, method: "l402" };
+    const apertureToken = request.headers.get("X-Aperture-Verified");
+    const expected = process.env.APERTURE_SHARED_SECRET;
+    if (expected && apertureToken === expected) {
+      return { authenticated: true, method: "l402" };
+    }
+    // L402 header present but not verified by Aperture proxy — treat as no payment
+    return { authenticated: false, method: "l402" };
   }
 
   // Cashu NUT-24: Verify the ecash token directly against the mint.

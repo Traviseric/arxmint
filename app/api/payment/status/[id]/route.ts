@@ -6,13 +6,17 @@
 //   pending  — created but not yet paid
 //   paid     — verified and consumed
 //   expired  — past the expiresAt timestamp
+//
+// Unauthenticated callers receive { status, expiresAt } only.
+// Authenticated callers receive the full challenge details.
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
 import { _challenges } from "@/app/api/payment/route";
+import { getCallerFromRequest } from "@/lib/auth-middleware";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -38,9 +42,18 @@ export async function GET(
     status = "pending";
   }
 
-  return NextResponse.json({
+  // Minimal safe response — safe for unauthenticated callers (e.g. polling for payment status)
+  const minimalResponse = {
     status,
-    challenge: entry.challenge,
+    expiresAt: entry.challenge.expiresAt,
     ...(entry.paidAt && { paidAt: entry.paidAt }),
-  });
+  };
+
+  // Return full challenge details only to authenticated callers
+  const caller = getCallerFromRequest(request);
+  if (caller) {
+    return NextResponse.json({ ...minimalResponse, challenge: entry.challenge });
+  }
+
+  return NextResponse.json(minimalResponse);
 }

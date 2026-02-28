@@ -5,11 +5,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth-middleware";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const { id } = await params;
 
   if (!id || typeof id !== "string") {
@@ -36,6 +40,7 @@ export async function GET(
       /* ignore */
     }
 
+    // Strip sensitive internal fields — never expose raw notes blob or federation invites
     return NextResponse.json({
       settlementId: tx.id,
       saleId: parsedNotes.saleId ?? null,
@@ -46,7 +51,6 @@ export async function GET(
       invoice: parsedNotes.invoice ?? null,
       mintUrl: parsedNotes.mintUrl ?? null,
       createdAt: tx.timestamp.toISOString(),
-      notes: parsedNotes,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
