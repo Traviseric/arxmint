@@ -10,7 +10,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Wallet } from "@cashu/cashu-ts";
 import { db } from "@/lib/db";
-import { requireAuth } from "@/lib/auth-middleware";
 
 // ---- Types --------------------------------------------------
 

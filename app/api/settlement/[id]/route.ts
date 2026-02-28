@@ -8,9 +8,9 @@ import { db } from "@/lib/db";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   if (!id || typeof id !== "string") {
     return NextResponse.json({ error: "Settlement ID is required" }, { status: 400 });
