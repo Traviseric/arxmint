@@ -16,8 +16,9 @@ import {
   ChevronUp,
   Cpu,
   Globe,
+  ExternalLink,
 } from "lucide-react";
-import { generateDeployment, generateApertureConfig } from "@/lib/community-generator";
+import { generateApertureConfig } from "@/lib/community-generator";
 import type { DeploymentConfig } from "@/lib/types";
 import { useSovereignStore } from "@/lib/store";
 
@@ -35,20 +36,35 @@ export function CreateCommunityForm() {
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("docker");
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const setDeployment = useSovereignStore((s) => s.setDeployment);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setGenerating(true);
+    setGenerateError(null);
+    setSavedId(null);
 
-    // Small delay for UX feel
-    await new Promise((r) => setTimeout(r, 600));
-
-    const result = generateDeployment(prompt, network);
-    setLocalDeployment(result);
-    setDeployment(result);
-    setGenerating(false);
+    try {
+      const res = await fetch("/api/community", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, network }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate community");
+      }
+      setLocalDeployment(data.deployment);
+      setDeployment(data.deployment);
+      if (data.id) setSavedId(data.id);
+    } catch (err: any) {
+      setGenerateError(err.message);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const copyToClipboard = async (text: string, id: string) => {
@@ -136,6 +152,13 @@ export function CreateCommunityForm() {
         )}
       </button>
 
+      {/* Error state */}
+      {generateError && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {generateError}
+        </div>
+      )}
+
       {/* Generated Output */}
       {deployment && (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -203,6 +226,21 @@ export function CreateCommunityForm() {
               )}
             </div>
           </div>
+
+          {/* Dashboard link (only shown when persisted to DB) */}
+          {savedId && (
+            <div className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-4 py-3">
+              <span className="text-sm text-text-primary">
+                Community saved — view it in your dashboard
+              </span>
+              <a
+                href={`/community/${savedId}`}
+                className="flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+              >
+                Open <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          )}
 
           {/* Docker Compose */}
           <CollapsibleSection

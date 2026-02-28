@@ -5,7 +5,7 @@
 // Privacy score + Cycle alerts + Wallet overview
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Shield,
   TrendingUp,
@@ -20,6 +20,7 @@ import { PrivacyDashboard } from "@/components/privacy-dashboard";
 import { CycleAlerts } from "@/components/cycle-alerts";
 import { WalletPanel } from "@/components/wallet-panel";
 import { useSovereignStore } from "@/lib/store";
+import type { CommunityConfig } from "@/lib/types";
 import { PRIVACY_PRESETS } from "@/lib/privacy-defaults";
 import { formatSats } from "@/lib/utils";
 import {
@@ -37,7 +38,30 @@ type Tab = "overview" | "privacy" | "cycle" | "wallet" | "health" | "grants";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const { balance, currentCommunity } = useSovereignStore();
+  const { balance, currentCommunity, communities, setCommunities, setCurrentCommunity } =
+    useSovereignStore();
+
+  // Load saved communities from DB on mount
+  useEffect(() => {
+    fetch("/api/community")
+      .then((r) => r.json())
+      .then((data: { communities?: Array<{ id: string; name: string; config: unknown }> }) => {
+        if (Array.isArray(data.communities) && data.communities.length > 0) {
+          const configs = data.communities
+            .map((c) => c.config as CommunityConfig)
+            .filter(Boolean);
+          setCommunities(configs);
+          // Auto-select the most recent community if none currently selected
+          if (!currentCommunity && configs.length > 0) {
+            setCurrentCommunity(configs[0]);
+          }
+        }
+      })
+      .catch(() => {
+        // DB not available — silently ignore
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Use community privacy config or default to high
   const privacyConfig = currentCommunity?.privacy || PRIVACY_PRESETS.high;
@@ -208,14 +232,41 @@ export default function DashboardPage() {
         )}
 
         {activeTab === "overview" && !currentCommunity && (
-          <div className="mt-6 rounded-xl border border-btc-orange/20 bg-btc-orange/5 px-6 py-4 text-center">
-            <p className="text-sm text-sovereign-muted">
-              No community connected yet.{" "}
-              <a href="/create" className="text-btc-orange hover:underline font-medium">
-                Create one
-              </a>{" "}
-              or connect your wallet below to get started.
-            </p>
+          <div className="mt-6 space-y-4">
+            {communities.length > 0 ? (
+              <div className="rounded-xl border border-sovereign-border bg-sovereign-panel p-6">
+                <h3 className="text-sm font-bold text-sovereign-white mb-3">
+                  Your saved communities
+                </h3>
+                <div className="space-y-2">
+                  {communities.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setCurrentCommunity(c)}
+                      className="w-full flex items-center justify-between rounded-lg border border-sovereign-border bg-sovereign-dark px-4 py-3 text-left hover:border-btc-orange/40 transition-colors"
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-sovereign-white">{c.name}</div>
+                        <div className="text-xs text-sovereign-muted mt-0.5">
+                          {c.mintBackend} · {c.network} · {c.memberCount} members
+                        </div>
+                      </div>
+                      <span className="text-xs text-btc-orange">Select →</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-btc-orange/20 bg-btc-orange/5 px-6 py-4 text-center">
+                <p className="text-sm text-sovereign-muted">
+                  No community connected yet.{" "}
+                  <a href="/create" className="text-btc-orange hover:underline font-medium">
+                    Create one
+                  </a>{" "}
+                  or connect your wallet below to get started.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
