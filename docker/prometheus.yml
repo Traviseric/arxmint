@@ -1,0 +1,33 @@
+# ArxMint — Prometheus Scrape Config
+# Monitors LND, Cashu mint, and Fedimint guardians in the root stack
+# For generated configs see lib/community-generator.ts:generatePrometheusConfig()
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "lnd"
+    static_configs:
+      - targets: ["lnd:8080"]
+    metrics_path: /metrics
+
+  - job_name: "cashu-mint"
+    static_configs:
+      - targets: ["cashu-mint:3338"]
+    metrics_path: /metrics
+
+  - job_name: "fedimint-guardian-0"
+    static_configs:
+      - targets: ["fedimintd-0:18174"]
+    metrics_path: /metrics
+
+  - job_name: "fedimint-guardian-1"
+    static_configs:
+      - targets: ["fedimintd-1:18176"]
+    metrics_path: /metrics
+
+  - job_name: "fedimint-guardian-2"
+    static_configs:
+      - targets: ["fedimintd-2:18178"]
+    metrics_path: /metrics
