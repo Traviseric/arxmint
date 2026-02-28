@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       backend,
       status = "completed",
       counterparty,
-      proofData,
+      notes,
     } = body;
 
     if (!communityId || typeof communityId !== "string") {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         backend,
         status,
         counterparty: counterparty ?? null,
-        proofData: proofData ?? undefined,
+        notes: notes ?? null,
       },
     });
 

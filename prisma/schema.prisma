@@ -1,5 +1,6 @@
 // ============================================================
 // ArxMint — Prisma Schema
+// Cashu proofs NEVER touch this DB. Proofs are client-side only (IndexedDB). See lib/cashu-vault.ts
 // ============================================================
 
 generator client {
@@ -13,36 +14,26 @@ datasource db {
 
 model Community {
   id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   name      String
   prompt    String
   config    Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  walletProofs WalletProof[]
   merchants    Merchant[]
   transactions Transaction[]
 
   @@map("communities")
 }
 
-model WalletProof {
-  id          String    @id @default(cuid())
-  communityId String
-  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  mintUrl     String
-  proofData   Json
-  amount      Int
-  isSpent     Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-
-  @@map("wallet_proofs")
-}
-
 model Merchant {
   id               String    @id @default(cuid())
   communityId      String
   community        Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?     @relation(fields: [userId], references: [id])
   name             String
   description      String?
   category         String?
@@ -55,24 +46,73 @@ model Merchant {
 }
 
 model Transaction {
-  id          String    @id @default(cuid())
-  communityId String
-  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  type        String    // send | receive | swap
-  amount      Int
-  backend     String    // cashu | lightning | fedimint
-  timestamp   DateTime  @default(now())
-  status      String    // pending | confirmed | failed
+  id           String    @id @default(cuid())
+  communityId  String
+  community    Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  type         String    // send | receive | swap
+  amount       Int
+  backend      String    // cashu | lightning | fedimint
+  timestamp    DateTime  @default(now())
+  status       String    // pending | confirmed | failed
   counterparty String?
-  proofData   Json?
+  notes        String?   // non-sensitive metadata only — NO raw proofs
 
   @@map("transactions")
 }
 
 model User {
-  id          String   @id @default(cuid())
-  nostrPubkey String   @unique
-  createdAt   DateTime @default(now())
+  id            String    @id @default(cuid())
+  nostrPubkey   String?   @unique
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts    Account[]
+  sessions    Session[]
+  communities Community[]
+  merchants   Merchant[]
 
   @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
