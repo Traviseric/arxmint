@@ -79,6 +79,23 @@ npm run setup:full
 npm run setup:cashu
 ```
 
+### Cashu Mint: Nutshell vs CDK
+
+| | Nutshell | CDK |
+|---|---|---|
+| **Best for** | Dev / small communities | Production / mainnet |
+| **Image** | `cashubtc/nutshell:latest` (Python) | `cashubtc/cdk-mintd:latest` (Rust) |
+| **Prometheus metrics** | No | Yes (`/metrics`) |
+| **Auto-selected by generator** | < 30 members + testnet | > 30 members or mainnet |
+
+```bash
+# Default (Nutshell — development)
+npm run setup:full
+
+# Production (CDK mint — replaces Nutshell in the stack)
+docker compose -f docker-compose.yml -f docker/docker-compose.cdk.yml up -d
+```
+
 ### Run Tests
 
 ```bash
