@@ -1,0 +1,89 @@
+# ============================================================
+# ArxMint — Regtest Override for E2E Testing
+# Adds a local bitcoind in regtest mode and overrides LND
+# to use it instead of testnet/neutrino.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker/docker-compose.regtest.yml up -d
+#   npm run setup:regtest
+# ============================================================
+
+services:
+
+  # === Local Regtest Bitcoin Node ===
+  bitcoind:
+    image: lncm/bitcoind:v27.0
+    container_name: sf-bitcoind
+    restart: unless-stopped
+    command:
+      - -regtest
+      - -server
+      - -rpcuser=test
+      - -rpcpassword=test
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -fallbackfee=0.0001
+      - -zmqpubrawblock=tcp://0.0.0.0:28332
+      - -zmqpubrawtx=tcp://0.0.0.0:28333
+    ports:
+      - "18443:18443"  # regtest RPC
+    volumes:
+      - bitcoind-regtest-data:/data/.bitcoin
+    networks:
+      - sovereign
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-regtest", "-rpcuser=test", "-rpcpassword=test", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # === LND — override to use regtest + local bitcoind ===
+  lnd:
+    command: >
+      lnd
+      --bitcoin.active
+      --bitcoin.regtest
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoind:18443
+      --bitcoind.rpcuser=test
+      --bitcoind.rpcpass=test
+      --bitcoind.zmqpubrawblock=tcp://bitcoind:28332
+      --bitcoind.zmqpubrawtx=tcp://bitcoind:28333
+      --rpclisten=0.0.0.0:10009
+      --restlisten=0.0.0.0:8080
+      --tlsextradomain=lnd
+      --accept-keysend
+      --noseedbackup
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "lncli", "--network=regtest", "getinfo"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # === Cashu Mint — override to use regtest macaroon path ===
+  cashu-mint:
+    environment:
+      - MINT_BACKEND_BOLT11_SAT=LndRestWallet
+      - MINT_LND_REST_ENDPOINT=https://lnd:8080
+      - MINT_LND_REST_CERT=/root/.lnd/tls.cert
+      - MINT_LND_REST_MACAROON=/root/.lnd/data/chain/bitcoin/regtest/admin.macaroon
+      - MINT_LISTEN_HOST=0.0.0.0
+      - MINT_LISTEN_PORT=3338
+      - MINT_PRIVATE_KEY=${CASHU_PRIVATE_KEY:-regtest_test_key_change_in_prod}
+
+  # === Web app — override to regtest ===
+  web:
+    environment:
+      - CASHU_MINT_URL=http://cashu-mint:3338
+      - APERTURE_URL=http://aperture:8081
+      - BITCOIN_NETWORK=regtest
+      - DATABASE_URL=postgresql://arxmint:${POSTGRES_PASSWORD:-regtest}@postgres:5432/arxmint
+      - NODE_ENV=development
+
+volumes:
+  bitcoind-regtest-data:
