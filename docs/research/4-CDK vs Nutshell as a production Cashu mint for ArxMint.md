@@ -1,0 +1,117 @@
+# Authentication Strategy for ArxMint: Nostr vs Alternatives
+
+## Context and security requirements
+
+ArxMint’s current state (“no auth at all — anyone can access everything”) is not merely an access-control gap; it is a funds-security gap because Cashu proofs behave like bearer instruments: whoever obtains valid proofs can generally redeem/spend them, similar to physical cash. citeturn1search7turn1search19turn8view0 This means any authentication compromise that yields read-access to stored proofs (or the ability to trigger melt/swap operations) can translate directly into the loss of funds rather than just data exposure. citeturn8view0turn1search7
+
+At the protocol level, Cashu’s core anti-double-spend protection is the mint rejecting re-use of a proof secret (“the mint requires that the secret has not been seen before”), but that does not prevent theft—only double-spending once theft has occurred. citeturn8view0 Protecting bearer tokens therefore requires defense-in-depth: (a) route/data authorization so one user cannot read or mutate another user’s wallet state, (b) robust session security (cookie hardening, CSRF posture), and (c) ideally a *wallet-aware* control that prevents stolen proofs from being spendable without an additional key or re-auth step. citeturn17search0turn17search3turn17search1turn8view1
+
+Finally, because ArxMint explicitly targets three different caller types—Bitcoin community members (likely Nostr-capable), merchants (may not be), and AI agents (need programmatic auth)—a single authentication mechanism will not fit all. Payment-gated APIs (L402 / NUT-24) also add a second axis: “who may call” vs “who has paid.” citeturn23view0turn6view0
+
+## Evaluation of the candidate approaches
+
+**Nostr-only (NIP-07 extension + NIP-98 HTTP auth)**  
+NIP-07 defines a browser/extension-exposed `window.nostr` object with `getPublicKey()` and `signEvent()` as the core required methods; it does not define cross-site “sessions,” user management, or any standard cookie/JWT behavior. citeturn10view0 NIP-98 defines request authorization via an ephemeral signed event (kind `27235`) that must include the absolute URL (`u`) and HTTP method (`method`); servers validate timestamp freshness (suggested 60 seconds), URL/method match, and optionally a `payload` tag containing a SHA-256 of the request body for POST/PUT/PATCH. citeturn26view0
+
+User friction is extremely polarized: for desktop Bitcoin/Nostr natives who already have a signer extension, login can be “one approval + one signature”; for everyone else it begins with “install an extension,” which is a high drop-off point and not available on most mobile browsers. citeturn10view0 On mobile, the practical path is not NIP-07 but NIP-46 (“remote signing”), which moves the private key to a separate signer (potentially a mobile app or hardware device) and lets the web client request signatures over an encrypted Nostr relay message flow (kind `24133`), commonly initiated via `nostrconnect://…` QR/link. citeturn10view2 This can substantially reduce key exposure in the browser (the NIP-46 rationale explicitly argues for exposing private keys to as few systems as possible). citeturn10view2
+
+Session management under “Nostr-only” can be done in two fundamentally different styles:
+
+- **Stateless request signing**: require NIP-98 on every privileged request. This minimizes session cookie risk but may increase signing prompts and complicate server components that make multiple calls. citeturn26view0  
+- **Signed login → session cookie/JWT**: accept a NIP-98-signed request to a dedicated login endpoint, then issue a standard web session (HTTP-only cookie or encrypted stateless cookie). NIP-98 itself does not define this, so you must design replay defenses (e.g., nonce binding) and cookie hardening. citeturn26view0turn22view0turn17search3 A concrete example pattern in the ecosystem is: verify NIP-98, enforce a nonce to reject replayed tokens, then issue a cookie-backed session. citeturn9search8
+
+Security model: Nostr-only gives strong *proof of key control* for login, but it does not by itself protect Cashu proofs if your app stores them in a way an authenticated session can access. If an attacker steals a user’s session cookie (or can induce actions via XSS), they may be able to trigger spending unless you add step-up controls for wallet operations. citeturn17search3turn1search7turn8view1
+
+image_group{"layout":"carousel","aspect_ratio":"16:9","query":["Nostr NIP-07 browser extension window.nostr prompt","Nostr Connect NIP-46 QR code login","LNURL-auth login QR code example","WebAuthn passkeys login prompt"],"num_per_query":1}
+
+**Nostr + email/password (or email magic link) fallback**  
+For merchants who do not have Nostr keys (or do not want Nostr as identity), a hybrid model reduces adoption friction while keeping Nostr as the “Bitcoin-native” fast path. In the Next.js ecosystem, a common way to do this is via entity["organization","Auth.js","authentication library"] for sessions + route enforcement, plus a custom Nostr login endpoint that verifies NIP-98 and then establishes the same session as any other provider. Auth.js explicitly supports “Credentials” flows (forward arbitrary credentials like username/password to your auth service) and “Email” (magic link) flows; email verification tokens are time-limited (commonly 24 hours). citeturn16search4turn24search3turn28view0
+
+From a security standpoint, adding password auth increases your burden: you must securely store password verifiers (hashing + salting + work factors), defend against credential stuffing, and build reliable account recovery. citeturn24search0 Modern guidance also increasingly discourages “complexity rules” and instead pushes longer passwords and breached-password blocklists; NIST’s digital identity guidance emphasizes blacklists over composition rules. citeturn24search5turn24search1 For a pilot, using email magic links instead of passwords often reduces both user friction and the likelihood of password-related compromise, while still serving merchants. citeturn24search3turn24search2
+
+Mobile support is strong (email flows work on mobile), and you can still later add NIP-46 to make “Nostr login on mobile” viable without browser extensions. citeturn10view2 The key design decision is *linking*: a single internal “user” should be able to attach multiple authenticators (Nostr pubkey, email, LNURL-auth key), so you can start permissive in pilot and harden later without migrations that break identity continuity.
+
+**Supabase Auth (if using Supabase for DB)**  
+entity["company","Supabase","backend platform"] Auth provides built-in email/password, OTP, and passwordless email (magic link) flows. citeturn24search2turn27search16 Supabase Auth is JWT-based (short-lived access tokens) and is designed to integrate with database Row Level Security (RLS), which can be attractive if ArxMint stores merchant listings/community configs/profiles in Postgres and wants enforcement at the data layer. citeturn25search5turn25search7 For Next.js App Router + SSR, Supabase’s recommended approach is configuring the client to store sessions in **cookies** (not local storage) using `@supabase/ssr`. citeturn16search5turn16search19
+
+The tricky part is “custom Nostr provider possible.” Supabase’s documented “third-party auth” expects an external provider that exposes OIDC discovery and issues **asymmetrically signed JWTs**—in other words, an OIDC-compliant IdP. citeturn25search0 Nostr signatures (NIP-98) are not OIDC tokens, so to make “Nostr login” first-class in Supabase Auth you generally need an adaptation layer (e.g., your own small OIDC service that accepts NIP-98, then issues OIDC JWTs) or you keep Nostr auth outside Supabase Auth and map it to Supabase identities some other way. citeturn25search0turn25search2
+
+Practical implication: Supabase Auth is excellent for merchant-friendly login quickly, but “Nostr-first” becomes either a parallel auth system or an engineering project to bridge into OIDC. citeturn25search0turn27search2
+
+**LNURL-auth (Lightning-based login)**  
+LNURL-auth (LUD-04) is a challenge/response signature scheme: the server generates a random 32-byte `k1` challenge; the user’s Lightning wallet signs it with a domain-specific `linkingPrivKey` (derived from wallet seed) and calls back with `sig` + `key`; the server verifies the signature and may treat the provided `key` as the stable user identifier (and store it in a session/db). citeturn14view0 The spec strongly recommends replay protection via tracking unused `k1` values and removing them on success, and it warns that changing subdomains changes derived identity because wallets use the full domain name in derivation material. citeturn14view0
+
+User friction is typically low for mobile-first users (scan QR → approve “Login”), and on desktop it is still workable because the phone wallet scans the desktop QR. citeturn14view0 It is also culturally aligned with the Bitcoin community; LNURL-auth is explicitly framed as “authorization with Bitcoin wallet” and can be used for login or “sensitive actions” (`action` enum includes `auth`). citeturn14view0
+
+However, LNURL-auth is not a great fit for AI agents. The identity key is derived from a wallet seed and signing is interactive in most wallet UX; turning this into a headless agent credential means you’ve effectively created another private key that must be stored and protected like an API secret. citeturn14view0turn23view1
+
+Does LNURL-auth “work with LNC-web”? “LNC” (Lightning Node Connect) is a separate protocol designed to connect a Lightning node (initially LND) to a web or mobile application via an end-to-end encrypted connection through a mailbox/proxy; it is not an LNURL authentication method. citeturn15search0turn15search1turn15search5 LNURL-auth also explicitly avoids using a plain LN node identity key, favoring a derived linking key, so “having node access in the browser” does not automatically give you the LNURL-auth identity primitive. citeturn14view0turn15search1
+
+**API keys for agents (scoped, rate-limited, revocable)**  
+For agentic callers, ArxMint already points toward payment-native authentication: NUT-24 defines HTTP 402 flows where servers respond with `X-Cashu` containing an encoded payment request and clients retry with a `cashuB` token in `X-Cashu` as payment. citeturn6view0 In parallel, entity["company","Lightning Labs","lightning network company"]’s L402 standard defines HTTP 402 flows where servers respond with `WWW-Authenticate` containing a token + Lightning invoice, and clients present the token plus preimage (macaroon(s) + preimage pair) to gain access. citeturn23view0turn23view1 L402 documentation explicitly makes two points valuable for agents: it is designed for program/agent clients, and the resulting token is a bearer instrument that can be reused, passed on, and attenuated/restricted (capabilities can be narrowed). citeturn23view0turn23view2
+
+The security caveat is equally explicit: L402 credentials are not secure unless used with TLS; if intercepted, the attacker can reuse them, and spoofed endpoints can capture credentials. citeturn23view1 Similarly, any bearer-token API key must be treated as “money-like”: if leaked, it will be used.
+
+If you add separate “agent API keys” beyond L402/NUT-24, the best-practice baseline is: least-privilege scopes, object-level authorization checks on every resource access (to avoid BOLA), per-key rate limits, and strong operational controls (issue once, rotate, revoke, audit). citeturn17search0 L402’s model can actually serve as your agent-key substrate because it already supports reuse until revocation conditions (expiry, usage count, etc.) and expresses service/capabilities caveats. citeturn23view1turn23view2
+
+## Session management and route protection in Next.js App Router
+
+Next.js’s own guidance breaks auth into three layers: authentication (prove identity), session management (persist login state), and authorization (enforce what the user can access). citeturn22view0 It also strongly recommends using an auth library rather than rolling your own, noting session management complexity and emphasizing server-side handling via Server Actions/Route Handlers. citeturn22view0
+
+For sessions, Next.js describes “stateless sessions” as (1) generating a secret key, (2) encrypting/decrypting session data, and (3) setting server-managed cookies with hardened options like HttpOnly, Secure, SameSite, and expiration. citeturn22view0 Cookie hardening aligns with entity["organization","OWASP","security nonprofit"] guidance on HttpOnly/SameSite and secure session management. citeturn17search3turn17search7
+
+If you adopt Auth.js, its Next.js integration is designed specifically for App Router: a universal `auth()` method can be used in Middleware, Server Components, and Route Handlers, and it includes options such as always using secure cookies on HTTPS deployments. citeturn28view0 This matters for ArxMint because you likely need:
+
+- **Middleware-level coarse gating** (block unauthenticated access to `/wallet`, `/merchant`, `/admin`, etc.) without hitting a database on the edge runtime, and  
+- **Route handler / server-component fine checks** (validate ownership and roles) for every wallet or merchant resource operation, to avoid object-level authorization failures. citeturn17search0turn28view0
+
+Session lifetime and “re-auth” should be driven by risk. entity["organization","NIST","us standards agency"]’s digital identity guidance describes both overall and inactivity timeouts for authenticated sessions, and explicitly discusses reauthentication as a normal part of session management. citeturn17search1turn17search9 For ArxMint, that suggests longer-lived sessions for browsing configs/merchant listings, but short-lived or step-up requirements for actions that can spend, export, or rebind Cashu proofs.
+
+## Protecting Cashu wallet operations
+
+The hardest requirement in your prompt is: “proof spending should require re-auth.” Because Cashu proofs are bearer tokens, protections that only guard *pages* are insufficient if proofs are accessible once logged in. citeturn1search7turn8view0 At minimum, any endpoint that can initiate a melt/swap or reveal raw proofs should be elevated to a “high-risk” tier with step-up authentication and strict audit logging. citeturn17search1turn17search0
+
+A stronger pattern is to avoid “session compromise ⇒ funds compromise” by adding a wallet-aware control at the proof level:
+
+- Cashu NUT-10 standardizes spending conditions and warns that if a mint does not support spending conditions, proofs may be treated as normal anyone-can-spend tokens. citeturn8view0  
+- NUT-11 defines Pay-to-Public-Key (P2PK), allowing proofs to be locked to an ECC public key and requiring a Schnorr signature by the corresponding private key to unlock during spending; the mint enforces this. citeturn8view1
+
+For ArxMint, P2PK yields an important architectural opportunity: if your app locks proofs to a spending key that is not trivially available to a stolen web session, then database leaks and session hijacks are less likely to become direct theft. citeturn8view1turn17search1 The remaining design question becomes “where does that spending key live?”
+
+A modern answer is passkeys. entity["organization","FIDO Alliance","authentication standards"] describes passkeys as cryptographic key pairs for phishing-resistant passwordless sign-in, usable from user devices and bound to the service domain (and optionally synced across devices). citeturn17search2turn17search6 Even if ArxMint does not make passkeys the *login* method initially, you can use them as a *spending authorization* factor: the passkey authenticates the user and releases a local encryption key or signs a spend-intent, enabling “step-up for spending” while keeping browsing friction low. citeturn17search2turn17search1
+
+Separately, the Cashu ecosystem itself includes authentication standards aimed at mints: NUT-21 defines “Clear Authentication” using OAuth 2.0 / OpenID Connect access tokens (often JWTs), explicitly warning that it breaks privacy and should be required only on selected endpoints; NUT-22 defines “Blind Authentication Tokens” (BATs) that are themselves ecash-like, single-use tokens with unit `auth`. citeturn7view0turn7view1 While ArxMint isn’t necessarily a mint, these NUTs show there *is* an emerging standard for “authenticated access without fully doxxing users” in the Cashu ecosystem—useful as a conceptual model for rate limiting and abuse prevention without tying every operation to a long-lived identity token. citeturn7view0turn7view1turn17search0
+
+## What other Bitcoin web apps do
+
+The broader ecosystem is pragmatic and tends to separate “admin dashboard auth” from “wallet/key auth”:
+
+entity["company","Mutiny Wallet","lightning wallet"] has explored Nostr-adjacent wallet connectivity such as “Nostr Wallet Auth” to simplify connecting a Lightning wallet to Nostr clients/services (scan QR or one click). citeturn18search4 Its user guidance emphasizes self-custody realities: the user must back up their seed phrase because it is the only way to redeem funds if browser storage is cleared. citeturn19search7 This is not “web app login” in the traditional sense; it is “wallet key management,” with optional app-layer locks as secondary. citeturn19search7turn18search0
+
+entity["company","Start9 Labs","startos maker"]’ entity["company","Umbrel","personal server os"] and StartOS approach is closer to conventional web sessions: StartOS explicitly describes authenticated sessions created per login and provides UI for managing active sessions. citeturn18search18 Umbrel’s “official troubleshooting guide” describes credential behavior around initial setup and notes that after web UI account creation, the terminal login uses the account password set during setup—i.e., a unified password-based control plane. citeturn20search4 These systems are “server dashboards,” so password/session auth is expected; the main security controversies are usually about downstream apps having weak defaults, not the dashboard login model itself. citeturn18search17turn20search7
+
+entity["organization","BTCPay Server","bitcoin payment processor"] is a useful reference because it supports both human UI and programmatic integration. BTCPay documentation explicitly includes account management features like setting up two-factor authentication and managing API keys. citeturn18search3turn18search7 Its Greenfield API supports creating API keys with specific permissions, reflecting a mature “scoped key” model. citeturn18search7 BTCPay also documents “BitID” for manual API access, where clients generate a private key, pair a public key, and sign requests—an older example of Bitcoin-style key-based authentication. citeturn18search15turn21search0
+
+For “wallet-aware auth,” there is no single dominant Bitcoin equivalent of “Sign-In with Ethereum,” but there are converging primitives: Bitcoin message signing standards (BIP-322) for proving control of scripts/addresses, LNURL-auth for derived identity keys, Nostr keys via NIP-07/46/98, and Cashu P2PK spending conditions for making the bearer token itself require a signature. citeturn9search0turn14view0turn10view0turn8view1
+
+## Phased recommendation for ArxMint
+
+**What to ship for a pilot (fastest path to “secure enough” without boxing you in)**  
+Adopt a hybrid identity strategy with *one* session framework, and make wallet spending a step-up tier.
+
+1. Use Auth.js as the session “spine” for Next.js App Router so you can gate routes in middleware and read identity in Server Components/Route Handlers using `auth()`. citeturn28view0turn22view0  
+2. Implement Nostr login as a first-class path by verifying NIP-98-signed requests (kind `27235`, `u` + `method`, freshness window, and `payload` binding for POST bodies). Consider a nonce scheme to make replay within the freshness window non-viable; this approach is used by existing NIP-98 login implementations. citeturn26view0turn9search8  
+3. For merchants without Nostr, choose email magic links (not passwords) as the fallback, because the flow is well-supported and reduces password handling burden while remaining mobile-friendly. citeturn24search3turn24search2turn24search0  
+4. Immediately classify wallet operations into risk tiers. For anything that can spend/export/reveal proofs, require step-up reauthentication (short reauth window, enforced inactivity/overall timeouts) aligned with NIST session guidance. citeturn17search1turn17search9turn1search7  
+5. For AI agents, do not reuse human sessions. Use L402 (and/or NUT-24 if you accept Cashu directly) as the default agent-facing auth/payment mechanism because it is designed for programmatic clients and supports capability restriction and revocation conditions. citeturn23view0turn23view1turn6view0
+
+This pilot scope gets you: “no more anonymous access,” Nostr-native UX for the core community, merchant onboarding without requiring Nostr, and clean separation between human auth and agent access.
+
+**What to build toward for production (fund-grade security + mobile-first sovereignty)**  
+1. Add NIP-46 support so Nostr login works on mobile *without* browser extensions and so private keys are not routinely exposed to the browser environment; NIP-46 is explicitly designed for remote signing with encrypted request/response messages. citeturn10view2  
+2. Introduce passkeys as either (a) a merchant-friendly primary authenticator or (b) a mandatory spending authorization factor, leveraging their phishing resistance and domain binding. citeturn17search2turn17search6  
+3. Move from “session compromise ⇒ funds compromise” toward “proof compromise still not enough to spend” by using Cashu P2PK for proofs whenever the mint supports it, and by refusing or warning on mints that do not advertise spending-condition support (NUT-10 warns about fallback-to-anyone-can-spend behavior if unsupported). citeturn8view0turn8view1  
+4. If you standardize on Supabase for data, decide explicitly whether you want (a) Supabase Auth as the primary identity system (excellent for email/OAuth + RLS) or (b) Auth.js sessions stored in Supabase Postgres via the Supabase adapter (clean for Next.js-centric auth, but separate from Supabase Auth). citeturn16search5turn27search1turn27search2turn25search5  
+5. For agents at scale: lean into capability-based tokens (L402 macaroons with service/capability caveats) plus strict object-level authorization checks to prevent BOLA, and enforce TLS everywhere because bearer credentials are replayable if intercepted. citeturn23view2turn17search0turn23view1
+
+This path converges on a “Bitcoin-native” stack where: identity can be Nostr or Lightning, sessions are conventional but hardened, and *spending* is protected by a second cryptographic factor (P2PK/passkeys) so that authentication becomes necessary—but not sufficient—for moving funds. citeturn8view1turn17search2turn17search1

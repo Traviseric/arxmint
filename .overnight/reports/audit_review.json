@@ -1,0 +1,284 @@
+{
+  "run_at": "2026-02-28T14:00:00Z",
+  "session": "task_synthesizer_round_10_docs_synthesis",
+  "sources_synthesized": ["human_tasks_md"],
+  "conductor_instructions": "All 67 previous tasks completed. Create P2 tasks for 4 agent-automatable documentation items from human_tasks.md only.",
+  "total_findings_this_round": 22,
+  "accepted_this_round": 4,
+  "deferred_this_round": 18,
+  "rejected_this_round": 0,
+  "merged_this_round": 0,
+  "tasks_created_this_round": 4,
+  "task_id_range_this_round": "141-144",
+  "new_tasks": ["141-P2","142-P2","143-P2","144-P2"],
+  "accepted_items": [
+    {
+      "id": "141",
+      "finding": "Prepare shared grant dossier (human_tasks.md)",
+      "reason": "Agent can populate all 6 sections from lib/grant-templates.ts, lib/pilot-deployment.ts, docs/spec.md, docs/roadmap.md, docs/brand.md"
+    },
+    {
+      "id": "142",
+      "finding": "Single-host federation trust statement (human_tasks.md)",
+      "reason": "Agent can write disclosure from lib/value-caps.ts defaults and lib/pilot-deployment.ts PilotKPITargets"
+    },
+    {
+      "id": "143",
+      "finding": "Define Longmont pilot KPIs (human_tasks.md)",
+      "reason": "KPI data in lib/pilot-deployment.ts and lib/bce-metrics.ts; agent can format into strategic document"
+    },
+    {
+      "id": "144",
+      "finding": "Mainnet migration plan (human_tasks.md)",
+      "reason": "Migration procedures derivable from docker/ configs, lib/replication-playbook.ts, Research #3 notes"
+    }
+  ],
+  "deferred_human_items": [
+    "Provision Vultr VPS — requires external infrastructure access",
+    "Register domain + DNS — requires human external service access",
+    "LND wallet creation — requires physical VPS + offline seed phrase",
+    "Generate NEXTAUTH_SECRET — security-sensitive, must be human offline",
+    "Generate MACAROON_ROOT_KEY — security-sensitive, must be human offline",
+    "Generate CASHU_PRIVATE_KEY — security-sensitive, must be human offline",
+    "Set GRAFANA_PASSWORD — security-sensitive",
+    "Configure off-host backup destination — external storage credentials required",
+    "Submit OpenSats General Grant — requires human submission + real pilot data",
+    "Submit HRF Bitcoin Development Fund — requires human submission",
+    "Submit Spiral email proposal — requires human submission",
+    "Longmont Bitcoin meetup outreach — human relationship building",
+    "FBCE Round 3 monitoring — external tracking",
+    "Disaster recovery drill on testnet — requires live VPS",
+    "Ark SDK release — upstream @arkade-os/sdk not on npm",
+    "Programmable eCash (NUT-XX) — Cashu protocol upstream",
+    "ZK reissuance — Cashu protocol upstream",
+    "CTV+CSFS for Ark — requires Bitcoin soft-fork"
+  ],
+  "project_declared": {
+    "total": 22,
+    "accepted": 4,
+    "merged": 0,
+    "rejected": 0,
+    "deferred": 18
+  },
+  "previous_sessions_summary": {
+    "round_9_ux_focus": {
+      "run_at": "2026-02-28T12:00:00Z",
+      "tasks_created": 21,
+      "task_id_range": "120-140",
+      "source": "ux_audit"
+    },
+    "round_8_feature_focus": {
+      "run_at": "2026-02-28T10:00:00Z",
+      "tasks_created": 4,
+      "task_id_range": "116-119",
+      "source": "feature_audit + review_audit"
+    }
+  },
+  "round_11_targeted_sweep": {
+    "run_at": "2026-02-28T16:00:00Z",
+    "session": "task_synthesizer_round_11_switch_blocked_sweep",
+    "sources_synthesized": ["human_tasks_switch_blocked"],
+    "conductor_instructions": "Targeted sweep of switch_blocked.json items only. Check if generate-secrets.sh, DR_DRILL.md, VPS_SETUP.md exist before creating tasks.",
+    "verified_missing": [
+      "scripts/generate-secrets.sh — does not exist",
+      "docs/DR_DRILL.md — does not exist",
+      "docs/VPS_SETUP.md — does not exist"
+    ],
+    "tasks_created": 3,
+    "task_id_range": "145-147",
+    "new_tasks": ["145-P1","146-P1","147-P1"],
+    "accepted_items": [
+      {
+        "id": "145",
+        "finding": "scripts/generate-secrets.sh missing — agent can create bash script for one-command secret generation",
+        "reason": "openssl rand script for NEXTAUTH_SECRET, MACAROON_ROOT_KEY, CASHU_PRIVATE_KEY, GRAFANA_PASSWORD — fully automatable"
+      },
+      {
+        "id": "146",
+        "finding": "docs/DR_DRILL.md missing — agent can write DR drill checklist (separate from INCIDENT_RESPONSE.md)",
+        "reason": "Step-by-step testnet restore drill checklist is documentation an agent can write from existing backup scripts and architecture"
+      },
+      {
+        "id": "147",
+        "finding": "docs/VPS_SETUP.md missing — agent can write provisioning checklist operationalizing Research #2 decisions",
+        "reason": "Vultr/UFW/Docker/Caddy setup checklist from locked architectural decisions in Research #2 — fully documentable by agent"
+      }
+    ],
+    "human_only_confirmed_15_items": [
+      "3 grant submissions (human accounts required)",
+      "4 credential inputs (actual .env population on live VPS, LND seed — NOT covered by generate-secrets.sh which is a prep helper)",
+      "1 off-host backup destination setup",
+      "5 upstream dependencies",
+      "2 community coordination items",
+      "1 VPS provisioning (actual Vultr UI click-through)",
+      "1 DR drill execution (human must run the drill, agent only writes the checklist)"
+    ]
+  },
+  "summary": "Round 10 (documentation synthesis): 22 items in human_tasks.md reviewed. 4 tasks created (141-144). Round 11 (switch_blocked targeted sweep): 3 additional prep artifact tasks created (145-147): generate-secrets.sh script, DR drill checklist, VPS setup checklist. Remaining 15 blocked items verified human-only. Total tasks created across all rounds: 75 (tasks 073-147).",
+  "round_12_root_human_tasks": {
+    "run_at": "2026-02-28T18:00:00Z",
+    "session": "task_synthesizer_round_12_root_human_tasks",
+    "sources_synthesized": ["root-human-tasks"],
+    "conductor_instructions": "Process root human_tasks.md. Create grant drafts (Spiral email), update checkboxes, create upstream tracking docs, draft FBCE outreach. Tasks 145/146/147 confirmed COMPLETE by workers.",
+    "prior_work_confirmed": [
+      "scripts/generate-secrets.sh — EXISTS (task 145 complete, commit 2893ac3)",
+      "docs/DR_DRILL.md — EXISTS (task 146 complete, commit 8c98d1b)",
+      "docs/VPS_SETUP.md — EXISTS (task 147 complete, commit ebb47a1)",
+      "docs/grants/opensats-application.md — EXISTS (previous session)",
+      "docs/grants/hrf-application.md — EXISTS (previous session)",
+      "docs/grants/common-app-application.md — EXISTS, covers Spiral via common app"
+    ],
+    "tasks_created": 4,
+    "task_id_range": "148-151",
+    "new_tasks": ["148-P2", "149-P3", "150-P3", "151-P2"],
+    "accepted_items": [
+      {
+        "id": "148",
+        "finding": "Submit Spiral email proposal — no direct email draft exists",
+        "reason": "Spiral accepts direct email pitches. common-app covers form route. Agent can write email template (docs/grants/spiral-email.md) with developer-tooling/UX angle."
+      },
+      {
+        "id": "149",
+        "finding": "Upstream deps (Ark SDK, NUT-XX, ZK, CTV+CSFS, CDK maturity) lack tracking doc",
+        "reason": "Agent can create docs/tracking/upstream-deps.md with GitHub monitor links, ready-when criteria, ArxMint impact per dep."
+      },
+      {
+        "id": "150",
+        "finding": "FBCE Round 3 monitoring — outreach email + Geyser.fund profile not drafted",
+        "reason": "Agent can draft email to admin@fbce.io and Geyser.fund profile text (docs/grants/fbce-outreach.md)."
+      },
+      {
+        "id": "151",
+        "finding": "human_tasks.md unchecked items lack notes about available scripts/docs",
+        "reason": "Agent can annotate items with generate-secrets.sh, backup scripts, DR_DRILL.md, VPS_SETUP.md references."
+      }
+    ],
+    "deferred_human_items": [
+      "Submit OpenSats, HRF, Spiral — drafts exist, human submits",
+      "Provision Vultr VPS — VPS_SETUP.md checklist ready, human clicks Vultr UI",
+      "Register domain + DNS — requires external service access",
+      "LND wallet creation — agents never touch seed phrases",
+      "4 secret generation items — scripts/generate-secrets.sh ready, human runs on VPS",
+      "Configure off-host backup destination — scripts ready, human configures destination",
+      "Disaster recovery drill — DR_DRILL.md checklist ready, human runs drill",
+      "Longmont meetup outreach — human relationship building",
+      "Ark SDK / NUT-XX / ZK / CTV+CSFS — external upstreams, cannot be forced"
+    ],
+    "total_tasks_all_rounds": 79
+  },
+  "round_13_final_gap_analysis": {
+    "run_at": "2026-02-28T23:00:00Z",
+    "session": "task_synthesizer_round_13_overnight_tasks_gap",
+    "sources_synthesized": ["conductor_gap_analysis", "review_audit_output", "worker_outputs"],
+    "conductor_instructions": "All 79 active task files status:completed. OVERNIGHT_TASKS.md Summary table stale (39 pending / 0 completed). Verify IDs 9,27,30,33,34. Generate task to update checkboxes. DO NOT generate tasks for external-credential items or duplicates.",
+    "verification_results": {
+      "ID_9_prometheus_grafana": "CONFIRMED DONE — docker/prometheus.yml + docker/grafana/datasources/prometheus.yml exist",
+      "ID_27_health_check": "CONFIRMED DONE — app/api/health/route.ts exists (Glob verified)",
+      "ID_30_security_headers": "CONFIRMED DONE — next.config.ts lines 23-41 have X-Frame-Options:DENY, nosniff, CSP (Grep verified)",
+      "ID_33_production_dockerfile": "CONFIRMED DONE — Dockerfile is multi-stage, node:22.14-alpine, non-root nextjs user (Read verified)",
+      "ID_34_ci_cd": "CONFIRMED DONE — .github/workflows/ci.yml has lint+build+test+e2e steps (Grep verified)"
+    },
+    "tasks_created": 1,
+    "task_id_range": "152",
+    "new_tasks": ["152-P2"],
+    "accepted_items": [
+      {
+        "id": "152",
+        "finding": "OVERNIGHT_TASKS.md Summary table stale — 39 pending / 0 completed, but all 39 items are implemented",
+        "reason": "All 39 items verified implemented. Worker can update all checkboxes from [ ] to [x] and fix Summary table. Pure documentation update, no code change needed."
+      }
+    ],
+    "total_tasks_all_rounds": 80
+  },
+  "round_15_feature_coverage_push": {
+    "run_at": "2026-02-28T25:00:00Z",
+    "session": "task_synthesizer_round_15_feature_coverage",
+    "sources_synthesized": ["feature_audit"],
+    "conductor_instructions": "Fresh feature_audit (round 70) ran AFTER round 64 TASK_SYNTHESIZER — 12 findings not yet synthesized. Generate only low-effort disclaimer/label/gating tasks. Skip anything requiring real backend implementation.",
+    "findings_reviewed": 12,
+    "new_tasks_accepted": 3,
+    "new_tasks_rejected": 6,
+    "new_tasks_deferred": 2,
+    "new_tasks_merged": 1,
+    "tasks_created": 3,
+    "task_id_range": "153-155",
+    "new_tasks": ["153-P0", "154-P1", "155-P3"],
+    "accepted_items": [
+      {
+        "id": "153",
+        "finding": "CoinJoin/PayJoin supportedBy:'on-chain-only' status:'live' — no implementation exists but dashboard won't show 'coming soon' badge. Privacy score adds 15+10 points unconditionally.",
+        "action": "Change supportedBy to 'not-yet-implemented', status to 'experimental', gate score additions with isLayerAvailable()"
+      },
+      {
+        "id": "154",
+        "finding": "Agent compute (500 sats, fake 'Compute task executed successfully') and data (100 sats, hardcoded 2-dataset catalog) return static stubs while accepting real sats via L402 paywall (MERGED)",
+        "action": "Add demo:true + disclaimer field to both responses. Mark both as demo in service capability list."
+      },
+      {
+        "id": "155",
+        "finding": "Merchant NFC (NumoNFCSetup): no browser detection for Web NFC API. Silently fails/renders unusable UI on 95%+ of devices (iOS, desktop, Firefox, Safari).",
+        "action": "Add typeof navigator.nfc check, render unsupported browser message, surface QR code as primary path when NFC unavailable."
+      }
+    ],
+    "rejections": [
+      {
+        "finding": "Agent privacy-audit returns hardcoded score 78",
+        "reason": "Task 116 already completed — code now calls computePrivacyScore(privacyConfig). Verified."
+      },
+      {
+        "finding": "Ark VTXO off-chain spending appears as active option",
+        "reason": "Already properly gated: arkSpends.supportedBy='not-yet-implemented' → dashboard shows 'coming soon'. spend-router.ts line 123 explicitly comments 'availability.ark is always false'. Audit was wrong about this."
+      },
+      {
+        "finding": "L402 challenge persistence — in-memory Map not persisted to DB",
+        "reason": "Task 117 already completed. app/api/l402/route.ts verified: uses db.paymentChallenge.create() on challenge creation and DB fallback on cache miss."
+      },
+      {
+        "finding": "Cycle MVRV/NUPL signals not disclaimed as approximate",
+        "reason": "Already fixed: cycle-alerts.tsx has '(approx.)' labels, tooltips, and footer disclaimer '* MVRV and NUPL are price-based approximations (SMA ratios). On-chain UTXO data requires Glassnode API.'"
+      },
+      {
+        "finding": "Landing page fake live metrics (setInterval Math.random())",
+        "reason": "Task 118 already completed."
+      },
+      {
+        "finding": "E2E test automation / CI pipeline missing",
+        "reason": "Task 104 already completed. .github/workflows/ci.yml confirmed."
+      }
+    ],
+    "deferrals": [
+      {
+        "finding": "Silent Payments hardware wallet delegation (medium, feature-stub)",
+        "reason": "High effort. Requires server-side Fedimint module (not upstream). Previously deferred."
+      },
+      {
+        "finding": "Guardian governance enforcement (medium, feature-partial)",
+        "reason": "High effort. Runtime enforcement requires protocol-level changes. Previously deferred."
+      }
+    ],
+    "total_tasks_all_rounds": 83
+  },
+  "round_14_exhaustion": {
+    "run_at": "2026-02-28T23:59:00Z",
+    "session": "task_synthesizer_round_14_exhaustion",
+    "sources_synthesized": ["security_audit_output", "code_quality_audit_output", "feature_audit_output", "ux_audit_output", "review_audit_output", "last_mile_test_output", "all_active_task_files"],
+    "conductor_instructions": "Review switch_blocked.json flagged items (HT-001 through HT-018). Find any remaining agent-doable sub-tasks. If no new tasks found, return 0 tasks to signal exhaustion.",
+    "findings_reviewed": 82,
+    "new_tasks_accepted": 0,
+    "new_rejections": 0,
+    "new_deferrals": 0,
+    "signal": "EXHAUSTED",
+    "disposition_summary": {
+      "security_audit_16_findings": "9 completed (tasks 107-115), 4 deferred (CORS/CSP/rate-limiter/XSS), 2 rejected (session revocation, ignoreBuildErrors)",
+      "code_quality_21_findings": "7 completed (tasks 096-102), 7 deferred (WASM typing, god modules), 3 rejected (wallet-panel refactor, NFC TODO, token blocklist)",
+      "feature_9_findings": "4 completed (tasks 116-118, 104), 5 deferred (Ark SDK, compute stub, data stub, cycle MVRV, silent payments HW)",
+      "ux_35_findings": "21 completed (tasks 120-140), 5 deferred (tooltip popover, password strength, expandedSection, multi-step jump, copied timeout), 4 n/a (hero breakpoints handled by 130)",
+      "review_1_finding": "1 completed (task 119)",
+      "last_mile_test": "GO — no findings"
+    },
+    "switch_gate_status": "18 items remain in human_tasks.md — all require genuine human action. Agent prep tooling maximally complete: generate-secrets.sh, DR_DRILL.md, VPS_SETUP.md, spiral-email.md, upstream-deps.md, fbce-outreach.md all exist. No further automation possible.",
+    "tasks_created": 0,
+    "task_id_range": "none",
+    "total_tasks_all_rounds": 80
+  }
+}

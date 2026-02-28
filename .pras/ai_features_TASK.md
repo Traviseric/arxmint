@@ -1,0 +1,632 @@
+# AI_FEATURES — Feature Implementation Verification
+
+## Project
+Path: C:\code\arxmint
+Slug: arxmint
+
+## Discovered Features
+The following features were extracted from this project's documentation:
+
+```json
+[
+  {
+    "id": "readme-1",
+    "name": "Prompt",
+    "description": "**Prompt-driven economy creation** \u2014 Describe your community in natural language, get a full deployment config",
+    "source": "readme",
+    "source_location": "README.md:47",
+    "confidence": 0.85,
+    "keywords": [
+      "prompt",
+      "driven",
+      "economy",
+      "creation",
+      "describe",
+      "your",
+      "community",
+      "natural",
+      "language",
+      "get",
+      "full",
+      "deployment",
+      "config"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-2",
+    "name": "Fedimint federation support",
+    "description": "**Fedimint federation support** \u2014 Multi-guardian federated ecash with blinded Chaumian e-cash notes backed by BTC",
+    "source": "readme",
+    "source_location": "README.md:48",
+    "confidence": 0.85,
+    "keywords": [
+      "fedimint",
+      "federation",
+      "support",
+      "multi",
+      "guardian",
+      "federated",
+      "ecash",
+      "blinded",
+      "chaumian",
+      "cash",
+      "notes",
+      "backed",
+      "btc"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-3",
+    "name": "Cashu mint support",
+    "description": "**Cashu mint support** \u2014 Lightweight local Nutshell + CDK compose generation path for production deployments",
+    "source": "readme",
+    "source_location": "README.md:49",
+    "confidence": 0.85,
+    "keywords": [
+      "cashu",
+      "mint",
+      "support",
+      "lightweight",
+      "local",
+      "nutshell",
+      "cdk",
+      "compose",
+      "generation",
+      "path",
+      "production",
+      "deployments"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-4",
+    "name": "Lightning AI agent commerce",
+    "description": "**Lightning AI agent commerce** \u2014 L402 + NUT-24 paywall flows, scoped security tiers, macaroon baking, remote signer config validation",
+    "source": "readme",
+    "source_location": "README.md:50",
+    "confidence": 0.85,
+    "keywords": [
+      "lightning",
+      "agent",
+      "commerce",
+      "l402",
+      "nut",
+      "paywall",
+      "flows",
+      "scoped",
+      "security",
+      "tiers",
+      "macaroon",
+      "baking",
+      "remote",
+      "signer",
+      "config",
+      "validation"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-5",
+    "name": "Privacy defaults on",
+    "description": "**Privacy defaults on** \u2014 CoinJoin/PayJoin routing + honest per-backend support matrix; SP/Ark paths include experimental scaffolding",
+    "source": "readme",
+    "source_location": "README.md:51",
+    "confidence": 0.85,
+    "keywords": [
+      "privacy",
+      "defaults",
+      "coinjoin",
+      "payjoin",
+      "routing",
+      "honest",
+      "per",
+      "backend",
+      "support",
+      "matrix",
+      "ark",
+      "paths",
+      "include",
+      "experimental",
+      "scaffolding"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-6",
+    "name": "Spend router",
+    "description": "**Spend router** \u2014 Auto-selects ecash \u2192 Lightning \u2192 Ark \u2192 on-chain based on amount and privacy score",
+    "source": "readme",
+    "source_location": "README.md:52",
+    "confidence": 0.85,
+    "keywords": [
+      "spend",
+      "router",
+      "auto",
+      "selects",
+      "ecash",
+      "lightning",
+      "ark",
+      "chain",
+      "based",
+      "amount",
+      "privacy",
+      "score"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-7",
+    "name": "Cycle monitoring",
+    "description": "**Cycle monitoring** \u2014 Real-time MVRV, NUPL, and supply-in-profit signals from on-chain data",
+    "source": "readme",
+    "source_location": "README.md:53",
+    "confidence": 0.85,
+    "keywords": [
+      "cycle",
+      "monitoring",
+      "real",
+      "time",
+      "mvrv",
+      "nupl",
+      "supply",
+      "profit",
+      "signals",
+      "chain",
+      "data"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-8",
+    "name": "Merchant directory",
+    "description": "**Merchant directory** \u2014 Onboarding flow, QR codes, NFC support, \"Spend sats here\" listings",
+    "source": "readme",
+    "source_location": "README.md:54",
+    "confidence": 0.85,
+    "keywords": [
+      "merchant",
+      "directory",
+      "onboarding",
+      "flow",
+      "codes",
+      "nfc",
+      "support",
+      "spend",
+      "sats",
+      "here",
+      "listings"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-9",
+    "name": "Agent marketplace",
+    "description": "**Agent marketplace** \u2014 AI agents sell data, compute, privacy audits, and cycle signals for sats",
+    "source": "readme",
+    "source_location": "README.md:55",
+    "confidence": 0.85,
+    "keywords": [
+      "agent",
+      "marketplace",
+      "agents",
+      "sell",
+      "data",
+      "compute",
+      "privacy",
+      "audits",
+      "cycle",
+      "signals",
+      "sats"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-10",
+    "name": "BCE health metrics",
+    "description": "**BCE health metrics** \u2014 Community health dashboard with grant-ready export (JSON/CSV)",
+    "source": "readme",
+    "source_location": "README.md:56",
+    "confidence": 0.85,
+    "keywords": [
+      "bce",
+      "health",
+      "metrics",
+      "community",
+      "health",
+      "dashboard",
+      "grant",
+      "ready",
+      "export",
+      "json",
+      "csv"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "readme-11",
+    "name": "Deployment generation",
+    "description": "**Deployment generation** \u2014 Compose generation for LND + Fedimint/Cashu + Aperture + optional Ark/SP/monitoring services",
+    "source": "readme",
+    "source_location": "README.md:57",
+    "confidence": 0.85,
+    "keywords": [
+      "deployment",
+      "generation",
+      "compose",
+      "generation",
+      "lnd",
+      "fedimint",
+      "cashu",
+      "aperture",
+      "optional",
+      "ark",
+      "monitoring",
+      "services"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "pkg-description",
+    "name": "Your Bitcoin economy, one prompt away \u2014 private Fedimint/Cashu mints with Lightn",
+    "description": "Your Bitcoin economy, one prompt away \u2014 private Fedimint/Cashu mints with Lightning AI agent rails",
+    "source": "package-json",
+    "source_location": "package.json:description",
+    "confidence": 0.6,
+    "keywords": [
+      "your",
+      "bitcoin",
+      "economy",
+      "one",
+      "prompt",
+      "away",
+      "private",
+      "fedimint",
+      "cashu",
+      "mints",
+      "lightning",
+      "agent",
+      "rails"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-brand-1",
+    "name": "Visual Theme",
+    "description": "Visual Theme",
+    "source": "docs",
+    "source_location": "docs\\brand.md:18",
+    "confidence": 0.7,
+    "keywords": [
+      "visual",
+      "theme"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-research-crossref-1",
+    "name": "Cross-Reference: Research Docs \u2192 Existing Spec Sections",
+    "description": "Cross-Reference: Research Docs \u2192 Existing Spec Sections",
+    "source": "docs",
+    "source_location": "docs\\research-crossref.md:192",
+    "confidence": 0.7,
+    "keywords": [
+      "cross",
+      "reference",
+      "research",
+      "docs",
+      "existing",
+      "spec",
+      "sections"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-1",
+    "name": "Integration Gaps (Stubbed or Partial)",
+    "description": "Integration Gaps (Stubbed or Partial)",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:72",
+    "confidence": 0.6,
+    "keywords": [
+      "integration",
+      "gaps",
+      "stubbed",
+      "partial"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-2",
+    "name": "Phase B: Auth & Wallet Recovery (Week 2-3)",
+    "description": "Phase B: Auth & Wallet Recovery (Week 2-3)",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:117",
+    "confidence": 0.6,
+    "keywords": [
+      "phase",
+      "auth",
+      "wallet",
+      "recovery",
+      "week"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-3",
+    "name": "Phase E: Real Data Pipeline (Week 5-6)",
+    "description": "Phase E: Real Data Pipeline (Week 5-6)",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:136",
+    "confidence": 0.6,
+    "keywords": [
+      "phase",
+      "real",
+      "data",
+      "pipeline",
+      "week"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-4",
+    "name": "0.4 \u2014 Remote Signer Integration (P0)",
+    "description": "0.4 \u2014 Remote Signer Integration (P0)",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:202",
+    "confidence": 0.6,
+    "keywords": [
+      "remote",
+      "signer",
+      "integration"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-5",
+    "name": "1.3 \u2014 BCE Maturity Metrics Dashboard (P1)",
+    "description": "1.3 \u2014 BCE Maturity Metrics Dashboard (P1)",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:250",
+    "confidence": 0.6,
+    "keywords": [
+      "bce",
+      "maturity",
+      "metrics",
+      "dashboard"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-6",
+    "name": "1.7 \u2014 G-Bot Integration (P1)",
+    "description": "1.7 \u2014 G-Bot Integration (P1)",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:301",
+    "confidence": 0.6,
+    "keywords": [
+      "bot",
+      "integration"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-7",
+    "name": "2.2 \u2014 Ark SDK Integration",
+    "description": "2.2 \u2014 Ark SDK Integration",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:325",
+    "confidence": 0.6,
+    "keywords": [
+      "ark",
+      "sdk",
+      "integration"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-8",
+    "name": "2.5 \u2014 NUT-26 Payment Requests + QR/NFC",
+    "description": "2.5 \u2014 NUT-26 Payment Requests + QR/NFC",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:349",
+    "confidence": 0.6,
+    "keywords": [
+      "nut",
+      "payment",
+      "requests",
+      "nfc"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-9",
+    "name": "3.6 \u2014 Numo NFC Merchant Integration",
+    "description": "3.6 \u2014 Numo NFC Merchant Integration",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:407",
+    "confidence": 0.6,
+    "keywords": [
+      "numo",
+      "nfc",
+      "merchant",
+      "integration"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-roadmap-10",
+    "name": "4.3 \u2014 Grant Reporting Dashboard",
+    "description": "4.3 \u2014 Grant Reporting Dashboard",
+    "source": "docs",
+    "source_location": "docs\\roadmap.md:450",
+    "confidence": 0.6,
+    "keywords": [
+      "grant",
+      "reporting",
+      "dashboard"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-spec-1",
+    "name": "Spec Governance",
+    "description": "Spec Governance",
+    "source": "docs",
+    "source_location": "docs\\spec.md:109",
+    "confidence": 0.7,
+    "keywords": [
+      "spec",
+      "governance"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-upstream-contributions-1",
+    "name": "Contribution Log",
+    "description": "Contribution Log",
+    "source": "docs",
+    "source_location": "docs\\upstream-contributions.md:47",
+    "confidence": 0.7,
+    "keywords": [
+      "contribution",
+      "log"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-upstream-contributions-2",
+    "name": "How to Log Contributions",
+    "description": "How to Log Contributions",
+    "source": "docs",
+    "source_location": "docs\\upstream-contributions.md:104",
+    "confidence": 0.7,
+    "keywords": [
+      "how",
+      "log",
+      "contributions"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-whitepaper-1",
+    "name": "2.3 The Integration Gap",
+    "description": "2.3 The Integration Gap",
+    "source": "docs",
+    "source_location": "docs\\whitepaper.md:87",
+    "confidence": 0.6,
+    "keywords": [
+      "integration",
+      "gap"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-whitepaper-2",
+    "name": "3.2 System Pipeline",
+    "description": "3.2 System Pipeline",
+    "source": "docs",
+    "source_location": "docs\\whitepaper.md:105",
+    "confidence": 0.6,
+    "keywords": [
+      "system",
+      "pipeline"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-whitepaper-3",
+    "name": "5.3 Payment Verification",
+    "description": "5.3 Payment Verification",
+    "source": "docs",
+    "source_location": "docs\\whitepaper.md:242",
+    "confidence": 0.6,
+    "keywords": [
+      "payment",
+      "verification"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-whitepaper-4",
+    "name": "5.5 MCP Integration",
+    "description": "5.5 MCP Integration",
+    "source": "docs",
+    "source_location": "docs\\whitepaper.md:264",
+    "confidence": 0.6,
+    "keywords": [
+      "mcp",
+      "integration"
+    ],
+    "status_hint": ""
+  },
+  {
+    "id": "doc-whitepaper-5",
+    "name": "9.3 One-Command Deploy",
+    "description": "9.3 One-Command Deploy",
+    "source": "docs",
+    "source_location": "docs\\whitepaper.md:516",
+    "confidence": 0.6,
+    "keywords": [
+      "one",
+      "command",
+      "deploy"
+    ],
+    "status_hint": ""
+  }
+]
+```
+
+## Your Task
+
+You are a senior engineer verifying whether claimed features are actually implemented.
+For EACH discovered feature above:
+
+1. **Search the codebase** for files related to this feature using the keywords
+2. **Check implementation status**:
+   - `complete` — Real logic exists, handles edge cases, appears functional
+   - `partial` — Some logic exists but gaps remain (missing error handling, incomplete flows)
+   - `stub` — Function/route exists but returns placeholder/throws "not implemented"
+   - `mock` — Returns hardcoded/fake data
+   - `missing` — No code found that implements this feature
+   - `untested` — Code exists but no tests found
+3. **Collect evidence** — file paths, line numbers, code snippets proving the status
+4. **Check for tests** — does this feature have test coverage?
+
+Be thorough. A feature might be split across multiple files. Check:
+- Exported functions matching feature keywords
+- API route handlers
+- React components/pages
+- Database schemas/models
+- Configuration files
+
+## Output Format
+
+Write ONLY valid JSON to the output file.
+
+```json
+{
+  "verifications": [
+    {
+      "feature_id": "<matches discovered feature id>",
+      "status": "complete|partial|stub|mock|missing|untested",
+      "confidence": 0.0-1.0,
+      "has_tests": true|false,
+      "files": ["<relative/path/to/file.ts>"],
+      "evidence": [
+        {
+          "type": "code|test|config",
+          "file": "<relative/path>",
+          "line": <line_number>,
+          "snippet": "<brief code snippet>",
+          "note": "<why this proves the status>"
+        }
+      ],
+      "summary": "<one-line explanation of implementation state>"
+    }
+  ]
+}
+```
+
+Write output to: C:\code\arxmint\.pras\ai_features_verify_output.json

@@ -1,0 +1,215 @@
+{
+  "success": true,
+  "next_box": "CONDUCTOR",
+  "context": {
+    "audit_type": "code_quality",
+    "project": "arxmint",
+    "language": "TypeScript",
+    "type_checker": "tsc (strict mode)",
+    "linter": "ESLint (next/core-web-vitals + next/typescript)",
+    "test_framework": "Node test runner + experimental-strip-types",
+    "findings": [
+      {
+        "severity": "high",
+        "category": "types",
+        "file": ".eslintrc.json",
+        "line": 5,
+        "description": "ESLint rule '@typescript-eslint/no-explicit-any' is explicitly disabled, allowing unbounded use of `any` types throughout the codebase despite strict TypeScript mode being enabled in tsconfig.json.",
+        "recommendation": "Remove or change '@typescript-eslint/no-explicit-any': 'off' to 'warn' or 'error' and systematically replace any types with proper TypeScript interfaces."
+      },
+      {
+        "severity": "medium",
+        "category": "types",
+        "file": "lib/fedimint-sdk.ts",
+        "line": 149,
+        "description": "Unsafe type cast `result.payment_type as any` bypasses TypeScript type system. Payment type enum values should be properly typed.",
+        "recommendation": "Define a proper union type for payment_type values and use discriminated union pattern instead of casting to any."
+      },
+      {
+        "severity": "medium",
+        "category": "types",
+        "file": "lib/nostr-auth.ts",
+        "line": 227,
+        "description": "Unsafe type cast `verifyEvent(event as any)` bypasses TypeScript type checking for Nostr event verification.",
+        "recommendation": "Import the proper NostrEvent type from the nostr-tools library and type the event parameter correctly."
+      },
+      {
+        "severity": "medium",
+        "category": "types",
+        "file": "lib/fedimint-sdk.ts",
+        "line": 1,
+        "description": "Multiple `any` typed module-level variables for WASM lazy-loading: `let WalletDirector: any`, `let WasmWorkerTransport: any`, `private director: any = null`, `private wallet: any = null`. While WASM dynamic imports make full typing difficult, these variables are entirely untyped.",
+        "recommendation": "Create interface definitions describing the WASM module API surface and use those types instead of any. At minimum create a WasmWalletDirector interface."
+      },
+      {
+        "severity": "medium",
+        "category": "types",
+        "file": "lib/lightning-agent.ts",
+        "line": 1,
+        "description": "LNC WASM client typed as `any`: `let LNC: any = null`, `private lnc: any = null`. Channel mapping also uses `map((ch: any) => ...)` losing type safety on channel data.",
+        "recommendation": "Use the type definitions from @lightninglabs/lnc-web package for the LNC client. Define a Channel interface for channel mapping."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "components/wallet-panel.tsx",
+        "line": 267,
+        "description": "Multiple catch blocks use `catch (e: any)` pattern (lines 267, 509, 671, 710, 955, 978, 1046, 1088, 1175) - 9 instances. Using `e: any` allows accessing error properties without type safety, e.g., `e.message` could fail at runtime.",
+        "recommendation": "Change `catch (e: any)` to `catch (e: unknown)` and use `instanceof Error` checks: `const msg = e instanceof Error ? e.message : String(e)`."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "lib/cashu-sdk.ts",
+        "line": 1562,
+        "description": "Catch block uses `catch (e: any)` pattern, losing type safety on error handling in the Cashu SDK core logic.",
+        "recommendation": "Use `catch (e: unknown)` with proper instanceof guards."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "lib/cashu-paywall.ts",
+        "line": 137,
+        "description": "Catch block uses `catch (e: any)` pattern in NUT-24 ecash paywall logic.",
+        "recommendation": "Use `catch (e: unknown)` with proper instanceof guards."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "lib/community-generator.ts",
+        "line": 1048,
+        "description": "Catch block uses `catch (e: any)` pattern in community generation pipeline.",
+        "recommendation": "Use `catch (e: unknown)` with proper instanceof guards."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "app/api/l402/route.ts",
+        "line": 129,
+        "description": "Two catch blocks use `catch (e: any)` pattern (lines 129, 170) in the L402 payment route handler.",
+        "recommendation": "Use `catch (e: unknown)` with proper instanceof guards for HTTP 500 responses."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "app/community/[id]/page.tsx",
+        "line": 368,
+        "description": "Catch block uses `catch (e: any)` pattern in community page data loading.",
+        "recommendation": "Use `catch (e: unknown)` with proper instanceof guards."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "components/cycle-alerts.tsx",
+        "line": 26,
+        "description": "Catch block uses `catch (e: any)` pattern in cycle alert data fetching.",
+        "recommendation": "Use `catch (e: unknown)` with proper instanceof guards."
+      },
+      {
+        "severity": "medium",
+        "category": "errors",
+        "file": "components/wallet-panel.tsx",
+        "line": 851,
+        "description": "Promise chain `.catch(() => {/* DB unavailable — ignore */})` silently swallows database errors. The comment indicates intent but no fallback state is set or user notified.",
+        "recommendation": "At minimum log the error to a debug channel and/or set an error state to inform the UI that transaction history is unavailable."
+      },
+      {
+        "severity": "medium",
+        "category": "patterns",
+        "file": "components/wallet-panel.tsx",
+        "line": 226,
+        "description": "God component: wallet-panel.tsx is 1,364 lines containing multiple large sub-components inlined: ReceivePanel (~232 lines, lines 226-458), SendPanel (~179 lines, lines 460-639), InvoicePanel (~259 lines, lines 641-900), plus WalletPanel main component (~146 lines). Deep nesting and mixed concerns.",
+        "recommendation": "Extract ReceivePanel, SendPanel, InvoicePanel, and TransactionList into separate component files. The main WalletPanel should only orchestrate these sub-components."
+      },
+      {
+        "severity": "medium",
+        "category": "patterns",
+        "file": "lib/cashu-sdk.ts",
+        "line": 1,
+        "description": "God module: cashu-sdk.ts is 1,905 lines containing 4+ distinct classes: SovereignCashuClient, AgentCashuWallet, AuditedAgentWallet, MultiMintManager (~190 lines). The MultiMintManager class alone handles multi-mint routing, fee optimization, and load balancing.",
+        "recommendation": "Split into separate modules: cashu-client.ts, agent-cashu-wallet.ts, audited-wallet.ts, multi-mint-manager.ts. This improves testability and maintainability."
+      },
+      {
+        "severity": "medium",
+        "category": "patterns",
+        "file": "lib/community-generator.ts",
+        "line": 1,
+        "description": "Large module at 1,108 lines handling multiple distinct concerns: natural language parsing, Docker compose generation, federation config, and deployment templating all in one file.",
+        "recommendation": "Consider splitting into: prompt-parser.ts, docker-generator.ts, federation-config.ts to separate concerns."
+      },
+      {
+        "severity": "low",
+        "category": "patterns",
+        "file": "lib/auth-middleware.ts",
+        "line": 97,
+        "description": "TODO comment: 'implement a DB-backed blocklist if immediate revocation is required' - JWT token revocation is not implemented, meaning compromised tokens remain valid until natural expiry.",
+        "recommendation": "Implement token blocklist using Redis or database. This is a security feature gap for immediate session termination scenarios."
+      },
+      {
+        "severity": "low",
+        "category": "patterns",
+        "file": "components/merchant-onboard.tsx",
+        "line": 647,
+        "description": "TODO comment: NFC provisioning is not implemented - uses manual fulfillment queue instead of Web NFC API. The UI presents NFC card setup as a feature but it is not functional.",
+        "recommendation": "Either implement Web NFC API integration or update the UI to clearly indicate the feature is 'coming soon' rather than appearing to work."
+      },
+      {
+        "severity": "low",
+        "category": "dead_code",
+        "file": "lib/cashu-sdk.ts",
+        "line": 1,
+        "description": "40+ console.log/warn/error/info statements across 21 production files. While some are appropriate for SDK diagnostic output, many log internal state that should be controlled by a debug flag or logging level.",
+        "recommendation": "Introduce a structured logger (e.g., a simple Logger class with level controls) or use an environment-gated debug flag: `if (process.env.DEBUG_SDK) console.log(...)`. API routes should use structured logging."
+      },
+      {
+        "severity": "low",
+        "category": "tests",
+        "file": "tests/",
+        "line": 1,
+        "description": "Missing test coverage for several key lib modules: lib/grant-templates.ts (534 lines, no test), lib/replication-playbook.ts (553 lines, no test), lib/pilot-deployment.ts (762 lines, no test), lib/bce-metrics.ts has tests but complex cycle signal calculations may lack edge case coverage.",
+        "recommendation": "Add unit tests for grant-templates.ts, replication-playbook.ts, and pilot-deployment.ts. These are pure transformation functions that are easy to test."
+      },
+      {
+        "severity": "low",
+        "category": "tests",
+        "file": "tests/",
+        "line": 1,
+        "description": "Test-to-source ratio: 2,325 LOC tests vs ~20,047 LOC source = ~11.6% test coverage by lines. Unit tests exist for 13 modules but 15+ lib modules have no corresponding test file.",
+        "recommendation": "Aim for test files covering all lib/ modules. Priority: community-generator.ts (1,108 lines, core business logic), silent-payments.ts (632 lines, cryptographic logic)."
+      },
+      {
+        "severity": "low",
+        "category": "types",
+        "file": "components/wallet-panel.tsx",
+        "line": 1,
+        "description": "Inline type assertions and `any` casts in component state management weaken type safety in the largest UI component.",
+        "recommendation": "Define explicit interfaces for all component state types at the top of the file or in a separate types file."
+      }
+    ],
+    "severity_counts": {
+      "critical": 0,
+      "high": 1,
+      "medium": 13,
+      "low": 7
+    },
+    "top_files_by_issues": [
+      {"file": "components/wallet-panel.tsx", "issues": 4, "lines": 1364},
+      {"file": "lib/cashu-sdk.ts", "issues": 3, "lines": 1905},
+      {"file": ".eslintrc.json", "issues": 1, "lines": 7},
+      {"file": "lib/fedimint-sdk.ts", "issues": 2, "lines": 552},
+      {"file": "lib/lightning-agent.ts", "issues": 1, "lines": 601}
+    ],
+    "project_stats": {
+      "total_ts_tsx_files": 66,
+      "total_source_loc": 20047,
+      "total_test_loc": 2325,
+      "test_files": 24,
+      "files_with_any_types": 28,
+      "catch_e_any_instances": 16,
+      "as_any_casts": 2,
+      "todo_fixme_comments": 2,
+      "console_statements": 40
+    },
+    "summary": "ArxMint has solid TypeScript infrastructure (strict tsconfig) but undermines it by disabling no-explicit-any in ESLint. The codebase has 16 catch-block any-typed errors and 28 files using any. The biggest architectural concern is wallet-panel.tsx (1,364 lines) and cashu-sdk.ts (1,905 lines) as god files needing decomposition. Error handling is present but uses unsafe any-typed catch patterns throughout. Test coverage is reasonable for core lib modules (13 unit test files) but ~15 lib modules have no test coverage. No critical vulnerabilities found - issues are maintainability and type-safety debt."
+  }
+}
