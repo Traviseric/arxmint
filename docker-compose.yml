@@ -31,9 +31,9 @@ services:
       --db.backend=sqlite
       # NOTE: Run 'docker exec sf-lnd lncli create' after first start to create wallet + save seed phrase
     ports:
-      - "9735:9735"     # P2P
-      - "10009:10009"   # gRPC
-      - "8080:8080"     # REST
+      - "9735:9735"     # P2P — must be public for Lightning routing
+      # gRPC (10009) and REST (8080) are internal only — access via docker exec or SSH tunnel
+      # Caddy handles HTTPS termination; LND internal APIs stay on the sovereign network
     volumes:
       - lnd-data:/root/.lnd
     networks:
@@ -231,6 +231,24 @@ services:
     networks:
       - sovereign
 
+  # === Caddy Reverse Proxy (HTTPS termination) ===
+  caddy:
+    image: caddy:2-alpine
+    container_name: sf-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3 (QUIC)
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - sovereign
+    depends_on:
+      - web
+
 volumes:
   lnd-data:
   cashu-data:
@@ -240,6 +258,8 @@ volumes:
   prometheus-data:
   grafana-data:
   postgres-data:
+  caddy-data:
+  caddy-config:
 
 networks:
   sovereign:
