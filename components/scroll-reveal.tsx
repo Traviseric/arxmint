@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ReactNode } from "react";
 
 export function ScrollReveal({
@@ -14,8 +14,14 @@ export function ScrollReveal({
     className?: string;
     direction?: "up" | "down" | "left" | "right" | "none";
 }) {
+    const prefersReducedMotion = useReducedMotion();
+
     const yOffset = direction === "up" ? 30 : direction === "down" ? -30 : 0;
     const xOffset = direction === "left" ? 30 : direction === "right" ? -30 : 0;
+
+    if (prefersReducedMotion) {
+        return <div className={className}>{children}</div>;
+    }
 
     return (
         <motion.div
@@ -41,6 +47,12 @@ export function StaggerContainer({
     staggerDelay?: number;
     delay?: number;
 }) {
+    const prefersReducedMotion = useReducedMotion();
+
+    if (prefersReducedMotion) {
+        return <div className={className}>{children}</div>;
+    }
+
     return (
         <motion.div
             initial="hidden"
@@ -70,8 +82,14 @@ export function StaggerItem({
     className?: string;
     direction?: "up" | "down" | "left" | "right" | "none";
 }) {
+    const prefersReducedMotion = useReducedMotion();
+
     const yOffset = direction === "up" ? 20 : direction === "down" ? -20 : 0;
     const xOffset = direction === "left" ? 20 : direction === "right" ? -20 : 0;
+
+    if (prefersReducedMotion) {
+        return <div className={className}>{children}</div>;
+    }
 
     return (
         <motion.div

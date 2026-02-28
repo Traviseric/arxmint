@@ -177,8 +177,17 @@
   }
 }
 
-/* Fix 062-5: Respect prefers-reduced-motion — disable fade-in and other animations */
+/* Fix 062-5 + 065: Respect prefers-reduced-motion — disable all animations */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .animate-in,
   .animate-fade-in,
   [class*="animate-"] {
@@ -189,6 +198,20 @@
 
   .animate-spin {
     animation: none !important;
+  }
+
+  .animate-pulse {
+    animation: none !important;
+  }
+
+  .scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .typing-cursor {
+    animation: none !important;
+    opacity: 1 !important;
   }
 }
 
