@@ -440,7 +440,7 @@ export class SovereignLightningClient {
 /** Cache of L402 tokens by domain */
 const tokenCache = new Map<string, L402Token>();
 
-function parseL402Challenge(wwwAuthenticate: string): L402Challenge {
+export function parseL402Challenge(wwwAuthenticate: string): L402Challenge {
   const macaroonMatch = wwwAuthenticate.match(/macaroon="([^"]+)"/);
   const invoiceMatch = wwwAuthenticate.match(/invoice="([^"]+)"/);
 

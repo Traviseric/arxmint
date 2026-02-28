@@ -12,7 +12,7 @@ import type {
   MintBackend,
   ParsedPrompt,
 } from "./types";
-import { PRIVACY_PRESETS, type PrivacyLevel } from "./privacy-defaults";
+import { PRIVACY_PRESETS, type PrivacyLevel } from "./privacy-defaults.ts";
 
 /** Parse a natural language prompt into structured community config */
 export function parsePrompt(prompt: string): ParsedPrompt {
