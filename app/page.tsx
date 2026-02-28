@@ -69,23 +69,25 @@ export default function HomePage() {
       {/* Background Ambience */}
       <div
         ref={heroBgRef}
-        className="fixed top-0 left-0 w-full h-[120vh] z-0 pointer-events-none origin-top overflow-hidden"
+        className="fixed top-0 left-0 w-full h-[120vh] z-0 pointer-events-none origin-top overflow-hidden bg-bg-base"
         style={{ transform: "scale(1.1)" }}
       >
         <Image
           src="/images/hero_ambience.png"
           alt="Cinematic abstract data node"
           fill
-          className="object-cover opacity-30 mix-blend-screen"
+          className="object-cover opacity-[0.15] mix-blend-screen"
           priority
         />
-        <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full bg-accent/5 blur-[120px] mix-blend-screen" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-[150px] mix-blend-screen" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg-base via-bg-base/50 to-transparent opacity-90 z-10" />
+        <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] rounded-full bg-accent/10 blur-[150px] mix-blend-screen z-10" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-[150px] mix-blend-screen z-10" />
+
         {/* Subtle grid overlay */}
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[size:32px_32px] opacity-[0.03]" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[size:32px_32px] opacity-[0.03] z-10" />
 
         {/* Gradient Fade up */}
-        <div className="absolute inset-0 bg-gradient-to-t from-bg-base/90 via-transparent to-transparent z-10" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-bg-base via-bg-base/80 to-transparent z-10" />
       </div>
 
       <div className="relative z-10 w-full">
@@ -120,10 +122,10 @@ export default function HomePage() {
                   </span>
                 </h1>
 
-                <p className="text-xl sm:text-2xl text-text-secondary font-light max-w-lg leading-relaxed">
+                <p className="text-xl sm:text-2xl text-text-primary font-medium max-w-lg leading-relaxed drop-shadow-md">
                   Your Bitcoin economy, one prompt away.
                 </p>
-                <p className="text-text-muted max-w-lg mt-4 leading-relaxed font-mono text-sm">
+                <p className="text-text-secondary max-w-lg mt-4 leading-relaxed font-mono text-sm drop-shadow">
                   ArxMint generates private Fedimint federations, Cashu mints,
                   Lightning agent rails, and deploys them instantly. Humans and AI agents share the same sovereign infrastructure.
                 </p>

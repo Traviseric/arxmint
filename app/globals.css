@@ -121,6 +121,47 @@
     @apply inline-block text-accent;
     animation: blink 0.8s step-end infinite;
   }
+
+  /* --- Legacy Components Map --- */
+  .sovereign-card {
+    @apply glass glow-card p-6 rounded-xl;
+  }
+
+  .sovereign-btn-outline {
+    @apply antigravity-btn-outline;
+  }
+
+  .sovereign-btn {
+    @apply antigravity-btn;
+  }
+
+  .sovereign-input {
+    @apply bg-bg-elevated border border-border-default rounded-md px-3 py-2 text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all duration-[200ms];
+  }
+
+  .text-sovereign-white {
+    @apply text-text-primary;
+  }
+
+  .text-sovereign-text {
+    @apply text-text-primary;
+  }
+
+  .text-sovereign-muted {
+    @apply text-text-secondary;
+  }
+
+  .bg-sovereign-dark {
+    @apply bg-bg-surface;
+  }
+
+  .bg-sovereign-panel {
+    @apply bg-bg-elevated;
+  }
+
+  .border-sovereign-border {
+    @apply border-border-default;
+  }
 }
 
 @keyframes blink {
