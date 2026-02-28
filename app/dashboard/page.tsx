@@ -21,7 +21,7 @@ import { CycleAlerts } from "@/components/cycle-alerts";
 import { WalletPanel } from "@/components/wallet-panel";
 import { useSovereignStore } from "@/lib/store";
 import type { CommunityConfig } from "@/lib/types";
-import { PRIVACY_PRESETS } from "@/lib/privacy-defaults";
+import { PRIVACY_PRESETS, getBackendAwarePrivacyConfig } from "@/lib/privacy-defaults";
 import { formatSats } from "@/lib/utils";
 import {
   TIER_INFO,
@@ -62,8 +62,14 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Use community privacy config or default to high
-  const privacyConfig = currentCommunity?.privacy || PRIVACY_PRESETS.high;
+  // Use community privacy config or default to high, filtered by the active backend.
+  // This auto-disables features like Silent Payments when Fedimint is selected,
+  // since they are Cashu-only and would be misleading if shown as enabled.
+  const activeBackend = currentCommunity?.mintBackend || "cashu";
+  const privacyConfig = getBackendAwarePrivacyConfig(
+    currentCommunity?.privacy || PRIVACY_PRESETS.high,
+    activeBackend
+  );
 
   const tabs = [
     { id: "overview" as const, label: "Overview", icon: Zap },

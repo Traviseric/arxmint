@@ -89,32 +89,42 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
           const available = isLayerAvailable(key, backend);
           const effectivelyOn = enabled && available;
           const comingSoon = info.supportedBy === "not-yet-implemented";
+          const cashuOnly = info.supportedBy === "cashu-only";
+          const backendDisabled = cashuOnly && backend !== "cashu";
 
           return (
             <div
               key={key}
               className={`rounded-lg border px-4 py-3 transition-all ${
-                comingSoon
+                comingSoon || backendDisabled
                   ? "border-sovereign-border bg-sovereign-dark opacity-60"
                   : effectivelyOn
                     ? "border-green-500/30 bg-green-500/5"
-                    : enabled && !available
-                      ? "border-yellow-500/30 bg-yellow-500/5"
-                      : "border-sovereign-border bg-sovereign-dark"
+                    : "border-sovereign-border bg-sovereign-dark"
               }`}
+              title={
+                backendDisabled
+                  ? "Silent Payments requires Cashu backend — not available with Fedimint"
+                  : undefined
+              }
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {effectivelyOn ? (
                     <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
-                  ) : enabled && !available ? (
-                    <Info className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                  ) : backendDisabled ? (
+                    <Info className="w-4 h-4 text-sovereign-muted flex-shrink-0" />
                   ) : (
                     <AlertTriangle className="w-4 h-4 text-sovereign-muted flex-shrink-0" />
                   )}
                   <div>
-                    <div className="text-sm font-medium text-sovereign-white">
+                    <div className="flex items-center gap-2 text-sm font-medium text-sovereign-white">
                       {info.name}
+                      {cashuOnly && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-btc-orange/10 text-btc-orange/70 font-normal">
+                          Cashu only
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-sovereign-muted">
                       {info.short}
@@ -141,16 +151,14 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
                   )}
                   <span
                     className={`text-xs font-medium ${
-                      comingSoon
+                      comingSoon || backendDisabled
                         ? "text-sovereign-muted"
                         : effectivelyOn
                           ? "text-green-400"
-                          : enabled && !available
-                            ? "text-yellow-400"
-                            : "text-sovereign-muted"
+                          : "text-sovereign-muted"
                     }`}
                   >
-                    {comingSoon ? "—" : effectivelyOn ? "ON" : enabled && !available ? "LIMITED" : "OFF"}
+                    {comingSoon || backendDisabled ? "—" : effectivelyOn ? "ON" : "OFF"}
                   </span>
                 </div>
               </div>
@@ -160,9 +168,9 @@ export function PrivacyDashboard({ config, backend = "cashu" }: Props) {
                   {info.backendWarning}
                 </div>
               )}
-              {/* Backend availability warning for partially-available layers */}
-              {!comingSoon && enabled && !available && info.backendWarning && (
-                <div className="mt-2 ml-7 text-xs text-yellow-400/80 leading-relaxed">
+              {/* Backend restriction notice for cashu-only layers on non-cashu backends */}
+              {backendDisabled && info.backendWarning && (
+                <div className="mt-2 ml-7 text-xs text-sovereign-muted leading-relaxed">
                   {info.backendWarning}
                 </div>
               )}

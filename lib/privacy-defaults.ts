@@ -154,6 +154,23 @@ export function computePrivacyScore(
   return Math.min(score, 100);
 }
 
+/**
+ * Returns a copy of the privacy config with layers disabled that are not
+ * available for the given backend. Call this when the backend changes so that
+ * features like Silent Payments (cashu-only) are automatically turned off for
+ * Fedimint users, rather than appearing as "LIMITED".
+ */
+export function getBackendAwarePrivacyConfig(
+  config: PrivacyConfig,
+  backend: MintBackend
+): PrivacyConfig {
+  return {
+    ...config,
+    silentPayments: config.silentPayments && isLayerAvailable("silentPayments", backend),
+    arkSpends: config.arkSpends && isLayerAvailable("arkSpends", backend),
+  };
+}
+
 /** Generate privacy-related Docker environment variables */
 export function privacyEnvVars(config: PrivacyConfig): Record<string, string> {
   return {
