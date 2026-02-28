@@ -25,7 +25,7 @@ export function NavBar() {
             alt="ArxMint Logo"
             width={32}
             height={32}
-            className="w-8 h-8 rounded-md"
+            className="w-8 h-8 rounded-lg overflow-hidden"
           />
           <span className="text-lg font-bold text-text-primary">
             Arx<span className="text-accent">Mint</span>
