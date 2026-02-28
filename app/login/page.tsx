@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Zap, AlertCircle } from "lucide-react";
 import { useSovereignStore } from "@/lib/store";
 import { pubkeyToNpub, truncateNpub } from "@/lib/nostr-auth";
+import { SeedRestore } from "@/components/seed-restore";
 
 function LoginContent() {
   const router = useRouter();
@@ -18,6 +19,7 @@ function LoginContent() {
 
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRestore, setShowRestore] = useState(false);
   const { setAuthenticated, setNostrUser } = useSovereignStore();
 
   // Redirect if already authenticated (has valid session cookie)
@@ -184,12 +186,33 @@ function LoginContent() {
           </div>
         </div>
 
-        {/* Back link */}
-        <p className="text-center mt-4 text-sm text-sovereign-muted">
+        {/* Seed restore panel */}
+        {showRestore && (
+          <div className="mt-4">
+            <SeedRestore
+              onRestored={() => {
+                setShowRestore(false);
+                router.push(from);
+              }}
+              onDismiss={() => setShowRestore(false)}
+            />
+          </div>
+        )}
+
+        {/* Links */}
+        <div className="flex items-center justify-between mt-4 text-sm text-sovereign-muted">
           <a href="/" className="text-btc-orange hover:underline">
             ← Back to home
           </a>
-        </p>
+          {!showRestore && (
+            <button
+              onClick={() => setShowRestore(true)}
+              className="hover:text-btc-orange transition-colors"
+            >
+              Restore from seed phrase
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -20,7 +20,9 @@ import {
   Unlink,
   History,
   Info,
+  Shield,
 } from "lucide-react";
+import { SeedBackup } from "@/components/seed-backup";
 import { getFedimintClient } from "@/lib/fedimint-sdk";
 import {
   createCashuClient,
@@ -1025,6 +1027,7 @@ function CashuConnect() {
   const [mintUrl, setMintUrl] = useState("http://localhost:3338");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [seedWords, setSeedWords] = useState<string[] | null>(null);
   const { cashuConnected, setConnected, setBalance } = useSovereignStore();
 
   const connect = async () => {
@@ -1061,8 +1064,39 @@ function CashuConnect() {
         <ConnectionBadge connected={cashuConnected} />
       </div>
 
+      {/* Seed backup prompt — shown after vault creation */}
+      {seedWords && (
+        <div className="mb-3">
+          <SeedBackup
+            mnemonic={seedWords}
+            onConfirmed={() => setSeedWords(null)}
+            onDismiss={() => setSeedWords(null)}
+          />
+        </div>
+      )}
+
       {cashuConnected ? (
-        <p className="text-xs text-green-400">{message || "Connected"}</p>
+        <div className="space-y-2">
+          <p className="text-xs text-green-400">{message || "Connected"}</p>
+          {!seedWords && (
+            <button
+              onClick={async () => {
+                try {
+                  const { vault } = await import("@/lib/cashu-vault");
+                  const words = await vault.create(mintUrl);
+                  setSeedWords(words);
+                } catch (e: any) {
+                  setMessage(e.message || "Failed to create vault backup");
+                  setStatus("error");
+                }
+              }}
+              className="sovereign-btn-outline !py-1.5 !text-xs flex items-center gap-1.5 w-full"
+            >
+              <Shield className="h-3 w-3" />
+              Back Up Wallet Seed
+            </button>
+          )}
+        </div>
       ) : (
         <div className="space-y-3">
           <input
