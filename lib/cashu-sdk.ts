@@ -95,6 +95,18 @@ export function validateAndRegisterKeysets(
       continue;
     }
 
+    // NUT-02: Keyset ID V2 starts with "01" (HMAC-SHA256 prefix).
+    // Legacy V1 IDs start with "00" and are weaker — warn the operator.
+    if (keysetId.startsWith("00")) {
+      warnings.push(
+        `Legacy keyset ID V1 detected ("${keysetId}") from ${normalizedMint}. ` +
+          `Prefer mints that use V2 keyset IDs (HMAC-SHA256, prefixed "01").`
+      );
+      console.warn(
+        `[ArxMint] Legacy keyset V1: "${keysetId}" from ${normalizedMint}. V2 ("01" prefix) preferred.`
+      );
+    }
+
     const existing = keysetRegistryById.get(keysetId);
     if (existing && existing.mintUrl !== normalizedMint) {
       errors.push(

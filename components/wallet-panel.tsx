@@ -19,6 +19,7 @@ import {
   Link,
   Unlink,
   History,
+  Info,
 } from "lucide-react";
 import { getFedimintClient } from "@/lib/fedimint-sdk";
 import {
@@ -1048,7 +1049,15 @@ function CashuConnect() {
   return (
     <div className="sovereign-card">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-bold text-sovereign-white">Cashu Mint</h4>
+        <div className="flex items-center gap-1.5">
+          <h4 className="text-sm font-bold text-sovereign-white">Cashu Mint</h4>
+          <span
+            title="Avoid auto-trusting unknown mints. ArxMint verifies keyset IDs per NUT-02 to protect against malicious mint attacks (Jan 2026 disclosure). Hold small balances per mint."
+            className="cursor-help"
+          >
+            <Info className="h-3.5 w-3.5 text-sovereign-muted" />
+          </span>
+        </div>
         <ConnectionBadge connected={cashuConnected} />
       </div>
 
