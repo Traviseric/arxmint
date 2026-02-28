@@ -8,7 +8,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { CashuMint, CashuWallet } from "@cashu/cashu-ts";
+import { Wallet } from "@cashu/cashu-ts";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
 
@@ -88,9 +88,8 @@ async function createCashuMintQuote(
   mintUrl: string
 ): Promise<{ invoice: string; quoteId: string } | null> {
   try {
-    const mint = new CashuMint(mintUrl);
-    const wallet = new CashuWallet(mint);
-    const quote = await wallet.createMintQuote(feeAmount);
+    const wallet = new Wallet(mintUrl);
+    const quote = await wallet.createMintQuoteBolt11(feeAmount);
     return { invoice: quote.request, quoteId: quote.quote };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

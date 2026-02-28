@@ -1,5 +1,11 @@
 # Worker Log
 
+## Task: 085-P1-federation-ecash-settlement-marketplace.md
+- **Status:** COMPLETE
+- **Changes:** app/api/settlement/route.ts (new), app/api/settlement/[id]/route.ts (new)
+- **Commit:** a11aaab
+- **Notes:** Created federation ecash settlement endpoint. POST /api/settlement accepts saleAmount, referralFeePct, recipientCashuAddress or recipientFedimintInvite, and saleId. Cashu path creates a mint quote (bolt11 invoice) via @cashu/cashu-ts CashuWallet directly server-side (no "use client" wrapper). Fedimint path returns initiation response (WASM join is client-side). Idempotency: duplicate saleId returns 200 with existing settlement record. All settlements logged to Transaction table with type='settlement'. GET /api/settlement?saleId=<id> for lookup by saleId. GET /api/settlement/:id for status by transaction ID. Build passes (27/27 routes). Used @/lib/db (not @/lib/prisma) per project convention.
+
 ## Task: 087-P1-add-caddy-reverse-proxy-docker-compose.md
 - **Status:** COMPLETE
 - **Changes:** docker/Caddyfile (new), docker-compose.yml, .env.example
@@ -218,3 +224,15 @@
   - Task 079: app/api/l402/route.ts already uses real LND REST API via createLNDInvoice() with LND_REST_URL+LND_MACAROON_HEX. HMAC-SHA256 signed macaroons (MACAROON_ROOT_KEY). Cryptographic preimage verification (SHA256(preimage)==rHash). Dev fallback is explicit/logged. All env vars documented in .env.example.
   - Task 080: lib/cashu-paywall.ts verifyCashuPayment() calls real mint checkProofsStates() + wallet.receive() for double-spend protection. app/api/agent/route.ts requires payment by default with explicit SKIP_PAYMENT_VERIFY=true override only. CASHU_MINT_URL documented.
   - Build passes (25/25 pages). Permission denied error on /c/Users/Gaming path is pre-existing Windows environment issue, unrelated to these tasks.
+
+## Task: 086-P1-shared-nostr-auth-cross-project.md
+- **Status:** COMPLETE
+- **Changes:** lib/auth-middleware.ts, app/api/payment/route.ts, app/api/payment/verify/route.ts, .env.example
+- **Commit:** f618baa
+- **Notes:** Added verifySharedSession() and getCallerFromRequest() to lib/auth-middleware.ts. verifySharedSession() tries local NEXTAUTH_SECRET first, then AUTH_SHARED_SECRET — handles tokens from both ArxMint and Teneo Marketplace. getCallerFromRequest() checks arxmint_session cookie then Authorization: Bearer <token>. Payment create and verify endpoints optionally extract caller pubkey (returned in response when present). AUTH_SHARED_SECRET documented in .env.example with setup instructions. Cross-project auth pattern documented in module comment block. Build passes (25/25 pages).
+
+## Task: 079-P1-wire-l402-to-real-lnd-invoice.md (worker_002 completion)
+- **Status:** COMPLETE
+- **Changes:** app/api/l402/route.ts, lib/lightning-agent.ts
+- **Commit:** e009604
+- **Notes:** Prior log entry said task 079 was already complete but acceptance criteria had remaining gaps: (1) no lookupLNDInvoice() for server-side settlement verification, (2) invalid/unpaid preimage returned 401 instead of required 402. Fixed both: added lookupLNDInvoice() function that calls LND REST /v1/invoice/{r_hash_url_safe} to verify settlement state after preimage crypto-check; changed all invalid/unpaid preimage responses from 401 to 402 (Payment Required) as specified in acceptance criteria; added lookupInvoice() method to SovereignLightningClient for client-side invoice state queries via LNC-Web. Build passes (25/25 pages).
