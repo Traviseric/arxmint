@@ -50,6 +50,9 @@ export default function HomePage() {
   useEffect(() => {
     if (!heroBgRef.current || !heroRef.current) return;
 
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
     // Smooth zoom out and blur on scroll
     gsap.to(heroBgRef.current, {
       scale: 1,
@@ -62,6 +65,10 @@ export default function HomePage() {
         scrub: true,
       }
     });
+
+    return () => {
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    };
   }, []);
 
   return (
