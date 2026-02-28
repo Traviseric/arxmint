@@ -14,6 +14,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { _challenges } from "@/app/api/payment/route";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
+import { db } from "@/lib/db";
+import { type PaymentChallenge } from "@/lib/payment-sdk";
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +23,22 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const entry = _challenges.get(id);
+  let entry = _challenges.get(id);
+
+  // DB fallback: challenge may have been created in a prior process lifetime
+  if (!entry) {
+    try {
+      const row = await db.paymentChallenge.findUnique({ where: { id } });
+      if (row && row.notes) {
+        const data = JSON.parse(row.notes) as { challenge: PaymentChallenge; createdAt: number };
+        const paidAt = row.paidAt ? row.paidAt.getTime() : undefined;
+        entry = { challenge: data.challenge, createdAt: data.createdAt, paidAt };
+        _challenges.set(id, entry);
+      }
+    } catch {
+      // DB unavailable — fall through to 404
+    }
+  }
 
   if (!entry) {
     return NextResponse.json(

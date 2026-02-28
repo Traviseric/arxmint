@@ -18,6 +18,7 @@ import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { validateAmount, errorResponse } from "@/lib/validation";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
+import { db } from "@/lib/db";
 
 /** In-process challenge registry (process lifetime) */
 export const _challenges = new Map<
@@ -25,12 +26,41 @@ export const _challenges = new Map<
   { challenge: PaymentChallenge; paidAt?: number; createdAt: number }
 >();
 
-/** Clean up expired challenges */
+/** Persist a new challenge to DB (best-effort — won't throw on DB errors) */
+async function dbWriteChallenge(
+  challengeId: string,
+  entry: { challenge: PaymentChallenge; createdAt: number }
+): Promise<void> {
+  try {
+    await db.paymentChallenge.create({
+      data: {
+        id: challengeId,
+        type: entry.challenge.type,
+        amount: entry.challenge.amount,
+        backend: entry.challenge.type === "l402" ? "lightning" : "cashu",
+        status: "pending",
+        expiresAt: new Date(entry.challenge.expiresAt),
+        createdAt: new Date(entry.createdAt),
+        notes: JSON.stringify({ challenge: entry.challenge, createdAt: entry.createdAt }),
+      },
+    });
+  } catch (e) {
+    logger.warn("challenge_db_persist_failed", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+}
+
+/** Clean up expired challenges from memory and DB */
 function prune() {
   const now = Date.now();
   for (const [id, entry] of _challenges) {
     if (entry.challenge.expiresAt < now) _challenges.delete(id);
   }
+  // Fire-and-forget DB prune (don't block the request)
+  void db.paymentChallenge
+    .deleteMany({ where: { expiresAt: { lt: new Date() } } })
+    .catch(() => undefined);
 }
 
 export async function POST(request: NextRequest) {
@@ -107,10 +137,10 @@ export async function POST(request: NextRequest) {
         ? challenge.macaroon
         : `cashu_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-    _challenges.set(challengeId, {
-      challenge,
-      createdAt: Date.now(),
-    });
+    const entry = { challenge, createdAt: Date.now() };
+    _challenges.set(challengeId, entry);
+    // Write-through to DB so challenges survive server restarts
+    void dbWriteChallenge(challengeId, entry);
 
     logger.payment("challenge_created", {
       amount,

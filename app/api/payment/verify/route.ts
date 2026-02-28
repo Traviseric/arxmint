@@ -10,11 +10,43 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   verifyL402Token,
   verifyCashuPayment,
+  type PaymentChallenge,
 } from "@/lib/payment-sdk";
 import { _challenges } from "@/app/api/payment/route";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { validateCashuToken } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+import { db } from "@/lib/db";
+
+/** Load challenge entry from memory; fall back to DB if not found */
+async function getOrLoadChallenge(
+  id: string
+): Promise<{ challenge: PaymentChallenge; paidAt?: number; createdAt: number } | null> {
+  const cached = _challenges.get(id);
+  if (cached) return cached;
+  try {
+    const row = await db.paymentChallenge.findUnique({ where: { id } });
+    if (!row || row.status !== "pending" || !row.notes) return null;
+    const data = JSON.parse(row.notes) as { challenge: PaymentChallenge; createdAt: number };
+    const entry = { challenge: data.challenge, createdAt: data.createdAt };
+    _challenges.set(id, entry);
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+/** Mark a challenge as paid in the DB (best-effort) */
+async function dbMarkPaid(id: string, paidAt: number): Promise<void> {
+  try {
+    await db.paymentChallenge.update({
+      where: { id },
+      data: { status: "paid", paidAt: new Date(paidAt) },
+    });
+  } catch {
+    // Silently fail — in-memory state is source of truth during this process lifetime
+  }
+}
 
 export async function POST(request: NextRequest) {
   // Optional: identify the caller (ArxMint session cookie or marketplace Bearer JWT)
@@ -52,10 +84,12 @@ export async function POST(request: NextRequest) {
     const result = await verifyL402Token({ macaroon, preimage });
 
     if (result.success) {
-      // Mark the challenge as paid in the registry
-      const entry = _challenges.get(macaroon);
+      // Mark the challenge as paid in memory and DB
+      const entry = await getOrLoadChallenge(macaroon);
       if (entry) {
-        _challenges.set(macaroon, { ...entry, paidAt: Date.now() });
+        const paidAt = Date.now();
+        _challenges.set(macaroon, { ...entry, paidAt });
+        void dbMarkPaid(macaroon, paidAt);
       }
     }
 
@@ -92,12 +126,14 @@ export async function POST(request: NextRequest) {
     const result = await verifyCashuPayment({ token, expectedAmount, mintUrl });
 
     if (result.success) {
-      // Mark the associated challenge as paid if a challengeId was provided
+      // Mark the associated challenge as paid in memory and DB
       const challengeId = body.challengeId ? String(body.challengeId) : null;
       if (challengeId) {
-        const entry = _challenges.get(challengeId);
+        const entry = await getOrLoadChallenge(challengeId);
         if (entry) {
-          _challenges.set(challengeId, { ...entry, paidAt: Date.now() });
+          const paidAt = Date.now();
+          _challenges.set(challengeId, { ...entry, paidAt });
+          void dbMarkPaid(challengeId, paidAt);
         }
       }
     }
