@@ -271,6 +271,61 @@ export function validateRestoredProofs(
   return { proofs, warnings, rejected };
 }
 
+// ---- localStorage Proof Persistence (standalone helpers) ----
+
+/** Storage key prefix for Cashu proofs, namespaced by mint URL */
+const PROOF_STORAGE_KEY_PREFIX = "arxmint_proofs_";
+
+/**
+ * Save Cashu proofs to localStorage, namespaced by mint URL.
+ * No-ops in SSR context (window undefined).
+ */
+export function saveProofsToLocalStorage(mintUrl: string, proofs: Proof[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(`${PROOF_STORAGE_KEY_PREFIX}${mintUrl}`, JSON.stringify(proofs));
+}
+
+/**
+ * Load Cashu proofs from localStorage for a given mint URL.
+ * Returns empty array if not found or parse fails.
+ */
+export function loadProofsFromLocalStorage(mintUrl: string): Proof[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(`${PROOF_STORAGE_KEY_PREFIX}${mintUrl}`);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as Proof[];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Clear Cashu proofs from localStorage for a given mint URL.
+ */
+export function clearProofsFromLocalStorage(mintUrl: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(`${PROOF_STORAGE_KEY_PREFIX}${mintUrl}`);
+}
+
+/**
+ * Get all mint URLs that currently have proofs stored in localStorage.
+ * Useful for multi-mint hydration on app startup.
+ */
+export function getStoredMintUrls(): string[] {
+  if (typeof window === "undefined") return [];
+  const urls: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(PROOF_STORAGE_KEY_PREFIX)) {
+      urls.push(key.slice(PROOF_STORAGE_KEY_PREFIX.length));
+    }
+  }
+  return urls;
+}
+
 /** Test-only helpers for security validation logic. */
 export const __cashuSecurityTestUtils = {
   resetRegistry(): void {
@@ -504,32 +559,13 @@ export class SovereignCashuClient {
   // ----- Persistence -----
 
   private persistProofs(): void {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        `arxmint_cashu_proofs_${this._mintUrl}`,
-        JSON.stringify(this._proofs)
-      );
-    }
+    saveProofsToLocalStorage(this._mintUrl, this._proofs);
   }
 
   /** Restore proofs from localStorage */
   restoreProofs(): void {
-    if (typeof window === "undefined") return;
-
-    const storageKey = `arxmint_cashu_proofs_${this._mintUrl}`;
-    const stored = localStorage.getItem(storageKey);
-    if (!stored) return;
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(stored);
-    } catch {
-      this._proofs = [];
-      console.warn(
-        `[ArxMint] Ignoring invalid Cashu restore payload for ${this._mintUrl}: invalid JSON`
-      );
-      return;
-    }
+    const stored = loadProofsFromLocalStorage(this._mintUrl);
+    if (stored.length === 0) return;
 
     const trustedKeysetIds =
       this._trustedKeysetIds.size > 0
@@ -538,7 +574,7 @@ export class SovereignCashuClient {
 
     const validation = validateRestoredProofs(
       this._mintUrl,
-      parsed,
+      stored,
       trustedKeysetIds
     );
 

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { create } from "zustand";
+import type { Proof } from "@cashu/cashu-ts";
 import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance, NostrUser } from "./types";
 
 interface SovereignState {
@@ -15,6 +16,10 @@ interface SovereignState {
   // Wallet
   balance: WalletBalance;
   setBalance: (b: Partial<WalletBalance>) => void;
+
+  // Cashu proof storage (for cross-session recovery)
+  cashuProofs: Proof[];
+  setCashuProofs: (proofs: Proof[]) => void;
 
   // Cycle
   cycleMetrics: CycleMetrics | null;
@@ -62,6 +67,9 @@ export const useSovereignStore = create<SovereignState>((set) => ({
       return { balance: next };
     }),
 
+  cashuProofs: [],
+  setCashuProofs: (proofs) => set({ cashuProofs: proofs }),
+
   cycleMetrics: null,
   setCycleMetrics: (m) => set({ cycleMetrics: m }),
 
@@ -87,6 +95,44 @@ export const useSovereignStore = create<SovereignState>((set) => ({
     set({ nostrUser: null, nostrConnected: false });
   },
 }));
+
+/** Hydrate Cashu proofs from localStorage (call once on app mount) */
+export function hydrateCashuSession(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const prefix = "arxmint_proofs_";
+    const allProofs: Proof[] = [];
+
+    // Scan for all stored mint namespaces
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith(prefix)) continue;
+      const stored = localStorage.getItem(key);
+      if (!stored) continue;
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) continue;
+      const proofs = (parsed as unknown[]).filter(
+        (p): p is Proof =>
+          p !== null &&
+          typeof p === "object" &&
+          typeof (p as Record<string, unknown>).id === "string" &&
+          typeof (p as Record<string, unknown>).amount === "number" &&
+          typeof (p as Record<string, unknown>).secret === "string" &&
+          typeof (p as Record<string, unknown>).C === "string"
+      );
+      allProofs.push(...proofs);
+    }
+
+    if (allProofs.length === 0) return;
+
+    const cashuSats = allProofs.reduce((sum, p) => sum + p.amount, 0);
+    const store = useSovereignStore.getState();
+    store.setCashuProofs(allProofs);
+    store.setBalance({ cashuSats });
+  } catch {
+    // Ignore storage read errors
+  }
+}
 
 /** Hydrate Nostr session from localStorage (call once on app mount) */
 export function hydrateNostrSession(): void {

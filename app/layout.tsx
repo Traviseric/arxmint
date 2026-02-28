@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { NavBar } from "@/components/nav-bar";
+import { StorageHydrator } from "@/components/storage-hydrator";
 import "./globals.css";
 
 const inter = Inter({
@@ -43,6 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} min-h-screen bg-bg-base text-text-primary font-sans selection:bg-accent/30 selection:text-white`}>
+        <StorageHydrator />
         <NavBar />
 
         {/* Main content */}
