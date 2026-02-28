@@ -1559,13 +1559,13 @@ export async function executeAtomicSwap(
       destReceived: result.amountSats,
       feePaidSats: result.routingFeeSats,
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     return {
       success: false,
       sourceSpent: 0,
       destReceived: 0,
       feePaidSats: 0,
-      error: e.message || "Atomic swap failed",
+      error: e instanceof Error ? e.message : "Atomic swap failed",
     };
   }
 }

@@ -134,12 +134,12 @@ export async function verifyCashuPayment(
       amountSats: totalSats,
       proofs,
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     return {
       paid: false,
       amountSats: 0,
       proofs: [],
-      error: e.message || "Token verification failed",
+      error: e instanceof Error ? e.message : "Token verification failed",
     };
   }
 }

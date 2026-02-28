@@ -264,8 +264,8 @@ function ReceivePanel() {
         setMessage(`Connect to ${method} first`);
         setStatus("error");
       }
-    } catch (e: any) {
-      setMessage(e.message || "Failed to receive");
+    } catch (e: unknown) {
+      setMessage(e instanceof Error ? e.message : "Failed to receive");
       setStatus("error");
     }
 
@@ -506,8 +506,8 @@ function SendPanel() {
         setResult(`Connect to ${method} first`);
         setStatus("error");
       }
-    } catch (e: any) {
-      setResult(e.message || "Failed to send");
+    } catch (e: unknown) {
+      setResult(e instanceof Error ? e.message : "Failed to send");
       setStatus("error");
     }
   };
@@ -668,8 +668,8 @@ function InvoicePanel() {
         setResult("Connect to Fedimint or Cashu first");
         setStatus("error");
       }
-    } catch (e: any) {
-      setResult(e.message || "Failed to create invoice");
+    } catch (e: unknown) {
+      setResult(e instanceof Error ? e.message : "Failed to create invoice");
       setStatus("error");
     }
   };
@@ -707,8 +707,8 @@ function InvoicePanel() {
         setResult("Connect to Fedimint or Cashu first");
         setStatus("error");
       }
-    } catch (e: any) {
-      setResult(e.message || "Failed to pay invoice");
+    } catch (e: unknown) {
+      setResult(e instanceof Error ? e.message : "Failed to pay invoice");
       setStatus("error");
     }
 
@@ -952,8 +952,8 @@ function FedimintConnect() {
       setConnected("fedimintConnected", true);
       setMessage(`Joined federation ${fedId.slice(0, 16)}...`);
       setStatus("success");
-    } catch (e: any) {
-      setMessage(e.message || "Failed to connect");
+    } catch (e: unknown) {
+      setMessage(e instanceof Error ? e.message : "Failed to connect");
       setStatus("error");
     }
   };
@@ -975,8 +975,8 @@ function FedimintConnect() {
         setMessage("No previous federation found. Enter invite code.");
         setStatus("idle");
       }
-    } catch (e: any) {
-      setMessage(e.message || "Failed to reconnect");
+    } catch (e: unknown) {
+      setMessage(e instanceof Error ? e.message : "Failed to reconnect");
       setStatus("error");
     }
   };
@@ -1043,8 +1043,8 @@ function CashuConnect() {
       setConnected("cashuConnected", true);
       setMessage(`Connected to ${mintUrl}`);
       setStatus("success");
-    } catch (e: any) {
-      setMessage(e.message || "Failed to connect");
+    } catch (e: unknown) {
+      setMessage(e instanceof Error ? e.message : "Failed to connect");
       setStatus("error");
     }
   };
@@ -1085,8 +1085,8 @@ function CashuConnect() {
                   const { vault } = await import("@/lib/cashu-vault");
                   const words = await vault.create(mintUrl);
                   setSeedWords(words);
-                } catch (e: any) {
-                  setMessage(e.message || "Failed to create vault backup");
+                } catch (e: unknown) {
+                  setMessage(e instanceof Error ? e.message : "Failed to create vault backup");
                   setStatus("error");
                 }
               }}
@@ -1172,8 +1172,8 @@ function LightningConnect() {
       setConnected("lightningConnected", true);
       setMessage(`${info.alias} (${info.numChannels} ch) — ${tier} tier`);
       setStatus("success");
-    } catch (e: any) {
-      setMessage(e.message || "Failed to connect");
+    } catch (e: unknown) {
+      setMessage(e instanceof Error ? e.message : "Failed to connect");
       setStatus("error");
     }
   };

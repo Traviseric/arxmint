@@ -365,8 +365,8 @@ function AgentCard({ agent }: { agent: AgentService }) {
         }
         setStatus("success");
       }
-    } catch (e: any) {
-      setError(e.message || "Request failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Request failed");
       setStatus("error");
     }
   };

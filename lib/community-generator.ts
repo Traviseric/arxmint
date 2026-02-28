@@ -1045,10 +1045,10 @@ export async function setupFederation(
   if (gbotStatus.available && gbotStatus.endpoint) {
     try {
       return await setupViaGBot(config, gbotStatus.endpoint);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn(
         "[ArxMint] G-Bot setup failed, falling back to Docker:",
-        e.message
+        e instanceof Error ? e.message : String(e)
       );
     }
   }

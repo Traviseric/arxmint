@@ -126,8 +126,8 @@ async function lookupLNDInvoice(
 
     const data = await res.json();
     return { settled: data.settled === true };
-  } catch (e: any) {
-    console.warn("[ArxMint] LND invoice lookup error:", e.message);
+  } catch (e: unknown) {
+    console.warn("[ArxMint] LND invoice lookup error:", e instanceof Error ? e.message : String(e));
     return null;
   }
 }
@@ -167,8 +167,8 @@ async function createLNDInvoice(
     }
 
     return { paymentRequest: data.payment_request as string, rHash: data.r_hash as string };
-  } catch (e: any) {
-    console.warn("[ArxMint] LND invoice creation error:", e.message);
+  } catch (e: unknown) {
+    console.warn("[ArxMint] LND invoice creation error:", e instanceof Error ? e.message : String(e));
     return null;
   }
 }

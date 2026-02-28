@@ -23,8 +23,8 @@ export function CycleAlerts() {
     try {
       const m = await getCycleMetrics();
       setMetrics(m);
-    } catch (e: any) {
-      setError(e.message || "Failed to fetch cycle data");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to fetch cycle data");
     } finally {
       setLoading(false);
     }
