@@ -24,7 +24,6 @@ import type { CommunityConfig } from "@/lib/types";
 import { PRIVACY_PRESETS } from "@/lib/privacy-defaults";
 import { formatSats } from "@/lib/utils";
 import {
-  getDemoBCEMetrics,
   TIER_INFO,
   exportMetricsJSON,
   exportMetricsCSV,
@@ -328,7 +327,45 @@ function StatusCard({
 // ---- Community Health Tab (BCE Metrics) ----
 
 function CommunityHealthTab() {
-  const metrics = getDemoBCEMetrics();
+  const [metrics, setMetrics] = useState<BCEMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { currentCommunity } = useSovereignStore();
+
+  useEffect(() => {
+    const url = currentCommunity?.id
+      ? `/api/bce-metrics?communityId=${currentCommunity.id}`
+      : "/api/bce-metrics";
+    fetch(url)
+      .then((r) => r.json())
+      .then((data: { empty?: boolean; metrics: BCEMetrics | null }) => {
+        setMetrics(data.metrics ?? null);
+      })
+      .catch(() => setMetrics(null))
+      .finally(() => setLoading(false));
+  }, [currentCommunity?.id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-sovereign-muted text-sm animate-pulse">Loading metrics…</div>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <div className="max-w-4xl">
+        <div className="sovereign-card text-center py-12">
+          <Activity className="w-8 h-8 text-sovereign-muted mx-auto mb-3" />
+          <h3 className="text-sovereign-white font-medium mb-1">Initializing</h3>
+          <p className="text-sovereign-muted text-sm">
+            No transactions yet. BCE metrics will appear once your community starts transacting.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const tier = TIER_INFO[metrics.maturityTier];
 
   const handleExport = (format: "json" | "csv") => {
@@ -516,8 +553,82 @@ function MetricCard({
 // ---- Grant Reporting Tab ----
 
 function GrantReportingTab() {
-  const metrics = getDemoBCEMetrics();
+  const [metrics, setMetrics] = useState<BCEMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { currentCommunity } = useSovereignStore();
+
+  useEffect(() => {
+    const url = currentCommunity?.id
+      ? `/api/bce-metrics?communityId=${currentCommunity.id}`
+      : "/api/bce-metrics";
+    fetch(url)
+      .then((r) => r.json())
+      .then((data: { empty?: boolean; metrics: BCEMetrics | null }) => {
+        setMetrics(data.metrics ?? null);
+      })
+      .catch(() => setMetrics(null))
+      .finally(() => setLoading(false));
+  }, [currentCommunity?.id]);
+
   const schedule = generateReportSchedule(6, new Date().toISOString().split("T")[0]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-sovereign-muted text-sm animate-pulse">Loading report data…</div>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div className="sovereign-card !border-btc-orange/20">
+          <h3 className="text-lg font-bold text-sovereign-white flex items-center gap-2">
+            <FileText className="w-5 h-5 text-btc-orange" />
+            Grant Reporting
+          </h3>
+          <p className="text-sm text-sovereign-muted mt-1">
+            Progress reports matching OpenSats cadence — monthly (months 1-3), then quarterly
+          </p>
+        </div>
+        <div className="sovereign-card">
+          <h4 className="text-sm font-bold text-sovereign-white mb-4">Reporting Schedule</h4>
+          <div className="space-y-2">
+            {schedule.map((s, i) => (
+              <div
+                key={i}
+                className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                  i === 0
+                    ? "border-btc-orange/30 bg-btc-orange/5"
+                    : "border-sovereign-border bg-sovereign-dark"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    s.cadence === "monthly"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : "bg-purple-500/20 text-purple-400"
+                  }`}>
+                    {s.cadence}
+                  </span>
+                  <span className="text-sm text-sovereign-white">{s.label}</span>
+                </div>
+                <span className="text-xs text-sovereign-muted font-mono">Due: {s.dueDate}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="sovereign-card text-center py-10">
+          <FileText className="w-8 h-8 text-sovereign-muted mx-auto mb-3" />
+          <h3 className="text-sovereign-white font-medium mb-1">Initializing</h3>
+          <p className="text-sovereign-muted text-sm">
+            No transactions yet. Grant reports will populate once your community has real activity.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const demoReport = generateProgressReport(
     metrics,

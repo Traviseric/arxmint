@@ -1,5 +1,3 @@
-"use client";
-
 // ============================================================
 // ArxMint — Bitcoin Circular Economy (BCE) Metrics
 // Community health metrics for dashboard + grant reporting.
