@@ -12,6 +12,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
+import { db } from "@/lib/db";
 
 /** In-memory store: base64-macaroon → { rHashBase64, expiresAt } */
 const pendingL402 = new Map<
@@ -249,7 +250,26 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const pending = pendingL402.get(macaroon);
+      let pending = pendingL402.get(macaroon);
+      if (!pending) {
+        // DB fallback: recover challenges that survived a server restart
+        try {
+          const dbChallenge = await db.paymentChallenge.findUnique({
+            where: { id: macaroon },
+          });
+          if (dbChallenge && dbChallenge.expiresAt > new Date()) {
+            const notes = JSON.parse(dbChallenge.notes ?? "{}") as { rHashBase64?: string };
+            if (notes.rHashBase64) {
+              pending = { rHashBase64: notes.rHashBase64, expiresAt: dbChallenge.expiresAt.getTime() };
+              pendingL402.set(macaroon, pending);
+            }
+          }
+        } catch (e) {
+          logger.warn("l402_db_lookup_failed", {
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
 
       if (pending && verifyPreimage(preimage, pending.rHashBase64)) {
         // Preimage is cryptographically valid (SHA-256 check passed).
@@ -270,6 +290,10 @@ export async function GET(request: NextRequest) {
 
         // Valid preimage confirmed — consume the token and serve the protected resource
         pendingL402.delete(macaroon);
+        // Mark as paid in DB (fire-and-forget)
+        void db.paymentChallenge
+          .update({ where: { id: macaroon }, data: { status: "paid", paidAt: new Date() } })
+          .catch(() => undefined);
         return NextResponse.json({
           success: true,
           data: {
@@ -386,6 +410,24 @@ export async function GET(request: NextRequest) {
     rHashBase64: rHash,
     expiresAt: Date.now() + TTL_MS,
   });
+  // Persist to DB so challenges survive server restarts (fire-and-forget)
+  void db.paymentChallenge
+    .create({
+      data: {
+        id: macaroon,
+        type: "l402",
+        amount: amountSats,
+        backend: "lightning",
+        status: "pending",
+        expiresAt: new Date(Date.now() + TTL_MS),
+        notes: JSON.stringify({ rHashBase64: rHash, invoice }),
+      },
+    })
+    .catch((e: unknown) => {
+      logger.warn("l402_challenge_db_persist_failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    });
 
   logger.payment("l402_challenge_created", {
     amount: amountSats,
