@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "lint": "next lint",
     "setup:cashu": "docker compose -f docker/docker-compose.cashu.yml up -d",
     "setup:full": "docker compose up -d",
+    "setup:cdk": "docker compose -f docker-compose.yml -f docker/docker-compose.cdk.yml up -d",
     "setup:agents": "bash scripts/deploy-agent-tools.sh"
   },
   "dependencies": {
