@@ -182,7 +182,7 @@ export function CreateCommunityForm() {
       {/* Fix 062-3: role="alert" so dynamic error is announced by screen readers */}
       {/* Fix 120: Retry button lets user re-submit without clearing form state */}
       {generateError && (
-        <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div role="alert" className="rounded-lg border border-red-500/50 bg-red-900/40 px-4 py-3 text-sm text-red-200">
           <div className="flex items-center justify-between gap-3">
             <span>{generateError}</span>
             <button
@@ -287,7 +287,7 @@ export function CreateCommunityForm() {
             onToggle={setExpandedSection}
           >
             <div className="relative">
-              <pre className="bg-sovereign-panel/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[500px]">
+              <pre className="bg-sovereign-panel/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[280px] sm:max-h-[400px] md:max-h-[500px]">
                 {deployment.dockerCompose}
               </pre>
               <div className="absolute top-2 right-2 flex gap-2 items-center">

@@ -39,9 +39,9 @@ export function CycleAlerts() {
       <div className="sovereign-card animate-pulse">
         <div className="h-6 w-32 bg-sovereign-dark rounded mb-4" />
         <div className="space-y-3">
-          <div className="h-16 bg-sovereign-dark rounded" />
-          <div className="h-16 bg-sovereign-dark rounded" />
-          <div className="h-16 bg-sovereign-dark rounded" />
+          <div className="min-h-[64px] sm:h-16 bg-sovereign-dark rounded" />
+          <div className="min-h-[64px] sm:h-16 bg-sovereign-dark rounded" />
+          <div className="min-h-[64px] sm:h-16 bg-sovereign-dark rounded" />
         </div>
       </div>
     );
@@ -196,13 +196,13 @@ function MetricCard({
           label
         )}
       </div>
-      <div className="text-xl font-bold" style={{ color }} aria-hidden="true">
+      <div className="text-xl font-bold" style={{ color }}>
         {value}
       </div>
-      <div className="text-xs font-medium text-sovereign-muted mt-0.5" aria-hidden="true">
+      <div className="text-xs font-medium text-sovereign-muted mt-0.5">
         {zone}
       </div>
-      <div className="text-xs text-sovereign-muted mt-1 leading-tight" aria-hidden="true">
+      <div className="text-xs text-sovereign-muted mt-1 leading-tight">
         {description}
       </div>
     </div>
