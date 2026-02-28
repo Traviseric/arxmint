@@ -171,6 +171,26 @@ services:
     networks:
       - sovereign
 
+  # === PostgreSQL Database ===
+  postgres:
+    image: postgres:15-alpine
+    container_name: sf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: arxmint
+      POSTGRES_USER: arxmint
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — set a strong password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - sovereign  # internal only — no ports exposed to host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arxmint"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   # === Aperture L402 Reverse Proxy ===
   aperture:
     image: lightninglabs/aperture:latest
@@ -201,8 +221,13 @@ services:
       - CASHU_MINT_URL=http://cashu-mint:3338
       - APERTURE_URL=http://aperture:8081
       - BITCOIN_NETWORK=testnet
+      - DATABASE_URL=postgresql://arxmint:${POSTGRES_PASSWORD}@postgres:5432/arxmint
+      - NODE_ENV=production
     depends_on:
-      - cashu-mint
+      cashu-mint:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     networks:
       - sovereign
 
@@ -214,6 +239,7 @@ volumes:
   guardian-2-data:
   prometheus-data:
   grafana-data:
+  postgres-data:
 
 networks:
   sovereign:
