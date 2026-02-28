@@ -841,6 +841,7 @@ function InvoicePanel() {
 function TransactionHistory() {
   const { currentCommunity, transactions, setTransactions } = useSovereignStore();
   const [loading, setLoading] = useState(true);
+  const [txLoadError, setTxLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const communityId = currentCommunity?.id;
@@ -855,12 +856,21 @@ function TransactionHistory() {
           setTransactions(data.transactions);
         }
       })
-      .catch(() => {/* DB unavailable — ignore */})
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn('[wallet-panel] Transaction history unavailable:', msg);
+        setTxLoadError('Transaction history temporarily unavailable');
+      })
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCommunity?.id]);
 
   if (loading) return null; // Don't flash empty state on first load
+  if (txLoadError) return (
+    <div className="sovereign-card">
+      <p className="text-sovereign-muted text-sm">{txLoadError}</p>
+    </div>
+  );
   if (transactions.length === 0) return null; // Hide when empty — no clutter
 
   return (
