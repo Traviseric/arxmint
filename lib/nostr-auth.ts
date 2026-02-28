@@ -3,7 +3,7 @@
 // ============================================================
 
 import { npubEncode } from "nostr-tools/nip19";
-import { SimplePool } from "nostr-tools/pool";
+import { verifyEvent } from "nostr-tools";
 import type { NostrUser } from "./types";
 
 // NIP-07 window.nostr type declarations
@@ -223,9 +223,12 @@ export function verifyNip98Auth(
       return { valid: false, error: "Method mismatch" };
     }
 
-    // Signature verification requires secp256k1 — for now, trust the
-    // structure if the fields match. Full sig check can be added with
-    // nostr-tools verifyEvent() when needed on server routes.
+    // Verify secp256k1 signature via nostr-tools
+    const isValid = verifyEvent(event as any);
+    if (!isValid) {
+      return { valid: false, error: "Invalid signature" };
+    }
+
     return { valid: true, pubkey: event.pubkey };
   } catch {
     return { valid: false, error: "Failed to parse NIP-98 token" };
