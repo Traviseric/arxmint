@@ -21,6 +21,8 @@
   <a href="https://github.com/Traviseric/arxmint/issues"><img src="https://img.shields.io/github/issues/Traviseric/arxmint" alt="Issues" /></a>
 </p>
 
+> **Part of the open creator economy.** ArxMint is the payment network. [Teneo Marketplace](https://github.com/Traviseric/teneo-marketplace) is the storefront — courses, books, funnels, email marketing. Together: a complete creator platform that can't be shut down.
+
 ---
 
 ArxMint lets anyone spin up a private Bitcoin circular economy — for humans and AI agents — from a single natural language prompt.

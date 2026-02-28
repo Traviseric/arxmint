@@ -42,6 +42,8 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel` |
 | Brand guide | `docs/brand.md` | `tagline voice palette audience` |
 | Docs index | `docs/README.md` | — |
+| Payment SDK | `lib/payment-sdk.ts` (planned) | `createL402Challenge verifyL402Token routePayment` |
+| Marketplace integration | See `C:\code\teneo-marketplace` | `teneo-marketplace, storefront, federation, revenue share` |
 
 ## Tech Stack
 
