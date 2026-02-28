@@ -980,6 +980,14 @@ const GBOT_DEFAULT_ENDPOINT = "https://gbot.fedimint.org/api/v1";
 export async function checkGBotAvailability(
   endpoint: string = GBOT_DEFAULT_ENDPOINT
 ): Promise<GBotStatus> {
+  // Short-circuit if G-Bot is explicitly disabled (default)
+  if (process.env.GBOT_ENABLED !== 'true') {
+    return {
+      available: false,
+      message: "G-Bot disabled via GBOT_ENABLED env var — using Docker Compose",
+    };
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
