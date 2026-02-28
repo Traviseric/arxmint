@@ -10,6 +10,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCycleMetrics } from "@/lib/cycle-monitor";
 import {
+  computePrivacyScore,
+  PRIVACY_PRESETS,
+  PRIVACY_DESCRIPTIONS,
+  isLayerAvailable,
+} from "@/lib/privacy-defaults";
+import {
   detectPaymentMethod,
   verifyCashuPayment,
   buildCashuChallenge,
@@ -193,27 +199,46 @@ export async function GET(request: NextRequest) {
 
   // Route to the right agent service
   switch (service) {
-    case "privacy-audit":
+    case "privacy-audit": {
+      const privacyConfig = PRIVACY_PRESETS.standard;
+      const score = computePrivacyScore(privacyConfig);
+
+      // Recommend layers that are available but not yet enabled
+      const recommendations = (
+        Object.keys(PRIVACY_DESCRIPTIONS) as Array<keyof typeof PRIVACY_DESCRIPTIONS>
+      )
+        .filter((layer) => !privacyConfig[layer] && isLayerAvailable(layer, "cashu"))
+        .map((layer) => `${PRIVACY_DESCRIPTIONS[layer].name}: ${PRIVACY_DESCRIPTIONS[layer].short}`);
+
+      // Build per-layer breakdown
+      const breakdown = Object.fromEntries(
+        (Object.keys(PRIVACY_DESCRIPTIONS) as Array<keyof typeof PRIVACY_DESCRIPTIONS>).map(
+          (layer) => [
+            layer,
+            {
+              status: privacyConfig[layer]
+                ? isLayerAvailable(layer, "cashu")
+                  ? "active"
+                  : "limited"
+                : "available",
+              privacy: PRIVACY_DESCRIPTIONS[layer].status,
+            },
+          ]
+        )
+      );
+
       return NextResponse.json({
         service: "privacy-audit",
         paymentMethod,
         audit: {
-          score: 78,
-          recommendations: [
-            "Enable CoinJoin for on-chain consolidation transactions",
-            "Use Silent Payments (BIP352) for receiving — prevents address reuse",
-            "Consider Ark spends for large transfers — better privacy than on-chain",
-            "Your ecash usage within the mint is already fully private",
-          ],
-          layers: {
-            ecash: { status: "active", privacy: "strong" },
-            silentPayments: { status: "recommended", privacy: "high" },
-            coinJoin: { status: "available", privacy: "medium-high" },
-            ark: { status: "experimental", privacy: "very-high" },
-          },
-          timestamp: Date.now(),
+          score,
+          grade: score >= 80 ? "A" : score >= 60 ? "B" : "C",
+          recommendations,
+          breakdown,
+          computed_at: new Date().toISOString(),
         },
       });
+    }
 
     case "cycle-signals": {
       try {
