@@ -74,7 +74,8 @@ export default function HomePage() {
       >
         <Image
           src="/images/hero_ambience.png"
-          alt="Cinematic abstract data node"
+          alt=""
+          role="presentation"
           fill
           className="object-cover opacity-[0.15] mix-blend-screen"
           priority
