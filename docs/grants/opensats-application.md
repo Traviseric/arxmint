@@ -49,7 +49,7 @@ MIT
 
 ## GitHub Repository
 
-https://github.com/arxmint/arxmint
+https://github.com/Traviseric/arxmint
 
 ## Tech Stack
 
@@ -73,7 +73,8 @@ ArxMint lowers the barrier to deploying the ecash infrastructure that OpenSats f
 
 ## Links
 
-- Repository: https://github.com/arxmint/arxmint
+- Repository: https://github.com/Traviseric/arxmint
+- Live demo: https://arxmint.vercel.app
 - Domain: https://arxmint.com
 - Upstream contributions: [link to docs/upstream-contributions.md]
 

@@ -14,7 +14,7 @@ ArxMint is an open-source tool for deploying private Bitcoin circular economies.
 ### Setup
 
 ```bash
-git clone https://github.com/arxmint/arxmint.git
+git clone https://github.com/Traviseric/arxmint.git
 cd arxmint
 npm install
 npm run dev

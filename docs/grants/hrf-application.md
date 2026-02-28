@@ -133,7 +133,8 @@ HRF has already invested in the components (Cashu, KVAC, Fedimint, Bitsacco). Ar
 **Is this project Free and Open Source?:** Yes
 
 **Project Links:**
-- GitHub: https://github.com/arxmint/arxmint
+- GitHub: https://github.com/Traviseric/arxmint
+- Live demo: https://arxmint.vercel.app
 - Website: https://arxmint.com
 - Upstream contributions: [link to docs/upstream-contributions.md]
 

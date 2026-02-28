@@ -60,11 +60,12 @@
 
 ## BEFORE SUBMITTING — Required Prep
 
-1. **GitHub repo must be public** — Is it currently? If private, make public now.
+1. **GitHub repo must be public** — https://github.com/Traviseric/arxmint
 2. **MIT license file** — Verify LICENSE file exists in repo root
 3. **README** — Should clearly describe what ArxMint does (grant reviewers will check)
-4. **Contact info** — Real email you check regularly
-5. **References** — 2 people who can vouch. Options:
+4. **Live demo** — https://arxmint.vercel.app (link in all applications)
+5. **Contact info** — Real email you check regularly
+6. **References** — 2 people who can vouch. Options:
    - Bitcoin community members
    - Other open-source developers
    - Local Longmont business owners

@@ -53,7 +53,7 @@ ArxMint lowers the barrier to deploying the ecash and federation infrastructure 
 
 ## Section 3: Source Code
 
-**GitHub Repository:** https://github.com/arxmint/arxmint
+**GitHub Repository:** https://github.com/Traviseric/arxmint
 
 **Tech Stack:**
 - Next.js 15, TypeScript, Tailwind
@@ -117,6 +117,7 @@ ArxMint lowers the barrier to deploying the ecash and federation infrastructure 
 - Twitter: [your handle]
 - Nostr: [your npub]
 - Website: https://arxmint.com
+- Live demo: https://arxmint.vercel.app
 
 ## Section 7: References
 

@@ -51,6 +51,12 @@ export function NavBar() {
             Roadmap
           </a>
           <a
+            href="/blog"
+            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
+          >
+            Blog
+          </a>
+          <a
             href="/whitepaper"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
           >
