@@ -34,6 +34,7 @@ export function CreateCommunityForm() {
   const [network, setNetwork] = useState<"testnet" | "signet" | "regtest" | "bitcoin">("testnet");
   const [deployment, setLocalDeployment] = useState<DeploymentConfig | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [generationDone, setGenerationDone] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("docker");
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export function CreateCommunityForm() {
     setGenerating(true);
     setGenerateError(null);
     setSavedId(null);
+    setGenerationDone(false);
 
     try {
       const res = await fetch("/api/community", {
@@ -60,6 +62,7 @@ export function CreateCommunityForm() {
       setLocalDeployment(data.deployment);
       setDeployment(data.deployment);
       if (data.id) setSavedId(data.id);
+      setGenerationDone(true);
     } catch (err: any) {
       setGenerateError(err.message);
     } finally {
@@ -87,10 +90,16 @@ export function CreateCommunityForm() {
     <div className="space-y-8">
       {/* Prompt Input */}
       <div>
-        <label className="block text-[13px] font-medium text-text-primary mb-2 tracking-wide uppercase font-mono">
-          Describe your sovereign community
+        {/* Fix 057-1: htmlFor + id link label to textarea; visible required indicator */}
+        <label htmlFor="prompt-textarea" className="block text-[13px] font-medium text-text-primary mb-2 tracking-wide uppercase font-mono">
+          Describe your sovereign community{" "}
+          <span aria-hidden="true" className="text-btc-orange">*</span>
+          <span className="sr-only">(required)</span>
         </label>
+        {/* Fix 057-5: aria-required on textarea (covered with id + aria-required) */}
         <textarea
+          id="prompt-textarea"
+          aria-required="true"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Create a private Bitcoin community for 20 Longmont Bitcoiners with chat, private payments, and AI agents selling data..."
@@ -101,12 +110,14 @@ export function CreateCommunityForm() {
         {/* Example prompts */}
         <div className="mt-3 flex flex-wrap gap-2">
           {EXAMPLE_PROMPTS.map((ex, i) => (
+            /* Fix 057-2: aria-label describes purpose to screen readers */
             <button
               key={i}
+              aria-label={`Use example prompt: ${ex}`}
               onClick={() => setPrompt(ex)}
               className="text-xs px-3 py-1.5 rounded-full border border-border-border-default
                          text-text-text-secondary hover:text-accent hover:border-accent/30
-                         transition-all duration-200 truncate max-w-[280px]"
+                         transition-all duration-200 truncate max-w-[280px] min-h-[44px]"
             >
               {ex.slice(0, 60)}...
             </button>
@@ -114,15 +125,17 @@ export function CreateCommunityForm() {
         </div>
       </div>
 
-      {/* Network selector */}
+      {/* Fix 057-3: Network selector with radiogroup semantics */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-        <label className="block text-[13px] font-medium text-text-primary mb-2 tracking-wide uppercase font-mono !mb-0">Network:</label>
-        <div className="flex flex-wrap gap-2">
+        <span id="network-group-label" className="block text-[13px] font-medium text-text-primary tracking-wide uppercase font-mono">Network:</span>
+        <div role="radiogroup" aria-labelledby="network-group-label" className="flex flex-wrap gap-2">
           {(["testnet", "signet", "regtest", "bitcoin"] as const).map((n) => (
             <button
               key={n}
+              role="radio"
+              aria-checked={network === n}
               onClick={() => setNetwork(n)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${network === n
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${network === n
                   ? "bg-accent text-bg-base"
                   : "border border-border-border-default text-text-text-secondary hover:border-accent/30"
                 }`}
@@ -133,28 +146,38 @@ export function CreateCommunityForm() {
         </div>
       </div>
 
-      {/* Generate button */}
+      {/* Fix 062-1: aria-live region announces generation status to screen readers */}
+      <span aria-live="polite" className="sr-only">
+        {generating
+          ? "Generating economy configuration..."
+          : generationDone
+          ? "Economy configuration ready."
+          : ""}
+      </span>
+
+      {/* Fix 062-1: aria-busy on generate button; Fix 062-6: min-h for 44px touch target */}
       <button
         onClick={handleGenerate}
         disabled={!prompt.trim() || generating}
-        className="antigravity-btn w-full text-lg !py-4"
+        aria-busy={generating}
+        className="antigravity-btn w-full text-lg !py-4 min-h-[44px]"
       >
         {generating ? (
           <>
-            <div className="w-5 h-5 border-2 border-bg-base/30 border-t-bg-base rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-bg-base/30 border-t-bg-base rounded-full animate-spin" aria-hidden="true" />
             Forging your sovereign community...
           </>
         ) : (
           <>
-            <Zap className="w-5 h-5" />
+            <Zap className="w-5 h-5" aria-hidden="true" />
             Forge Community
           </>
         )}
       </button>
 
-      {/* Error state */}
+      {/* Fix 062-3: role="alert" so dynamic error is announced by screen readers */}
       {generateError && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {generateError}
         </div>
       )}
@@ -167,7 +190,7 @@ export function CreateCommunityForm() {
           {/* Summary Card */}
           <div className="glass glow-card border border-border-default rounded-xl p-6 !border-accent/30">
             <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-accent" />
+              <Shield className="w-5 h-5 text-accent" aria-hidden="true" />
               {deployment.community.name}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
@@ -237,7 +260,7 @@ export function CreateCommunityForm() {
                 href={`/community/${savedId}`}
                 className="flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
               >
-                Open <ExternalLink className="w-3.5 h-3.5" />
+                Open <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
               </a>
             </div>
           )}
@@ -245,7 +268,7 @@ export function CreateCommunityForm() {
           {/* Docker Compose */}
           <CollapsibleSection
             title="Docker Compose"
-            icon={<Globe className="w-4 h-4" />}
+            icon={<Globe className="w-4 h-4" aria-hidden="true" />}
             id="docker"
             expanded={expandedSection}
             onToggle={setExpandedSection}
@@ -254,26 +277,33 @@ export function CreateCommunityForm() {
               <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[500px]">
                 {deployment.dockerCompose}
               </pre>
-              <div className="absolute top-2 right-2 flex gap-2">
+              <div className="absolute top-2 right-2 flex gap-2 items-center">
+                {/* Fix 057-4: aria-label on icon-only copy button; Fix 062-4: aria-live for copy feedback */}
+                <span aria-live="polite" className="sr-only">
+                  {copied === "docker" ? "Copied to clipboard" : ""}
+                </span>
                 <button
+                  aria-label="Copy docker-compose to clipboard"
                   onClick={() => copyToClipboard(deployment.dockerCompose, "docker")}
-                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
+                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
                   title="Copy"
                 >
                   {copied === "docker" ? (
-                    <Check className="w-4 h-4 text-green-400" />
+                    <Check className="w-4 h-4 text-green-400" aria-hidden="true" />
                   ) : (
-                    <Copy className="w-4 h-4 text-text-text-secondary" />
+                    <Copy className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
                   )}
                 </button>
+                {/* Fix 057-4: aria-label on icon-only download button */}
                 <button
+                  aria-label="Download docker-compose.yml"
                   onClick={() =>
                     downloadFile(deployment.dockerCompose, "docker-compose.yml")
                   }
-                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
+                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
                   title="Download"
                 >
-                  <Download className="w-4 h-4 text-text-text-secondary" />
+                  <Download className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -283,7 +313,7 @@ export function CreateCommunityForm() {
           {deployment.community.agents.enabled && (
             <CollapsibleSection
               title="Aperture L402 Config"
-              icon={<Cpu className="w-4 h-4" />}
+              icon={<Cpu className="w-4 h-4" aria-hidden="true" />}
               id="aperture"
               expanded={expandedSection}
               onToggle={setExpandedSection}
@@ -292,32 +322,37 @@ export function CreateCommunityForm() {
                 <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[400px]">
                   {generateApertureConfig(deployment.community)}
                 </pre>
-                <div className="absolute top-2 right-2 flex gap-2">
+                <div className="absolute top-2 right-2 flex gap-2 items-center">
+                  <span aria-live="polite" className="sr-only">
+                    {copied === "aperture" ? "Copied to clipboard" : ""}
+                  </span>
                   <button
+                    aria-label="Copy Aperture config to clipboard"
                     onClick={() =>
                       copyToClipboard(
                         generateApertureConfig(deployment.community),
                         "aperture"
                       )
                     }
-                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
+                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
                   >
                     {copied === "aperture" ? (
-                      <Check className="w-4 h-4 text-green-400" />
+                      <Check className="w-4 h-4 text-green-400" aria-hidden="true" />
                     ) : (
-                      <Copy className="w-4 h-4 text-text-text-secondary" />
+                      <Copy className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
                     )}
                   </button>
                   <button
+                    aria-label="Download aperture.yml"
                     onClick={() =>
                       downloadFile(
                         generateApertureConfig(deployment.community),
                         "aperture.yml"
                       )
                     }
-                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors"
+                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
                   >
-                    <Download className="w-4 h-4 text-text-text-secondary" />
+                    <Download className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -328,7 +363,7 @@ export function CreateCommunityForm() {
           {deployment.l402Endpoints.length > 0 && (
             <CollapsibleSection
               title="L402 Agent Endpoints"
-              icon={<Zap className="w-4 h-4" />}
+              icon={<Zap className="w-4 h-4" aria-hidden="true" />}
               id="l402"
               expanded={expandedSection}
               onToggle={setExpandedSection}
@@ -362,7 +397,7 @@ export function CreateCommunityForm() {
           {/* Setup Instructions */}
           <CollapsibleSection
             title="Setup Instructions"
-            icon={<Shield className="w-4 h-4" />}
+            icon={<Shield className="w-4 h-4" aria-hidden="true" />}
             id="instructions"
             expanded={expandedSection}
             onToggle={setExpandedSection}
@@ -397,24 +432,29 @@ function CollapsibleSection({
   children: React.ReactNode;
 }) {
   const isOpen = expanded === id;
+  // Fix 062-2: stable content id for aria-controls
+  const contentId = `${id}-content`;
 
   return (
     <div className="glass glow-card border border-border-default rounded-xl p-6 !p-0 overflow-hidden">
+      {/* Fix 062-2: aria-expanded + aria-controls on toggle button; Fix 062-6: min-h touch target */}
       <button
+        aria-expanded={isOpen}
+        aria-controls={contentId}
         onClick={() => onToggle(isOpen ? null : id)}
-        className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-bg-elevated/50/50 transition-colors"
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-bg-elevated/50/50 transition-colors min-h-[44px]"
       >
         <div className="flex items-center gap-2 text-text-primary font-medium">
-          <span className="text-accent">{icon}</span>
+          <span className="text-accent" aria-hidden="true">{icon}</span>
           {title}
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-text-text-secondary" />
+          <ChevronUp className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-text-text-secondary" />
+          <ChevronDown className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
         )}
       </button>
-      {isOpen && <div className="px-6 pb-6">{children}</div>}
+      {isOpen && <div id={contentId} className="px-6 pb-6">{children}</div>}
     </div>
   );
 }

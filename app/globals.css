@@ -175,3 +175,18 @@
     opacity: 0;
   }
 }
+
+/* Fix 062-5: Respect prefers-reduced-motion — disable fade-in and other animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-fade-in,
+  [class*="animate-"] {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+  }
+
+  .animate-spin {
+    animation: none !important;
+  }
+}
