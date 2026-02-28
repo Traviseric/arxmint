@@ -72,12 +72,15 @@ export class SovereignArkClient {
    * Connect to an Ark server.
    * In production, this would use @arkade-os/sdk.
    * Currently a structured stub that validates the connection.
+   *
+   * - Network unreachable (TypeError / AbortError): returns { connected: false }, sets _connected = false
+   * - HTTP error (4xx / 5xx): throws so callers know the server is unhealthy
+   * - Success: returns { connected: true }, sets _connected = true
    */
   async connect(config: ArkServerConfig): Promise<ArkStatus> {
     this._config = config;
 
     try {
-      // Attempt to reach the Ark server
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -86,31 +89,45 @@ export class SovereignArkClient {
       });
       clearTimeout(timeout);
 
-      if (response.ok) {
-        const info = await response.json();
-        this._connected = true;
-        return {
-          connected: true,
-          serverUrl: config.serverUrl,
-          currentRound: info.current_round
-            ? {
-                id: info.current_round.id,
-                secondsUntilClose: info.current_round.seconds_until_close,
-              }
-            : undefined,
-          network: info.network,
-        };
+      if (!response.ok) {
+        // Server is reachable but returned an error — not a stub fallback scenario
+        throw new Error(
+          `Ark server error: HTTP ${response.status} from ${config.serverUrl}`
+        );
       }
 
-      throw new Error(`Ark server returned ${response.status}`);
-    } catch {
-      // Ark server not reachable — connect in stub mode for development
+      const info = await response.json();
       this._connected = true;
       return {
         connected: true,
         serverUrl: config.serverUrl,
-        network: config.network,
+        currentRound: info.current_round
+          ? {
+              id: info.current_round.id,
+              secondsUntilClose: info.current_round.seconds_until_close,
+            }
+          : undefined,
+        network: info.network,
       };
+    } catch (err) {
+      // Only fall back to stub mode for network errors (server unreachable)
+      if (
+        err instanceof TypeError ||
+        (err as Error).name === "AbortError"
+      ) {
+        console.warn(
+          "[ArkSDK] Server unreachable, running in stub mode:",
+          config.serverUrl
+        );
+        this._connected = false;
+        return {
+          connected: false,
+          serverUrl: config.serverUrl,
+          network: config.network,
+        };
+      }
+      // HTTP errors or other unexpected errors — re-throw
+      throw err;
     }
   }
 
