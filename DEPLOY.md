@@ -497,3 +497,44 @@ ports:
 ```bash
 docker compose logs --tail=100 -f
 ```
+
+---
+
+## 13. Backup Automation
+
+ArxMint includes two backup scripts in `scripts/`:
+
+### Postgres backups (daily)
+
+```bash
+# Make the script executable (first time only)
+chmod +x scripts/backup_postgres.sh
+
+# Test it manually
+./scripts/backup_postgres.sh /backups/postgres
+
+# Add to crontab (runs daily at 2am)
+crontab -e
+# Add this line:
+0 2 * * * /app/scripts/backup_postgres.sh /backups/postgres >> /var/log/arxmint-backup.log 2>&1
+```
+
+Backup files are stored as `arxmint_YYYYMMDD_HHMMSS.sql.gz`. Backups older than 7 days are pruned automatically. Override with `BACKUP_RETENTION_DAYS` env var.
+
+### LND channel.backup watcher (continuous)
+
+The `channel.backup` file must be copied every time LND channels change — losing it means losing all Lightning channels.
+
+```bash
+# Make executable
+chmod +x scripts/watch_channel_backup.sh
+
+# Run as a background service (add to /etc/systemd/system/arxmint-channel-backup.service)
+nohup ./scripts/watch_channel_backup.sh /backups/lnd >> /var/log/arxmint-channel-backup.log 2>&1 &
+
+# Or set LND_DATA_DIR to match your Docker volume path
+LND_DATA_DIR=/var/lib/docker/volumes/arxmint_lnd_data/_data \
+  ./scripts/watch_channel_backup.sh /backups/lnd
+```
+
+Uses `inotifywait` (inotify-tools) when available for efficient event-driven watching. Falls back to 60-second polling on macOS or systems without inotify.
