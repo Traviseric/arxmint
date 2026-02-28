@@ -133,8 +133,8 @@ export function WalletPanel() {
             onClick={() => setView(view === "receive" ? "overview" : "receive")}
             className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
               view === "receive"
-                ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                : "bg-sovereign-dark text-sovereign-muted hover:text-sovereign-text"
+                ? "bg-green-500/20 text-green-400 border-b-2 border-green-400"
+                : "bg-sovereign-dark text-sovereign-muted border-b-2 border-transparent hover:text-sovereign-text"
             }`}
           >
             <ArrowDownLeft className="w-4 h-4" />
@@ -149,8 +149,8 @@ export function WalletPanel() {
             onClick={() => setView(view === "send" ? "overview" : "send")}
             className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
               view === "send"
-                ? "bg-btc-orange/20 text-btc-orange border border-btc-orange/30"
-                : "bg-sovereign-dark text-sovereign-muted hover:text-sovereign-text"
+                ? "bg-btc-orange/20 text-btc-orange border-b-2 border-btc-orange"
+                : "bg-sovereign-dark text-sovereign-muted border-b-2 border-transparent hover:text-sovereign-text"
             }`}
           >
             <ArrowUpRight className="w-4 h-4" />
@@ -165,8 +165,8 @@ export function WalletPanel() {
             onClick={() => setView(view === "invoice" ? "overview" : "invoice")}
             className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
               view === "invoice"
-                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                : "bg-sovereign-dark text-sovereign-muted hover:text-sovereign-text"
+                ? "bg-blue-500/20 text-blue-400 border-b-2 border-blue-400"
+                : "bg-sovereign-dark text-sovereign-muted border-b-2 border-transparent hover:text-sovereign-text"
             }`}
           >
             <Zap className="w-4 h-4" />

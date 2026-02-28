@@ -140,7 +140,7 @@ export default function HomePage() {
               >
                 <a href="/create" className="antigravity-btn w-full sm:w-auto !py-4">
                   Initialize Environment
-                  <ArrowRight className="w-4 h-4 ml-2 opacity-70" />
+                  <ArrowRight className="w-4 h-4 ml-2 opacity-70" aria-hidden="true" />
                 </a>
                 <a href="https://github.com/Traviseric/arxmint" target="_blank" rel="noopener noreferrer" className="antigravity-btn-outline w-full sm:w-auto !py-4 text-text-secondary">
                   <Github className="w-4 h-4 mr-2" />
@@ -164,7 +164,7 @@ export default function HomePage() {
                 <div>
                   <div className="text-sm text-text-secondary font-mono mb-1">ACTIVE_NODES</div>
                   <div className="text-xl font-mono text-text-primary flex items-center gap-2">
-                    {activeNodes} <ArrowDown className="w-3 h-3 text-red-400 rotate-180" />
+                    {activeNodes} <ArrowDown className="w-3 h-3 text-red-400 rotate-180" aria-hidden="true" />
                   </div>
                 </div>
                 <div>

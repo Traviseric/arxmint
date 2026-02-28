@@ -20,6 +20,7 @@ export function NostrLogin() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -31,6 +32,15 @@ export function NostrLogin() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // Focus first focusable element when login panel opens
+  useEffect(() => {
+    if (!open || nostrConnected) return;
+    const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    focusable?.[0]?.focus();
+  }, [open, nostrConnected]);
 
   // Check for extension when dropdown opens
   useEffect(() => {
@@ -168,8 +178,14 @@ export function NostrLogin() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-72 rounded-lg border border-border-default bg-bg-surface p-4 shadow-xl z-50">
-          <p className="text-sm font-semibold text-text-primary mb-1">
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="nostr-login-title"
+          className="absolute right-0 top-full mt-2 w-72 rounded-lg border border-border-default bg-bg-surface p-4 shadow-xl z-50"
+        >
+          <p className="text-sm font-semibold text-text-primary mb-1" id="nostr-login-title">
             Nostr Login
           </p>
           <p className="text-xs text-text-secondary mb-3">

@@ -101,8 +101,9 @@ export function CycleAlerts() {
             onClick={fetchMetrics}
             className="p-2 rounded-lg hover:bg-sovereign-dark/50 transition-colors"
             title="Refresh"
+            aria-label="Refresh cycle metrics"
           >
-            <RefreshCw className="w-4 h-4 text-sovereign-muted" />
+            <RefreshCw className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
           </button>
         </div>
         <p className="text-sm text-sovereign-muted">{signal.action}</p>
