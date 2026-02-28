@@ -107,17 +107,21 @@ export function CreateCommunityForm() {
           rows={5}
         />
 
-        {/* Example prompts */}
+        {/* Example prompts — task 135: aria-pressed + active state */}
         <div className="mt-3 flex flex-wrap gap-2">
           {EXAMPLE_PROMPTS.map((ex, i) => (
             /* Fix 057-2: aria-label describes purpose to screen readers */
+            /* Fix 135: aria-pressed + active visual state for selected prompt */
             <button
               key={i}
               aria-label={`Use example prompt: ${ex}`}
+              aria-pressed={prompt === ex}
               onClick={() => setPrompt(ex)}
-              className="text-xs px-3 py-1.5 rounded-full border border-border-border-default
-                         text-text-text-secondary hover:text-accent hover:border-accent/30
-                         transition-all duration-200 truncate max-w-[280px] min-h-[44px]"
+              className={`text-xs px-3 py-1.5 rounded-full border transition-all duration-200 truncate max-w-[280px] min-h-[44px] ${
+                prompt === ex
+                  ? "border-btc-orange bg-btc-orange/10 text-btc-orange"
+                  : "border-white/10 text-sovereign-muted hover:text-sovereign-text hover:border-white/20"
+              }`}
             >
               {ex.slice(0, 60)}...
             </button>
@@ -137,7 +141,7 @@ export function CreateCommunityForm() {
               onClick={() => setNetwork(n)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${network === n
                   ? "bg-accent text-bg-base"
-                  : "border border-border-border-default text-text-text-secondary hover:border-accent/30"
+                  : "border border-white/10 text-sovereign-muted hover:border-accent/30"
                 }`}
             >
               {n === "bitcoin" ? "MAINNET" : n.toUpperCase()}
@@ -176,9 +180,18 @@ export function CreateCommunityForm() {
       </button>
 
       {/* Fix 062-3: role="alert" so dynamic error is announced by screen readers */}
+      {/* Fix 120: Retry button lets user re-submit without clearing form state */}
       {generateError && (
         <div role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {generateError}
+          <div className="flex items-center justify-between gap-3">
+            <span>{generateError}</span>
+            <button
+              onClick={handleGenerate}
+              className="sovereign-btn-outline text-xs px-3 py-1 shrink-0"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       )}
 
@@ -195,25 +208,25 @@ export function CreateCommunityForm() {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
               <div>
-                <div className="text-text-text-secondary">Backend</div>
+                <div className="text-sovereign-muted">Backend</div>
                 <div className="text-text-primary font-medium capitalize">
                   {deployment.community.mintBackend}
                 </div>
               </div>
               <div>
-                <div className="text-text-text-secondary">Members</div>
+                <div className="text-sovereign-muted">Members</div>
                 <div className="text-text-primary font-medium">
                   {deployment.community.memberCount}
                 </div>
               </div>
               <div>
-                <div className="text-text-text-secondary">Guardians</div>
+                <div className="text-sovereign-muted">Guardians</div>
                 <div className="text-text-primary font-medium">
                   {deployment.community.guardianCount}
                 </div>
               </div>
               <div>
-                <div className="text-text-text-secondary">Network</div>
+                <div className="text-sovereign-muted">Network</div>
                 <div className="text-text-primary font-medium uppercase">
                   {deployment.community.network}
                 </div>
@@ -240,7 +253,7 @@ export function CreateCommunityForm() {
                     key={key}
                     className={`px-2 py-1 rounded ${val
                         ? "bg-green-500/10 text-green-400"
-                        : "bg-bg-bg-elevated/50 text-text-text-secondary"
+                        : "bg-sovereign-panel/50 text-sovereign-muted"
                       }`}
                   >
                     {key}: {val ? "ON" : "OFF"}
@@ -274,7 +287,7 @@ export function CreateCommunityForm() {
             onToggle={setExpandedSection}
           >
             <div className="relative">
-              <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[500px]">
+              <pre className="bg-sovereign-panel/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[500px]">
                 {deployment.dockerCompose}
               </pre>
               <div className="absolute top-2 right-2 flex gap-2 items-center">
@@ -285,13 +298,13 @@ export function CreateCommunityForm() {
                 <button
                   aria-label="Copy docker-compose to clipboard"
                   onClick={() => copyToClipboard(deployment.dockerCompose, "docker")}
-                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
+                  className="p-2 rounded-lg bg-sovereign-dark hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
                   title="Copy"
                 >
                   {copied === "docker" ? (
                     <Check className="w-4 h-4 text-green-400" aria-hidden="true" />
                   ) : (
-                    <Copy className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
+                    <Copy className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
                   )}
                 </button>
                 {/* Fix 057-4: aria-label on icon-only download button */}
@@ -300,10 +313,10 @@ export function CreateCommunityForm() {
                   onClick={() =>
                     downloadFile(deployment.dockerCompose, "docker-compose.yml")
                   }
-                  className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
+                  className="p-2 rounded-lg bg-sovereign-dark hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
                   title="Download"
                 >
-                  <Download className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
+                  <Download className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -319,7 +332,7 @@ export function CreateCommunityForm() {
               onToggle={setExpandedSection}
             >
               <div className="relative">
-                <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[400px]">
+                <pre className="bg-sovereign-panel/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[400px]">
                   {generateApertureConfig(deployment.community)}
                 </pre>
                 <div className="absolute top-2 right-2 flex gap-2 items-center">
@@ -334,12 +347,12 @@ export function CreateCommunityForm() {
                         "aperture"
                       )
                     }
-                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
+                    className="p-2 rounded-lg bg-sovereign-dark hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
                   >
                     {copied === "aperture" ? (
                       <Check className="w-4 h-4 text-green-400" aria-hidden="true" />
                     ) : (
-                      <Copy className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
+                      <Copy className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
                     )}
                   </button>
                   <button
@@ -350,9 +363,9 @@ export function CreateCommunityForm() {
                         "aperture.yml"
                       )
                     }
-                    className="p-2 rounded-lg bg-bg-bg-surface hover:bg-bg-elevated hover:bg-border-border-default transition-colors min-h-[44px] min-w-[44px]"
+                    className="p-2 rounded-lg bg-sovereign-dark hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
                   >
-                    <Download className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
+                    <Download className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -372,11 +385,11 @@ export function CreateCommunityForm() {
                 {deployment.l402Endpoints.map((ep) => (
                   <div
                     key={ep.path}
-                    className="flex items-center justify-between bg-bg-bg-elevated/50 rounded-lg px-4 py-3"
+                    className="flex items-center justify-between bg-sovereign-panel/50 rounded-lg px-4 py-3"
                   >
                     <div>
                       <code className="text-accent text-sm">{ep.path}</code>
-                      <p className="text-xs text-text-text-secondary mt-1">
+                      <p className="text-xs text-sovereign-muted mt-1">
                         {ep.description}
                       </p>
                     </div>
@@ -403,7 +416,7 @@ export function CreateCommunityForm() {
             onToggle={setExpandedSection}
           >
             <div className="prose prose-invert prose-sm max-w-none">
-              <pre className="bg-bg-bg-elevated/50 rounded-lg p-4 text-xs text-text-secondary whitespace-pre-wrap">
+              <pre className="bg-sovereign-panel/50 rounded-lg p-4 text-xs text-text-secondary whitespace-pre-wrap">
                 {deployment.instructions.join("\n")}
               </pre>
             </div>
@@ -442,16 +455,16 @@ function CollapsibleSection({
         aria-expanded={isOpen}
         aria-controls={contentId}
         onClick={() => onToggle(isOpen ? null : id)}
-        className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-bg-elevated/50/50 transition-colors min-h-[44px]"
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-sovereign-panel/50 transition-colors min-h-[44px]"
       >
         <div className="flex items-center gap-2 text-text-primary font-medium">
           <span className="text-accent" aria-hidden="true">{icon}</span>
           {title}
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
+          <ChevronUp className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-text-text-secondary" aria-hidden="true" />
+          <ChevronDown className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
         )}
       </button>
       {isOpen && <div id={contentId} className="px-6 pb-6">{children}</div>}
