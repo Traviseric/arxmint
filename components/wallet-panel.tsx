@@ -1297,7 +1297,11 @@ function LightningConnect() {
       ) : (
         <div className="space-y-3">
           <div>
-            <label htmlFor="lnc-pairing-phrase" className="sovereign-label">Pairing Phrase (10 words)</label>
+            <label htmlFor="lnc-pairing-phrase" className="sovereign-label">
+              Pairing Phrase (10 words)
+              <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+              <span className="sr-only">(required)</span>
+            </label>
             <input
               id="lnc-pairing-phrase"
               type="password"
@@ -1308,15 +1312,19 @@ function LightningConnect() {
             />
           </div>
           <div>
-            <label htmlFor="lnc-password" className="sovereign-label">Password (optional)</label>
+            <label htmlFor="lnc-password" className="sovereign-label">Encryption Password (optional)</label>
             <input
               id="lnc-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Encryption password"
+              aria-describedby="lnc-password-hint"
               className="sovereign-input text-sm"
             />
+            <p id="lnc-password-hint" className="text-xs text-sovereign-muted mt-1">
+              Optional. Used to protect your LNC pairing phrase. Leave blank to use the default passphrase.
+            </p>
           </div>
           {/* Security tier selector */}
           <div>
@@ -1354,7 +1362,11 @@ function LightningConnect() {
                 Remote signer config (required for pay-only)
               </p>
               <div>
-                <label htmlFor="lnc-signer-url" className="sovereign-label">Signer URL</label>
+                <label htmlFor="lnc-signer-url" className="sovereign-label">
+                  Signer URL
+                  <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+                  <span className="sr-only">(required)</span>
+                </label>
                 <input
                   id="lnc-signer-url"
                   type="text"
@@ -1365,7 +1377,11 @@ function LightningConnect() {
                 />
               </div>
               <div>
-                <label htmlFor="lnc-signer-tls-cert" className="sovereign-label">Signer TLS Cert (base64)</label>
+                <label htmlFor="lnc-signer-tls-cert" className="sovereign-label">
+                  Signer TLS Cert (base64)
+                  <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+                  <span className="sr-only">(required)</span>
+                </label>
                 <textarea
                   id="lnc-signer-tls-cert"
                   value={remoteSignerTlsCert}
@@ -1375,7 +1391,11 @@ function LightningConnect() {
                 />
               </div>
               <div>
-                <label htmlFor="lnc-signer-macaroon" className="sovereign-label">Signer Macaroon (hex)</label>
+                <label htmlFor="lnc-signer-macaroon" className="sovereign-label">
+                  Signer Macaroon (hex)
+                  <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+                  <span className="sr-only">(required)</span>
+                </label>
                 <input
                   id="lnc-signer-macaroon"
                   type="password"

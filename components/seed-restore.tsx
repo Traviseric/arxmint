@@ -122,13 +122,19 @@ export function SeedRestore({ onRestored, onDismiss }: SeedRestoreProps) {
       <div className="grid grid-cols-3 gap-2">
         {words.map((word, i) => (
           <div key={i} className="flex items-center gap-1.5">
-            <span className="text-xs text-sovereign-muted w-5 text-right select-none">
+            <span
+              id={`restore-word-label-${i}`}
+              className="text-xs text-sovereign-muted w-5 text-right select-none"
+            >
               {i + 1}.
             </span>
             <input
               type="text"
               autoComplete="off"
               spellCheck={false}
+              aria-labelledby={`restore-word-label-${i}`}
+              aria-label={`Word ${i + 1} of 12 (required)`}
+              aria-required="true"
               value={word}
               onChange={(e) => updateWord(i, e.target.value)}
               onKeyDown={(e) => {
@@ -151,9 +157,11 @@ export function SeedRestore({ onRestored, onDismiss }: SeedRestoreProps) {
 
       {/* Mint URLs */}
       <div className="space-y-2">
-        <label className="text-xs text-sovereign-muted block">
+        <p className="text-xs text-sovereign-muted">
           Cashu Mint URLs (NUT-09 restore)
-        </label>
+          <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
+          <span className="sr-only">(at least one required)</span>
+        </p>
         {mintUrls.map((url) => (
           <div key={url} className="flex items-center gap-2">
             <span className="text-xs font-mono text-sovereign-text flex-1 truncate sovereign-panel rounded px-2 py-1">

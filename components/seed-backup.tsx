@@ -147,13 +147,19 @@ export function SeedBackup({ mnemonic, onConfirmed, onDismiss }: SeedBackupProps
           <div className="space-y-3">
             {verifyPositions.map((pos) => (
               <div key={pos} className="flex items-center gap-3">
-                <span className="text-sm text-sovereign-muted w-16 flex-shrink-0">
+                <span
+                  id={`verify-word-label-${pos}`}
+                  className="text-sm text-sovereign-muted w-16 flex-shrink-0"
+                >
                   Word #{pos + 1}
+                  <span aria-hidden="true" className="text-btc-orange ml-1">*</span>
                 </span>
                 <input
                   type="text"
                   autoComplete="off"
                   spellCheck={false}
+                  aria-labelledby={`verify-word-label-${pos}`}
+                  aria-required="true"
                   value={answers[pos] ?? ""}
                   onChange={(e) =>
                     setAnswers((prev) => ({ ...prev, [pos]: e.target.value }))
