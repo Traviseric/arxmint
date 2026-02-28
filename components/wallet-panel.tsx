@@ -396,8 +396,9 @@ function ReceivePanel() {
         >
           <div className="space-y-3 mb-3">
             <div>
-              <label className="sovereign-label">Amount (sats)</label>
+              <label htmlFor="receive-qr-amount" className="sovereign-label">Amount (sats)</label>
               <input
+                id="receive-qr-amount"
                 type="number"
                 value={qrAmount}
                 onChange={(e) => { setQrAmount(e.target.value); setQrDataUrl(null); }}
@@ -407,8 +408,9 @@ function ReceivePanel() {
               />
             </div>
             <div>
-              <label className="sovereign-label">Memo (optional)</label>
+              <label htmlFor="receive-qr-memo" className="sovereign-label">Memo (optional)</label>
               <input
+                id="receive-qr-memo"
                 type="text"
                 value={qrMemo}
                 onChange={(e) => { setQrMemo(e.target.value); setQrDataUrl(null); }}
@@ -551,8 +553,9 @@ function SendPanel() {
       </div>
 
       <div className="mb-3">
-        <label className="sovereign-label">Amount (sats)</label>
+        <label htmlFor="send-amount" className="sovereign-label">Amount (sats)</label>
         <input
+          id="send-amount"
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
@@ -564,7 +567,7 @@ function SendPanel() {
 
       {/* Privacy preference */}
       <div className="mb-3">
-        <label className="sovereign-label">Privacy</label>
+        <span className="sovereign-label">Privacy</span>
         <div className="flex gap-1.5">
           {(["auto", "standard", "high", "maximum"] as const).map((p) => (
             <button
@@ -758,8 +761,9 @@ function InvoicePanel() {
         <>
           <div className="space-y-3 mb-3">
             <div>
-              <label className="sovereign-label">Amount (sats)</label>
+              <label htmlFor="invoice-amount" className="sovereign-label">Amount (sats)</label>
               <input
+                id="invoice-amount"
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -769,8 +773,9 @@ function InvoicePanel() {
               />
             </div>
             <div>
-              <label className="sovereign-label">Memo (optional)</label>
+              <label htmlFor="invoice-memo" className="sovereign-label">Memo (optional)</label>
               <input
+                id="invoice-memo"
                 type="text"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
@@ -816,8 +821,9 @@ function InvoicePanel() {
       {tab === "pay" && (
         <>
           <div className="mb-3">
-            <label className="sovereign-label">BOLT11 Invoice</label>
+            <label htmlFor="invoice-bolt11" className="sovereign-label">BOLT11 Invoice</label>
             <textarea
+              id="invoice-bolt11"
               value={bolt11Input}
               onChange={(e) => setBolt11Input(e.target.value)}
               placeholder="lnbc..."
@@ -1230,8 +1236,9 @@ function LightningConnect() {
       ) : (
         <div className="space-y-3">
           <div>
-            <label className="sovereign-label">Pairing Phrase (10 words)</label>
+            <label htmlFor="lnc-pairing-phrase" className="sovereign-label">Pairing Phrase (10 words)</label>
             <input
+              id="lnc-pairing-phrase"
               type="password"
               value={phrase}
               onChange={(e) => setPhrase(e.target.value)}
@@ -1240,8 +1247,9 @@ function LightningConnect() {
             />
           </div>
           <div>
-            <label className="sovereign-label">Password (optional)</label>
+            <label htmlFor="lnc-password" className="sovereign-label">Password (optional)</label>
             <input
+              id="lnc-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -1251,7 +1259,7 @@ function LightningConnect() {
           </div>
           {/* Security tier selector */}
           <div>
-            <label className="sovereign-label">Security Tier</label>
+            <span className="sovereign-label">Security Tier</span>
             <div className="flex gap-2">
               {(["watch-only", "pay-only", "admin"] as const).map((t) => (
                 <button
@@ -1285,8 +1293,9 @@ function LightningConnect() {
                 Remote signer config (required for pay-only)
               </p>
               <div>
-                <label className="sovereign-label">Signer URL</label>
+                <label htmlFor="lnc-signer-url" className="sovereign-label">Signer URL</label>
                 <input
+                  id="lnc-signer-url"
                   type="text"
                   value={remoteSignerUrl}
                   onChange={(e) => setRemoteSignerUrl(e.target.value)}
@@ -1295,8 +1304,9 @@ function LightningConnect() {
                 />
               </div>
               <div>
-                <label className="sovereign-label">Signer TLS Cert (base64)</label>
+                <label htmlFor="lnc-signer-tls-cert" className="sovereign-label">Signer TLS Cert (base64)</label>
                 <textarea
+                  id="lnc-signer-tls-cert"
                   value={remoteSignerTlsCert}
                   onChange={(e) => setRemoteSignerTlsCert(e.target.value)}
                   placeholder="LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t..."
@@ -1304,8 +1314,9 @@ function LightningConnect() {
                 />
               </div>
               <div>
-                <label className="sovereign-label">Signer Macaroon (hex)</label>
+                <label htmlFor="lnc-signer-macaroon" className="sovereign-label">Signer Macaroon (hex)</label>
                 <input
+                  id="lnc-signer-macaroon"
                   type="password"
                   value={remoteSignerMacaroon}
                   onChange={(e) => setRemoteSignerMacaroon(e.target.value)}
