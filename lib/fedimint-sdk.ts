@@ -146,7 +146,8 @@ export class SovereignFedimintClient {
     // SDK returns OutgoingLightningPayment: { payment_type, contract_id, fee }
     // The operationId lives inside payment_type as either { lightning: id } or { internal: id }
     const result = await this.wallet.lightning.payInvoice(bolt11);
-    const pt = result.payment_type as any;
+    type FedimintPaymentType = { lightning?: string; internal?: string };
+    const pt = result.payment_type as FedimintPaymentType;
     const operationId: string = pt.lightning ?? pt.internal ?? result.contract_id;
     if (!operationId) {
       throw new Error("payInvoice: could not extract operationId from SDK response");

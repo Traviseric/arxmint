@@ -3,7 +3,7 @@
 // ============================================================
 
 import { npubEncode } from "nostr-tools/nip19";
-import { verifyEvent, SimplePool } from "nostr-tools";
+import { verifyEvent, SimplePool, type Event as NostrToolsEvent } from "nostr-tools";
 import type { NostrUser } from "./types";
 
 // NIP-07 window.nostr type declarations
@@ -224,7 +224,7 @@ export function verifyNip98Auth(
     }
 
     // Verify secp256k1 signature via nostr-tools
-    const isValid = verifyEvent(event as any);
+    const isValid = verifyEvent(event as NostrToolsEvent);
     if (!isValid) {
       return { valid: false, error: "Invalid signature" };
     }
