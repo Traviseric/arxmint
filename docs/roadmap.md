@@ -1,6 +1,6 @@
 # ArxMint — Implementation Roadmap
 
-**Version:** 1.0 — February 27, 2026
+**Version:** 1.1 — February 27, 2026 (audited)
 **Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md`
 **Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Codename convention:** Phase names follow the brand versioning from positioning doc (Keystone → Spire → Aether)
@@ -10,11 +10,11 @@
 ## Roadmap Overview
 
 ```
-Phase 0: Fortify     (Security hardening)            🟡 IN PROGRESS
-Phase 1: Keystone    (Core architecture upgrades)    🟡 IN PROGRESS
-Phase 2: Spire       (Full privacy + commerce stack) 🟡 IN PROGRESS
-Phase 3: Aether      (Advanced features + scale)     🟠 EXPERIMENTAL GROUNDWORK
-Phase 4: Citadel     (Production + grant deployment) 🔵 PLANNING + TOOLING
+Phase 0: Fortify     (Security hardening)            ✅ COMPLETE (code-verified)
+Phase 1: Keystone    (Core architecture upgrades)    ✅ COMPLETE (code-verified)
+Phase 2: Spire       (Full privacy + commerce stack) 🟡 MOSTLY COMPLETE (6/8 real, Ark=stub, SP crypto=placeholder)
+Phase 3: Aether      (Advanced features + scale)     🟠 PARTIAL (2/6 built, 3 not implemented, 1 unverified)
+Phase 4: Citadel     (Production + grant deployment) ✅ COMPLETE (planning/tooling layer — no real deployment yet)
 ```
 
 ---
@@ -22,121 +22,149 @@ Phase 4: Citadel     (Production + grant deployment) 🔵 PLANNING + TOOLING
 ## Implementation Snapshot (Current Codebase)
 
 Status key:
-- `Complete` = implemented and wired into current UX/runtime
-- `Partial` = implemented but not fully enforced/integrated/tested end-to-end
-- `Prototype` = scaffolding or stub behavior for design/prototyping
-- `Planned` = roadmap target, not yet implemented
+- `Complete` = implemented, wired into UX/runtime, uses real SDK calls
+- `Complete (needs infra)` = code is real but requires running backend (mint, LND, federation)
+- `Partial` = real infrastructure + placeholder crypto or incomplete integration
+- `Stub` = in-memory mock, upstream SDK unavailable
+- `Not implemented` = code does not exist despite earlier claims
 
 | Item | Status | Evidence |
 |---|---|---|
-| 0.1 Cashu keyset hardening | Complete | `lib/cashu-sdk.ts`, `tests/cashu-security.test.ts` |
-| 0.2 Honest SP backend status + scoring | Complete | `lib/privacy-defaults.ts`, `components/privacy-dashboard.tsx`, `tests/privacy-defaults.test.ts` |
-| 0.3 Lightning security tiers | Complete | `lib/types.ts`, `lib/lightning-agent.ts`, `components/wallet-panel.tsx`, `tests/lightning-security.test.ts` |
-| 0.4 Remote signer isolation | Partial | Config + validation shipped; signer flow not yet fully isolated transport integration (`lib/lightning-agent.ts`) |
-| 1.1 NUT-24 dual paywall | Partial | `lib/cashu-paywall.ts`, `app/api/agent/route.ts` (dev path still serves unauthenticated responses) |
-| 1.2 Spend router | Complete | `lib/spend-router.ts`, route UX in `components/wallet-panel.tsx` |
-| 1.3 BCE metrics dashboard + export | Complete | `lib/bce-metrics.ts`, `app/dashboard/page.tsx` |
-| 1.4 Merchant onboarding flow | Complete | `components/merchant-onboard.tsx`, `app/community/[id]/page.tsx` |
-| 1.5 Macaroon bakery | Complete | `bakeMacaroon()` in `lib/lightning-agent.ts` |
-| 1.6 Ephemeral agent wallets | Complete | `lib/fedimint-sdk.ts`, `lib/cashu-sdk.ts` |
-| 1.7 G-Bot fallback integration | Complete | `setupFederationWithGbot()` path in `lib/community-generator.ts` |
-| 2.1 Fedimint v0.10 path | Partial | Generated compose uses `v0.10.0`; root `docker-compose.yml` still on `v0.5.0` |
-| 2.2 Ark integration | Prototype | `lib/ark-sdk.ts` explicitly stub-mode today |
-| 2.3 CDK production mint | Partial | CDK compose generation exists; default local compose still Nutshell |
-| 2.4 Multi-mint (Coco path) | Partial | Manager + swap scaffolding in `lib/cashu-sdk.ts` |
-| 2.5 NUT-26 QR flow | Complete | URI/QR generation + wallet UI flow in `lib/cashu-sdk.ts`, `components/wallet-panel.tsx` |
-| 2.6 Silent Payments infra | Prototype | Scanner/parser + Docker generator present; several placeholder derivations remain in `lib/silent-payments.ts` |
-| 2.7 Monitoring stack | Partial | Prometheus/Grafana generation exists in `lib/community-generator.ts`; not in root compose |
-| 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
-| 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
-| 4.x production/grant rollout | Partial | Strong planning/tooling layer (`lib/pilot-deployment.ts`, `lib/grant-templates.ts`, `lib/replication-playbook.ts`) |
+| 0.1 Cashu keyset hardening | Complete | Real NUT-13 validation, dual registry (full ID + 31-bit int), collision detection, proof filtering on restore. `lib/cashu-sdk.ts:24-273`, `tests/cashu-security.test.ts` |
+| 0.2 Honest SP backend status + scoring | Complete | `isLayerAvailable()` returns false for SP on Fedimint. Privacy score excludes unavailable layers. `lib/privacy-defaults.ts:116-173`, `components/privacy-dashboard.tsx` |
+| 0.3 Lightning security tiers | Complete | `SecurityTier` type, `requireTier()` enforcement, tier-gated operations (invoice/pay/bake). `lib/types.ts:138-197`, `lib/lightning-agent.ts:172-435` |
+| 0.4 Remote signer isolation | Complete | Real `litd` probe to `/v1/state` (5s timeout, fail-closed), signing delegation via LNC→LND→litd. `lib/lightning-agent.ts:372-406`, `lib/lightning-validator.ts:18-105` |
+| 1.1 NUT-24 dual paywall | Complete (needs infra) | Real `verifyCashuPayment()` — decodes token, validates mint URL, calls `wallet.checkProofsStates()`, claims via `wallet.receive()`. `lib/cashu-paywall.ts:77-145`, `app/api/agent/route.ts` |
+| 1.2 Spend router | Complete | Amount/privacy-based routing, fee estimation, viable path validation, alternatives. `lib/spend-router.ts:98-262` |
+| 1.3 BCE metrics dashboard + export | Complete (needs infra) | Real API pipeline at `/api/bce-metrics` queries DB for merchant count, 30d transactions, success rate, MAU. Falls back to `getDemoBCEMetrics()` when no DB. `lib/bce-metrics.ts`, `app/api/bce-metrics/route.ts` |
+| 1.4 Merchant onboarding flow | Complete (needs infra) | Multi-step form with DB persistence via `/api/merchants` POST→`db.merchant.create()`. QR code generation. `components/merchant-onboard.tsx`, `app/api/merchants/route.ts` |
+| 1.5 Macaroon bakery | Complete (needs infra) | Real LND RPC `bakeMacaroon()`, role→permission mapping, TTL/amount caveats. Requires ADMIN tier. `lib/lightning-agent.ts:308-350` |
+| 1.6 Ephemeral agent wallets | Complete | In-memory only, real TTL enforcement, balance limits, clean lifecycle. `AgentCashuWallet` in `lib/cashu-sdk.ts:630-748`, `AgentFedimintWallet` in `lib/fedimint-sdk.ts:264-370` |
+| 1.7 G-Bot fallback integration | Complete (needs infra) | Real fetch to `gbot.fedimint.org/api/v1`, POST to `/federation/create`, returns invite code. Docker fallback if unreachable. `lib/community-generator.ts:980-1100` |
+| 2.1 Fedimint v0.10.0 | Complete | Root `docker-compose.yml` uses `fedimint/fedimintd:v0.10.0` (3 guardians), Iroh transport. Generator matches. `docker-compose.yml:72-136`, `lib/community-generator.ts:270` |
+| 2.2 Ark integration | Stub | Attempts real `/v1/info` connect but falls back to in-memory. VTXO IDs are client-generated, no server round coordination. Blocked on upstream `@arkade-os/sdk`. `lib/ark-sdk.ts:80-238` |
+| 2.3 CDK production mint | Complete | Generator uses `cashubtc/cdk-mintd` + Postgres for production (>30 members or mainnet). Root compose uses Nutshell for local dev (correct behavior). `lib/community-generator.ts:137-206` |
+| 2.4 Multi-mint (Coco) | Complete | Real `MultiMintManager` — creates real Cashu clients, real cross-mint routing via `receiveOn()`. `lib/cashu-sdk.ts:1142-1241` |
+| 2.5 NUT-26 QR flow | Complete | Real `cashu://pay?` URI generation + parsing with proper URLSearchParams. `lib/cashu-sdk.ts:1018-1085` |
+| 2.6 Silent Payments infra | Partial | Real indexer API (POST to `/api/v1/scan`), localStorage persistence, scan scheduling. BUT: address parsing uses placeholder keys, ECDH tweak is zero-filled. Needs libsecp256k1. `lib/silent-payments.ts` |
+| 2.7 Monitoring stack | Complete | Root `docker-compose.yml` has Prometheus v2.51.0 + Grafana 11.0.0. Real scrape configs in `docker/prometheus.yml`. Generator also produces per-service configs. `docker-compose.yml:138-172` |
+| 2.8 Fedimint gateway bridge | Complete (needs infra) | Real L402 flow: parse challenge → `fedimintClient.payInvoice()` → `wallet.lightning.waitForPay()` → real preimage from SDK. Token caching. `lib/fedimint-sdk.ts:412-552` |
+| 3.1 Governance framework | Complete | Real BFT quorum (2f+1), guardian rotation checks (term limits, uptime, liveness), governance doc generator. `lib/community-generator.ts:644-970` |
+| 3.2 Programmable eCash | Not implemented | No SpendCondition types, no evaluateConditions(), no createAgentEscrow() in codebase. Blocked on Cashu NUT-XX upstream. |
+| 3.3 ZK reissuance | Not implemented | No AuditedAgentWallet class, no reissue() method, no verifyAuditChain() in codebase. Blocked on Cashu protocol support. |
+| 3.4 HW wallet BIP392 | Complete | Real SP descriptor generation with functional checksum. Honest HW status matrix (all devices: "not yet supported"). `lib/silent-payments.ts:468-632` |
+| 3.5 Advanced Cashu | Not implemented | No P2BKToken, no ProofStateVerifier, no executeAtomicSwap() in codebase. Blocked on Cashu protocol evolution. |
+| 3.6 Numo NFC | Unverified | Component references exist in `merchant-onboard.tsx`. Full NFC integration not confirmed by code audit. |
+| 4.1 Longmont pilot | Complete (planning) | Real KPI targets (30/300/98%/99.5%), 6-month timeline, 21-item pre-launch checklist, KPI evaluation. No actual deployment. `lib/pilot-deployment.ts:33-461` |
+| 4.2 Grant applications | Complete | 3 substantive generators (FBCE/OpenSats/Fedi) with real budgets, milestones, content. `lib/grant-templates.ts:71-529` |
+| 4.3 Grant reporting | Complete (needs infra) | Report generation, OpenSats cadence (monthly→quarterly), Markdown export. Needs real KPI data. `lib/bce-metrics.ts:249-523` |
+| 4.4 Replication playbook | Complete | 10-section actionable guide with real Docker commands, DKG ceremony steps, Prometheus setup. `lib/replication-playbook.ts:39-553` |
+| 4.5 Multi-city federation | Complete (planning) | Real CityNode networking, cross-city Lightning routing, KPI aggregation, expansion plan. `lib/pilot-deployment.ts:494-762` |
 
 ---
 
 ## Known Gaps (Code Written ≠ Verified Working)
 
-Every roadmap item above has code in the repo. But **code written is not code verified**.
-To honestly mark something "done" requires real-world verification:
+**Code written is not code verified.** Most items have real SDK calls, but
+to honestly mark something "production-ready" requires real-world verification:
 connect to a real mint, make a real payment, see real metrics.
 
-### Critical Gaps (No Backend / No Persistence)
+### Critical Gaps (Infrastructure / Auth)
 
-| Gap | Impact | Files Affected |
-|-----|--------|----------------|
-| **No database** | Everything is in-memory (Zustand). All wallet balances, community configs, merchant listings, transaction history are lost on page refresh. | `lib/store.ts` |
-| **No user auth** | No accounts, no login, no API keys. Anyone can access everything. | — (not built) |
-| **No wallet recovery** | Cashu proofs and Fedimint ecash are not persisted. No seed backup, no restore flow. | `lib/cashu-sdk.ts`, `lib/fedimint-sdk.ts` |
-| **No merchant backend** | Merchant onboarding form collects data but doesn't save it anywhere. | `components/merchant-onboard.tsx` |
-| **No transaction history** | No ledger, no journal, no audit trail of payments. | — (not built) |
+| Gap | Impact | Current State |
+|-----|--------|---------------|
+| **No user auth** | No accounts, no login, no API keys. Anyone can access everything. | Nostr NIP-07 login exists for identity but no session persistence to DB, no API key management. |
+| **No full database** | Wallet balances in-memory (Zustand), lost on refresh. | Some API routes have DB persistence (`/api/merchants`, `/api/bce-metrics`, `/api/transactions`). Cashu proofs persisted via localStorage. But no unified Prisma schema. |
+| **No wallet recovery** | No seed backup, no encrypted proof export/restore flow. | Cashu proofs in localStorage. Fedimint ecash not persisted. |
+| **Agent API responses** | Agent services return demo data (except cycle-signals which is real CoinGecko). | Paywall verification is real; service implementations behind the paywall are demo. |
 
 ### Integration Gaps (Stubbed or Partial)
 
 | Gap | Current State | What's Needed |
 |-----|--------------|---------------|
-| **Ark SDK** | Stub — generates fake VTXO IDs. Upstream `@arkade-os/sdk` doesn't exist yet. | Wait for upstream SDK release, then replace stubs |
-| **Silent Payments scanning** | Types + scanner scaffolding exist, but no real chain scanning. SP for Fedimint requires server-side module. | `sp-indexer` Docker service + real BIP-352 derivation |
-| **L402 invoice generation** | Demo endpoint accepts any token. No real LND invoice creation or macaroon validation. | Wire Aperture proxy to LND, validate macaroons server-side |
-| **Remote signer transport** | Config + validation shipped. Actual isolated signer transport not yet wired end-to-end. | Complete `litd` remote signer integration |
-| **Fedimint v0.10.0 parity** | Generator outputs v0.10.0 compose. Root `docker-compose.yml` still uses v0.5.0. | Update root compose to match generator output |
-| **CDK vs Nutshell** | Generator picks CDK for production, but local `docker-compose.yml` uses Nutshell. | Align default local stack with generator |
-| **Monitoring not in root compose** | Prometheus/Grafana generation works in community generator, but not in root `docker-compose.yml`. | Add monitoring to default local compose |
-| **Gateway bridge** | Bridge flow implemented with placeholder preimage handling. | Wire real LND payment + preimage extraction |
-| **BCE metrics** | Algorithm is real, but data comes from `getDemoBCEMetrics()` (hardcoded). No real data pipeline. | Connect to real transaction data from mint/LN |
-| **Grant templates** | Generates correct Markdown/JSON, but content is template placeholder text. | Fill with real pilot data post-deployment |
-| **Programmable eCash (3.2)** | Condition types defined, evaluation logic built. Depends on upstream Cashu NUT-XX adoption. | Track Cashu protocol, enable when NUT-XX lands |
-| **ZK reissuance (3.3)** | Audit-log + hash-chain built. Real ZK proofs depend on upstream Cashu support. | Track upstream, replace mock hash with real ZK proof |
-| **HW wallet BIP392 (3.4)** | Descriptor generation + PSBT fields. Not tested against real hardware devices. | Test with Coldcard, BitBox02, etc. |
+| **Ark SDK** | Stub — in-memory VTXOs. Attempts real `/v1/info` connect, falls back to no-op. Upstream `@arkade-os/sdk` doesn't exist. | Wait for upstream SDK release, then replace stubs |
+| **Silent Payments crypto** | Real indexer API integration + scan scheduling. But address parsing uses placeholder keys, ECDH tweak is zero-filled. | Real BIP-352 ECDH via libsecp256k1 (JS binding or backend service) |
+| **HW wallet SP** | Honest status matrix — all 6 devices show "not yet supported". Descriptor generation works. | Wait for ColdCard/BitBox02/etc. to ship BIP-352 support |
+| **Programmable eCash (3.2)** | NOT IMPLEMENTED — no code exists. Blocked on Cashu NUT-XX protocol adoption. | Track upstream, implement when NUT-XX lands |
+| **ZK reissuance (3.3)** | NOT IMPLEMENTED — no code exists. Blocked on Cashu protocol support for ZK proofs. | Track upstream, build when protocol supports it |
+| **Advanced Cashu (3.5)** | NOT IMPLEMENTED — no P2BK, no ProofStateVerifier, no atomic swaps. | Track upstream NUT-28 and Cashu protocol evolution |
+| **Numo NFC (3.6)** | Component references exist but full integration unverified by code audit. | Verify NFC payload generation and card provisioning flow |
 
-### Verification Checklist (What "Done" Actually Means)
+### Resolved (Previously Listed as Gaps)
 
-To move any item from "code written" to "verified working":
+These were listed as gaps but have since been fixed:
+
+| Item | Resolution |
+|------|------------|
+| ~~Remote signer transport~~ | Complete — real `litd` probe to `/v1/state`, fail-closed, signing delegation via LNC→LND→litd |
+| ~~Fedimint v0.10.0 parity~~ | Complete — root `docker-compose.yml` uses v0.10.0 with Iroh transport (3 guardians) |
+| ~~Monitoring not in root compose~~ | Complete — Prometheus v2.51.0 + Grafana 11.0.0 in root compose with real scrape configs |
+| ~~Gateway bridge preimage~~ | Complete — real preimage from `wallet.lightning.waitForPay()`, not placeholder |
+| ~~L402 invoice generation~~ | Complete — real HMAC-SHA256 preimage verification, real LND REST invoice generation |
+| ~~BCE metrics data pipeline~~ | Complete — `/api/bce-metrics` queries DB for real merchant/transaction data, demo fallback |
+| ~~Merchant backend~~ | Complete — `/api/merchants` POST persists to DB via `db.merchant.create()` |
+| ~~CDK vs Nutshell~~ | Complete — generator correctly uses CDK for production, Nutshell for dev (intended behavior) |
+| ~~Grant templates~~ | Complete — substantive content generation, not placeholder text |
+
+### Verification Checklist (Code-Verified → Infra-Verified)
+
+Code audit (Feb 27, 2026) confirmed real SDK calls and logic. Next step: verify against running infrastructure.
 
 - [ ] **0.1 Keyset validation**: Connect to a real Cashu mint. Intentionally feed a bad keyset ID. Confirm rejection.
 - [ ] **0.3 Security tiers**: Connect LNC to a real Lightning Terminal. Confirm watch-only can't pay. Confirm pay-only routes through remote signer.
-- [ ] **1.1 NUT-24 paywall**: Send a real Cashu token to `/api/agent`. Confirm access granted. Confirm invalid token rejected.
+- [ ] **0.4 Remote signer**: Connect to real `litd` instance. Confirm probe succeeds. Confirm payment signing delegated.
+- [ ] **1.1 NUT-24 paywall**: Send a real Cashu token to `/api/agent`. Confirm access granted. Confirm invalid/spent token rejected.
 - [ ] **1.2 Spend router**: With real balances across Cashu + Lightning, confirm auto-routing picks correct path.
-- [ ] **1.3 BCE metrics**: With real transaction data flowing, confirm dashboard shows accurate numbers.
-- [ ] **1.4 Merchant onboarding**: Complete full onboarding flow. Generate QR. Make a real payment to a merchant.
+- [ ] **1.3 BCE metrics**: With DB connected, confirm `/api/bce-metrics` returns real merchant/transaction data.
+- [ ] **1.4 Merchant onboarding**: Complete full flow. Confirm merchant persists in DB via `/api/merchants`. Generate QR. Make real payment.
+- [ ] **1.5 Macaroon bakery**: Connect to real LND. Bake a pay-only macaroon. Confirm it can pay but not bake.
+- [ ] **1.7 G-Bot**: Test against real G-Bot API (if available). Confirm Docker fallback works when unreachable.
 - [ ] **2.1 Fedimint**: Join a real federation via invite code. Send and receive ecash.
 - [ ] **2.5 NUT-26 QR**: Generate a QR, scan it with a Cashu wallet, complete payment.
 - [ ] **2.7 Monitoring**: Run `docker compose up`. Confirm Prometheus scrapes all services. Confirm Grafana shows data.
+- [ ] **2.8 Gateway bridge**: Pay an L402 endpoint using Fedimint ecash. Confirm preimage returned and token cached.
 - [ ] **4.1 Longmont pilot**: Real merchants. Real payments. Real KPIs tracked.
 
 ---
 
 ## Path to Working MVP
 
-What's needed to go from "beautiful prototype" to "actually works end-to-end":
+What's needed to go from "code-verified prototype" to "actually works end-to-end".
+
+**Already done** (confirmed by Feb 27 audit): L402 has real HMAC verification + LND invoice generation. NUT-24 verifies tokens against real mint. Merchants persist to DB. BCE metrics has real DB pipeline. Root compose is v0.10.0 with monitoring. Gateway bridge gets real preimage from SDK.
 
 ### Phase A: Data Persistence (Week 1-2)
-1. Add Postgres + Prisma ORM
-2. Persist: community configs, wallet proofs (Cashu), merchant listings, transaction log
-3. Add localStorage backup for Cashu proofs (immediate recovery on refresh)
-4. Migrate Zustand store to hydrate from DB on load
+1. Add Postgres + Prisma ORM — unified schema for all entities
+2. ~~Persist merchant listings~~ DONE — `/api/merchants` route exists
+3. ~~Add localStorage backup for Cashu proofs~~ DONE — Cashu proofs in localStorage
+4. Persist: community configs, wallet balance snapshots, Fedimint ecash state
+5. Migrate Zustand store to hydrate from DB on load
 
 ### Phase B: Auth & Wallet Recovery (Week 2-3)
-1. Add user accounts (Nostr login or simple API key)
-2. Wallet backup/restore flow (encrypted proof export)
-3. API key management for agent access
-4. Session management
+1. ~~Add Nostr login~~ DONE — NIP-07 browser extension auth exists (no DB session yet)
+2. Persist Nostr sessions to DB (currently localStorage only)
+3. Wallet backup/restore flow (encrypted proof export)
+4. API key management for agent access
+5. Session management
 
-### Phase C: Real L402 & Payments (Week 3-4)
-1. Wire Aperture proxy to real LND for invoice generation
-2. Validate L402 macaroons server-side (not just accept any token)
-3. Wire NUT-24 ecash paywall to verify tokens against real mint
-4. End-to-end test: user pays L402 → agent returns real data
+### Phase C: Real Agent Services (Week 3-4)
+1. ~~Wire L402 to real LND~~ DONE — real HMAC-SHA256 + LND REST invoice generation
+2. ~~Wire NUT-24 to verify against real mint~~ DONE — `verifyCashuPayment()` checks proof states + claims
+3. Replace demo agent responses (privacy-audit, compute, data) with real service implementations
+4. Wire Aperture reverse proxy for production L402 flow
+5. End-to-end test: user pays L402/Cashu → agent returns real data
 
-### Phase D: Docker Stack Parity (Week 4-5)
-1. Update root `docker-compose.yml` to Fedimint v0.10.0
-2. Add Prometheus + Grafana to default local compose
-3. Add CDK option alongside Nutshell
+### Phase D: Deployment (Week 4-5)
+1. ~~Update root docker-compose.yml to Fedimint v0.10.0~~ DONE
+2. ~~Add Prometheus + Grafana to root compose~~ DONE
+3. ~~CDK option for production~~ DONE — generator uses CDK for >30 members/mainnet
 4. Write `DEPLOY.md` — step-by-step VPS deployment guide
 5. Test full `docker compose up` → connect wallet → make payment flow
 
 ### Phase E: Real Data Pipeline (Week 5-6)
-1. Connect BCE metrics to real transaction log (not demo data)
-2. Wire merchant directory to persisted backend
-3. Connect grant reporting to real KPI snapshots
+1. ~~Connect BCE metrics to real DB~~ DONE — `/api/bce-metrics` queries merchant count + 30d transactions
+2. ~~Wire merchant directory to backend~~ DONE — `/api/merchants` persists to DB
+3. Connect grant reporting to real KPI snapshots (currently uses demo metrics when no DB)
 4. Prometheus scrape targets verified against running services
 
 ### Phase F: Testing & Hardening (Week 6-8)
@@ -148,8 +176,10 @@ What's needed to go from "beautiful prototype" to "actually works end-to-end":
 
 ### Blocked Items (Waiting on Upstream)
 - **Ark SDK**: No production SDK available. Track `@arkade-os/sdk` release.
-- **Programmable eCash (NUT-XX)**: Cashu protocol hasn't adopted spending conditions yet.
-- **ZK reissuance**: Requires Cashu protocol support for ZK proofs in token reissuance.
+- **Programmable eCash (3.2)**: NOT IMPLEMENTED. Cashu NUT-XX not adopted. No code to enable.
+- **ZK reissuance (3.3)**: NOT IMPLEMENTED. Requires Cashu protocol support.
+- **Advanced Cashu (3.5)**: NOT IMPLEMENTED. P2BK, atomic swaps pending upstream.
+- **SP crypto**: Placeholder ECDH. Needs libsecp256k1 JS binding or backend service.
 - **CTV+CSFS for Ark**: Requires Bitcoin soft-fork. Track BIP proposals.
 
 ---
@@ -381,32 +411,38 @@ What's needed to go from "beautiful prototype" to "actually works end-to-end":
 
 **Goal:** Programmable eCash, advanced privacy, community governance.
 **Research drivers:** Doc 5 (advanced SP), Doc 6 (STARK conditions, ZK reissuance), Doc 7 (governance)
+**Honest status:** 2 of 6 items implemented. 3 items NOT BUILT (blocked on upstream). 1 unverified.
 
-### 3.1 — Guardian Governance Framework
+### 3.1 — Guardian Governance Framework ✅
 **Source:** Doc 7
 **File:** `lib/community-generator.ts`
 **What:** Guardian selection criteria, rotation policy, incident response, quorum management, treasury use policy.
+**Status:** Complete. Real BFT quorum scaling (2f+1), `checkGuardianRotation()` with uptime/liveness enforcement, governance document generator.
 
-### 3.2 — Programmable eCash (STARK/Cairo Spending Conditions)
+### 3.2 — Programmable eCash (STARK/Cairo Spending Conditions) ❌ NOT IMPLEMENTED
 **Source:** Doc 6 — NUT-XX
 **What:** Conditional ecash tokens (escrow, subscriptions, proof-of-service). Agent pays token that's only spendable when service is proven delivered.
-**Status:** Depends on Cashu protocol adoption of NUT-XX. Track upstream.
+**Status:** No code exists. No SpendCondition types, no evaluateConditions(), no createAgentEscrow(). Blocked on Cashu NUT-XX protocol adoption.
 
-### 3.3 — ZK Verified Reissuance
+### 3.3 — ZK Verified Reissuance ❌ NOT IMPLEMENTED
 **Source:** Doc 6 — arXiv paper on stateless agent wallets
 **What:** Implement audit-log + ZK reissuance pattern for agent wallets. Ephemeral wallets that can circulate and reissue tokens without centralized mediation.
+**Status:** No code exists. No AuditedAgentWallet class, no reissue() method, no verifyAuditChain(). Blocked on Cashu protocol support for ZK proofs.
 
-### 3.4 — Hardware Wallet Support (BIP392/BIP376)
+### 3.4 — Hardware Wallet Support (BIP392/BIP376) ✅
 **Source:** Doc 5
 **What:** SP descriptor support and PSBT spending for hardware signing devices.
+**Status:** Complete. Real descriptor generation with functional checksum. Honest HW wallet support matrix (all 6 devices: "not yet supported" — accurate as of Feb 2026). PSBT field structure real but ECDH tweak placeholder.
 
-### 3.5 — Advanced Cashu Features
+### 3.5 — Advanced Cashu Features ❌ NOT IMPLEMENTED
 **Source:** Doc 3
 **What:** NUT-28 P2BK, background proof state verification, multi-mint atomic swaps.
+**Status:** No code exists. No P2BKToken, no ProofStateVerifier, no executeAtomicSwap(). Blocked on Cashu protocol evolution.
 
-### 3.6 — Numo NFC Merchant Integration
+### 3.6 — Numo NFC Merchant Integration ❓ UNVERIFIED
 **Source:** Doc 3
 **What:** Tap-to-pay for merchants using Numo NFC cards. Deep integration with merchant directory.
+**Status:** Component references exist in `merchant-onboard.tsx`. Full NFC integration not confirmed by code audit.
 
 ---
 
@@ -429,6 +465,7 @@ These items are intentionally tracked outside active delivery phases. Promote to
 
 **Goal:** Production hardening, Longmont pilot, grant applications, replication.
 **Research drivers:** Doc 7 (grant templates, BCE patterns, pilot-to-scale)
+**Honest status:** All 5 items have real, substantive code. But this is planning/tooling — no actual pilot deployment has happened.
 
 ### 4.1 — Longmont Pilot Deployment
 **Source:** Doc 7, Spec §8
