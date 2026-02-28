@@ -120,7 +120,6 @@ export function generateDockerCompose(config: CommunityConfig): string {
       --rpclisten=0.0.0.0:10009
       --restlisten=0.0.0.0:8080
       --tlsextradomain=lnd
-      --noseedbackup
       --accept-keysend
       --protocol.wumbo-channels
     ports:
@@ -316,7 +315,7 @@ export function generateDockerCompose(config: CommunityConfig): string {
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=\${GRAFANA_PASSWORD:-arxmint}
+      - GF_SECURITY_ADMIN_PASSWORD=\${GRAFANA_PASSWORD:?GRAFANA_PASSWORD is required}
       - GF_USERS_ALLOW_SIGN_UP=false
     ports:
       - "3001:3000"

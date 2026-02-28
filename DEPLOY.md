@@ -12,11 +12,12 @@ Deploy ArxMint to a VPS: from a fresh Ubuntu server to a running Bitcoin circula
 4. [Clone and Configure](#4-clone-and-configure)
 5. [Database Setup](#5-database-setup)
 6. [Start the Full Stack](#6-start-the-full-stack)
-7. [Domain and SSL](#7-domain-and-ssl)
-8. [Regtest vs Testnet vs Mainnet](#8-regtest-vs-testnet-vs-mainnet)
-9. [Monitoring](#9-monitoring)
-10. [Updating](#10-updating)
-11. [Troubleshooting](#11-troubleshooting)
+7. [First-Time LND Setup](#7-first-time-lnd-setup)
+8. [Domain and SSL](#8-domain-and-ssl)
+9. [Regtest vs Testnet vs Mainnet](#9-regtest-vs-testnet-vs-mainnet)
+10. [Monitoring](#10-monitoring)
+11. [Updating](#11-updating)
+12. [Troubleshooting](#12-troubleshooting)
 
 ---
 
@@ -255,7 +256,32 @@ docker compose logs -f
 
 ---
 
-## 7. Domain and SSL
+## 7. First-Time LND Setup
+
+After `docker compose up -d`, LND starts without a wallet. **You must create the wallet and save the seed phrase before funds can be received.**
+
+```bash
+# Wait for LND to start (takes ~60 seconds on first run), then:
+docker exec -it sf-lnd lncli --network=testnet create
+```
+
+Follow the prompts:
+1. Enter a wallet password (you'll need this to unlock LND on each restart)
+2. Choose **n** when asked if you have an existing seed
+3. **SAVE THE 24-WORD SEED PHRASE SECURELY** — write it down and store it offline
+
+> **Critical:** This seed phrase is the only way to recover funds if the Docker volume (`lnd-data`) is lost. No seed phrase = permanent loss of all channel funds.
+
+For the Cashu-only stack (`sf-lnd-lite`):
+```bash
+docker exec -it sf-lnd-lite lncli --network=testnet create
+```
+
+**Subsequent restarts:** LND will require wallet unlock. Either run `lncli unlock` manually or configure an auto-unlock password file.
+
+---
+
+## 8. Domain and SSL
 
 Use [Caddy](https://caddyserver.com/) as a reverse proxy — it handles TLS automatically via Let's Encrypt.
 
@@ -296,7 +322,7 @@ Caddy automatically provisions and renews TLS certificates. Your site will be li
 
 ---
 
-## 8. Regtest vs Testnet vs Mainnet
+## 9. Regtest vs Testnet vs Mainnet
 
 ### Testnet (default)
 
@@ -365,7 +391,7 @@ The Cashu mint's `testnet` vs mainnet macaroon path also changes — update `MIN
 
 ---
 
-## 9. Monitoring
+## 10. Monitoring
 
 Prometheus and Grafana are included in the full stack.
 
@@ -375,7 +401,7 @@ Prometheus and Grafana are included in the full stack.
 http://localhost:3001   (or https://grafana.yourdomain.com if configured)
 ```
 
-Default credentials: `admin` / `arxmint` (set `GRAFANA_PASSWORD` in `.env` to change).
+Log in with `admin` and the `GRAFANA_PASSWORD` you set in `.env` (required — there is no default).
 
 The ArxMint dashboard is pre-provisioned at `docker/grafana/dashboards/arxmint.yaml`.
 
@@ -389,7 +415,7 @@ Scrape config is at `docker/prometheus.yml`. Prometheus stores 30 days of metric
 
 ---
 
-## 10. Updating
+## 11. Updating
 
 ```bash
 # Pull latest code
@@ -409,7 +435,7 @@ docker compose down && docker compose up -d
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 ### LND won't start / stays unhealthy
 
@@ -419,7 +445,7 @@ LND takes 60–120 seconds to sync neutrino headers on first start. Check logs:
 docker compose logs -f lnd
 ```
 
-If it fails with a wallet error, LND needs a wallet to be created (only on first run without `--noseedbackup`). The default config uses `--noseedbackup` to skip this.
+If it fails with a wallet error, you need to create the LND wallet. See the **First-Time LND Setup** section above.
 
 ### Cashu mint can't connect to LND
 
