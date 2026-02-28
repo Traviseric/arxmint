@@ -12,6 +12,7 @@ import {
   Wallet,
   getDecodedToken,
   type Proof,
+  type ProofState,
 } from "@cashu/cashu-ts";
 
 /** NUT-24 paywall configuration for an endpoint */
@@ -113,7 +114,7 @@ export async function verifyCashuPayment(
 
     const states = await wallet.checkProofsStates(proofs);
     const allUnspent = states.every(
-      (s: any) => s.state === "UNSPENT"
+      (s: ProofState) => s.state === "UNSPENT"
     );
 
     if (!allUnspent) {

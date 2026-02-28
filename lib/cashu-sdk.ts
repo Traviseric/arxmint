@@ -18,6 +18,7 @@ import {
   type MintKeys,
   type MintQuoteResponse,
   type MeltQuoteResponse,
+  type ProofState,
 } from "@cashu/cashu-ts";
 
 // ---- Keyset ID Validation (NUT-13 security) ----
@@ -541,7 +542,7 @@ export class SovereignCashuClient {
     const valid: Proof[] = [];
     const spent: Proof[] = [];
 
-    states.forEach((state: any, i: number) => {
+    states.forEach((state: ProofState, i: number) => {
       if (state.state === "UNSPENT") {
         valid.push(this._proofs[i]);
       } else {
@@ -660,6 +661,10 @@ export class AgentCashuWallet {
   get timeRemaining(): number {
     const remaining = (this._createdAt + this._config.ttlSeconds * 1000) - Date.now();
     return Math.max(0, remaining);
+  }
+
+  get mintUrl(): string {
+    return this._config.mintUrl;
   }
 
   /** Connect to the mint (in-memory only) */
@@ -842,21 +847,21 @@ export class AuditedAgentWallet {
   async receive(token: string): Promise<Proof[]> {
     const proofs = await this._inner.receive(token);
     const amount = proofs.reduce((s, p) => s + p.amount, 0);
-    this.appendLog("receive", amount, proofs.length);
+    await this.appendLog("receive", amount, proofs.length);
     return proofs;
   }
 
   /** Send ecash with audit logging */
   async send(amountSats: number): Promise<string> {
     const token = await this._inner.send(amountSats);
-    this.appendLog("send", amountSats, 0);
+    await this.appendLog("send", amountSats, 0);
     return token;
   }
 
   /** Pay a Lightning invoice with audit logging */
   async payInvoice(bolt11: string): Promise<boolean> {
     const result = await this._inner.payInvoice(bolt11);
-    this.appendLog("send", 0, 0); // Amount determined by invoice
+    await this.appendLog("send", 0, 0); // Amount determined by invoice
     return result;
   }
 
@@ -882,11 +887,11 @@ export class AuditedAgentWallet {
     const proofs = await this._inner.receive(token);
     const amount = proofs.reduce((s, p) => s + p.amount, 0);
 
-    this.appendLog("reissue", amount, proofs.length);
+    await this.appendLog("reissue", amount, proofs.length);
 
     const proof: ReissuanceProof = {
       tokenId: `ri_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-      mintUrl: "",
+      mintUrl: this._inner.mintUrl,
       amountSats: amount,
       auditLogHash: this._lastHash,
       auditLogLength: this._auditLog.length,
@@ -922,14 +927,21 @@ export class AuditedAgentWallet {
   /**
    * Verify the integrity of the audit log hash chain.
    * Returns true if the chain is intact (no tampering).
+   * Recomputes SHA-256 hashes from entry data to detect tampering.
    */
-  verifyAuditChain(): { valid: boolean; brokenAt?: number } {
+  async verifyAuditChain(): Promise<{ valid: boolean; brokenAt?: number }> {
     let expectedPrevHash = "genesis";
     for (let i = 0; i < this._auditLog.length; i++) {
-      if (this._auditLog[i].previousHash !== expectedPrevHash) {
+      const entry = this._auditLog[i];
+      if (entry.previousHash !== expectedPrevHash) {
         return { valid: false, brokenAt: i };
       }
-      expectedPrevHash = this._auditLog[i].stateHash;
+      const stateData = `${entry.previousHash}:${entry.action}:${entry.amountSats}:${entry.timestamp}`;
+      const expectedHash = await sha256Hex(stateData);
+      if (entry.stateHash !== expectedHash) {
+        return { valid: false, brokenAt: i };
+      }
+      expectedPrevHash = entry.stateHash;
     }
     return { valid: true };
   }
@@ -942,17 +954,15 @@ export class AuditedAgentWallet {
     this._inner.destroy();
   }
 
-  private appendLog(
+  private async appendLog(
     action: AuditLogEntry["action"],
     amountSats: number,
     proofCount: number
-  ): void {
-    // Simple hash chain: hash = H(previous + action + amount + timestamp)
+  ): Promise<void> {
+    // SHA-256 hash chain: hash = SHA256(previous + action + amount + timestamp)
     const timestamp = Date.now();
     const stateData = `${this._lastHash}:${action}:${amountSats}:${timestamp}`;
-    // In production, use crypto.subtle.digest("SHA-256", ...)
-    // For now, use a simple deterministic string hash
-    const stateHash = simpleHash(stateData);
+    const stateHash = await sha256Hex(stateData);
 
     this._auditLog.push({
       id: `al_${timestamp.toString(36)}_${Math.random().toString(36).slice(2, 4)}`,
@@ -969,14 +979,12 @@ export class AuditedAgentWallet {
   }
 }
 
-/** Simple deterministic string hash (placeholder for crypto.subtle) */
-function simpleHash(input: string): string {
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    const char = input.charCodeAt(i);
-    hash = ((hash << 5) - hash + char) | 0;
-  }
-  return Math.abs(hash).toString(16).padStart(8, "0");
+/** SHA-256 hash using Web Crypto API (available in Node.js 18+ and modern browsers). */
+async function sha256Hex(data: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(data);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /** Create an audited agent wallet with ZK reissuance support */
@@ -1216,18 +1224,19 @@ export class MultiMintManager {
     }
 
     // Try each connected mint until one accepts
+    const mintErrors: Array<{ mintUrl: string; error: string }> = [];
     for (const [url, client] of this._mints) {
       try {
         const proofs = await client.receiveEcash(token);
         return { proofs, mintUrl: url };
-      } catch {
+      } catch (err) {
+        mintErrors.push({ mintUrl: url, error: (err as Error).message });
         continue;
       }
     }
 
     throw new Error(
-      "No connected mint could accept this token. " +
-        "Add the token's mint first with addMint()."
+      `No connected mint could accept this token. Per-mint errors: ${JSON.stringify(mintErrors)}`
     );
   }
 
@@ -1441,7 +1450,11 @@ export class ProofStateVerifier {
         if (spent.length > 0 && this._onSpentDetected) {
           this._onSpentDetected(client.mintUrl, spent.length);
         }
-      } catch {
+      } catch (err) {
+        console.warn(
+          `[ProofStateVerifier] Mint verification failed for ${client.mintUrl}:`,
+          (err as Error).message
+        );
         results.push({
           mintUrl: client.mintUrl,
           totalChecked: 0,
