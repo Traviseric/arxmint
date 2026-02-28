@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ merchants });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // DB not configured — return empty list so the UI degrades gracefully
-    console.warn("Could not fetch merchants from DB:", error.message);
+    console.warn("Could not fetch merchants from DB:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ merchants: [] });
   }
 }

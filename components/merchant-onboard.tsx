@@ -434,9 +434,9 @@ export function MerchantOnboard({
                   saveMerchantsToStorage();
                   onComplete(savedMerchant);
                   setStep("complete");
-                } catch (err: any) {
+                } catch (err: unknown) {
                   // Fallback: complete locally even if DB save fails
-                  setSubmitError(`Note: ${err.message} — listing shown locally only`);
+                  setSubmitError(`Note: ${err instanceof Error ? err.message : String(err)} — listing shown locally only`);
                   addMerchant(merchant);
                   saveMerchantsToStorage();
                   onComplete(merchant);

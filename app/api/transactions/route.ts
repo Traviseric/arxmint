@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ transactions });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // DB not configured — return empty list so UI degrades gracefully
-    console.warn("Could not fetch transactions from DB:", error.message);
+    console.warn("Could not fetch transactions from DB:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ transactions: [] });
   }
 }

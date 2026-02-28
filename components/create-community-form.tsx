@@ -63,8 +63,8 @@ export function CreateCommunityForm() {
       setDeployment(data.deployment);
       if (data.id) setSavedId(data.id);
       setGenerationDone(true);
-    } catch (err: any) {
-      setGenerateError(err.message);
+    } catch (err: unknown) {
+      setGenerateError(err instanceof Error ? err.message : String(err));
     } finally {
       setGenerating(false);
     }

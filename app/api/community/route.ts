@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
       select: { id: true, name: true, prompt: true, config: true, createdAt: true },
     });
     return NextResponse.json({ communities });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // DB not configured — return empty list so app degrades gracefully
-    console.warn("Could not fetch communities from DB:", error.message);
+    console.warn("Could not fetch communities from DB:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ communities: [] });
   }
 }

@@ -74,9 +74,9 @@ export function SeedRestore({ onRestored, onDismiss }: SeedRestoreProps) {
       setStatus("success");
       setMessage("Vault restored! Your proofs are being recovered via NUT-09.");
       onRestored();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStatus("error");
-      setMessage(err?.message || "Restore failed — check your seed phrase and try again.");
+      setMessage(err instanceof Error ? err.message : "Restore failed — check your seed phrase and try again.");
     }
   };
 

@@ -23,8 +23,9 @@ async function checkDatabase(): Promise<ServiceStatus> {
   try {
     await db.$queryRaw`SELECT 1`;
     return { ok: true, latencyMs: Date.now() - start };
-  } catch (err: any) {
-    return { ok: false, error: err.message ?? "database unreachable" };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: msg ?? "database unreachable" };
   }
 }
 
@@ -39,8 +40,9 @@ async function checkCashuMint(): Promise<ServiceStatus> {
       return { ok: false, error: `HTTP ${res.status}` };
     }
     return { ok: true, latencyMs: Date.now() - start };
-  } catch (err: any) {
-    return { ok: false, error: err.message ?? "mint unreachable" };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: msg ?? "mint unreachable" };
   }
 }
 
@@ -64,8 +66,9 @@ async function checkLnd(): Promise<ServiceStatus> {
       return { ok: false, error: `HTTP ${res.status}` };
     }
     return { ok: true, latencyMs: Date.now() - start };
-  } catch (err: any) {
-    return { ok: false, error: err.message ?? "LND unreachable" };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: msg ?? "LND unreachable" };
   }
 }
 
