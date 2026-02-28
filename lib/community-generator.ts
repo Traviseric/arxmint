@@ -151,7 +151,7 @@ export function generateDockerCompose(config: CommunityConfig): string {
       - CDK_LND_ADDRESS=https://lnd:8080
       - CDK_LND_CERT_PATH=/root/.lnd/tls.cert
       - CDK_LND_MACAROON_PATH=/root/.lnd/data/chain/bitcoin/${config.network === "bitcoin" ? "mainnet" : config.network}/admin.macaroon
-      - CDK_DATABASE_URL=postgres://cashu:cashu@cashu-db:5432/cashu
+      - CDK_DATABASE_URL=postgres://\${CASHU_DB_USER:-cashu}:\${CASHU_DB_PASSWORD:-cashu}@cashu-db:5432/cashu
       - CDK_MINT_INFO_NAME=${config.name}
       - CDK_MINT_INFO_DESCRIPTION=ArxMint community mint
     ports:
