@@ -85,14 +85,25 @@ export function NostrLogin() {
           onClick={() => setOpen(!open)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-xs sm:text-sm"
         >
-          <Zap className="w-3.5 h-3.5 text-accent" />
-          <span className="text-text-primary font-mono">
-            {truncateNpub(nostrUser.npub)}
+          {nostrUser.picture ? (
+            <img
+              src={nostrUser.picture}
+              alt={nostrUser.displayName}
+              className="w-4 h-4 rounded-full object-cover"
+            />
+          ) : (
+            <Zap className="w-3.5 h-3.5 text-accent" />
+          )}
+          <span className="text-text-primary font-mono truncate max-w-[120px]">
+            {nostrUser.displayName}
           </span>
         </button>
 
         {open && (
           <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-border-default bg-bg-surface p-3 shadow-xl z-50">
+            {nostrUser.name && (
+              <p className="text-sm font-semibold text-text-primary mb-1">{nostrUser.name}</p>
+            )}
             <p className="text-xs text-text-secondary mb-1">Connected as</p>
             <p className="text-xs font-mono text-text-primary break-all mb-3">
               {nostrUser.npub}

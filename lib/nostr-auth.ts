@@ -3,6 +3,7 @@
 // ============================================================
 
 import { npubEncode } from "nostr-tools/nip19";
+import { SimplePool } from "nostr-tools/pool";
 import type { NostrUser } from "./types";
 
 // NIP-07 window.nostr type declarations
@@ -79,12 +80,55 @@ export async function connectNostr(): Promise<NostrUser> {
   const pubkey = await window.nostr.getPublicKey();
   const npub = pubkeyToNpub(pubkey);
 
-  return {
+  const user: NostrUser = {
     pubkey,
     npub,
     displayName: truncateNpub(npub),
     connectedAt: Date.now(),
   };
+
+  // Attempt to fetch profile metadata asynchronously
+  try {
+    const profile = await fetchNostrProfile(pubkey);
+    if (profile) {
+      user.name = profile.name || profile.displayName;
+      user.picture = profile.picture;
+      user.displayName = user.name || user.displayName;
+    }
+  } catch (err) {
+    console.warn("Failed to fetch NIP-01 profile:", err);
+  }
+
+  return user;
+}
+
+/**
+ * Fetch NIP-01 Profile (kind: 0) metadata for a given pubkey using SimplePool.
+ */
+export async function fetchNostrProfile(pubkey: string): Promise<Record<string, any> | null> {
+  const relays = [
+    "wss://relay.damus.io",
+    "wss://nos.lol",
+    "wss://relay.primal.net",
+    "wss://relay.snort.social"
+  ];
+
+  const pool = new SimplePool();
+  try {
+    const event = await pool.get(relays, {
+      kinds: [0],
+      authors: [pubkey],
+    });
+
+    if (event) {
+      return JSON.parse(event.content);
+    }
+  } catch (err) {
+    console.error("Nostr pool error:", err);
+  } finally {
+    pool.close(relays);
+  }
+  return null;
 }
 
 // ---- NIP-98 HTTP Auth ----

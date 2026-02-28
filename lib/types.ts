@@ -204,6 +204,10 @@ export interface NostrUser {
   npub: string;
   /** Display name (truncated npub until profile fetched) */
   displayName: string;
+  /** Real name from NIP-01 profile */
+  name?: string;
+  /** Avatar URL from NIP-01 profile */
+  picture?: string;
   /** Timestamp when the user connected */
   connectedAt: number;
 }
