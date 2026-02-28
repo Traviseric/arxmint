@@ -171,8 +171,9 @@ export function generateDockerCompose(config: CommunityConfig): string {
     container_name: arx-cashu-db-${config.id}
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=cashu
-      - POSTGRES_PASSWORD=cashu
+      # SECURITY: Override CASHU_DB_USER and CASHU_DB_PASSWORD in production!
+      - POSTGRES_USER=\${CASHU_DB_USER:-cashu}
+      - POSTGRES_PASSWORD=\${CASHU_DB_PASSWORD:-cashu}
       - POSTGRES_DB=cashu
     volumes:
       - cashu-db-data:/var/lib/postgresql/data
