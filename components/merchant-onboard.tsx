@@ -72,6 +72,20 @@ export function MerchantOnboard({
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateField = (fieldName: string, value: string) => {
+    const messages: Record<string, string> = {
+      businessName: "Business name is required",
+      description: "Description is required",
+      location: "Location is required",
+    };
+    if (!value.trim()) {
+      setFieldErrors((prev) => ({ ...prev, [fieldName]: messages[fieldName] ?? "This field is required" }));
+    } else {
+      setFieldErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
 
   const resetForm = () => {
     setStep("info");
@@ -175,9 +189,16 @@ export function MerchantOnboard({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={(e) => validateField("businessName", e.target.value)}
               placeholder="Bitcoin Coffee Shop"
-              className="sovereign-input text-sm"
+              aria-describedby={fieldErrors.businessName ? "businessName-error" : undefined}
+              className={`sovereign-input text-sm${fieldErrors.businessName ? " border-red-500" : ""}`}
             />
+            {fieldErrors.businessName && (
+              <p id="businessName-error" role="alert" className="text-xs text-red-400 mt-1">
+                {fieldErrors.businessName}
+              </p>
+            )}
           </div>
 
           <fieldset>
@@ -217,10 +238,12 @@ export function MerchantOnboard({
               id="business-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={(e) => validateField("description", e.target.value)}
               placeholder="What does your business offer?"
               maxLength={MAX_DESC_CHARS}
-              aria-describedby="desc-counter"
-              className="sovereign-input text-sm min-h-[60px]"
+              aria-label={`Business description, maximum ${MAX_DESC_CHARS} characters`}
+              aria-describedby={`desc-counter${fieldErrors.description ? " description-error" : ""}`}
+              className={`sovereign-input text-sm min-h-[60px]${fieldErrors.description ? " border-red-500" : ""}`}
             />
             <p
               id="desc-counter"
@@ -229,6 +252,11 @@ export function MerchantOnboard({
             >
               {description.length}/{MAX_DESC_CHARS} characters
             </p>
+            {fieldErrors.description && (
+              <p id="description-error" role="alert" className="text-xs text-red-400 mt-1">
+                {fieldErrors.description}
+              </p>
+            )}
           </div>
 
           <div>
@@ -243,9 +271,16 @@ export function MerchantOnboard({
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              onBlur={(e) => validateField("location", e.target.value)}
               placeholder="Longmont, CO"
-              className="sovereign-input text-sm"
+              aria-describedby={fieldErrors.location ? "location-error" : undefined}
+              className={`sovereign-input text-sm${fieldErrors.location ? " border-red-500" : ""}`}
             />
+            {fieldErrors.location && (
+              <p id="location-error" role="alert" className="text-xs text-red-400 mt-1">
+                {fieldErrors.location}
+              </p>
+            )}
           </div>
 
           <div>
@@ -435,12 +470,12 @@ export function MerchantOnboard({
                   onComplete(savedMerchant);
                   setStep("complete");
                 } catch (err: unknown) {
-                  // Fallback: complete locally even if DB save fails
-                  setSubmitError(`Note: ${err instanceof Error ? err.message : String(err)} — listing shown locally only`);
+                  const message = err instanceof Error ? err.message : String(err);
+                  setSubmitError(`Failed to save listing: ${message}. Please retry.`);
+                  // Save locally so form data isn't lost, but do NOT show success screen
                   addMerchant(merchant);
                   saveMerchantsToStorage();
-                  onComplete(merchant);
-                  setStep("complete");
+                  // Do NOT call setStep("complete") — keep user on review to retry
                 } finally {
                   setSubmitting(false);
                 }
