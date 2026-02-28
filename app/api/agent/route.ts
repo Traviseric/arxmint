@@ -17,18 +17,6 @@ import {
 } from "@/lib/cashu-paywall";
 import { validateRemoteSignerEnv } from "@/lib/lightning-validator";
 
-// Hard validation at module init — refuse to start if remote signer is
-// misconfigured. Prevents agents from running without key isolation when
-// REMOTE_SIGNER_URL or LNC_SECURITY_TIER=pay-only is set.
-const _signerEnvCheck = validateRemoteSignerEnv(
-  process.env as Record<string, string | undefined>
-);
-if (!_signerEnvCheck.valid) {
-  throw new Error(
-    `[ArxMint] Remote signer misconfigured — agent route cannot start: ${_signerEnvCheck.errors.join("; ")}`
-  );
-}
-
 /** Default paywall config — matches .env.example CASHU_MINT_URL */
 const PAYWALL_CONFIG: CashuPaywallConfig = {
   priceSats: Number(process.env.L402_PRICE_SATS) || 100,
@@ -135,6 +123,21 @@ async function checkPayment(
  * Returns 401 when an invalid or spent Cashu token is provided.
  */
 export async function GET(request: NextRequest) {
+  // Validate remote signer config at request time, not module load time.
+  // This prevents a misconfigured env from crashing the entire Next.js server.
+  const signerCheck = validateRemoteSignerEnv(
+    process.env as Record<string, string | undefined>
+  );
+  if (!signerCheck.valid) {
+    return NextResponse.json(
+      {
+        error: "Remote signer not configured",
+        details: signerCheck.errors.join("; "),
+      },
+      { status: 503 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const service = searchParams.get("service") || "query";
 
