@@ -28,7 +28,7 @@ const config: Config = {
         text: {
           primary: "#f2f2f2",
           secondary: "#888888",
-          muted: "#484848",
+          muted: "#909090",
         },
         accent: {
           DEFAULT: "#F7931A",

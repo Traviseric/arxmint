@@ -5,7 +5,7 @@
 // Privacy score + Cycle alerts + Wallet overview
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Shield,
   TrendingUp,
@@ -15,6 +15,7 @@ import {
   Activity,
   Download,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { PrivacyDashboard } from "@/components/privacy-dashboard";
 import { CycleAlerts } from "@/components/cycle-alerts";
@@ -37,6 +38,8 @@ type Tab = "overview" | "privacy" | "cycle" | "wallet" | "health" | "grants";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [selectingId, setSelectingId] = useState<string | null>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const { balance, currentCommunity, communities, setCommunities, setCurrentCommunity } =
     useSovereignStore();
 
@@ -87,30 +90,36 @@ export default function DashboardPage() {
 
   const handleTabClick = (tabId: Tab) => {
     setActiveTab(tabId);
-    setTimeout(() => document.getElementById(`panel-${tabId}`)?.focus(), 0);
   };
 
   const handleTablistKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const tabIds = tabs.map((t) => t.id);
     const idx = tabIds.indexOf(activeTab);
-    let next: Tab | undefined;
+    let nextIdx: number | undefined;
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      next = tabIds[(idx + 1) % tabIds.length];
+      nextIdx = (idx + 1) % tabIds.length;
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      next = tabIds[(idx - 1 + tabIds.length) % tabIds.length];
+      nextIdx = (idx - 1 + tabIds.length) % tabIds.length;
     } else if (e.key === "Home") {
       e.preventDefault();
-      next = tabIds[0];
+      nextIdx = 0;
     } else if (e.key === "End") {
       e.preventDefault();
-      next = tabIds[tabIds.length - 1];
+      nextIdx = tabIds.length - 1;
     }
-    if (next) {
-      setActiveTab(next);
-      setTimeout(() => document.getElementById(`tab-${next}`)?.focus(), 0);
+    if (nextIdx !== undefined) {
+      setActiveTab(tabIds[nextIdx]);
+      tabRefs.current[nextIdx]?.focus();
     }
+  };
+
+  const handleCommunitySelect = async (community: CommunityConfig) => {
+    setSelectingId(community.id);
+    setCurrentCommunity(community);
+    await new Promise<void>((resolve) => setTimeout(resolve, 300));
+    setSelectingId(null);
   };
 
   return (
@@ -135,9 +144,10 @@ export default function DashboardPage() {
           className="flex gap-1 p-1 bg-sovereign-dark rounded-xl mb-8 overflow-x-auto scrollbar-thin scrollbar-thumb-sovereign-panel pb-1"
           onKeyDown={handleTablistKeyDown}
         >
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <button
               key={tab.id}
+              ref={(el) => { tabRefs.current[index] = el; }}
               role="tab"
               id={`tab-${tab.id}`}
               aria-selected={activeTab === tab.id}
@@ -146,8 +156,8 @@ export default function DashboardPage() {
               onClick={() => handleTabClick(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap flex-shrink-0 transition-all ${
                 activeTab === tab.id
-                  ? "bg-sovereign-panel text-btc-orange shadow-sm"
-                  : "text-sovereign-muted hover:text-sovereign-text"
+                  ? "bg-sovereign-panel text-sovereign-text border-b-2 border-btc-orange shadow-sm"
+                  : "text-sovereign-muted hover:text-sovereign-text border-b-2 border-transparent"
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -268,8 +278,11 @@ export default function DashboardPage() {
                     {communities.map((c) => (
                       <button
                         key={c.id}
-                        onClick={() => setCurrentCommunity(c)}
-                        className="w-full flex items-center justify-between rounded-lg border border-sovereign-border bg-sovereign-dark px-4 py-3 text-left hover:border-btc-orange/40 transition-colors"
+                        onClick={() => handleCommunitySelect(c)}
+                        disabled={selectingId === c.id}
+                        className={`w-full flex items-center justify-between rounded-lg border border-sovereign-border bg-sovereign-dark px-4 py-3 text-left hover:border-btc-orange/40 transition-colors ${
+                          selectingId === c.id ? "opacity-60" : ""
+                        }`}
                       >
                         <div>
                           <div className="text-sm font-medium text-sovereign-white">{c.name}</div>
@@ -277,7 +290,14 @@ export default function DashboardPage() {
                             {c.mintBackend} · {c.network} · {c.memberCount} members
                           </div>
                         </div>
-                        <span className="text-xs text-btc-orange">Select →</span>
+                        {selectingId === c.id ? (
+                          <span className="flex items-center gap-1 text-xs text-btc-orange">
+                            <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                            Selecting…
+                          </span>
+                        ) : (
+                          <span className="text-xs text-btc-orange">Select →</span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -376,7 +396,9 @@ function BalanceRow({
           className={`w-2 h-2 rounded-full ${
             connected ? "bg-green-400" : "bg-sovereign-muted"
           }`}
+          aria-hidden="true"
         />
+        <span className="sr-only">{connected ? "(connected)" : "(disconnected)"}</span>
         <span className="text-sm text-sovereign-muted">{label}</span>
       </div>
       <span className="text-sm text-sovereign-text font-mono">{value}</span>
@@ -860,12 +882,16 @@ function GrantReportingTab() {
         <div className="space-y-2 mb-6">
           {demoReport.milestoneProgress.map((m) => (
             <div key={m.milestoneId} className="flex items-center gap-3 text-xs">
-              <span className={`w-2 h-2 rounded-full ${
-                m.status === "completed" ? "bg-green-400" :
-                m.status === "in-progress" ? "bg-blue-400" :
-                m.status === "delayed" ? "bg-red-400" :
-                "bg-sovereign-muted"
-              }`} />
+              <span
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  m.status === "completed" ? "bg-green-400" :
+                  m.status === "in-progress" ? "bg-blue-400" :
+                  m.status === "delayed" ? "bg-red-400" :
+                  "bg-sovereign-muted"
+                }`}
+                aria-hidden="true"
+              />
+              <span className="sr-only">{m.status}:</span>
               <span className="text-sovereign-white flex-1">{m.title}</span>
               <span className="text-sovereign-muted">{m.percentComplete}%</span>
             </div>
