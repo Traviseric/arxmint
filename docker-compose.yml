@@ -1,6 +1,6 @@
 # ============================================================
 # ArxMint — Full Stack Docker Compose
-# Fedimint Federation + Cashu Mint + LND + Aperture L402
+# Fedimint Federation v0.10.0 + Cashu Mint + LND + Aperture L402
 # Network: testnet (change to mainnet for production)
 # ============================================================
 # Usage:
@@ -69,9 +69,9 @@ services:
     networks:
       - sovereign
 
-  # === Fedimint Guardian 1 (Primary) ===
+  # === Fedimint Guardian 1 (Primary) — v0.10.0 Lighthouse ===
   fedimintd-0:
-    image: fedimint/fedimintd:v0.5.0
+    image: fedimint/fedimintd:v0.10.0
     container_name: sf-guardian-0
     restart: unless-stopped
     environment:
@@ -80,6 +80,9 @@ services:
       - FM_P2P_URL=fedimintd-0:18173
       - FM_API_URL=ws://fedimintd-0:18174
       - FM_BITCOIN_RPC_KIND=none
+      # v0.10.0 ConnectorRegistry — Iroh networking
+      - FM_TRANSPORT=iroh
+      - FM_IROH_DISCOVERY=dns
     ports:
       - "18173:18173"
       - "18174:18174"
@@ -88,9 +91,9 @@ services:
     networks:
       - sovereign
 
-  # === Fedimint Guardian 2 ===
+  # === Fedimint Guardian 2 — v0.10.0 Lighthouse ===
   fedimintd-1:
-    image: fedimint/fedimintd:v0.5.0
+    image: fedimint/fedimintd:v0.10.0
     container_name: sf-guardian-1
     restart: unless-stopped
     environment:
@@ -99,6 +102,9 @@ services:
       - FM_P2P_URL=fedimintd-1:18175
       - FM_API_URL=ws://fedimintd-1:18176
       - FM_BITCOIN_RPC_KIND=none
+      # v0.10.0 ConnectorRegistry — Iroh networking
+      - FM_TRANSPORT=iroh
+      - FM_IROH_DISCOVERY=dns
     ports:
       - "18175:18175"
       - "18176:18176"
@@ -107,9 +113,9 @@ services:
     networks:
       - sovereign
 
-  # === Fedimint Guardian 3 ===
+  # === Fedimint Guardian 3 — v0.10.0 Lighthouse ===
   fedimintd-2:
-    image: fedimint/fedimintd:v0.5.0
+    image: fedimint/fedimintd:v0.10.0
     container_name: sf-guardian-2
     restart: unless-stopped
     environment:
@@ -118,6 +124,9 @@ services:
       - FM_P2P_URL=fedimintd-2:18177
       - FM_API_URL=ws://fedimintd-2:18178
       - FM_BITCOIN_RPC_KIND=none
+      # v0.10.0 ConnectorRegistry — Iroh networking
+      - FM_TRANSPORT=iroh
+      - FM_IROH_DISCOVERY=dns
     ports:
       - "18177:18177"
       - "18178:18178"
