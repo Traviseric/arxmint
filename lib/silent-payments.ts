@@ -578,7 +578,7 @@ export function generateSPDescriptor(
 export function buildSPPSBTFields(
   recipientAddress: string,
   outpoints: Array<{ txid: string; vout: number }>,
-  scanPubKey: string
+  _scanPubKey: string
 ): SPPSBTField {
   // In production, compute ECDH shared secret and derive output key
   // For now, create the PSBT field structure

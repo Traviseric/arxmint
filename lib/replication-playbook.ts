@@ -299,7 +299,7 @@ function generateMerchantSection(config: CommunityConfig, kpis: PilotKPITargets)
   };
 }
 
-function generateMonitoringSection(config: CommunityConfig): PlaybookSection {
+function generateMonitoringSection(_config: CommunityConfig): PlaybookSection {
   return {
     id: "monitoring",
     title: "Monitoring & Alerts",
