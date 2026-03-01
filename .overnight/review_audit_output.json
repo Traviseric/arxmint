@@ -3,275 +3,56 @@
   "next_box": "CONDUCTOR",
   "context": {
     "audit_type": "review",
-    "tasks_reviewed": 24,
-    "verified": 23,
-    "partial": 1,
+    "tasks_reviewed": 4,
+    "verified": 4,
+    "partial": 0,
     "fake": 0,
     "broken": 0,
     "missing": 0,
     "build_passes": true,
     "tests_pass": true,
-    "test_results": {
-      "total": 321,
-      "pass": 260,
-      "fail": 0,
-      "skipped": 61
-    },
-    "verification_score": 96,
+    "verification_score": 100,
     "findings": [
       {
-        "task_id": "133-P2-add-focus-trap-to-nostr-login-dropdown",
-        "worker": "worker_001",
-        "worker_claim": "Added focus trap to nostr-login dropdown with Tab/Shift+Tab cycling, Escape closes, focus return, aria-expanded, aria-haspopup, role=dialog, aria-modal",
+        "task_id": "156-P0-fix-privacy-defaults-test-expectations",
+        "worker": "WORKER_001",
+        "commit": "f32d9e6",
+        "worker_claim": "Updated test expectations in tests/privacy-defaults.test.ts: fedimintScore 65→40, cashuScore 80→55 to match CoinJoin/PayJoin gating. 260 tests pass, 0 fail.",
         "verdict": "VERIFIED",
-        "evidence": "handleKeyDown with Tab/ShiftTab cycling at lines 74-100, Escape handler line 75, wasOpenRef focus return lines 39-44, aria-expanded/aria-haspopup on triggers, role=dialog/aria-modal on panel",
-        "file": "components/nostr-login.tsx"
+        "evidence": "Git diff confirms exactly 4 lines changed in tests/privacy-defaults.test.ts: (1) assert.equal(fedimintScore, 65) → assert.equal(fedimintScore, 40) at line 27, (2) assert.equal(cashuScore, 80) → assert.equal(cashuScore, 55) at line 29, (3) comments updated to mention CoinJoin + PayJoin exclusions. No other files touched. npm test confirms 260 pass, 0 fail, 61 skipped. npm run build succeeds (14 routes). No TODOs, FIXMEs, or stubs introduced. All 5 acceptance criteria met."
       },
       {
-        "task_id": "136-P2-add-mobile-hamburger-menu-nav-bar",
-        "worker": "worker_001",
-        "worker_claim": "Added mobile hamburger menu with useState, Menu icon, mobileOpen state, hamburger button with aria-label/aria-expanded, dropdown with links",
+        "task_id": "153-P0-gate-coinjoin-payjoin",
+        "worker": "WORKER_001",
+        "commit": "82fa17e",
+        "previous_verdict": "BROKEN",
         "verdict": "VERIFIED",
-        "evidence": "mobileOpen state line 15, Menu import line 10, hamburger button lines 89-96 with aria-label and aria-expanded, mobile dropdown lines 101-119 with Why/Whitepaper links, sm:hidden responsive",
-        "file": "components/nav-bar.tsx"
+        "evidence": "Previously marked BROKEN because test expectations were stale (round 75 audit). Task 156 (commit f32d9e6) fixed the test expectations. Implementation in lib/privacy-defaults.ts is correct and tests now pass. Upgrading verdict from BROKEN to VERIFIED."
       },
       {
-        "task_id": "138-P3-add-skip-to-main-content-link-layout",
-        "worker": "worker_001",
-        "worker_claim": "Added sr-only skip-to-main-content link before NavBar, id=main on main element",
+        "task_id": "154-P1-add-demo-disclaimer",
+        "worker": "WORKER_002",
+        "commit": "807970d",
+        "previous_verdict": "VERIFIED",
         "verdict": "VERIFIED",
-        "evidence": "Skip link lines 47-52 with sr-only + focus:not-sr-only, href=#main, id=main on main element at line 57",
-        "file": "app/layout.tsx"
+        "evidence": "No changes since last audit. Previous VERIFIED verdict stands."
       },
       {
-        "task_id": "139-P3-add-aria-labels-to-external-links-landing-page",
-        "worker": "worker_002",
-        "worker_claim": "Added aria-label with opens in new window to GitHub links, ExternalLink icon, aria-hidden on decorative icons",
+        "task_id": "155-P3-add-nfc-browser-detection-fallback",
+        "worker": "WORKER_003",
+        "commit": "f031cc4",
+        "previous_verdict": "PARTIAL",
         "verdict": "VERIFIED",
-        "evidence": "Line 153: aria-label='View Source on GitHub (opens in new window)', line 539: aria-label='Audit Code on GitHub (opens in new window)', aria-hidden=true on Github and ExternalLink icons",
-        "file": "app/page.tsx"
-      },
-      {
-        "task_id": "128-P1-increase-muted-text-contrast-globals-css",
-        "worker": "worker_003",
-        "worker_claim": "Changed --text-muted from #737373 to #909090 in globals.css, aligned tailwind text.muted",
-        "verdict": "VERIFIED",
-        "evidence": "globals.css line 21: --text-muted: #909090; tailwind.config.ts line 31: muted: '#909090'",
-        "file": "app/globals.css"
-      },
-      {
-        "task_id": "137-P2-fix-active-tab-and-error-text-contrast",
-        "worker": "worker_003",
-        "worker_claim": "Active tab changed from text-btc-orange to text-sovereign-text + border-b-2 border-btc-orange, error alert upgraded to text-red-200/bg-red-900/40",
-        "verdict": "VERIFIED",
-        "evidence": "Dashboard line 159: active tab has text-sovereign-text border-b-2 border-btc-orange. Error alert in create-community-form uses text-red-200 bg-red-900/40 border-red-500/50",
-        "file": "app/dashboard/page.tsx"
-      },
-      {
-        "task_id": "121-P0-fix-merchant-false-success-on-db-failure",
-        "worker": "worker_002",
-        "worker_claim": "Catch block no longer calls setStep('complete') on DB failure, user stays on review step with retry message",
-        "verdict": "VERIFIED",
-        "evidence": "Lines 472-481: catch block shows error message and explicitly does NOT call setStep('complete'); comment at line 478 confirms intent",
-        "file": "components/merchant-onboard.tsx"
-      },
-      {
-        "task_id": "134-P2-add-inline-validation-and-aria-to-merchant-onboard",
-        "worker": "worker_002",
-        "worker_claim": "Added fieldErrors state, validateField() function, onBlur validation, role=alert error paragraphs with aria-describedby",
-        "verdict": "VERIFIED",
-        "evidence": "fieldErrors state line 75, validateField lines 77-88, onBlur at lines 192/241/274, role=alert paragraphs at lines 198/256/280 with aria-describedby linking",
-        "file": "components/merchant-onboard.tsx"
-      },
-      {
-        "task_id": "120-P0-add-retry-button-on-generation-error",
-        "worker": "worker_001",
-        "worker_claim": "Added Retry button to error alert that calls handleGenerate without clearing form state",
-        "verdict": "VERIFIED",
-        "evidence": "Lines 188-193: button with onClick={handleGenerate}, text 'Retry', sovereign-btn-outline styling, inside role=alert div",
-        "file": "components/create-community-form.tsx"
-      },
-      {
-        "task_id": "122-P0-fix-password-input-label-associations-wallet-panel",
-        "worker": "worker_003",
-        "worker_claim": "All 11 label+input pairs have htmlFor/id associations throughout wallet-panel",
-        "verdict": "VERIFIED",
-        "evidence": "All 11 htmlFor/id pairs confirmed: receive-qr-amount, receive-qr-memo, send-amount, invoice-amount, invoice-memo, invoice-bolt11, lnc-pairing-phrase, lnc-password, lnc-signer-url, lnc-signer-tls-cert, lnc-signer-macaroon",
-        "file": "components/wallet-panel.tsx"
-      },
-      {
-        "task_id": "127-P1-add-error-feedback-record-transaction-wallet-panel",
-        "worker": "worker_003",
-        "worker_claim": "Added txRecordError state with amber dismissible warning banner in ReceivePanel, SendPanel, InvoicePanel",
-        "verdict": "VERIFIED",
-        "evidence": "txRecordError state at lines 246/491/687, amber warning banners at lines 467-472/663-668/878-883 with border-yellow-500/30 bg-yellow-500/10 text-yellow-400 and dismiss button",
-        "file": "components/wallet-panel.tsx"
-      },
-      {
-        "task_id": "129-P2-add-loading-state-cashu-ln-connection-wallet-panel",
-        "worker": "worker_003",
-        "worker_claim": "Added isConnecting + connectStatus state to CashuConnect and LightningConnect with Loader2 spinner",
-        "verdict": "VERIFIED",
-        "evidence": "CashuConnect isConnecting/connectStatus at lines 1095-1096, loading display lines 1181-1186. LightningConnect at lines 1211-1212 and 1410-1415. Both use Loader2 spinner with aria-live=polite",
-        "file": "components/wallet-panel.tsx"
-      },
-      {
-        "task_id": "107-P0-fix-l402-agent-route-auth-bypass",
-        "worker": "worker_001",
-        "worker_claim": "L402 agent route now requires X-Aperture-Verified header matching APERTURE_SHARED_SECRET",
-        "verdict": "VERIFIED",
-        "evidence": "app/api/agent/route.ts lines 88-91: checks X-Aperture-Verified header against APERTURE_SHARED_SECRET env var",
-        "file": "app/api/agent/route.ts"
-      },
-      {
-        "task_id": "108-P0-require-auth-settlement-post",
-        "worker": "worker_001",
-        "worker_claim": "POST /api/settlement requires auth (session cookie, Bearer JWT, or X-Marketplace-Secret)",
-        "verdict": "VERIFIED",
-        "evidence": "app/api/settlement/route.ts lines 105-111: getCallerFromRequest() + 401 if !caller",
-        "file": "app/api/settlement/route.ts"
-      },
-      {
-        "task_id": "109-P0-remove-hardcoded-session-secret-fallback",
-        "worker": "worker_001",
-        "worker_claim": "Removed hardcoded secret fallbacks; production throws hard error, dev uses ephemeral key",
-        "verdict": "VERIFIED",
-        "evidence": "auth-middleware.ts lines 27-43 and middleware.ts lines 28-40: production throws FATAL error if NEXTAUTH_SECRET missing, dev-only ephemeral key",
-        "file": "lib/auth-middleware.ts"
-      },
-      {
-        "task_id": "110-P0-return-503-when-macaroon-root-key-absent",
-        "worker": "worker_001",
-        "worker_claim": "/api/l402 returns 503 in production when MACAROON_ROOT_KEY absent",
-        "verdict": "VERIFIED",
-        "evidence": "app/api/l402/route.ts lines 48-56: requireMacaroonKey() returns 503 'Service temporarily unavailable' in production",
-        "file": "app/api/l402/route.ts"
-      },
-      {
-        "task_id": "100-P1-add-rate-limiting-api-endpoints",
-        "worker": "worker_001",
-        "worker_claim": "Edge-safe rate limiting in middleware.ts with payment/auth/public tiers",
-        "verdict": "VERIFIED",
-        "evidence": "lib/rate-limit.ts exists with checkRateLimit function. middleware.ts imports and applies rate limiting to all API routes",
-        "file": "lib/rate-limit.ts"
-      },
-      {
-        "task_id": "101-P1-add-input-validation-structured-errors",
-        "worker": "worker_001",
-        "worker_claim": "Full input validation + errorResponse() across 7 API routes",
-        "verdict": "VERIFIED",
-        "evidence": "lib/validation.ts lines 1-103: validators for community name, prompt, amount, cashu token, merchant data, plus errorResponse with no stack traces in prod",
-        "file": "lib/validation.ts"
-      },
-      {
-        "task_id": "102-P1-add-structured-logging",
-        "worker": "worker_001",
-        "worker_claim": "Structured JSON logger with payment/auth/rateLimit methods, zero secrets logged",
-        "verdict": "VERIFIED",
-        "evidence": "lib/logger.ts lines 1-77: JSON stdout logging, specialized methods (payment, auth, rateLimit), never logs cashu proof secrets/tokens/preimages",
-        "file": "lib/logger.ts"
-      },
-      {
-        "task_id": "103-P1-add-pilot-value-caps",
-        "worker": "worker_001",
-        "worker_claim": "Value caps enforced in payment, l402, settlement, transactions routes",
-        "verdict": "VERIFIED",
-        "evidence": "lib/value-caps.ts lines 1-72: getValueCaps, checkSingleTxCap, checkDailyVolumeCap, checkWalletBalanceCap. Used in settlement and l402 routes",
-        "file": "lib/value-caps.ts"
-      },
-      {
-        "task_id": "098-P2-fix-silent-db-error-swallow-wallet-panel",
-        "worker": "worker_002",
-        "worker_claim": "Replaced silent catch with txLoadError state and visible error message",
-        "verdict": "VERIFIED",
-        "evidence": "wallet-panel.tsx lines 898/923-927: txLoadError state, error display sovereign-card with muted text instead of swallowed error",
-        "file": "components/wallet-panel.tsx"
-      },
-      {
-        "task_id": "113-P1-persist-payment-challenges-to-db",
-        "worker": "worker_003",
-        "worker_claim": "Added PaymentChallenge model to Prisma schema, DB fallback in payment routes",
-        "verdict": "VERIFIED",
-        "evidence": "prisma/schema.prisma lines 120-132: PaymentChallenge model. Used in l402 route and payment routes for persistent challenge recovery",
-        "file": "prisma/schema.prisma"
-      },
-      {
-        "task_id": "097-P1-fix-catch-e-any-error-handling-patterns",
-        "worker": "worker_002",
-        "worker_claim": "Fixed all 16 catch(e:any) instances across 7 files",
-        "verdict": "PARTIAL",
-        "evidence": "All 7 claimed files verified: zero catch(e:any) remains in them. However 9 catch(e:any) instances remain in OTHER files not covered by this task: seed-restore.tsx, health/route.ts (3x), transactions/route.ts, merchant-onboard.tsx, merchants/route.ts, community/route.ts, create-community-form.tsx. Worker accurately fixed what they claimed, but the task title implied fixing ALL patterns.",
-        "file": "components/seed-restore.tsx, app/api/health/route.ts, app/api/transactions/route.ts",
-        "fix_needed": "9 remaining catch(e:any) instances need conversion to catch(e:unknown) with instanceof Error guards"
-      },
-      {
-        "task_id": "140-P3-wrap-gsap-animations-with-reduced-motion-check",
-        "worker": "worker_001",
-        "worker_claim": "GSAP scroll animations wrapped with prefers-reduced-motion check",
-        "verdict": "VERIFIED",
-        "evidence": "app/page.tsx line 53: prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; if (prefersReducedMotion) return;",
-        "file": "app/page.tsx"
+        "evidence": "Upgrading from PARTIAL to VERIFIED. The pre-existing TODO at line 701 was already present before this task and the task spec explicitly says 'Do NOT attempt real navigator.nfc.write() integration'. All 6 acceptance criteria are met. The TODO is by-design, not a missing implementation."
       }
     ],
-    "technical_debt_notes": [
-      {
-        "type": "TODO",
-        "file": "lib/auth-middleware.ts",
-        "line": 118,
-        "note": "TODO: implement DB-backed blocklist for immediate token revocation. Currently tokens expire naturally (7d). Medium priority.",
-        "severity": "medium"
-      },
-      {
-        "type": "STUB_MODE",
-        "file": "lib/ark-sdk.ts",
-        "note": "SovereignArkClient intentionally in stub mode pending upstream @arkade-os/sdk maturity. Documented in roadmap phase 2.2.",
-        "severity": "low"
-      },
-      {
-        "type": "PLACEHOLDER",
-        "file": "lib/silent-payments.ts",
-        "line": 122,
-        "note": "BIP-352 Silent Payments uses placeholder key derivation instead of real Bech32m decoding. Documented in roadmap.",
-        "severity": "low"
-      },
-      {
-        "type": "DEV_FALLBACK",
-        "files": ["app/api/l402/route.ts", "lib/payment-sdk.ts", "app/api/settlement/route.ts"],
-        "note": "Placeholder invoices in dev mode — all guarded by NODE_ENV !== production check. Not a production risk.",
-        "severity": "info"
-      },
-      {
-        "type": "REMAINING_CATCH_ANY",
-        "count": 9,
-        "files": [
-          "components/seed-restore.tsx:77",
-          "app/api/health/route.ts:26,42,67",
-          "app/api/transactions/route.ts:30",
-          "components/merchant-onboard.tsx:437",
-          "app/api/merchants/route.ts:27",
-          "app/api/community/route.ts:24",
-          "components/create-community-form.tsx:66"
-        ],
-        "note": "Task 097 fixed its claimed 7 files correctly, but these 9 additional instances remain.",
-        "severity": "low"
-      }
-    ],
-    "new_tasks": [
-      {
-        "title": "Fix remaining catch(e:any) patterns in 6 files",
-        "description": "Task 097 fixed 16 instances across 7 files but 9 instances remain in seed-restore.tsx, health/route.ts (3x), transactions/route.ts, merchant-onboard.tsx, merchants/route.ts, community/route.ts, create-community-form.tsx. Convert to catch(e:unknown) with instanceof Error guards for type safety.",
-        "priority": "low",
-        "files": [
-          "components/seed-restore.tsx",
-          "app/api/health/route.ts",
-          "app/api/transactions/route.ts",
-          "components/merchant-onboard.tsx",
-          "app/api/merchants/route.ts",
-          "app/api/community/route.ts",
-          "components/create-community-form.tsx"
-        ]
-      }
-    ],
-    "summary": "23/24 tasks fully VERIFIED. 1 PARTIAL (task 097 fixed its claimed 7 files but 9 catch(any) instances remain in uncovered files). Zero FAKE, BROKEN, or MISSING implementations. Build compiles all routes successfully. Tests: 321 total, 260 pass, 0 fail, 61 skipped. No stubs, no empty function bodies, no hardcoded values in place of real logic. All security fixes (auth bypass, hardcoded secrets, rate limiting, value caps) confirmed correctly implemented. Technical debt is limited to documented roadmap items (Ark SDK stub mode, Silent Payments placeholder) and one medium-priority TODO for token revocation blocklist."
+    "new_tasks": [],
+    "test_results": {
+      "pass": 260,
+      "fail": 0,
+      "skipped": 61,
+      "total": 321
+    },
+    "summary": "4 tasks reviewed across this overnight run. All 4 VERIFIED. Task 156 (P0 fix for stale test expectations) confirmed: git diff shows exactly the 2-line assertion fix (fedimintScore 65→40, cashuScore 80→55), npm test passes 260/260, build succeeds. Task 153 upgraded from BROKEN→VERIFIED now that its test expectations are fixed. Task 155 upgraded from PARTIAL→VERIFIED (pre-existing TODO is by-design per task spec). No new fix tasks needed. All clear for SWITCH_PROJECT."
   }
 }

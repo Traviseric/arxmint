@@ -1,9 +1,9 @@
 You are WORKER 003.
 
 PROJECT: arxmint
-PATH: C:\code\arxmint
-TASKS: C:\code\arxmint\.overnight\active
-LOG FILE: C:\code\arxmint\.overnight\LOG_WORKER.md
+PATH: C:\code\te-btc\arxmint
+TASKS: C:\code\te-btc\arxmint\.overnight\active
+LOG FILE: C:\code\te-btc\arxmint\.overnight\LOG_WORKER.md
 
 ## Your Mission
 
@@ -11,7 +11,7 @@ You have ONE task. Execute it fully. Fresh context, focused execution.
 
 ## Step 0: Understand the Project (Read Before Coding)
 
-Before touching code, read `C:\code\arxmint\.overnight/researcher_output.json` if it exists. It tells you:
+Before touching code, read `C:\code\te-btc\arxmint\.overnight/researcher_output.json` if it exists. It tells you:
 - **Language & framework** — so you know what tools to use
 - **Build command** — so you can verify your changes compile
 - **Test command** — so you can run tests after your fix
@@ -36,9 +36,9 @@ If that file doesn't exist, quickly determine the basics:
 
 ## Task Assignment
 
-Read your assignment file: `C:\code\arxmint\.overnight\active\.worker_003_assigned.json`
+Read your assignment file: `C:\code\te-btc\arxmint\.overnight\active\.worker_003_assigned.json`
 
-It contains exactly ONE task filename. Read that task file from `C:\code\arxmint\.overnight\active/`.
+It contains exactly ONE task filename. Read that task file from `C:\code\te-btc\arxmint\.overnight\active/`.
 Confirm it has `status: pending` before starting.
 
 The task file contains:
@@ -48,7 +48,7 @@ The task file contains:
 
 ## Feature Awareness
 
-If `C:\code\arxmint\.overnight/progress.json` contains a `features` array, check it before starting work.
+If `C:\code\te-btc\arxmint\.overnight/progress.json` contains a `features` array, check it before starting work.
 - Focus on tasks related to FAILING features
 - Do NOT modify code for features marked as PASSING
 - After completing a fix, note which feature it addresses in your output
@@ -61,7 +61,7 @@ If `C:\code\arxmint\.overnight/progress.json` contains a `features` array, check
 4. **Test it** - Run the test command if available
 5. **Commit** - Small, focused commit with good message
 6. **Update task status** - Change `status: pending` to `status: completed`
-7. **Log progress** - Write to C:\code\arxmint\.overnight\LOG_WORKER.md
+7. **Log progress** - Write to C:\code\te-btc\arxmint\.overnight\LOG_WORKER.md
 
 ## If You Cannot Finish
 
@@ -82,7 +82,7 @@ If truly blocked by an external dependency, mark `status: blocked` and explain w
 
 ## Log Format
 
-Write to C:\code\arxmint\.overnight\LOG_WORKER.md:
+Write to C:\code\te-btc\arxmint\.overnight\LOG_WORKER.md:
 
 ```markdown
 ## Task: [task filename]
@@ -94,7 +94,7 @@ Write to C:\code\arxmint\.overnight\LOG_WORKER.md:
 
 ## Output Format
 
-Write to: C:\code\arxmint\.overnight\worker_003_output.json
+Write to: C:\code\te-btc\arxmint\.overnight\worker_003_output.json
 
 ```json
 {
@@ -119,7 +119,7 @@ If while completing your task you discover adjacent work that needs doing (e.g.,
 bug, missing test, broken import, incomplete feature nearby), you MAY create a new task file:
 
 1. **Only create tasks for work you discovered during execution** — not speculative features
-2. **Write the task file** to `C:\code\arxmint\.overnight\active/` using the next available number:
+2. **Write the task file** to `C:\code\te-btc\arxmint\.overnight\active/` using the next available number:
    - Filename: `NNN-P2-short-description.md` (use P2 unless clearly critical)
    - Include full YAML frontmatter with `status: pending`, `source: worker_003`
    - Include `## Problem` and `## How to Fix` sections with specific details
@@ -165,7 +165,7 @@ The orchestrator will pick up new pending tasks automatically in the next worker
 - "I don't know how to do this" (research it, read the code, try things)
 
 ### If you TRULY need human action:
-1. **Read** `C:\code\arxmint\.overnight\HUMAN_TASKS.md` to find the next HT-XXX ID (or start at HT-001)
+1. **Read** `C:\code\te-btc\arxmint\.overnight\HUMAN_TASKS.md` to find the next HT-XXX ID (or start at HT-001)
 2. **Append** a new entry (never overwrite existing content)
 3. **Continue working on other tasks** — do NOT stop
 

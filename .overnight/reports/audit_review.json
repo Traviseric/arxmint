@@ -280,5 +280,26 @@
     "tasks_created": 0,
     "task_id_range": "none",
     "total_tasks_all_rounds": 80
+  },
+  "round_16_test_fix": {
+    "run_at": "2026-02-28T26:00:00Z",
+    "session": "task_synthesizer_round_16_review_audit_test_fix",
+    "sources_synthesized": ["review_audit_new_tasks"],
+    "conductor_instructions": "REVIEW_AUDIT (round 75) found 1 BROKEN task: task 153 (CoinJoin/PayJoin gating) implementation correct but tests/privacy-defaults.test.ts NOT updated. npm test FAILS. Create P0 task to fix 2 stale assertions.",
+    "findings_reviewed": 1,
+    "new_tasks_accepted": 1,
+    "new_tasks_rejected": 0,
+    "new_tasks_deferred": 0,
+    "tasks_created": 1,
+    "task_id_range": "156",
+    "new_tasks": ["156-P0"],
+    "accepted_items": [
+      {
+        "id": "156",
+        "finding": "tests/privacy-defaults.test.ts:28 — fedimintScore expects 65 (actual 40), cashuScore expects 80 (actual 55) after task 153 gated CoinJoin/PayJoin as not-yet-implemented",
+        "reason": "2-line fix that unblocks npm test and the SWITCH_PROJECT validation gate. VERIFIED real by review_audit: AssertionError: 40 !== 65."
+      }
+    ],
+    "total_tasks_all_rounds": 84
   }
 }

@@ -5,12 +5,9 @@
     "completed": 1,
     "blocked": 0,
     "in_progress": 0,
-    "commits": ["fc99c6f"],
-    "files_changed": [
-      "docs/tracking/upstream-deps.md",
-      ".overnight/active/149-P3-create-upstream-dependency-tracking.md"
-    ],
-    "task_file": "149-P3-create-upstream-dependency-tracking.md",
+    "commits": ["807970d"],
+    "files_changed": ["app/api/agent/route.ts"],
+    "task_file": "154-P1-add-demo-disclaimer-to-agent-compute-data-endpoints.md",
     "blockers": [],
     "follow_up_tasks": []
   }

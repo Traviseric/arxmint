@@ -1,32 +1,38 @@
 {
   "success": true,
-  "next_box": "TASK_SYNTHESIZER",
+  "next_box": "REVIEW_AUDIT",
   "next_workflow": null,
   "context": {
     "project_slug": "arxmint",
-    "project_path": "C:\\code\\arxmint",
-    "relay_dir": "C:\\code\\arxmint\\.overnight",
-    "phase": "synthesize",
-    "decision_reason": "Priority tier 3 (missing critical features): Feature coverage confirmed at 70% (fresh feature_audit at round 70 just ran). SWITCH_PROJECT gate requires 90%+. Critical finding: TASK_SYNTHESIZER last ran at round 64 which was BEFORE the fresh feature_audit at round 70 — these 12 new feature_audit findings have NOT yet been synthesized into worker tasks. Several findings are LOW EFFORT and directly implementable without external APIs or infrastructure: (1) CoinJoin/PayJoin label 'coming soon/roadmap' in privacy dashboard UI — just a label/UI change, currently critical misleading claim; (2) Gate Ark VTXO behind 'experimental' flag in UI and spend-router.ts — low effort; (3) Add 'demo endpoint' disclaimer to agent compute/data responses and remove from agent pricing table — low effort; (4) Add MVRV/NUPL cycle dashboard disclaimer noting approximate signals — low effort; (5) Add NFC browser detection fallback with clear unsupported browser message in merchant-onboard.tsx — low-medium effort; (6) Verify L402 challenge persistence (task 117 marked complete but feature_audit still flags in-memory Map). These changes can raise coverage from 70% to 85-90%+. All 82 existing tasks are completed — WORKER is idle and ready. Routing to TASK_SYNTHESIZER with guidance to generate only low-effort disclaimer/label/gating tasks.",
+    "project_path": "C:\\code\\te-btc\\arxmint",
+    "relay_dir": "C:\\code\\te-btc\\arxmint\\.overnight",
+    "phase": "evaluate",
+    "decision_reason": "Priority tier: core_flow. WORKER (round 78) completed task 156 — fixed privacy-defaults test expectations (assert.equal fedimintScore: 65→40, cashuScore: 80→55). Worker confirms 260 tests pass, 0 fail. Standard protocol after WORKER is REVIEW_AUDIT to verify the fix is real. Previous REVIEW_AUDIT (round 75) found BROKEN due to failing tests (task 153 correct but test not updated). Task 156 was the P0 fix created by that audit. After REVIEW_AUDIT confirms task 156 VERIFIED and tests passing, route to HUMAN_PREP → SWITCH_PROJECT. All 5 audit types completed, all recent tasks (153, 154, 155, 156) are completed.",
     "what_you_read": [
       ".overnight/CONDUCTOR_TASK.md",
       ".overnight/progress.json",
       ".overnight/decision_log.jsonl",
-      ".overnight/feature_audit_output.json",
-      ".overnight/human_prep_output.json",
-      ".overnight/switch_blocked.json",
-      ".overnight/active/ (glob, 82 files, all status:completed)",
-      ".overnight/active/116-P1-wire-agent-privacy-audit.md (completed)",
-      ".overnight/active/120-P0-add-retry-button.md (completed)",
-      ".overnight/active/145-P1-create-generate-secrets.md (completed)",
-      ".overnight/active/151-P2-update-human-tasks.md (completed)",
-      ".overnight/active/152-P2-update-overnight-tasks.md (completed)"
+      ".overnight/active/156-P0-fix-privacy-defaults-test-expectations.md",
+      ".overnight/active/153-P0-gate-coinjoin-payjoin-as-not-yet-implemented.md",
+      ".overnight/active/154-P1-add-demo-disclaimer-to-agent-compute-data-endpoints.md",
+      ".overnight/active/155-P3-add-nfc-browser-detection-fallback-merchant-onboard.md",
+      ".overnight/worker_001_output.json",
+      ".overnight/review_audit_output.json"
     ],
-    "what_you_learned": "All 82 active task files are status:completed — no pending work. Feature coverage is 70% (17 complete, 6 partial, 3 missing, 4 stub out of 30 features) from round 70 feature_audit. TASK_SYNTHESIZER ran at round 64 BEFORE this fresh feature_audit, so the 12 findings in feature_audit_output.json have NOT been synthesized yet. Low-effort label/disclaimer/gating changes can close the coverage gap. SWITCH_PROJECT blocked by Python gate on 18 HT items — confirmed NOT automatable (pilot deployments, VPS provisioning, API keys, NFC hardware). Raising feature coverage to 90%+ is the correct path to clearing the gate.",
+    "what_you_learned": "Task 156 (P0 test fix) is completed. Worker confirms npm test: 260 pass, 0 fail. Previous review audit (round 75) found tests FAILING due to stale assertions after CoinJoin/PayJoin gating. That P0 blocker is now fixed. All recent tasks (153, 154, 155, 156) are completed. All 5 audits completed. SWITCH_PROJECT was previously blocked by Python due to failing tests + potentially automatable human tasks. Tests are now passing. REVIEW_AUDIT needed to confirm task 156 fix is real before attempting SWITCH_PROJECT.",
     "stuck_rounds": 0,
     "confidence": "high",
-    "sources_to_synthesize": ["feature_audit"],
-    "synthesis_guidance": "Read feature_audit_output.json. Generate tasks ONLY for findings that are NOT known false positives. LOW EFFORT targets: (1) CoinJoin/PayJoin — add 'coming soon' label/badge in lib/privacy-defaults.ts and privacy dashboard UI, do NOT implement the protocol; (2) Ark VTXO — add isExperimental flag or UI gating in lib/spend-router.ts and privacy dashboard, do NOT implement the full SDK; (3) Agent compute/data endpoints — add 'demo' field to API response JSON and remove from agent pricing table copy, do NOT build real job queue; (4) Cycle MVRV/NUPL — add disclaimer constant and display it in cycle dashboard, do NOT integrate Glassnode; (5) Merchant NFC — add typeof navigator.nfc check with fallback message UI; (6) L402 challenge persistence — verify app/api/l402/route.ts actually uses Prisma PaymentChallenge table (task 117 complete but feature audit still flags in-memory Map). SKIP: real job queue implementation, Glassnode API integration, pilot deployments, Ark SDK full integration, hardware procurement. NOTE: do NOT re-generate tasks for items already in the known_false_positives list in CONDUCTOR_TASK.md.",
-    "note_for_next_conductor": "After TASK_SYNTHESIZER + WORKER: re-run FEATURE_AUDIT to check if coverage improved to 90%+. If yes -> HUMAN_PREP -> SWITCH_PROJECT. If still below 90% and truly no more automatable work -> accept gate will stay blocked, HUMAN_PREP -> SWITCH_PROJECT anyway (Python gate may still block but all agent work is exhausted). The 18 HT blocking items are NOT automatable by agents."
+    "tasks_verified": {
+      "153_coinjoin_payjoin_gating": "completed",
+      "154_demo_disclaimer": "completed",
+      "155_nfc_detection": "completed",
+      "156_test_expectations_fix": "completed"
+    },
+    "test_status": {
+      "pass": 260,
+      "fail": 0,
+      "from": "worker_001_output.json round 78"
+    },
+    "after_review_audit": "If VERIFIED → HUMAN_PREP → SWITCH_PROJECT. If new issues found → TASK_SYNTHESIZER → WORKER cycle."
   }
 }

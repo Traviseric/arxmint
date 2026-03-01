@@ -5,12 +5,9 @@
     "completed": 1,
     "blocked": 0,
     "in_progress": 0,
-    "commits": ["83b92a3"],
-    "files_changed": [
-      "docs/grants/fbce-outreach.md",
-      ".overnight/active/150-P3-draft-fbce-outreach-email.md"
-    ],
-    "task_file": "150-P3-draft-fbce-outreach-email.md",
+    "commits": ["f031cc4"],
+    "files_changed": ["components/merchant-onboard.tsx"],
+    "task_file": "155-P3-add-nfc-browser-detection-fallback-merchant-onboard.md",
     "blockers": [],
     "follow_up_tasks": []
   }

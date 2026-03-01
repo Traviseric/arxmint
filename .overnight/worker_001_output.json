@@ -5,10 +5,23 @@
     "completed": 1,
     "blocked": 0,
     "in_progress": 0,
-    "commits": ["7da9079"],
-    "files_changed": ["OVERNIGHT_TASKS.md"],
-    "task_file": "152-P2-update-overnight-tasks-md-checkboxes.md",
-    "blockers": [],
-    "follow_up_tasks": []
+    "tasks": [
+      {
+        "file": "156-P0-fix-privacy-defaults-test-expectations.md",
+        "status": "completed",
+        "commit": "f32d9e6"
+      }
+    ],
+    "commits": ["f32d9e6"],
+    "files_changed": ["tests/privacy-defaults.test.ts"],
+    "session_tasks_assigned": 1,
+    "session_tasks_completed": 1,
+    "follow_up_tasks": [],
+    "test_results": {
+      "pass": 260,
+      "fail": 0,
+      "skipped": 61,
+      "total": 321
+    }
   }
 }

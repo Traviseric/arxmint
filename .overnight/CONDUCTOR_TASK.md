@@ -16,8 +16,8 @@ Your job is to read state, decide what happens next, and write your decision to 
 ---
 
 PROJECT: arxmint
-PATH: C:\code\arxmint
-RELAY DIR: C:\code\arxmint\.overnight
+PATH: C:\code\te-btc\arxmint
+RELAY DIR: C:\code\te-btc\arxmint\.overnight
 STAGE: unknown (0%)
 SCORE VALIDATION: completion_pct (0%) is SELF-REPORTED and has NEVER been validated. Run `reality_check` workflow before trusting this number.
 
@@ -44,13 +44,6 @@ This is a HARD gate — you cannot override it. You must address the issues firs
 - Ended: 2026-02-28T00:30:50.045946
 
 ## This Session's Decision History
-  Round 47: WORKER → productive (findings=0, tasks=3)
-  Round 48: CONDUCTOR → unproductive (findings=0, tasks=0)
-  Round 50: HUMAN_PREP → unproductive (findings=0, tasks=0)
-  Round 51: CONDUCTOR → productive (findings=0, tasks=0)
-  Round 53: CONDUCTOR → unproductive (findings=0, tasks=0)
-  Round 54: TASK_SYNTHESIZER → productive (findings=0, tasks=4)
-  Round 55: WORKER → productive (findings=0, tasks=4)
   Round 56: CONDUCTOR → unproductive (findings=0, tasks=0)
   Round 57: HUMAN_PREP → unproductive (findings=0, tasks=0)
   Round 58: CONDUCTOR → unproductive (findings=0, tasks=0)
@@ -64,6 +57,13 @@ This is a HARD gate — you cannot override it. You must address the issues firs
   Round 67: CONDUCTOR → unproductive (findings=0, tasks=0)
   Round 69: CONDUCTOR → unproductive (findings=0, tasks=0)
   Round 70: FEATURE_AUDIT → unproductive (findings=0, tasks=0)
+  Round 71: CONDUCTOR → unproductive (findings=0, tasks=0)
+  Round 73: WORKER → productive (findings=0, tasks=0)
+  Round 74: CONDUCTOR → unproductive (findings=0, tasks=0)
+  Round 75: REVIEW_AUDIT → unproductive (findings=0, tasks=0)
+  Round 76: CONDUCTOR → unproductive (findings=0, tasks=0)
+  Round 77: TASK_SYNTHESIZER → productive (findings=0, tasks=1)
+  Round 78: WORKER → productive (findings=0, tasks=1)
 
 **Don't repeat unproductive boxes.** If a box returned 0 findings, try a different one.
 
@@ -125,7 +125,7 @@ There is no separate EVALUATOR or ROUTER - YOU do all of that.
 
 ### 0. TASK INDEX (read BEFORE anything else)
 
-**C:\code\arxmint/TASK_INDEX.json** — Universal task registry. Any tool (PRAS, overnight,
+**C:\code\te-btc\arxmint/TASK_INDEX.json** — Universal task registry. Any tool (PRAS, overnight,
 human, external) can register findings/tasks here.
 
 Read this file first (if it exists). It tells you:
@@ -160,7 +160,7 @@ strategy + stepsToFix) which produces better task descriptions.
 
 ### 1. PROGRESS STATE (read FIRST - tells you where you are)
 
-**C:\code\arxmint\.overnight/progress.json** - Single source of truth for pipeline state:
+**C:\code\te-btc\arxmint\.overnight/progress.json** - Single source of truth for pipeline state:
 
 ```json
 {
@@ -210,36 +210,36 @@ This is how you know what works and what doesn't. READ IT.
 
 ### 2. Audit Outputs (if audits have run)
 
-**C:\code\arxmint\.overnight/*_output.json** - Results from completed audits:
+**C:\code\te-btc\arxmint\.overnight/*_output.json** - Results from completed audits:
 - `monetization_audit_output.json` - Revenue blockers
 - `security_audit_output.json` - Security issues
 - `ux_audit_output.json` - UX problems
 - `code_quality_audit_output.json` - Code quality issues
 
-### 3. Reports (if any): C:\code\arxmint\.overnight\reports/*.json
+### 3. Reports (if any): C:\code\te-btc\arxmint\.overnight\reports/*.json
    - Synthesized findings, review results
    - Issue counts by severity
 
-### 4. Tasks (if any): C:\code\arxmint\.overnight\active/*.md
+### 4. Tasks (if any): C:\code\te-btc\arxmint\.overnight\active/*.md
    - Pending tasks for workers
    - Completed vs remaining
 
-### 5. Worker Logs (if any): C:\code\arxmint\.overnight\LOG_*.md
+### 5. Worker Logs (if any): C:\code\te-btc\arxmint\.overnight\LOG_*.md
    - What workers accomplished
    - Any blockers or failures
 
 ### 6. Session Memory (CRITICAL for intelligence)
 
-**C:\code\arxmint\.overnight/HANDOFF.md** — Previous session's summary: what was accomplished, what remains,
+**C:\code\te-btc\arxmint\.overnight/HANDOFF.md** — Previous session's summary: what was accomplished, what remains,
 what approaches worked/failed, recommendations for this session. **Read this first if it exists.**
 
-**C:\code\arxmint\.overnight/decision_log.jsonl** — Every CONDUCTOR routing decision this session with outcomes.
+**C:\code\te-btc\arxmint\.overnight/decision_log.jsonl** — Every CONDUCTOR routing decision this session with outcomes.
 Shows what you already tried and whether it was productive. **Don't repeat unproductive routes.**
 
-**C:\code\arxmint\.overnight/lessons.json** — Accumulated lessons: rejected false-positive findings, fake worker
+**C:\code\te-btc\arxmint\.overnight/lessons.json** — Accumulated lessons: rejected false-positive findings, fake worker
 verdicts, unproductive box routes. **Avoid known false positives and known failure patterns.**
 
-### 7. Project Task Declarations (if any): C:\code\arxmint/OVERNIGHT_TASKS.md
+### 7. Project Task Declarations (if any): C:\code\te-btc\arxmint/OVERNIGHT_TASKS.md
    - Project's own priority list (checkbox format)
    - TASK_SYNTHESIZER will read and merge these with audit findings
    - You don't need to act on these directly — just know they exist
@@ -254,7 +254,7 @@ verdicts, unproductive box routes. **Avoid known false positives and known failu
 
 The situation briefing above gives your best 2-4 options. **If those options are sufficient, skip this section.**
 
-For unusual situations or first-time decisions, read `C:\code\arxmint\.overnight/flow_reference.md` for the full
+For unusual situations or first-time decisions, read `C:\code\te-btc\arxmint\.overnight/flow_reference.md` for the full
 list of all boxes, audit types, and workflows available. That file has stage-specific recommendations.
 
 **Quick reference — Core pipeline:**
@@ -359,7 +359,7 @@ may have already completed all tasks. Always verify the ACTUAL status of task fi
 
 ```
 BEFORE deciding to route to WORKER:
-  1. Read EVERY .md file in C:\code\arxmint\.overnight\active/
+  1. Read EVERY .md file in C:\code\te-btc\arxmint\.overnight\active/
   2. Check the `status:` field in each file's YAML frontmatter
   3. Count ONLY files with `status: pending`
 
@@ -379,7 +379,7 @@ when all 14 tasks already have `status: completed`. This wastes a full worker cy
 
 ### Post-Worker Task Triage (CRITICAL)
 
-After WORKER returns, **count task statuses** in C:\code\arxmint\.overnight\active/*.md before deciding:
+After WORKER returns, **count task statuses** in C:\code\te-btc\arxmint\.overnight\active/*.md before deciding:
 
 ```
 Read every .md file in active/ and count:
@@ -508,7 +508,7 @@ If stuck for 3+ rounds:
 
 ## Human Task Queue
 
-Read `C:\code\arxmint\.overnight\HUMAN_TASKS.md` if it exists. This file contains tasks that require
+Read `C:\code\te-btc\arxmint\.overnight\HUMAN_TASKS.md` if it exists. This file contains tasks that require
 human action (credentials, accounts, DNS, payments, etc.).
 
 ### Check for completed items:
@@ -546,7 +546,7 @@ This prevents switching away from a project with broken/faked work.
 
 ## Output Format
 
-Write your decision to: C:\code\arxmint\.overnight\conductor_output.json
+Write your decision to: C:\code\te-btc\arxmint\.overnight\conductor_output.json
 
 ```json
 {
@@ -555,8 +555,8 @@ Write your decision to: C:\code\arxmint\.overnight\conductor_output.json
   "next_workflow": "workflow_name" or null,
   "context": {
     "project_slug": "arxmint",
-    "project_path": "C:\code\arxmint",
-    "relay_dir": "C:\code\arxmint\.overnight",
+    "project_path": "C:\code\te-btc\arxmint",
+    "relay_dir": "C:\code\te-btc\arxmint\.overnight",
     "phase": "discover|audit|fix|synthesize|execute|evaluate|done",
     "decision_reason": "Why you chose this (must state priority tier: core_flow|deployment|features|polish)",
     "what_you_read": ["files you examined"],

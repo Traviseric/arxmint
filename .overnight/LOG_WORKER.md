@@ -541,3 +541,39 @@
 - **Changes:** components/nostr-login.tsx, components/nav-bar.tsx, app/layout.tsx
 - **Commit:** 9857fb1
 - **Notes:** Task 133: inline focus trap (Tab/Shift+Tab cycles within dropdown), Escape closes, focus returns to trigger; aria-expanded/aria-haspopup on trigger buttons; role=dialog/aria-modal on connected panel (WCAG 2.1.2). Task 136: mobile hamburger Menu button (block sm:hidden), mobileOpen state, absolute mobile dropdown with Why/Whitepaper links that close on click. Task 138: sr-only skip-to-main-content link before NavBar (appears on focus with btc-orange), id="main" on main element (WCAG 2.4.1). Build passes (27/27 static pages).
+
+## Task: 154-P1-add-demo-disclaimer-to-agent-compute-data-endpoints.md
+- **Status:** COMPLETE
+- **Changes:** app/api/agent/route.ts
+- **Commit:** 807970d
+- **Notes:** Added demo:true and disclaimer fields to compute and data case blocks; updated capability listing with demo_services array and demo_notice. Build passes (33/33 pages generated, pre-existing ENOENT trace collection error unrelated to this change).
+
+## Task: 154-P1-add-demo-disclaimer-to-agent-compute-data-endpoints.md
+- **Status:** COMPLETE
+- **Changes:** app/api/agent/route.ts
+- **Commit:** 807970d
+- **Notes:** Added demo:true and disclaimer fields to compute and data case blocks; updated capability listing with demo_services array and demo_notice. Build passes (33/33 pages generated).
+
+## Task: 153-P0-gate-coinjoin-payjoin-as-not-yet-implemented.md
+- **Status:** COMPLETE
+- **Changes:** lib/privacy-defaults.ts
+- **Commit:** 82fa17e
+- **Notes:** Changed coinJoin/payJoin supportedBy from "on-chain-only" to "not-yet-implemented", status from "live" to "experimental", added backendWarning messages. Gated score additions in computePrivacyScore() with isLayerAvailable(). Build pre-existing failure in /api/payment/verify unrelated to this change.
+
+## Task: 155-P3-add-nfc-browser-detection-fallback-merchant-onboard.md
+- **Status:** COMPLETE
+- **Changes:** components/merchant-onboard.tsx
+- **Commit:** f031cc4
+- **Notes:** Added `nfcSupported` detection via `typeof window !== "undefined" && "NDEFReader" in window` in NumoNFCSetup. Unsupported browsers now get a sovereign-card fallback with a clear message directing to QR code. Supported browsers (Chrome Android) see the existing provisioning UI unchanged. Build verified via `npx next build` — all routes compiled, no TypeScript errors.
+
+## Task: 155-P3-add-nfc-browser-detection-fallback-merchant-onboard.md
+- **Status:** COMPLETE
+- **Changes:** components/merchant-onboard.tsx
+- **Commit:** f031cc4
+- **Notes:** Added nfcSupported detection via NDEFReader in NumoNFCSetup. Fallback UI shown on unsupported browsers. Build verified.
+
+## Task: 156-P0-fix-privacy-defaults-test-expectations.md
+- **Status:** COMPLETE
+- **Changes:** tests/privacy-defaults.test.ts
+- **Commit:** f32d9e6
+- **Notes:** Updated two stale assertion values in 'privacy score is weighted by backend-usable layers' test. fedimintScore 65→40, cashuScore 80→55 to reflect CoinJoin(-15pts) + PayJoin(-10pts) now being unavailable on both backends after task 153 gating. npm test: 260 pass, 0 fail.

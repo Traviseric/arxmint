@@ -3,7 +3,7 @@ id: 154
 title: "Add 'demo' disclaimer to agent compute and data endpoints"
 priority: P1
 severity: high
-status: pending
+status: completed
 source: feature_audit
 file: app/api/agent/route.ts
 line: 272
