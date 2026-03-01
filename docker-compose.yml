@@ -193,7 +193,7 @@ services:
 
   # === Aperture L402 Reverse Proxy ===
   aperture:
-    image: lightninglabs/aperture:latest
+    image: lightninglabs/aperture:v0.4.2
     container_name: sf-aperture
     restart: unless-stopped
     ports:
