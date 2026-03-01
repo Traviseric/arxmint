@@ -272,11 +272,13 @@ export async function GET(request: NextRequest) {
     case "compute":
       return NextResponse.json({
         service: "compute",
+        demo: true,
+        disclaimer: "Demo endpoint — returns placeholder output. Real compute dispatch is on the roadmap.",
         paymentMethod,
         result: {
           jobId: `job_${Date.now().toString(36)}`,
           status: "completed",
-          output: "Compute task executed successfully",
+          output: "Compute task executed successfully (demo placeholder)",
           compute_units: 1,
           cost_sats: 500,
         },
@@ -286,18 +288,20 @@ export async function GET(request: NextRequest) {
     case "data":
       return NextResponse.json({
         service: "data-marketplace",
+        demo: true,
+        disclaimer: "Demo endpoint — returns placeholder dataset catalog. Real data delivery (mempool.space, Amboss) is on the roadmap.",
         paymentMethod,
         datasets: [
           {
             id: "btc-mempool-stats",
-            name: "BTC Mempool Statistics",
+            name: "BTC Mempool Stats (demo)",
             description: "Real-time mempool size, fee rates, and tx count",
             price_sats: 50,
             format: "json",
           },
           {
             id: "lightning-capacity",
-            name: "Lightning Network Capacity",
+            name: "Lightning Capacity (demo)",
             description: "Channel capacity distribution and routing stats",
             price_sats: 100,
             format: "json",
@@ -320,9 +324,11 @@ export async function GET(request: NextRequest) {
         pricing: {
           "privacy-audit": "200 sats",
           "cycle-signals": "50 sats",
-          compute: "500 sats/job",
-          data: "50-100 sats/dataset",
+          compute: "500 sats/job (demo — placeholder output)",
+          data: "50-100 sats/dataset (demo — static catalog)",
         },
+        demo_services: ["compute", "data"],
+        demo_notice: "compute and data endpoints are demo placeholders. privacy-audit and cycle-signals use real computations.",
         payment_methods: [
           "L402 (Lightning): Pay BOLT11 invoice, include preimage in Authorization header",
           "Cashu NUT-24: Send ecash token in Authorization: Cashu <token>",
