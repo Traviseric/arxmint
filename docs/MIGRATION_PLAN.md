@@ -149,7 +149,7 @@ This section documents the step-by-step procedure for transitioning from the Lon
 **Operator requirements:**
 - Distinct individuals or organizations (not ArxMint employees or contractors)
 - Geographically separated (different cities or regions — ideally different states)
-- Each operator controls their own hardware: a VPS or dedicated server meeting the minimum requirements from `DEPLOY.md` Section 1 (2 vCPUs, 4 GB RAM, 50 GB SSD)
+- Each operator controls their own hardware: a VPS or dedicated server meeting the minimum requirements from `docs/DEPLOY.md` Section 1 (2 vCPUs, 4 GB RAM, 50 GB SSD)
 - Each operator must be reachable via a reliable communication channel (Signal, email with PGP)
 - Each operator signs the guardian governance document committing to quorum rules and key custody responsibilities
 
@@ -165,7 +165,7 @@ This section documents the step-by-step procedure for transitioning from the Lon
 
 For each new operator (repeat on each of three independent servers):
 
-1. Follow `DEPLOY.md` Sections 1–4 to set up the server and clone the repository.
+1. Follow `docs/DEPLOY.md` Sections 1–4 to set up the server and clone the repository.
 
 2. Install Docker and start only the guardian service (do NOT start the full stack yet):
    ```bash
@@ -365,7 +365,7 @@ After the EOL date and confirmation that all non-negligible outstanding proofs h
    # Then consolidate into a single docker-compose.yml with CDK as the mint
    ```
 
-4. Update `DEPLOY.md` to reflect CDK as the default mint.
+4. Update `docs/DEPLOY.md` to reflect CDK as the default mint.
 
 ### CDK Migration Rollback
 
@@ -596,7 +596,7 @@ This rollback procedure covers migration-specific emergencies. For ongoing opera
 
 | File | Relevance |
 |------|-----------|
-| `DEPLOY.md` | Deployment procedures and docker-compose commands |
+| `docs/DEPLOY.md` | Deployment procedures and docker-compose commands |
 | `docker/docker-compose.cdk.yml` | CDK mint override compose file |
 | `docker/Caddyfile` | Reverse proxy configuration |
 | `docker/prometheus.yml` | Monitoring scrape config |

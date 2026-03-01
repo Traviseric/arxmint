@@ -183,7 +183,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 2. **Network hardening** — Internal Docker network for all services. Only Caddy exposes 80/443. LND p2p (9735) public. Fedimint guardian ports internal.
 3. **Prometheus scrape config + Grafana dashboards** — Scrape targets for LND, Cashu, Fedimint at 30s intervals. Alerts for disk >70%, container restarts, LND health, federation quorum.
 4. **Backup automation** — Daily Postgres dump with 7-day retention. LND channel.backup watch + sync on change. Off-host encrypted storage.
-5. **DEPLOY.md** — Step-by-step: Vultr provisioning, SSH hardening, UFW rules, Docker install, env setup, `docker compose up`, Caddy HTTPS, monitoring access. Nutshell hardening checklist.
+5. **docs/DEPLOY.md** — Step-by-step: Vultr provisioning, SSH hardening, UFW rules, Docker install, env setup, `docker compose up`, Caddy HTTPS, monitoring access. Nutshell hardening checklist.
 6. **BCE metrics pipeline** — Wire dashboard to real transaction data from DB.
 
 ### Phase D: E2E Testing + Hardening
@@ -274,7 +274,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 - [ ] Disaster recovery drill completed (new VPS, restore backups, verify transactions)
 
 ### Operations
-- [ ] DEPLOY.md written and followed for testnet deploy
+- [ ] docs/DEPLOY.md written and followed for testnet deploy
 - [ ] Incident response runbook exists
 - [ ] Rollback procedure documented and tested
 - [ ] Single-host federation trust statement published (see `docs/TRUST_STATEMENT.md`)

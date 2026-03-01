@@ -36,5 +36,8 @@ docker-data/
 build_log.txt
 *.log
 
+# TypeScript build info
+tsconfig.tsbuildinfo
+
 # Claude Code
 .claude/
