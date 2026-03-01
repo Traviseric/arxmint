@@ -76,6 +76,8 @@ jobs:
         run: npm run setup:regtest
         env:
           GRAFANA_PASSWORD: ci-regtest-only
+          POSTGRES_PASSWORD: ci-regtest-only
+          CASHU_PRIVATE_KEY: 0000000000000000000000000000000000000000000000000000000000000001
       - name: Run E2E tests
         run: npm run test:e2e
         env:
