@@ -74,6 +74,8 @@ jobs:
         run: npm ci
       - name: Start regtest Docker stack
         run: npm run setup:regtest
+        env:
+          GRAFANA_PASSWORD: ci-regtest-only
       - name: Run E2E tests
         run: npm run test:e2e
         env:
