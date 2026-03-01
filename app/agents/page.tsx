@@ -297,11 +297,11 @@ export default function AgentsPage() {
                     </div>
                     <div>
                       <span className="text-text-muted">2. Server 402 + Invoice:</span><br />
-                      <span className="text-accent">HTTP 402 — WWW-Authenticate: L402 macaroon="..." invoice="..."</span>
+                      <span className="text-accent">HTTP 402 — WWW-Authenticate: L402 macaroon=&quot;...&quot; invoice=&quot;...&quot;</span>
                     </div>
                     <div>
                       <span className="text-text-muted">3. Agent pays LN invoice:</span><br />
-                      <span className="text-text-primary">payInvoice("lnbc500n1...")</span> → preimage
+                      <span className="text-text-primary">payInvoice(&quot;lnbc500n1...&quot;)</span> → preimage
                     </div>
                     <div>
                       <span className="text-text-muted">4. Retry w/ proof:</span><br />

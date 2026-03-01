@@ -379,7 +379,7 @@ export default function RoadmapPage() {
             <div className="pl-6 border-l border-text-muted/30">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-text-primary mb-3">Abstract.</h2>
               <p className="text-sm leading-relaxed text-text-secondary pr-8">
-                A purely peer-to-peer version of electronic cash and AI agent commerce would allow online payments and autonomous economic activities to be sent directly from one party to another without going through a financial institution or centralized API provider. This document outlines the five phases of ArxMint's development, from foundational security hardening to production-grade deployment of sovereign Bitcoin economies integrating Fedimint, Cashu, and the Model Context Protocol (MCP). Every task traces back to rigorous core research, prioritized by security impact.
+                A purely peer-to-peer version of electronic cash and AI agent commerce would allow online payments and autonomous economic activities to be sent directly from one party to another without going through a financial institution or centralized API provider. This document outlines the five phases of ArxMint&apos;s development, from foundational security hardening to production-grade deployment of sovereign Bitcoin economies integrating Fedimint, Cashu, and the Model Context Protocol (MCP). Every task traces back to rigorous core research, prioritized by security impact.
               </p>
             </div>
           </ScrollReveal>

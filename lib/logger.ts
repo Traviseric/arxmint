@@ -20,11 +20,18 @@ interface LogEntry {
 type LogMeta = Omit<LogEntry, "timestamp" | "level" | "message">;
 
 function log(level: LogLevel, message: string, meta: LogMeta = {}): void {
+  // Guard: if meta is not a plain object (e.g. a string passed by mistake),
+  // spreading it would serialize character-by-character ("0":"H","1":"e",...).
+  // Wrap non-objects safely to prevent corrupted JSON output.
+  const safeMeta =
+    meta !== null && typeof meta === "object" && !Array.isArray(meta)
+      ? meta
+      : {};
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,
-    message,
-    ...meta,
+    message: typeof message === "string" ? message : String(message),
+    ...safeMeta,
   };
   // console.log writes to stdout in Node.js and is safe in Edge Runtime
   console.log(JSON.stringify(entry));

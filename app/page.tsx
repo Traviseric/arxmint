@@ -477,16 +477,16 @@ export default function HomePage() {
                 <Eye className="w-8 h-8 text-accent mb-6" />
                 <h3 className="text-2xl font-semibold text-text-primary mb-4">Privacy by Default</h3>
                 <p className="text-text-secondary leading-relaxed mb-8 max-w-md">
-                  We don't just offer privacy as an option. CoinJoin, Tor routing, and silent payments are hardcoded defaults at the protocol level.
+                  We don&apos;t just offer privacy as an option. Ecash blinding, silent payment addresses, and spend-path routing are built in from day one. Tor and CoinJoin integration are on the roadmap.
                 </p>
                 <div className="bg-bg-base/80 border border-border-strong rounded-lg p-6 font-mono text-xs">
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-text-muted">ROUTING</span>
-                    <span className="text-green-400 font-semibold">[TOR ACTIVE]</span>
+                    <span className="text-text-muted">PRIVACY</span>
+                    <span className="text-green-400 font-semibold">[ECASH: BLINDED]</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-text-muted">OBFUSCATION</span>
-                    <span className="text-accent font-semibold">[COINJOIN: 50+]</span>
+                    <span className="text-text-muted">ROUTING</span>
+                    <span className="text-accent font-semibold">[SILENT PAYMENTS: ON]</span>
                   </div>
                 </div>
               </div>
@@ -498,7 +498,7 @@ export default function HomePage() {
                   <Activity className="w-6 h-6 text-text-primary mb-4" />
                   <h3 className="text-xl font-semibold text-text-primary mb-2">Cycle Architecture</h3>
                   <p className="text-text-secondary text-sm">
-                    Live MVRV, NUPL, and supply-in-profit alerts built into the operator dashboard.
+                    MVRV, NUPL, and supply-in-profit alerts built into the operator dashboard (price-based approximations via CoinGecko).
                   </p>
                 </div>
 

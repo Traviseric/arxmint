@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import { NostrLogin } from "@/components/nostr-login";
 import { hydrateNostrSession } from "@/lib/store";
@@ -22,7 +23,7 @@ export function NavBar() {
   return (
     <nav className="fixed top-0 w-full z-50 border-b border-border-default glass-heavy">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <Image
             src="/images/logo.png"
             alt="ArxMint Logo"
@@ -33,38 +34,38 @@ export function NavBar() {
           <span className="text-lg font-bold text-text-primary">
             Arx<span className="text-accent">Mint</span>
           </span>
-        </a>
+        </Link>
         <div className="flex items-center gap-3 sm:gap-6">
-          <a
+          <Link
             href="/why"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
           >
             Why
-          </a>
-          <a
+          </Link>
+          <Link
             href="/agents"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             Agents
-          </a>
-          <a
+          </Link>
+          <Link
             href="/roadmap"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             Roadmap
-          </a>
-          <a
+          </Link>
+          <Link
             href="/blog"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
           >
             Blog
-          </a>
-          <a
+          </Link>
+          <Link
             href="/whitepaper"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
           >
             Whitepaper
-          </a>
+          </Link>
           <a
             href="https://github.com/Traviseric/arxmint"
             target="_blank"
@@ -84,12 +85,12 @@ export function NavBar() {
 
           <NostrLogin />
 
-          <a
+          <Link
             href="/create"
             className="antigravity-btn !px-3 !py-1.5 sm:!px-4 sm:!py-2 text-[10px] sm:!text-sm"
           >
             Get Started
-          </a>
+          </Link>
 
           {/* Mobile hamburger trigger */}
           <button
@@ -107,20 +108,20 @@ export function NavBar() {
       {mobileOpen && (
         <div className="sm:hidden absolute top-full left-0 right-0 bg-sovereign-panel border-b border-white/10 z-50">
           <div className="flex flex-col p-4 gap-3">
-            <a
+            <Link
               href="/why"
               onClick={() => setMobileOpen(false)}
               className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
             >
               Why
-            </a>
-            <a
+            </Link>
+            <Link
               href="/whitepaper"
               onClick={() => setMobileOpen(false)}
               className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
             >
               Whitepaper
-            </a>
+            </Link>
           </div>
         </div>
       )}

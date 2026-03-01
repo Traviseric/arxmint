@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen, Clock } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -198,13 +199,13 @@ export default async function BlogPostPage({
         {/* Hero */}
         <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
           <ScrollReveal delay={0.1}>
-            <a
+            <Link
               href="/blog"
               className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors mb-8"
             >
               <ArrowLeft className="w-4 h-4" />
               All posts
-            </a>
+            </Link>
           </ScrollReveal>
 
           <ScrollReveal delay={0.15}>

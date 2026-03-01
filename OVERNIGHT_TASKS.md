@@ -53,7 +53,7 @@ These are production blockers. Everything is in-memory right now — page refres
   - **Storage:** IndexedDB (not localStorage — quota limits, OWASP guidance). Request `navigator.storage.persist()`.
   - **Architecture:** Repository abstraction layer (ProofRepo, CounterRepo, OperationRepo) → IndexedDB adapter. Follow Coco's storage-agnostic pattern.
   - **Data model:** 5 collections: Proofs (encrypted `secret`+`C`), Counters (atomic with proof writes), Operations (saga log for crash recovery), Payment Requests (NUT-26), Proof State Metadata (unencrypted index for queries)
-  - **Encryption:** AES-256-GCM via Web Crypto API. Key derivation: Argon2id (RFC 9106) from user passphrase. Master key in-memory only while unlocked. Auto-lock on idle.
+  - **Encryption:** AES-256-GCM via Web Crypto API. Key derivation: PBKDF2-SHA256 (600K iterations, OWASP 2023) from user passphrase. Master key in-memory only while unlocked. Auto-lock on idle.
   - **Counter persistence:** MUST be atomic with proof writes (single IndexedDB transaction) — secret reuse vulnerability if not. Hook into cashu-ts v3 counter events.
   - **Recovery:** NUT-13 seed phrase (12-word BIP39 mnemonic) as primary recovery. Per-mint restore via NUT-09 `/v1/restore` in batches of 100. Encrypted snapshot export (TokenV4 per mint) as secondary.
   - **Crash recovery:** Saga pattern — mark proofs pending before operations, check NUT-07 `/v1/checkstate` on restart, reconcile.
@@ -61,7 +61,7 @@ These are production blockers. Everything is in-memory right now — page refres
   - **Nostr:** Do NOT derive storage key from NIP-07 (doesn't expose private keys). Use passphrase or mnemonic-derived key. NUT-27 for mint list backup via Nostr.
   - **UI:** Passphrase setup, seed phrase backup screen, "Export Wallet" (encrypted JSON), "Restore Wallet" (import + decrypt)
   - Hydrate Zustand store from vault on mount
-  - **Files:** new `lib/cashu-vault.ts` (VaultManager: unlock/lock lifecycle), new `lib/crypto.ts` (AES-GCM + Argon2id), new `lib/proof-repo.ts` (repository abstraction), update `lib/store.ts`
+  - **Files:** new `lib/cashu-vault.ts` (VaultManager: unlock/lock lifecycle), new `lib/crypto.ts` (AES-GCM + PBKDF2-SHA256), new `lib/proof-repo.ts` (repository abstraction), update `lib/store.ts`
 
 - [x] [P0] Persist community configs to database (ID: 3)
   - After community generation, save config to Postgres via Prisma
@@ -355,7 +355,7 @@ These must be done BEFORE the Longmont pilot accepts real money. See `docs/roadm
 - **CSS conventions:** Use `.sovereign-card`, `.sovereign-btn`, etc. from `globals.css`
 - **State:** Zustand via `useSovereignStore` — no prop drilling
 - **SDK singletons:** `getFedimintClient()`, `getCashuClient()`, `getLightningClient()`
-- **Proof vault:** IndexedDB + AES-256-GCM + Argon2id KDF. Repository abstraction (Coco pattern). NUT-13 seed recovery. Atomic counter persistence. See Research #5.
+- **Proof vault:** IndexedDB + AES-256-GCM + PBKDF2-SHA256 (600K iterations, OWASP 2023). Repository abstraction (Coco pattern). NUT-13 seed recovery. Atomic counter persistence. See Research #5.
 - **Custody model:** ArxMint is NON-CUSTODIAL. Cashu proofs stored client-side only. Server DB stores metadata only.
 - **Run `npm run build` before finishing** — must pass Next.js build
 - **Run `npm test` before finishing** — node test runner, not jest

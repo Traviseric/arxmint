@@ -8,7 +8,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 
 Humans and AI agents share the same private commerce infrastructure. Agents sell data/compute via L402 paywalls; humans transact in ecash; both use the same Lightning-connected federation.
 
-**Status:** Phases 0-4 complete. All roadmap phases (Fortify → Keystone → Spire → Aether → Citadel) implemented. See `docs/roadmap.md`.
+**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. Production Readiness Gate pending testnet VPS deployment (human action required). Phase 4 (Citadel pilot) in progress — grants drafted, KPI framework ready, pilot materials complete. See `docs/roadmap.md`.
 
 ## Lookup Table
 
@@ -36,7 +36,8 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Agent API | `app/api/agent/route.ts` | `privacy-audit cycle-signals` |
 | L402 demo | `app/api/l402/route.ts` | `WWW-Authenticate 402` |
 | Pilot deployment | `lib/pilot-deployment.ts` | `PilotKPITargets generatePilotTimeline MultiCityNetwork` |
-| Grant templates | `lib/grant-templates.ts` | `generateFBCEApplication generateOpenSatsApplication` |
+| Grant templates (TS lib) | `lib/grant-templates.ts` | `generateFBCEApplication generateOpenSatsApplication` |
+| Grant docs + human tasks | `C:\code\te-btc\internal\docs\arxmint\` | `grants/ human_tasks.md` |
 | Replication playbook | `lib/replication-playbook.ts` | `generateReplicationPlaybook exportPlaybookMarkdown` |
 | Spec + cross-ref | `docs/spec.md`, `docs/research-crossref.md` | — |
 | Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel` |

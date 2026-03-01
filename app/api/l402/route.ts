@@ -30,8 +30,8 @@ const MACAROON_ROOT_KEY = process.env.MACAROON_ROOT_KEY;
 if (!MACAROON_ROOT_KEY) {
   if (process.env.NODE_ENV === "production") {
     logger.error(
-      { action: "l402_misconfigured" },
-      "MACAROON_ROOT_KEY not set in production — L402 endpoint will return 503"
+      "MACAROON_ROOT_KEY not set in production — L402 endpoint will return 503",
+      { action: "l402_misconfigured" }
     );
   } else {
     console.warn(
