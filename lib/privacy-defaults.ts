@@ -80,8 +80,11 @@ export const PRIVACY_DESCRIPTIONS: Record<keyof PrivacyConfig, PrivacyLayerInfo>
       "Combines multiple users' inputs and outputs into a single transaction, " +
       "making it computationally expensive to trace which inputs fund which " +
       "outputs. Breaks the chain analysis heuristic that links sender to receiver.",
-    status: "live",
-    supportedBy: "on-chain-only",
+    status: "experimental",
+    supportedBy: "not-yet-implemented",
+    backendWarning:
+      "CoinJoin coordination is planned but not yet implemented. " +
+      "Integration with JoinMarket or BTCPayServer PayJoin is on the roadmap.",
   },
   payJoin: {
     name: "PayJoin",
@@ -90,8 +93,10 @@ export const PRIVACY_DESCRIPTIONS: Record<keyof PrivacyConfig, PrivacyLayerInfo>
       "Both sender and receiver contribute inputs to a transaction, breaking " +
       "the common-input-ownership heuristic. Looks like a normal transaction " +
       "but obscures the actual payment amount from chain observers.",
-    status: "live",
-    supportedBy: "on-chain-only",
+    status: "experimental",
+    supportedBy: "not-yet-implemented",
+    backendWarning:
+      "PayJoin (BIP-78) sender/receiver coordination is planned but not yet implemented.",
   },
   arkSpends: {
     name: "Ark Spends",
@@ -148,8 +153,8 @@ export function computePrivacyScore(
   // Base: using ecash (Fedimint/Cashu) already gives strong privacy
   score += 40;
   if (config.silentPayments && isLayerAvailable("silentPayments", backend)) score += 15;
-  if (config.coinJoin) score += 15;
-  if (config.payJoin) score += 10;
+  if (config.coinJoin && isLayerAvailable("coinJoin", backend)) score += 15;
+  if (config.payJoin && isLayerAvailable("payJoin", backend)) score += 10;
   if (config.arkSpends && isLayerAvailable("arkSpends", backend)) score += 20;
   return Math.min(score, 100);
 }
