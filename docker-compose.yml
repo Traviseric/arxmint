@@ -177,12 +177,27 @@ services:
     image: postgres:15-alpine
     container_name: sf-postgres
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=60s
+      - -c
+      - archive_command=test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f
+      - -c
+      - max_wal_senders=5
+      - -c
+      - wal_keep_size=512MB
     environment:
       POSTGRES_DB: arxmint
       POSTGRES_USER: arxmint
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — set a strong password}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - postgres-wal-archive:/var/lib/postgresql/wal-archive
     networks:
       - sovereign  # internal only — no ports exposed to host
     healthcheck:
@@ -265,6 +280,7 @@ volumes:
   prometheus-data:
   grafana-data:
   postgres-data:
+  postgres-wal-archive:
   caddy-data:
   caddy-config:
 

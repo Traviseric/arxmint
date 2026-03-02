@@ -21,6 +21,24 @@ import {
   type ProofState,
 } from "@cashu/cashu-ts";
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getMaxWalletBalanceSats(): number {
+  const parsed = parseInt(process.env.MAX_WALLET_BALANCE_SATS ?? "50000", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 50000;
+}
+
+function enforceWalletBalanceCap(balanceSats: number): void {
+  const max = getMaxWalletBalanceSats();
+  if (balanceSats > max) {
+    throw new Error(
+      `Wallet balance ${balanceSats} sats exceeds pilot limit of ${max} sats`
+    );
+  }
+}
+
 // ---- Keyset ID Validation (NUT-13 security) ----
 
 interface RegistryEntry {
@@ -431,6 +449,8 @@ export class SovereignCashuClient {
 
   /** Load proofs from external storage (localStorage, DB, etc.) */
   loadProofs(proofs: Proof[]): void {
+    const nextBalance = proofs.reduce((sum, p) => sum + p.amount, 0);
+    enforceWalletBalanceCap(nextBalance);
     this._proofs = [...proofs];
   }
 
@@ -455,6 +475,8 @@ export class SovereignCashuClient {
   ): Promise<Proof[]> {
     this.requireConnected();
     const proofs = await this.wallet!.mintProofs(amountSats, quoteId);
+    const minted = proofs.reduce((sum, p) => sum + p.amount, 0);
+    enforceWalletBalanceCap(this.balance + minted);
     this._proofs.push(...proofs);
     this.persistProofs();
     return proofs;
@@ -513,6 +535,8 @@ export class SovereignCashuClient {
   async receiveEcash(token: string): Promise<Proof[]> {
     this.requireConnected();
     const received = await this.wallet!.receive(token);
+    const incoming = received.reduce((sum, p) => sum + p.amount, 0);
+    enforceWalletBalanceCap(this.balance + incoming);
     const normalizedMint = normalizeMintUrl(this._mintUrl);
 
     // Validate received proofs have keyset IDs we trust
@@ -591,6 +615,8 @@ export class SovereignCashuClient {
       trustedKeysetIds
     );
 
+    const restoredBalance = validation.proofs.reduce((sum, p) => sum + p.amount, 0);
+    enforceWalletBalanceCap(restoredBalance);
     this._proofs = validation.proofs;
 
     if (validation.warnings.length > 0) {
@@ -1240,8 +1266,8 @@ export class MultiMintManager {
       try {
         const proofs = await client.receiveEcash(token);
         return { proofs, mintUrl: url };
-      } catch (err) {
-        mintErrors.push({ mintUrl: url, error: (err as Error).message });
+      } catch (err: unknown) {
+        mintErrors.push({ mintUrl: url, error: getErrorMessage(err) });
         continue;
       }
     }
@@ -1461,10 +1487,10 @@ export class ProofStateVerifier {
         if (spent.length > 0 && this._onSpentDetected) {
           this._onSpentDetected(client.mintUrl, spent.length);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.warn(
           `[ProofStateVerifier] Mint verification failed for ${client.mintUrl}:`,
-          (err as Error).message
+          getErrorMessage(err)
         );
         results.push({
           mintUrl: client.mintUrl,

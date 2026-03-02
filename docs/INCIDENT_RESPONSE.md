@@ -158,6 +158,20 @@ gunzip -c /backups/backup_TIMESTAMP.sql.gz \
   | docker exec -i sf-postgres psql -U arxmint arxmint
 ```
 
+**PITR restore (base backup + WAL replay):**
+```bash
+# Restore to latest available WAL state
+./scripts/restore_postgres_pitr.sh \
+  /backups/postgres-pitr/base/base_YYYYMMDD_HHMMSS.tar.gz
+
+# Restore to a specific timestamp
+./scripts/restore_postgres_pitr.sh \
+  /backups/postgres-pitr/base/base_YYYYMMDD_HHMMSS.tar.gz \
+  "2026-03-02 18:30:00+00"
+```
+
+See `docs/PITR_RUNBOOK.md` for full procedure and validation.
+
 ---
 
 ## 5. Disk Fills Up

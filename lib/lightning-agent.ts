@@ -473,7 +473,7 @@ export class SovereignLightningClient {
       if (!response.ok && response.status !== 401) {
         throw new Error(`Remote signer probe returned HTTP ${response.status}`);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(
         `Remote signer at ${signerUrl} is not reachable: ${message}. ` +

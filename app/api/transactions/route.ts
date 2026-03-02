@@ -13,8 +13,65 @@ import {
   SessionUserError,
 } from "@/lib/session-user";
 import { validateAmount, errorResponse, errorStatus } from "@/lib/validation";
-import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import {
+  checkDailyVolumeCap,
+  checkSingleTxCap,
+  checkWalletBalanceCap,
+  ValueCapError,
+} from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
+
+function utcDayStart(date = new Date()): Date {
+  const start = new Date(date);
+  start.setUTCHours(0, 0, 0, 0);
+  return start;
+}
+
+async function getTodayCommunityVolumeSats(communityId: string): Promise<number> {
+  const start = utcDayStart();
+  const next = new Date(start);
+  next.setUTCDate(start.getUTCDate() + 1);
+
+  const aggregate = await db.transaction.aggregate({
+    _sum: { amount: true },
+    where: {
+      communityId,
+      timestamp: { gte: start, lt: next },
+      status: { not: "failed" },
+    },
+  });
+  return aggregate._sum.amount ?? 0;
+}
+
+async function getCommunityWalletBalanceSats(communityId: string): Promise<number> {
+  const rows = await db.transaction.findMany({
+    where: {
+      communityId,
+      status: { not: "failed" },
+    },
+    select: {
+      type: true,
+      amount: true,
+    },
+  });
+
+  let balance = 0;
+  for (const row of rows) {
+    switch (row.type) {
+      case "receive":
+        balance += row.amount;
+        break;
+      case "send":
+      case "settlement":
+        balance -= row.amount;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return Math.max(0, balance);
+}
 
 async function getUserIdOrAuthError(
   request: NextRequest
@@ -111,6 +168,12 @@ export async function POST(request: NextRequest) {
 
     const validatedAmount = validateAmount(amount);
     checkSingleTxCap(validatedAmount);
+    const todayVolumeSats = await getTodayCommunityVolumeSats(communityId);
+    checkDailyVolumeCap(todayVolumeSats, validatedAmount);
+    if (type === "receive") {
+      const currentBalanceSats = await getCommunityWalletBalanceSats(communityId);
+      checkWalletBalanceCap(currentBalanceSats + validatedAmount);
+    }
 
     const transaction = await db.transaction.create({
       data: {

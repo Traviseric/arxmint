@@ -1,6 +1,6 @@
 # ArxMint — Implementation Roadmap
 
-**Version:** 3.0 — February 28, 2026
+**Version:** 4.0 — March 2, 2026
 **Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md` + 6 deep research studies in `docs/research/`
 **Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Overnight tasks:** `OVERNIGHT_TASKS.md` (concrete implementation tasks derived from this roadmap)
@@ -24,6 +24,7 @@ Phase E: Hardening     (rate limit, health, caps, CI)   ✅ CODE COMPLETE
 PRODUCTION READINESS GATE → testnet VPS deployment pending (human)
 ═══════════════════════════════════════════════════════
 Phase 4: Citadel       (Longmont pilot + grants)        🟡 IN PROGRESS
+Phase 5: Bazaar       (Merchant platform — decentralized Stripe)  📋 PLANNED
 ```
 
 **Feature path** (parallel, not blocking production):
@@ -67,6 +68,7 @@ Status key:
 | 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
 | 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, VPS setup + DR drill docs in `docs/`; pilot deployment pending human action |
+| 5.x merchant platform (Bazaar) | Planned | Decentralized Stripe alternative — API keys, webhooks, hosted checkout, client SDK, merchant dashboard, LNURL-pay, settlement automation |
 
 ---
 
@@ -233,9 +235,10 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 ## Production Readiness Gate
 
 **Everything below must be true before accepting real mainnet funds.** This is the exit criteria for Phases A–E. Phase 4 (Citadel) begins after this gate passes.
+**Live status tracker:** `docs/PILOT_READINESS_STATUS.md` (current verification results + remaining blockers)
 
 ### Data Safety
-- [ ] Postgres persists communities, merchants, transactions, auth sessions
+- [x] Postgres persists communities, merchants, transactions, auth sessions
 - [ ] Cashu proofs stored client-side only in encrypted IndexedDB vault (AES-256-GCM)
 - [ ] NUT-13 seed phrase backup + NUT-09 restore verified working
 - [ ] Crash recovery saga pattern tested — no proofs lost after simulated crash
@@ -245,30 +248,30 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 
 ### Authentication & Authorization
 - [ ] Auth.js with Nostr NIP-98 + email magic link working
-- [ ] Protected routes (`/wallet`, `/merchant`, `/admin`) require auth
+- [x] Protected routes (`/wallet`, `/merchant`, `/admin`) require auth
 - [ ] Step-up reauth for spend/export operations (5-min TTL)
-- [ ] L402 endpoints require valid paid macaroon
-- [ ] NUT-24 endpoints reject spent/invalid tokens
-- [ ] Rate limiting active on auth and payment endpoints
+- [x] L402 endpoints require valid paid macaroon
+- [x] NUT-24 endpoints reject spent/invalid tokens
+- [x] Rate limiting active on auth and payment endpoints
 
 ### Payment Correctness
 - [ ] L402: 402 challenge → pay invoice → preimage → access (E2E verified on regtest)
 - [ ] NUT-24: Cashu token → access; double-spend → rejection (E2E verified)
-- [ ] Spend router selects correct backend by amount/privacy/availability
-- [ ] Transaction ledger records metadata only (no raw proofs in DB)
-- [ ] Pilot value caps enforced (max balance, max transaction, max daily volume)
+- [x] Spend router selects correct backend by amount/privacy/availability
+- [x] Transaction ledger records metadata only (no raw proofs in DB)
+- [x] Pilot value caps enforced (max balance, max transaction, max daily volume)
 
 ### Infrastructure
 - [ ] All services on internal Docker network; only Caddy exposes 80/443
 - [ ] Caddy serving HTTPS with auto-renewing certificates
 - [ ] Prometheus scraping all services; Grafana dashboards showing data
 - [ ] Alerts configured for: disk >70%, container restarts, LND unhealthy, federation quorum loss
-- [ ] Health check endpoint (`/api/health`) returns real service status
+- [x] Health check endpoint (`/api/health`) returns real service status
 - [ ] Structured JSON logging on all services
-- [ ] Security headers (CSP, HSTS, X-Frame-Options) in place
+- [x] Security headers (CSP, HSTS, X-Frame-Options) in place
 
 ### Testing
-- [ ] All unit tests pass (`npm test`)
+- [x] All unit tests pass (`npm test`)
 - [ ] All E2E tests pass against regtest (`docs/E2E_TESTING.md`)
 - [ ] E2E tests run in CI on every push
 - [ ] 7+ days on testnet VPS with zero incidents
@@ -276,10 +279,10 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 
 ### Operations
 - [ ] docs/DEPLOY.md written and followed for testnet deploy
-- [ ] Incident response runbook exists
+- [x] Incident response runbook exists
 - [ ] Rollback procedure documented and tested
-- [ ] Single-host federation trust statement published (see `docs/TRUST_STATEMENT.md`)
-- [ ] Mainnet migration plan documented (when to split guardians)
+- [x] Single-host federation trust statement published (see `docs/TRUST_STATEMENT.md`)
+- [x] Mainnet migration plan documented (when to split guardians)
 
 ---
 
@@ -618,6 +621,206 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 
 ---
 
+## Phase 5: Bazaar — Decentralized Merchant Platform
+
+**Codename:** Bazaar — the open marketplace where sovereign commerce happens
+**Goal:** Make ArxMint as easy to integrate as Stripe. Any merchant — online or local — can accept Bitcoin payments with zero KYC on customers, near-zero fees, and full privacy. One API key, one script tag, done.
+**Prerequisite:** Phase 4 pilot running (real merchants, real payments proving the infrastructure works)
+**Vision:** A private, open-source, decentralized Stripe alternative. Merchants keep 99.7%+ of every sale. No payment data sold. No middleman. Customers pay with ecash (Cashu), Lightning, or Fedimint — merchant gets sats.
+
+### Why This Phase Exists
+
+Stripe charges 2.9% + $0.30 per transaction. A local merchant doing $10K/month loses ~$320/month to processing fees. ArxMint's ecash and Lightning payments cost fractions of a penny. But the technology advantage means nothing if the developer experience is worse than `<script src="stripe.js">`. Phase 5 closes that gap.
+
+The core payment loop (create challenge → pay → verify) is already production-quality. What's missing is the merchant-facing developer experience: API keys, webhooks, a checkout page, a client SDK, and a dashboard. This is plumbing, not protocol work — the hard crypto is done.
+
+### 5.1 — Merchant API Keys + Scoped Authentication
+
+**What:** Issue API credentials when a merchant onboards. `sk_live_...` (server-side, full access) and `pk_live_...` (client-side, create challenges only). Add `sk_test_...` / `pk_test_...` for sandbox mode that hits regtest infrastructure.
+**Why:** Without credentials, merchants can't programmatically create payments scoped to their business. This is the single biggest blocker to adoption.
+**Implementation:**
+- Generate HMAC-derived key pairs on merchant creation, store hashed in `Merchant` DB table
+- Add `apiKeyId` field to `PaymentChallenge` — every challenge is scoped to a merchant
+- Middleware: `X-API-Key` header authentication for all `/api/v1/merchant/*` endpoints
+- Key rotation endpoint: `POST /api/v1/merchant/keys/rotate`
+- Rate limits per API key (not just per IP)
+- Sandbox mode: separate key prefix (`sk_test_`), routes to regtest LND + test Cashu mint
+
+### 5.2 — Webhook System
+
+**What:** HTTP POST event delivery when payment state changes. Events: `payment.created`, `payment.completed`, `payment.failed`, `payment.expired`, `settlement.completed`.
+**Why:** Merchants can't automate fulfillment without knowing when a payment completes. This is the #1 feature request for any payment API.
+**Implementation:**
+- `WebhookEndpoint` DB table: `merchantId`, `url`, `secret` (HMAC signing key), `events[]`, `active`
+- `POST /api/v1/merchant/webhooks` — register endpoint
+- Event queue: on payment state change, enqueue webhook delivery
+- Delivery: POST to merchant URL with JSON body + `X-ArxMint-Signature` (HMAC-SHA256 of body with endpoint secret)
+- Retry: exponential backoff (1s, 5s, 30s, 5m, 30m) — 5 attempts max
+- `GET /api/v1/merchant/webhooks/:id/deliveries` — delivery log for debugging
+- SDK helper: `arxmint.webhooks.verify(body, signature, secret)` for merchant-side verification
+- Invoice-paid listener: watch LND invoice settlement events, trigger `payment.completed` webhook + auto-complete settlement
+
+### 5.3 — Hosted Checkout Page
+
+**What:** A merchant-branded payment page at `/pay/:challengeId`. Customer lands on page, sees amount + QR code, pays via Cashu ecash or Lightning, gets redirected to `successUrl`. No code required on the merchant's site beyond a link.
+**Why:** Stripe Checkout is the most-used integration pattern. Most merchants don't want to build a custom payment UI — they want a link that collects money.
+**Implementation:**
+- `POST /api/v1/merchant/checkout` — create session with `amount`, `description`, `successUrl`, `cancelUrl`, `metadata`
+- Returns `checkoutUrl` (e.g., `https://mint.arxmint.com/pay/cs_abc123`)
+- Checkout page: shows merchant name + amount, auto-detects best payment method, renders QR (NUT-26 for Cashu, BOLT11 for Lightning)
+- Real-time status via SSE — page auto-redirects on payment completion
+- Mobile-responsive, dark theme, merchant logo/name from onboarding data
+- Payment links: `POST /api/v1/merchant/payment-links` — reusable URLs for fixed-price items (no expiry)
+- Embeddable: `<iframe src="https://mint.arxmint.com/pay/cs_abc123">` for inline checkout
+
+### 5.4 — Payment Status API + Real-Time Updates
+
+**What:** `GET /api/v1/merchant/payments/:id` to poll payment status. SSE endpoint for real-time push. WebSocket option for high-frequency POS use.
+**Why:** After creating a challenge, the merchant is currently blind. They need to know when the customer paid.
+**Implementation:**
+- `GET /api/v1/merchant/payments/:id` — returns `{ id, status, amount, type, createdAt, completedAt, metadata }`
+- `GET /api/v1/merchant/payments/:id/events` — SSE stream, emits `status_changed` events
+- `GET /api/v1/merchant/payments` — list with filters: `status`, `dateRange`, `type`, cursor pagination
+- Status enum: `pending` → `completed` | `expired` | `failed`
+- For POS: WebSocket at `wss://mint.arxmint.com/ws/payments` — merchant subscribes to their payment stream
+
+### 5.5 — Client-Side SDK + React Components
+
+**What:** `@arxmint/js` — a client-side JavaScript SDK that handles the full payment flow in the browser. Plus `@arxmint/react` for React components.
+**Why:** Stripe.js lets any website add payments in 10 lines. ArxMint needs the same.
+**Implementation:**
+- `@arxmint/js` (vanilla JS, <15KB gzipped):
+  ```
+  const arx = ArxMint('pk_live_...')
+  const session = await arx.checkout({ amount: 500, description: 'Coffee' })
+  session.on('completed', (payment) => { /* fulfill order */ })
+  session.mount('#payment-container')  // renders QR + status
+  ```
+- `@arxmint/react`:
+  ```
+  <ArxMintProvider publishableKey="pk_live_...">
+    <PayButton amount={500} onSuccess={handlePaid} />
+  </ArxMintProvider>
+  ```
+- Components: `<PayButton>`, `<CheckoutForm>`, `<PaymentStatus>`, `<QRPayment>`
+- Handles: challenge creation, QR rendering, real-time status polling, success/error callbacks
+- Framework-agnostic core with React wrapper (Vue/Svelte wrappers post-launch)
+
+### 5.6 — LNURL-pay + Lightning Address
+
+**What:** Give every merchant a Lightning Address (`merchant@mint.arxmint.com`) and LNURL-pay endpoint. Scannable QR codes for physical POS.
+**Why:** Lightning Address is the most interoperable Bitcoin payment standard. Any Lightning wallet can scan and pay. This is table stakes for physical merchants.
+**Implementation:**
+- `/.well-known/lnurlp/:username` — LNURL-pay endpoint per merchant
+- Resolves to: create L402 challenge, return BOLT11 invoice, webhook on settlement
+- Static QR code for each merchant (print-and-display for POS)
+- Optional: NFC tag provisioning via existing Numo integration (tap-to-pay)
+- Lightning Address format: `merchantname@mint.arxmint.com`
+
+### 5.7 — Merchant Dashboard
+
+**What:** A dedicated merchant portal at `/merchant/dashboard` with payments, settlements, analytics, and API key management.
+**Why:** After Stripe onboarding, you get a dashboard. Currently ArxMint merchants get a `cashu://` URI and nothing else.
+**Implementation:**
+- **Payments tab:** Filterable transaction list (status, date, amount, type). CSV/JSON export. Real-time feed via SSE.
+- **Settlements tab:** Settlement history, pending payouts, settlement frequency config (instant / daily / weekly)
+- **Analytics tab:** Revenue over time, payment method breakdown, average transaction size, conversion rate (challenges created vs. completed)
+- **Settings tab:** API key management (view, rotate, revoke), webhook endpoints (add, test, view delivery logs), business info updates, payment method preferences
+- **Developer tab:** Integration guide, code snippets (curl, JS, React), test mode toggle, webhook event log
+
+### 5.8 — Settlement Automation
+
+**What:** Auto-complete the settlement loop. When a Lightning invoice is paid, automatically mint Cashu ecash and push to the merchant's wallet. Configurable payout schedules.
+**Why:** Currently settlement creates an invoice but nothing happens when it's paid. The loop is broken.
+**Implementation:**
+- LND invoice subscription: watch for settled invoices, match to pending settlements
+- On settlement: mint Cashu ecash via `wallet.createMintQuoteBolt11()` → `wallet.mintProofs()`
+- Push to merchant's Cashu address or hold in platform balance
+- Payout schedule options: instant (every settlement), daily batch, weekly batch
+- `POST /api/v1/merchant/settings/payout` — configure schedule
+- Settlement fee: configurable per-community (default 0% for pilot, community operator sets fee)
+
+### 5.9 — Public Merchant Directory + Discovery
+
+**What:** Unauthenticated merchant directory at `/merchants`. Searchable by category, location, payment methods. Each merchant gets a public profile page.
+**Why:** Customers need to find merchants. A directory also proves the network effect to new merchants considering joining.
+**Implementation:**
+- `GET /api/v1/directory?category=&location=&paymentMethod=` — public, no auth required
+- Merchant profile pages: `/merchants/:slug` — business info, accepted payment methods, QR code, Lightning Address
+- Geo-search: store lat/lng coordinates (optional), enable radius queries
+- Category filter: food, retail, services, digital, hospitality, health, other
+- Map view (optional): merchant pins on OpenStreetMap embed
+
+### 5.10 — Idempotency + Production Hardening
+
+**What:** Idempotency keys on all payment creation endpoints. Request deduplication. Comprehensive error codes.
+**Why:** Network retries and webhook redelivery mean merchants will send duplicate requests. Without idempotency, they get double-charged customers or duplicate records.
+**Implementation:**
+- `Idempotency-Key` header on `POST /api/v1/merchant/checkout` and `POST /api/v1/merchant/payments`
+- 24-hour key retention. Same key = return cached response, no new challenge created.
+- Structured error codes: `payment_expired`, `invalid_token`, `duplicate_request`, `rate_limited`, `merchant_not_found`, `insufficient_amount`
+- Request logging: every API call logged with request ID, merchant ID, endpoint, status code, latency
+- SDK retry logic: automatic retry with exponential backoff for 5xx errors, no retry for 4xx
+
+### Implementation Snapshot — Phase 5
+
+| Item | Status | Builds On |
+|---|---|---|
+| 5.1 Merchant API keys | Planned | Phase A auth + 1.4 merchant onboarding |
+| 5.2 Webhook system | Planned | Phase B payment SDK |
+| 5.3 Hosted checkout | Planned | Phase B L402 + NUT-24 |
+| 5.4 Payment status API | Planned | Phase B payment SDK |
+| 5.5 Client-side SDK | Planned | 5.1 + 5.3 + 5.4 |
+| 5.6 LNURL-pay / Lightning Address | Planned | Phase B L402 + LND wiring |
+| 5.7 Merchant dashboard | Planned | 5.1 + 5.4 + Phase A DB |
+| 5.8 Settlement automation | Planned | Phase B settlement + LND invoice subscription |
+| 5.9 Public directory | Planned | 1.4 merchant onboarding + Phase A DB |
+| 5.10 Idempotency + hardening | Planned | 5.1 + 5.2 + Phase E hardening |
+
+### Phase 5 Priority Order
+
+Build in this order — each step unlocks the next level of merchant adoption:
+
+```
+5.1 API Keys ──→ 5.4 Status API ──→ 5.2 Webhooks ──→ 5.8 Settlement Auto
+     │                                    │
+     └──→ 5.3 Hosted Checkout ───────────→ 5.5 Client SDK
+     │
+     └──→ 5.6 LNURL-pay
+     │
+     └──→ 5.7 Merchant Dashboard (parallel, grows with each feature)
+     │
+     └──→ 5.9 Public Directory (independent, can ship early)
+
+5.10 Idempotency: weave in throughout, harden before mainnet launch
+```
+
+### What This Makes Possible
+
+| Merchant Type | Integration | Time to First Payment |
+|---|---|---|
+| Coffee shop (no code) | Payment link QR printed at register | 5 minutes |
+| Online store (low code) | Hosted checkout link in "Buy" button | 15 minutes |
+| SaaS app (full code) | Client SDK + webhooks for fulfillment | 1 hour |
+| AI agent (programmatic) | L402 API keys + auto-settlement | 30 minutes |
+| Marketplace | Server SDK + settlement splitting | 2 hours |
+
+### Stripe vs. ArxMint — Target Comparison
+
+| | Stripe | ArxMint (Phase 5) |
+|---|---|---|
+| **Transaction fee** | 2.9% + $0.30 | ~0.1% (Lightning routing) or 0% (ecash) |
+| **Settlement time** | T+2 days | Instant (ecash) or next block (Lightning) |
+| **Customer KYC** | Card + billing address required | None — bearer ecash is anonymous |
+| **Merchant KYC** | Full identity verification | Nostr pubkey (optional: business info) |
+| **Data sold** | Yes (Stripe Radar, analytics) | Never — no payment data leaves the system |
+| **Chargebacks** | Yes (merchant liability) | Impossible — ecash is bearer, Lightning is final |
+| **Open source** | No | Yes — MIT license |
+| **Self-hostable** | No | Yes — full Docker stack |
+| **Censorship** | Platform risk (Stripe can freeze funds) | Sovereign — merchant controls their own mint |
+
+---
+
 ## Dependency Graph
 
 ```
@@ -670,6 +873,14 @@ Phase 4 (Citadel) depends on:
     - Phase 1.3 + 1.4 (metrics + merchants)
     - Phase 2.7 (monitoring config)
     NOT blocked by: Phase 3 (advanced features are post-pilot)
+
+Phase 5 (Bazaar) depends on:
+    - Phase 4 running (real merchant validation)
+    - Phase A (DB + auth)
+    - Phase B (payment SDK)
+    - Phase E (production hardening)
+    NOT blocked by: Phase 3 (Aether) or Phase 4 completion
+    CAN start in parallel with Phase 4 once pilot is live
 ```
 
 ---
@@ -736,4 +947,8 @@ Following the positioning doc's Tartarian builder theme:
 | Phase 1 | **Keystone** | The critical stone that holds the arch together |
 | Phase 2 | **Spire** | The structure rises — full stack visible |
 | Phase 3 | **Aether** | Advanced capabilities, reaching higher |
+| Phase 5 | **Bazaar** | The open marketplace — sovereign commerce for all |
 | Phase 4 | **Citadel** | The complete sovereign fortress — deployed and defended |
+
+
+

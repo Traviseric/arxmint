@@ -91,7 +91,10 @@ export async function POST(request: NextRequest) {
 
   try {
     body = await request.json();
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("POST /api/payment/verify invalid JSON body", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 

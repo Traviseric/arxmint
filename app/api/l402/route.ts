@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 import { db } from "@/lib/db";
@@ -80,7 +80,11 @@ function verifyPreimage(preimage: string, rHashBase64: string): boolean {
     const expected = Buffer.from(rHashBase64, "base64");
     if (derived.length !== expected.length) return false;
     return timingSafeEqual(derived, expected);
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("l402_preimage_verify_error", {
+      error: error instanceof Error ? error.message : String(error),
+      action: "l402_preimage_verify_error",
+    });
     return false;
   }
 }
@@ -117,7 +121,11 @@ function verifyMacaroon(token: string): { identifier: string } | null {
       .digest("hex");
     if (sig !== expectedSig) return null;
     return payload as { identifier: string };
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("l402_macaroon_parse_error", {
+      error: error instanceof Error ? error.message : String(error),
+      action: "l402_macaroon_parse_error",
+    });
     return null;
   }
 }
@@ -247,8 +255,12 @@ export async function GET(request: NextRequest) {
     request.headers.get("x-forwarded-for") ??
     request.headers.get("x-real-ip") ??
     "unknown";
-  if (!checkRateLimit(`l402:${ip}`, 20, 60_000)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  const rl = checkRateLimit(`l402:${ip}`, RATE_LIMITS.payment);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter ?? 60) } }
+    );
   }
 
   const authHeader = request.headers.get("Authorization");
@@ -316,7 +328,12 @@ export async function GET(request: NextRequest) {
         // Mark as paid in DB (fire-and-forget)
         void db.paymentChallenge
           .update({ where: { id: macaroon }, data: { status: "paid", paidAt: new Date() } })
-          .catch(() => undefined);
+          .catch((error: unknown) => {
+            logger.warn("l402_mark_paid_db_failed", {
+              error: error instanceof Error ? error.message : String(error),
+              action: "l402_mark_paid_db_failed",
+            });
+          });
         return NextResponse.json({
           success: true,
           data: {
@@ -393,9 +410,12 @@ export async function GET(request: NextRequest) {
   let macaroon: string;
   try {
     macaroon = signMacaroon(macaroonPayload);
-  } catch {
+  } catch (error: unknown) {
     // MACAROON_ROOT_KEY not set — only reachable in development (production blocked above)
-    console.warn("[ArxMint] DEV: issuing unsigned macaroon. Set MACAROON_ROOT_KEY for production.");
+    console.warn(
+      `[ArxMint] DEV: issuing unsigned macaroon (${error instanceof Error ? error.message : String(error)}). ` +
+        "Set MACAROON_ROOT_KEY for production."
+    );
     macaroon = Buffer.from(JSON.stringify(macaroonPayload)).toString("base64");
   }
 

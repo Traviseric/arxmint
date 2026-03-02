@@ -10,7 +10,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Wallet } from "@cashu/cashu-ts";
 import { db } from "@/lib/db";
-import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import {
+  checkDailyVolumeCap,
+  checkSingleTxCap,
+  ValueCapError,
+} from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -67,8 +71,11 @@ async function findExistingSettlement(
       let parsedNotes: Record<string, unknown> = {};
       try {
         parsedNotes = JSON.parse(existing.notes ?? "{}");
-      } catch {
-        /* ignore */
+      } catch (error: unknown) {
+        logger.warn("findExistingSettlement notes parse failed", {
+          saleId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
       const record: SettlementRecord = {
         txId: existing.id,
@@ -83,10 +90,36 @@ async function findExistingSettlement(
       _settlements.set(saleId, record);
       return record;
     }
-  } catch {
-    logger.warn("findExistingSettlement DB lookup failed; using in-memory cache only");
+  } catch (error: unknown) {
+    logger.warn("findExistingSettlement DB lookup failed; using in-memory cache only", {
+      saleId,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
   return null;
+}
+
+function utcDayStart(date = new Date()): Date {
+  const start = new Date(date);
+  start.setUTCHours(0, 0, 0, 0);
+  return start;
+}
+
+async function getTodaySettlementVolumeSats(communityId: string): Promise<number> {
+  const start = utcDayStart();
+  const next = new Date(start);
+  next.setUTCDate(start.getUTCDate() + 1);
+
+  const aggregate = await db.transaction.aggregate({
+    _sum: { amount: true },
+    where: {
+      communityId,
+      type: "settlement",
+      timestamp: { gte: start, lt: next },
+      status: { not: "failed" },
+    },
+  });
+  return aggregate._sum.amount ?? 0;
 }
 
 async function createCashuMintQuote(
@@ -135,7 +168,10 @@ export async function POST(request: NextRequest) {
   let body: Partial<SettlementRequest>;
   try {
     body = await request.json();
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("POST /api/settlement invalid JSON body", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
@@ -169,6 +205,7 @@ export async function POST(request: NextRequest) {
   }
 
   const feeAmount = Math.floor(saleAmount * referralFeePct);
+  const effectiveCommunityId = communityId ?? "marketplace";
   if (feeAmount < 1) {
     return NextResponse.json(
       { error: "Calculated fee is less than 1 sat — too small to settle" },
@@ -178,6 +215,8 @@ export async function POST(request: NextRequest) {
 
   try {
     checkSingleTxCap(feeAmount);
+    const todayVolumeSats = await getTodaySettlementVolumeSats(effectiveCommunityId);
+    checkDailyVolumeCap(todayVolumeSats, feeAmount);
   } catch (e: unknown) {
     if (e instanceof ValueCapError) {
       return NextResponse.json(
@@ -256,7 +295,6 @@ export async function POST(request: NextRequest) {
 
   // ---- Persist to Transaction table ----
   const notes = buildNotesJson(saleId, extraNotes);
-  const effectiveCommunityId = communityId ?? "marketplace";
 
   let txId: string;
   try {

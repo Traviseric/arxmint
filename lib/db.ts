@@ -72,7 +72,9 @@ function ensureDatabaseUrlGuards(rawUrl: string | undefined): string | undefined
     }
 
     return url.toString();
-  } catch {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[ArxMint][db] failed to parse DATABASE_URL for guardrails: ${message}`);
     return rawUrl;
   }
 }

@@ -521,6 +521,42 @@ crontab -e
 
 Backup files are stored as `arxmint_YYYYMMDD_HHMMSS.sql.gz`. Backups older than 7 days are pruned automatically. Override with `BACKUP_RETENTION_DAYS` env var.
 
+### Postgres PITR backups (base + WAL)
+
+`docker-compose.yml` enables Postgres WAL archiving to the `postgres-wal-archive` named volume.
+
+Create periodic base backups:
+
+```bash
+chmod +x scripts/backup_postgres_pitr_base.sh
+./scripts/backup_postgres_pitr_base.sh /backups/postgres-pitr/base
+```
+
+Restore to latest WAL state:
+
+```bash
+chmod +x scripts/restore_postgres_pitr.sh
+./scripts/restore_postgres_pitr.sh /backups/postgres-pitr/base/base_YYYYMMDD_HHMMSS.tar.gz
+```
+
+Restore to a specific timestamp:
+
+```bash
+./scripts/restore_postgres_pitr.sh \
+  /backups/postgres-pitr/base/base_YYYYMMDD_HHMMSS.tar.gz \
+  "2026-03-02 18:30:00+00"
+```
+
+Prune archived WAL files:
+
+```bash
+chmod +x scripts/prune_postgres_wal_archive.sh
+PITR_WAL_RETENTION_DAYS=7 \
+  ./scripts/prune_postgres_wal_archive.sh /var/lib/docker/volumes/arxmint_postgres-wal-archive/_data
+```
+
+For full procedure and validation steps, see `docs/PITR_RUNBOOK.md`.
+
 ### LND channel.backup watcher (continuous)
 
 The `channel.backup` file must be copied every time LND channels change — losing it means losing all Lightning channels.

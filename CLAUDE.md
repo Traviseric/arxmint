@@ -8,7 +8,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 
 Humans and AI agents share the same private commerce infrastructure. Agents sell data/compute via L402 paywalls; humans transact in ecash; both use the same Lightning-connected federation.
 
-**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. Production Readiness Gate pending testnet VPS deployment (human action required). Phase 4 (Citadel pilot) in progress — grants drafted, KPI framework ready, pilot materials complete. See `docs/roadmap.md`.
+**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. Production Readiness Gate pending testnet VPS deployment (human action required). Phase 4 (Citadel pilot) in progress — grants drafted, KPI framework ready, pilot materials complete. Phase 5 (Bazaar) planned — decentralized Stripe alternative with merchant API keys, webhooks, hosted checkout, client SDK, and merchant dashboard. See `docs/roadmap.md`.
 
 ## Lookup Table
 
@@ -40,7 +40,7 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Grant docs + human tasks | `C:\code\te-btc\internal\docs\arxmint\` | `grants/ human_tasks.md` |
 | Replication playbook | `lib/replication-playbook.ts` | `generateReplicationPlaybook exportPlaybookMarkdown` |
 | Spec + cross-ref | `docs/spec.md`, `docs/research-crossref.md` | — |
-| Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel` |
+| Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel Bazaar` |
 | Brand guide | `docs/brand.md` | `tagline voice palette audience` |
 | Docs index | `docs/README.md` | — |
 | Payment SDK | `lib/payment-sdk.ts` (planned) | `createL402Challenge verifyL402Token routePayment` |

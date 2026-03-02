@@ -16,6 +16,7 @@
 | [DEPLOY.md](DEPLOY.md) | VPS provisioning, Docker setup, env config, Caddy HTTPS |
 | [VPS_SETUP.md](VPS_SETUP.md) | Vultr/DigitalOcean server setup checklist |
 | [DR_DRILL.md](DR_DRILL.md) | Disaster recovery drill procedure |
+| [PITR_RUNBOOK.md](PITR_RUNBOOK.md) | Point-in-time recovery runbook for Postgres base backups + WAL replay |
 | [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md) | Incident response runbook |
 | [security/HARDENING_ROLLOUT_PLAN.md](security/HARDENING_ROLLOUT_PLAN.md) | Security guardrail rollout and mode controls (`off`/`observe`/`enforce`) |
 | [MIGRATION_PLAN.md](MIGRATION_PLAN.md) | Mainnet migration + guardian distribution plan |
@@ -28,6 +29,7 @@
 
 | Document | Description |
 |----------|-------------|
+| [PILOT_READINESS_STATUS.md](PILOT_READINESS_STATUS.md) | Current pilot readiness score, completed checks, and remaining blockers |
 | [PILOT_KPIS.md](PILOT_KPIS.md) | Longmont pilot KPI targets and measurement framework |
 | [GRANT_DOSSIER.md](GRANT_DOSSIER.md) | Shared grant dossier (OpenSats, HRF, Spiral, FBCE) |
 

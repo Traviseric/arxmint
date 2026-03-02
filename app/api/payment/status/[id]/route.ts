@@ -16,12 +16,35 @@ import { _challenges } from "@/app/api/payment/route";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { db } from "@/lib/db";
 import { type PaymentChallenge } from "@/lib/payment-sdk";
+import { logger } from "@/lib/logger";
+import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const caller = getCallerFromRequest(request);
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "payment-status",
+    ip,
+    caller,
+    RATE_LIMITS.paymentWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, `/api/payment/status/${id}`, rl.retryAfter ?? 60);
+    return NextResponse.json(
+      { error: "Too many requests" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfter ?? 60) },
+      }
+    );
+  }
 
   let entry = _challenges.get(id);
 
@@ -35,8 +58,11 @@ export async function GET(
         entry = { challenge: data.challenge, createdAt: data.createdAt, paidAt };
         _challenges.set(id, entry);
       }
-    } catch {
-      // DB unavailable — fall through to 404
+    } catch (error: unknown) {
+      logger.warn("payment_status_db_lookup_failed", {
+        challengeId: id,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -67,7 +93,6 @@ export async function GET(
   };
 
   // Return full challenge details only to authenticated callers
-  const caller = getCallerFromRequest(request);
   if (caller) {
     return NextResponse.json({ ...minimalResponse, challenge: entry.challenge });
   }

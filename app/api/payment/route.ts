@@ -62,7 +62,11 @@ function prune() {
   // Fire-and-forget DB prune (don't block the request)
   void db.paymentChallenge
     .deleteMany({ where: { expiresAt: { lt: new Date() } } })
-    .catch(() => undefined);
+    .catch((error: unknown) => {
+      logger.warn("payment_challenge_db_prune_failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
 }
 
 export async function POST(request: NextRequest) {
@@ -97,7 +101,10 @@ export async function POST(request: NextRequest) {
 
   try {
     body = await request.json();
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("POST /api/payment invalid JSON body", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 

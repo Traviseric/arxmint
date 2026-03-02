@@ -42,8 +42,11 @@ export async function GET(
     let parsedNotes: Record<string, unknown> = {};
     try {
       parsedNotes = JSON.parse(tx.notes ?? "{}");
-    } catch {
-      /* ignore */
+    } catch (error: unknown) {
+      logger.warn("Settlement notes parse failed", {
+        settlementId: id,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     const callerPubkey = getAuthPubkey(request);

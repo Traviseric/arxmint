@@ -257,7 +257,11 @@ export async function GET(request: NextRequest) {
           },
           timestamp: Date.now(),
         });
-      } catch {
+      } catch (error: unknown) {
+        logger.warn("cycle-signals live fetch failed; returning cached signal", {
+          error: error instanceof Error ? error.message : String(error),
+          action: "cycle_signals_fallback",
+        });
         return NextResponse.json({
           service: "cycle-signals",
           error: "Failed to fetch live data — returning cached signal",
