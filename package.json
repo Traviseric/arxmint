@@ -8,7 +8,7 @@
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
-    "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
+    "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
     "lint": "next lint",
     "setup:githooks": "node scripts/setup-githooks.cjs",
     "security:guardrails": "node scripts/security/run-guardrails.cjs --scope staged --mode observe",
@@ -19,8 +19,8 @@
     "setup:agents": "bash scripts/deploy-agent-tools.sh",
     "setup:regtest": "docker compose -f docker-compose.yml -f docker/docker-compose.regtest.yml up -d && bash scripts/wait-for-stack.sh && bash scripts/fund-regtest.sh",
     "test:e2e": "node --experimental-strip-types --test \"tests/e2e/**/*.test.ts\"",
-    "test:e2e:required": "bash scripts/test-e2e-required.sh",
-    "test:e2e:optional": "bash scripts/test-e2e-optional.sh"
+    "test:e2e:required": "node scripts/run-bash.cjs scripts/test-e2e-required.sh",
+    "test:e2e:optional": "node scripts/run-bash.cjs scripts/test-e2e-optional.sh"
   },
   "dependencies": {
     "@cashu/cashu-ts": "^3.5.0",
