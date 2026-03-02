@@ -5,6 +5,7 @@
 // Never import in 'use client' components.
 
 import { PrismaClient } from "@prisma/client";
+import { logger } from "@/lib/logger";
 
 const DEFAULT_POOL_MAX = 10;
 const DEFAULT_POOL_TIMEOUT_SECONDS = 10;
@@ -74,7 +75,7 @@ function ensureDatabaseUrlGuards(rawUrl: string | undefined): string | undefined
     return url.toString();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[ArxMint][db] failed to parse DATABASE_URL for guardrails: ${message}`);
+    logger.warn("db_guardrail_database_url_parse_failed", { error: message });
     return rawUrl;
   }
 }

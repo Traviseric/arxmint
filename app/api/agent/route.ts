@@ -67,9 +67,9 @@ async function checkPayment(
       });
       // Fall through to normal payment verification
     } else {
-      console.warn(
-        "[ArxMint] DEV: SKIP_PAYMENT_VERIFY=true — skipping payment verification."
-      );
+      logger.warn("DEV: SKIP_PAYMENT_VERIFY=true - skipping payment verification", {
+        action: "payment_bypass_dev",
+      });
       return { authenticated: true, method: "skip" };
     }
   }
@@ -341,3 +341,4 @@ export async function GET(request: NextRequest) {
       });
   }
 }
+
