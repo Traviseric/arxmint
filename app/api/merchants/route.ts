@@ -7,19 +7,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
+import {
+  isCommunityOwnedByUser,
+  requireSessionUserId,
+  SessionUserError,
+} from "@/lib/session-user";
 import { validateCommunityName, errorResponse, errorStatus } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+
+async function getUserIdOrAuthError(
+  request: NextRequest
+): Promise<string | NextResponse> {
+  try {
+    return await requireSessionUserId(request);
+  } catch (error: unknown) {
+    if (error instanceof SessionUserError) {
+      const status = error.code === "UNAUTHENTICATED" ? 401 : 503;
+      return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status });
+    }
+    return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status: 503 });
+  }
+}
 
 export async function GET(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
 
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
+
   try {
     const { searchParams } = new URL(request.url);
     const communityId = searchParams.get("communityId");
 
+    if (communityId) {
+      const owned = await isCommunityOwnedByUser(communityId, userId);
+      if (!owned) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const merchants = await db.merchant.findMany({
-      where: communityId ? { communityId } : {},
+      where: communityId ? { communityId } : { community: { userId } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -34,6 +63,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const body = await request.json();
@@ -56,6 +88,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "communityId is required", code: "VALIDATION_COMMUNITYID" },
         { status: 400 }
+      );
+    }
+
+    const owned = await isCommunityOwnedByUser(communityId, userId);
+    if (!owned) {
+      return NextResponse.json(
+        { error: "Forbidden", code: "FORBIDDEN_COMMUNITY" },
+        { status: 403 }
       );
     }
 

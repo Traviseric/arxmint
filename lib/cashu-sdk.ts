@@ -1106,7 +1106,6 @@ export function createPaymentRequest(
 export function generateQRDataUrl(data: string, size: number = 256): string {
   // Simple QR placeholder using SVG with embedded data
   // In production, use a library like qrcode or qr-image
-  const encoded = encodeURIComponent(data);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">
     <rect width="${size}" height="${size}" fill="#1a1a1a"/>
     <rect x="8" y="8" width="${size - 16}" height="${size - 16}" rx="4" fill="#0a0a0a" stroke="#F7931A" stroke-width="2"/>

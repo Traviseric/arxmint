@@ -1,0 +1,17 @@
+# Core security and payment paths
+/app/api/auth/ @Traviseric
+/app/api/l402/ @Traviseric
+/app/api/payment/ @Traviseric
+/app/api/settlement/ @Traviseric
+/lib/auth-middleware.ts @Traviseric
+/lib/payment-sdk.ts @Traviseric
+/lib/cashu-paywall.ts @Traviseric
+
+# Infrastructure and deployment
+/.github/workflows/ @Traviseric
+/docker-compose.yml @Traviseric
+/Dockerfile @Traviseric
+/prisma/ @Traviseric
+
+# Default owner
+* @Traviseric

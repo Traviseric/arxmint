@@ -6,30 +6,91 @@
 // Client-side only — runs in Web Worker
 // ============================================================
 
-import type { WalletBalance } from "./types";
+interface FedimintPaymentResult {
+  payment_type?: { lightning?: string; internal?: string };
+  contract_id?: string;
+}
+
+interface FedimintDirector {
+  createWallet(): Promise<FedimintWallet>;
+  parseOobNotes?: (notes: string) => Promise<{ total_amount: number }>;
+}
+
+interface FedimintWallet {
+  open(): Promise<void>;
+  isOpen?: () => boolean;
+  previewFederation(inviteCode: string): Promise<{
+    name: string;
+    guardians: number;
+    modules: string[];
+  }>;
+  hasMnemonicSet(): Promise<boolean>;
+  generateMnemonic(): Promise<string>;
+  setMnemonic(mnemonic: string): Promise<void>;
+  joinFederation(inviteCode: string): Promise<void>;
+  parseBolt11Invoice(
+    bolt11: string
+  ): Promise<{ amount_msat: number; description: string; expiry: number }>;
+  cleanup(): Promise<void>;
+  federation: {
+    getFederationId(): Promise<string>;
+    getInviteCode(): Promise<string>;
+    getConfig(): Promise<Record<string, unknown>>;
+    listOperations(): Promise<Array<Record<string, unknown>>>;
+  };
+  balance: {
+    getBalance(): Promise<number>;
+    subscribeBalance(callback: (balanceMsats: number) => void): () => void;
+  };
+  mint: {
+    spendNotes(amountMsats: number): Promise<string>;
+    redeemEcash(notes: string): Promise<void>;
+  };
+  lightning: {
+    createInvoice(
+      amountMsats: number,
+      description: string
+    ): Promise<{ invoice: string; operationId: string }>;
+    payInvoice(bolt11: string): Promise<FedimintPaymentResult>;
+    waitForPay(operationId: string): Promise<{
+      success: boolean;
+      error?: string;
+      data: { preimage: string };
+    }>;
+  };
+  wallet: {
+    generateAddress(): Promise<string>;
+  };
+}
+
+type WalletDirectorCtor = new (transport: unknown) => FedimintDirector;
+type WasmWorkerTransportCtor = new () => unknown;
 
 // Lazy-loaded to avoid SSR issues with WASM
-let WalletDirector: any;
-let WasmWorkerTransport: any;
+let WalletDirector: WalletDirectorCtor | null = null;
+let WasmWorkerTransport: WasmWorkerTransportCtor | null = null;
 
 async function loadFedimintSDK() {
   if (!WalletDirector) {
     const core = await import("@fedimint/core");
     const transport = await import("@fedimint/transport-web");
-    WalletDirector = core.WalletDirector;
-    WasmWorkerTransport = transport.WasmWorkerTransport;
+    WalletDirector = core.WalletDirector as unknown as WalletDirectorCtor;
+    WasmWorkerTransport = transport.WasmWorkerTransport as unknown as WasmWorkerTransportCtor;
   }
 }
 
 export class SovereignFedimintClient {
-  private director: any = null;
-  private wallet: any = null;
+  private director: FedimintDirector | null = null;
+  private wallet: FedimintWallet | null = null;
   private _isOpen = false;
   private _federationId: string | null = null;
 
   /** Initialize the WASM client (call once on app load) */
   async init(): Promise<void> {
     await loadFedimintSDK();
+    if (!WalletDirector || !WasmWorkerTransport) {
+      throw new Error("Failed to initialize Fedimint SDK");
+    }
     this.director = new WalletDirector(new WasmWorkerTransport());
     this.wallet = await this.director.createWallet();
   }
@@ -89,7 +150,7 @@ export class SovereignFedimintClient {
   /** Get the invite code for the current federation */
   async getInviteCode(): Promise<string> {
     this.requireOpen();
-    return await this.wallet.federation.getInviteCode();
+    return await this.wallet!.federation.getInviteCode();
   }
 
   // ----- Balance -----
@@ -97,13 +158,13 @@ export class SovereignFedimintClient {
   /** Get current ecash balance in msats */
   async getBalance(): Promise<number> {
     this.requireOpen();
-    return await this.wallet.balance.getBalance();
+    return await this.wallet!.balance.getBalance();
   }
 
   /** Subscribe to balance changes */
   subscribeBalance(callback: (balanceMsats: number) => void): () => void {
     this.requireOpen();
-    return this.wallet.balance.subscribeBalance(callback);
+    return this.wallet!.balance.subscribeBalance(callback);
   }
 
   // ----- Ecash (Mint) -----
@@ -111,18 +172,21 @@ export class SovereignFedimintClient {
   /** Create ecash notes to send to someone (spend) */
   async spendEcash(amountMsats: number): Promise<string> {
     this.requireOpen();
-    return await this.wallet.mint.spendNotes(amountMsats);
+    return await this.wallet!.mint.spendNotes(amountMsats);
   }
 
   /** Receive ecash notes from someone (redeem) */
   async receiveEcash(notes: string): Promise<void> {
     this.requireOpen();
-    await this.wallet.mint.redeemEcash(notes);
+    await this.wallet!.mint.redeemEcash(notes);
   }
 
   /** Parse ecash notes to inspect amount */
   async parseNotes(notes: string): Promise<{ total_amount: number }> {
     if (!this.director) throw new Error("Call init() first");
+    if (typeof this.director.parseOobNotes !== "function") {
+      throw new Error("Fedimint SDK missing parseOobNotes()");
+    }
     return await this.director.parseOobNotes(notes);
   }
 
@@ -134,7 +198,7 @@ export class SovereignFedimintClient {
     description?: string
   ): Promise<{ invoice: string; operationId: string }> {
     this.requireOpen();
-    return await this.wallet.lightning.createInvoice(
+    return await this.wallet!.lightning.createInvoice(
       amountMsats,
       description || "ArxMint payment"
     );
@@ -145,10 +209,10 @@ export class SovereignFedimintClient {
     this.requireOpen();
     // SDK returns OutgoingLightningPayment: { payment_type, contract_id, fee }
     // The operationId lives inside payment_type as either { lightning: id } or { internal: id }
-    const result = await this.wallet.lightning.payInvoice(bolt11);
+    const result = await this.wallet!.lightning.payInvoice(bolt11);
     type FedimintPaymentType = { lightning?: string; internal?: string };
     const pt = result.payment_type as FedimintPaymentType;
-    const operationId: string = pt.lightning ?? pt.internal ?? result.contract_id;
+    const operationId = pt.lightning ?? pt.internal ?? result.contract_id;
     if (!operationId) {
       throw new Error("payInvoice: could not extract operationId from SDK response");
     }
@@ -172,7 +236,7 @@ export class SovereignFedimintClient {
       )
     );
     const result = await Promise.race([
-      this.wallet.lightning.waitForPay(operationId),
+      this.wallet!.lightning.waitForPay(operationId),
       timeoutPromise,
     ]);
     if (!result.success) {
@@ -194,15 +258,15 @@ export class SovereignFedimintClient {
   // ----- Federation Info -----
 
   /** Get federation configuration */
-  async getConfig(): Promise<any> {
+  async getConfig(): Promise<Record<string, unknown>> {
     this.requireOpen();
-    return await this.wallet.federation.getConfig();
+    return await this.wallet!.federation.getConfig();
   }
 
   /** List operations */
-  async listOperations(): Promise<any[]> {
+  async listOperations(): Promise<Array<Record<string, unknown>>> {
     this.requireOpen();
-    return await this.wallet.federation.listOperations();
+    return await this.wallet!.federation.listOperations();
   }
 
   // ----- On-Chain -----
@@ -210,7 +274,7 @@ export class SovereignFedimintClient {
   /** Generate a deposit address */
   async getDepositAddress(): Promise<string> {
     this.requireOpen();
-    return await this.wallet.wallet.generateAddress();
+    return await this.wallet!.wallet.generateAddress();
   }
 
   // ----- Cleanup -----

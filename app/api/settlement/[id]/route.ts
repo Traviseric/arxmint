@@ -5,7 +5,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireAuth } from "@/lib/auth-middleware";
+import { getAuthPubkey, requireAuth } from "@/lib/auth-middleware";
+import {
+  isCommunityOwnedByUser,
+  requireSessionUserId,
+  SessionUserError,
+} from "@/lib/session-user";
 
 export async function GET(
   request: NextRequest,
@@ -38,6 +43,26 @@ export async function GET(
       parsedNotes = JSON.parse(tx.notes ?? "{}");
     } catch {
       /* ignore */
+    }
+
+    const callerPubkey = getAuthPubkey(request);
+    const initiatedBy =
+      typeof parsedNotes.initiatedBy === "string" ? parsedNotes.initiatedBy : null;
+
+    let hasAccess = initiatedBy === callerPubkey;
+    if (!hasAccess) {
+      try {
+        const userId = await requireSessionUserId(request);
+        hasAccess = await isCommunityOwnedByUser(tx.communityId, userId);
+      } catch (error: unknown) {
+        if (error instanceof SessionUserError && error.code === "UNAUTHENTICATED") {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+      }
+    }
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Strip sensitive internal fields — never expose raw notes blob or federation invites

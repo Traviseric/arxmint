@@ -7,9 +7,30 @@ on:
     branches: [master]
 
 jobs:
+  security:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Dependency audit (high+ blocks)
+        run: npm audit --audit-level=high
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    needs: [security]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +45,7 @@ jobs:
   type-check:
     name: Type Check
     runs-on: ubuntu-latest
+    needs: [security]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,6 +62,7 @@ jobs:
   build-and-test:
     name: Build & Unit Tests
     runs-on: ubuntu-latest
+    needs: [security]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,11 +82,6 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [build-and-test]
-    # continue-on-error: E2E tests require a regtest Docker stack (bitcoind +
-    # LND + Cashu containers) which is not available in standard GitHub Actions
-    # runners. Docker-in-Docker is not supported. These tests run reliably on
-    # self-hosted runners or local dev machines with Docker installed.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -78,7 +96,28 @@ jobs:
           GRAFANA_PASSWORD: ci-regtest-only
           POSTGRES_PASSWORD: ci-regtest-only
           CASHU_PRIVATE_KEY: 0000000000000000000000000000000000000000000000000000000000000001
+      - name: Wait for app health
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:3000/api/health > /dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "App did not become healthy in time"
+          docker compose ps || true
+          docker compose logs --tail=200 || true
+          exit 1
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           TEST_SERVER_URL: http://localhost:3000
+
+  container-build:
+    name: Container Build
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build -t arxmint:ci .

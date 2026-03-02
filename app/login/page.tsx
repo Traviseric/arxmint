@@ -26,7 +26,7 @@ function LoginContent() {
   // Redirect if already authenticated (has valid session cookie)
   useEffect(() => {
     fetch("/api/agent")
-      .then((r) => {
+      .then(() => {
         // If the agent route returns 200, we have a valid API session
         // (It's public, so this just confirms server is running)
       })

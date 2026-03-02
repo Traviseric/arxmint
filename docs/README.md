@@ -19,6 +19,8 @@
 | [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md) | Incident response runbook |
 | [MIGRATION_PLAN.md](MIGRATION_PLAN.md) | Mainnet migration + guardian distribution plan |
 | [TRUST_STATEMENT.md](TRUST_STATEMENT.md) | Single-host federation trust disclosure |
+| [audits/](audits/) | Quarterly production engineering audits |
+| [governance/](governance/) | Branch protection policy + ADR process |
 
 ## Grants & Pilot
 

@@ -6,7 +6,8 @@
 // Send/receive ecash, create/pay invoices
 // ============================================================
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   Wallet,
   Zap,
@@ -26,7 +27,6 @@ import { SeedBackup } from "@/components/seed-backup";
 import { getFedimintClient } from "@/lib/fedimint-sdk";
 import {
   createCashuClient,
-  SovereignCashuClient,
   createPaymentRequest,
   generateCashuURI,
   generateQRDataUrl,
@@ -77,11 +77,9 @@ export function WalletPanel() {
   const [view, setView] = useState<ActiveView>("overview");
   const {
     balance,
-    setBalance,
     fedimintConnected,
     cashuConnected,
     lightningConnected,
-    setConnected,
   } = useSovereignStore();
 
   return (
@@ -435,7 +433,14 @@ function ReceivePanel() {
           {qrDataUrl && (
             <div className="flex flex-col items-center gap-3">
               <div className="bg-sovereign-dark rounded-lg p-3 border border-sovereign-border">
-                <img src={qrDataUrl} alt="Cashu payment QR" className="w-[200px] h-[200px]" />
+                <Image
+                  src={qrDataUrl}
+                  alt="Cashu payment QR"
+                  width={200}
+                  height={200}
+                  unoptimized
+                  className="w-[200px] h-[200px]"
+                />
               </div>
               {qrUri && (
                 <div className="w-full">

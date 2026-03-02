@@ -32,6 +32,7 @@ interface SettlementRecord {
   method: "cashu" | "fedimint";
   status: "pending" | "initiated" | "completed" | "failed";
   invoice?: string;
+  initiatedBy?: string;
   createdAt: number;
 }
 
@@ -74,6 +75,7 @@ async function findExistingSettlement(
         method: (parsedNotes.method as "cashu" | "fedimint") ?? "cashu",
         status: (existing.status as SettlementRecord["status"]) ?? "initiated",
         invoice: (parsedNotes.invoice as string) ?? undefined,
+        initiatedBy: (parsedNotes.initiatedBy as string) ?? undefined,
         createdAt: existing.timestamp.getTime(),
       };
       _settlements.set(saleId, record);
@@ -185,7 +187,7 @@ export async function POST(request: NextRequest) {
   let invoice: string | undefined;
   let quoteId: string | undefined;
   let status: SettlementRecord["status"] = "initiated";
-  let extraNotes: Record<string, unknown> = {};
+  let extraNotes: Record<string, unknown> = { initiatedBy: caller };
 
   if (method === "cashu") {
     // Create a Cashu mint quote (bolt11 invoice) for the fee amount.
@@ -196,6 +198,7 @@ export async function POST(request: NextRequest) {
       invoice = quote.invoice;
       quoteId = quote.quoteId;
       extraNotes = {
+        ...extraNotes,
         method: "cashu",
         mintUrl,
         invoice,
@@ -206,6 +209,7 @@ export async function POST(request: NextRequest) {
       // Dev fallback: accept without a real invoice
       invoice = "lnbc1dev_settlement_placeholder_not_payable";
       extraNotes = {
+        ...extraNotes,
         method: "cashu",
         mintUrl,
         invoice,
@@ -222,6 +226,7 @@ export async function POST(request: NextRequest) {
     // Fedimint: the actual WASM join + deposit must be triggered client-side.
     // We record the initiation and return instructions to the caller.
     extraNotes = {
+      ...extraNotes,
       method: "fedimint",
       recipientFedimintInvite,
       status: "awaiting_client_deposit",
@@ -261,6 +266,7 @@ export async function POST(request: NextRequest) {
     method,
     status,
     invoice,
+    initiatedBy: caller,
     createdAt: Date.now(),
   };
 
@@ -304,6 +310,11 @@ export async function POST(request: NextRequest) {
 // ---- GET /api/settlement ------------------------------------
 
 export async function GET(request: NextRequest) {
+  const caller = getCallerFromRequest(request);
+  if (!caller) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const saleId = searchParams.get("saleId");
 
@@ -317,6 +328,14 @@ export async function GET(request: NextRequest) {
   const settlement = await findExistingSettlement(saleId);
   if (!settlement) {
     return NextResponse.json({ error: "Settlement not found" }, { status: 404 });
+  }
+
+  // Only the original authenticated caller (or marketplace system integration)
+  // can read a settlement record.
+  if (caller !== "marketplace-system") {
+    if (!settlement.initiatedBy || settlement.initiatedBy !== caller) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   return NextResponse.json({ settlement });

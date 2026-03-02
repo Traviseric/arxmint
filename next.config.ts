@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
       asyncWebAssembly: true,
       layers: true,
     };
+    // Fedimint's WASM worker emits async code; declare support explicitly.
+    config.output = {
+      ...config.output,
+      environment: {
+        ...(config.output?.environment ?? {}),
+        asyncFunction: true,
+      },
+    };
     return config;
   },
   // Headers for WASM + SharedArrayBuffer (required by Web Workers) + security hardening

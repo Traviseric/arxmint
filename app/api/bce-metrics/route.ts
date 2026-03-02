@@ -28,7 +28,6 @@ async function computeRealBCEMetrics(communityId?: string): Promise<BCEMetrics> 
     allTxs.map((t) => t.counterparty).filter(Boolean)
   ).size;
   const confirmedTxs = allTxs.filter((t) => t.status === "confirmed");
-  const failedTxs = allTxs.filter((t) => t.status === "failed");
   const spendVelocity7d = recentTxs
     .filter((t) => t.status === "confirmed")
     .reduce((sum, t) => sum + t.amount, 0);
@@ -54,7 +53,7 @@ export async function GET(request: NextRequest) {
   try {
     const metrics = await computeRealBCEMetrics(communityId);
     return NextResponse.json({ metrics, source: "database" });
-  } catch (error) {
+  } catch (_error) {
     // DB unavailable - fall back to demo metrics
     const metrics = getDemoBCEMetrics();
     return NextResponse.json({ metrics, source: "demo" });

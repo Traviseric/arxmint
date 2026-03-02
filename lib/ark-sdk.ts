@@ -158,7 +158,7 @@ export class SovereignArkClient {
    */
   async spend(
     amountSats: number,
-    recipientPubkey: string
+    _recipientPubkey: string
   ): Promise<{ vtxoId: string; change?: VTXO }> {
     this.requireConnected();
 
@@ -199,7 +199,7 @@ export class SovereignArkClient {
    */
   async bridge(
     amountSats: number,
-    onchainAddress: string
+    _onchainAddress: string
   ): Promise<{ txid: string }> {
     this.requireConnected();
 

@@ -7,21 +7,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
+import {
+  isCommunityOwnedByUser,
+  requireSessionUserId,
+  SessionUserError,
+} from "@/lib/session-user";
 import { validateAmount, errorResponse, errorStatus } from "@/lib/validation";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 
+async function getUserIdOrAuthError(
+  request: NextRequest
+): Promise<string | NextResponse> {
+  try {
+    return await requireSessionUserId(request);
+  } catch (error: unknown) {
+    if (error instanceof SessionUserError) {
+      const status = error.code === "UNAUTHENTICATED" ? 401 : 503;
+      return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status });
+    }
+    return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status: 503 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const { searchParams } = new URL(request.url);
     const communityId = searchParams.get("communityId");
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 200);
 
+    if (communityId) {
+      const owned = await isCommunityOwnedByUser(communityId, userId);
+      if (!owned) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const transactions = await db.transaction.findMany({
-      where: communityId ? { communityId } : {},
+      where: communityId ? { communityId } : { community: { userId } },
       orderBy: { timestamp: "desc" },
       take: limit,
     });
@@ -38,6 +67,9 @@ export async function POST(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
 
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
+
   try {
     const body = await request.json();
     const {
@@ -52,6 +84,14 @@ export async function POST(request: NextRequest) {
 
     if (!communityId || typeof communityId !== "string") {
       return NextResponse.json({ error: "communityId is required" }, { status: 400 });
+    }
+
+    const owned = await isCommunityOwnedByUser(communityId, userId);
+    if (!owned) {
+      return NextResponse.json(
+        { error: "Forbidden", code: "FORBIDDEN_COMMUNITY" },
+        { status: 403 }
+      );
     }
 
     const validTypes = ["send", "receive", "swap"];

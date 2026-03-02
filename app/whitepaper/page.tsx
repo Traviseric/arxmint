@@ -15,7 +15,7 @@ export default function WhitepaperPage() {
   let content = "";
   try {
     content = fs.readFileSync(filePath, "utf-8");
-  } catch (e) {
+  } catch (_error) {
     content = "# Whitepaper not found";
   }
 

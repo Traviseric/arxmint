@@ -8,15 +8,37 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateDeployment, generateApertureConfig } from "@/lib/community-generator";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
+import {
+  requireSessionUserId,
+  SessionUserError,
+} from "@/lib/session-user";
 import { validatePrompt, errorResponse, errorStatus } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+
+async function getUserIdOrAuthError(
+  request: NextRequest
+): Promise<string | NextResponse> {
+  try {
+    return await requireSessionUserId(request);
+  } catch (error: unknown) {
+    if (error instanceof SessionUserError) {
+      const status = error.code === "UNAUTHENTICATED" ? 401 : 503;
+      return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status });
+    }
+    return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status: 503 });
+  }
+}
 
 export async function GET(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
 
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
+
   try {
     const communities = await db.community.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true, prompt: true, config: true, createdAt: true },
     });
@@ -31,6 +53,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const body = await request.json();
@@ -53,6 +78,7 @@ export async function POST(request: NextRequest) {
     try {
       const saved = await db.community.create({
         data: {
+          userId,
           name: deployment.community.name,
           prompt: prompt.trim(),
           config: deployment.community as object,

@@ -10,7 +10,9 @@ import {
   Castle,
   Lock,
   Github,
+  type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
 
 export const metadata = {
@@ -34,7 +36,7 @@ type RoadmapPhase = {
   codename: string;
   title: string;
   status: RoadmapStatus;
-  icon: any;
+  icon: LucideIcon;
   description: string;
   humanDescription: string;
   timeline: string;
@@ -357,7 +359,13 @@ export default function RoadmapPage() {
             <div className="border-b-2 border-text-primary pb-8 mb-8 relative">
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-3xl rounded-full" />
               <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-text-primary mb-6 uppercase !font-sans flex items-center gap-4">
-                <img src="/images/logo.png" alt="ArxMint Citadel Logo" className="w-12 h-12 rounded-lg shadow-[0_0_15px_rgba(247,147,26,0.2)]" />
+                <Image
+                  src="/images/logo.png"
+                  alt="ArxMint Citadel Logo"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-lg shadow-[0_0_15px_rgba(247,147,26,0.2)]"
+                />
                 ArxMint: Sovereign Economy Specification
               </h1>
               <div className="flex justify-between items-end text-xs text-text-secondary uppercase tracking-widest">
