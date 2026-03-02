@@ -90,7 +90,14 @@ export class VaultManager {
 
     // Request persistent storage — non-fatal if denied
     if (typeof navigator !== "undefined" && "storage" in navigator) {
-      await navigator.storage.persist().catch(() => undefined);
+      try {
+        await navigator.storage.persist();
+      } catch (error: unknown) {
+        console.warn(
+          "[ArxMint][vault] navigator.storage.persist failed:",
+          error instanceof Error ? error.message : String(error)
+        );
+      }
     }
 
     this.resetIdleTimer();
@@ -258,3 +265,4 @@ export class VaultManager {
 
 /** Singleton vault instance used across the app. */
 export const vault = new VaultManager();
+
