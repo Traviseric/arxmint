@@ -4,7 +4,7 @@ As of March 2, 2026 (UTC)
 
 ## Snapshot
 
-- Production Readiness Gate checklist status: **15/35** checked in `docs/roadmap.md`.
+- Production Readiness Gate checklist status: **16/35** checked in `docs/roadmap.md`.
 - Automated validation in this cycle:
   - `npm test`: **pass** (230 passed, 0 failed, 3 skipped).
   - `npm run build`: **pass** (Next.js production build succeeded).
@@ -21,13 +21,14 @@ As of March 2, 2026 (UTC)
 - Normalized rate limiting usage to the principal+IP limiter in middleware/payment/auth/l402/settlement paths.
 - Updated Production Readiness Gate checkboxes in `docs/roadmap.md` for evidence-backed items.
 - Added a CI-enforced server logging lint guard (`npm run lint:server-logging`) to prevent unstructured `console.*` logs in API/server entrypoints.
+- Replaced backend env/auth `console.*` logging with structured `logger.*` calls and enforced this via CI.
 
 ## Gate Breakdown (Checked / Total)
 
 - Data Safety: **1/7**
 - Authentication and Authorization: **4/6**
 - Payment Correctness: **3/5**
-- Infrastructure: **2/7**
+- Infrastructure: **3/7**
 - Testing: **2/5**
 - Operations: **3/5**
 

@@ -267,7 +267,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 - [ ] Prometheus scraping all services; Grafana dashboards showing data
 - [ ] Alerts configured for: disk >70%, container restarts, LND unhealthy, federation quorum loss
 - [x] Health check endpoint (`/api/health`) returns real service status
-- [ ] Structured JSON logging on all services
+- [x] Structured JSON logging on all services
 - [x] Security headers (CSP, HSTS, X-Frame-Options) in place
 
 ### Testing
