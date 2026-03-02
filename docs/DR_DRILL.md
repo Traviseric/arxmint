@@ -359,7 +359,7 @@ Fill in one row per drill run. Keep this log current.
 | # | Date | Operator | Duration | Backup age at drill | Phase 3 all pass? | Issues found | Follow-up actions |
 |---|------|----------|----------|---------------------|-------------------|--------------|-------------------|
 | 1 | 2026-03-02 | Codex (automated) | 00:08 | N/A | No (blocked) | Drill execution environment did not have Docker or WSL installed, so stack restore commands could not run | Run drill on a Docker-capable host and attach full Phase 1-3 evidence by 2026-03-05 |
-| 2 | | | | | | | |
+| 2 | 2026-03-02 | Codex (automated) | 00:22 | N/A | No (blocked) | Docker CLI was installed but backend state was `stopped` with `hasNoVirtualization=true`; daemon pipes existed but engine never became healthy | Enable hardware virtualization/WSL2 (or Hyper-V Linux backend), confirm `docker version` shows a healthy Server section, then rerun full drill |
 | 3 | | | | | | | |
 | 4 | | | | | | | |
 
@@ -368,6 +368,7 @@ Fill in one row per drill run. Keep this log current.
 - `docker compose ps` failed: `docker` command not found
 - `docker ps` failed: `docker` command not found
 - `wsl -e ...` failed: WSL not installed
+- Follow-up attempt after Docker install: backend log at `C:\Users\Gaming pc\AppData\Local\Docker\log\host\com.docker.backend.exe.log` reported `hasNoVirtualization=true`, `docker=stopped`, `dockerAPI=stopped`.
 
 ---
 
