@@ -102,6 +102,8 @@ jobs:
         run: npm run lint
       - name: Enforce no-silent-catch policy
         run: npm run lint:silent-catch
+      - name: Enforce structured server logging
+        run: npm run lint:server-logging
 
   type-check:
     name: Type Check

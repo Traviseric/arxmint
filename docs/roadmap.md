@@ -273,7 +273,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 ### Testing
 - [x] All unit tests pass (`npm test`)
 - [ ] All E2E tests pass against regtest (`docs/E2E_TESTING.md`)
-- [ ] E2E tests run in CI on every push
+- [x] E2E tests run in CI on every push
 - [ ] 7+ days on testnet VPS with zero incidents
 - [ ] Disaster recovery drill completed (new VPS, restore backups, verify transactions)
 

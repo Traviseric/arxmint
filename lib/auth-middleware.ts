@@ -16,6 +16,7 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 const SESSION_TTL_SEC = 7 * 24 * 60 * 60; // 7 days
 const SESSION_COOKIE = "arxmint_session";
@@ -33,10 +34,12 @@ function getSecret(): string {
           "Generate one with: openssl rand -hex 32"
       );
     }
-    console.warn(
-      "[ArxMint] DEV: NEXTAUTH_SECRET is not set. " +
-        "Using ephemeral key — sessions will not survive server restarts."
-    );
+    logger.warn("auth_dev_ephemeral_secret", {
+      action: "auth_dev_ephemeral_secret",
+      message:
+        "[ArxMint] DEV: NEXTAUTH_SECRET is not set. " +
+        "Using ephemeral key — sessions will not survive server restarts.",
+    });
     return _DEV_EPHEMERAL_SECRET;
   }
   return secret;

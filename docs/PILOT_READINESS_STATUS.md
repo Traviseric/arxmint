@@ -4,10 +4,12 @@ As of March 2, 2026 (UTC)
 
 ## Snapshot
 
-- Production Readiness Gate checklist status: **14/35** checked in `docs/roadmap.md`.
+- Production Readiness Gate checklist status: **15/35** checked in `docs/roadmap.md`.
 - Automated validation in this cycle:
   - `npm test`: **pass** (230 passed, 0 failed, 3 skipped).
   - `npm run build`: **pass** (Next.js production build succeeded).
+- CI policy evidence:
+  - Required regtest E2E is wired in `.github/workflows/ci.yml` and runs on `push` to `master`.
 - Build still logs a production misconfiguration warning when `MACAROON_ROOT_KEY` is missing.
 
 ## Completed In This Cycle
@@ -18,6 +20,7 @@ As of March 2, 2026 (UTC)
 - Added payment status endpoint rate limiting in `app/api/payment/status/[id]/route.ts`.
 - Normalized rate limiting usage to the principal+IP limiter in middleware/payment/auth/l402/settlement paths.
 - Updated Production Readiness Gate checkboxes in `docs/roadmap.md` for evidence-backed items.
+- Added a CI-enforced server logging lint guard (`npm run lint:server-logging`) to prevent unstructured `console.*` logs in API/server entrypoints.
 
 ## Gate Breakdown (Checked / Total)
 
@@ -25,12 +28,13 @@ As of March 2, 2026 (UTC)
 - Authentication and Authorization: **4/6**
 - Payment Correctness: **3/5**
 - Infrastructure: **2/7**
-- Testing: **1/5**
+- Testing: **2/5**
 - Operations: **3/5**
 
 ## Remaining Pilot Blockers
 
 1. Run full regtest E2E suite and confirm pass criteria in `docs/E2E_TESTING.md`.
+   - Current local blocker in this environment: Docker CLI unavailable (`'docker' is not recognized`), so `npm run setup:regtest` cannot execute here.
 2. Deploy to testnet VPS and hold 7+ incident-free days.
 3. Complete and record disaster recovery drill with restore verification.
 4. Verify backup pipeline end-to-end: scheduled dumps, LND backup sync, off-host storage restore test.
