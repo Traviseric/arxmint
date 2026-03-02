@@ -1,5 +1,0 @@
-{
-  "blocked": true,
-  "reason": "18 human task(s) may be automatable by agents: [HT-001] **Run actual pilot deployments** to get real community data \u2014 Reason: Grant templates (lib/grant-templates.ts) use placeholder content. Only real pilot deployments with real merchant onboarding and transaction data can provide the KPIs, success stories, and metrics needed for FBCE and OpenSats applications.; [HT-002] **Choose and provision Glassnode or on-chain data API** \u2014 Reason: Cycle monitoring uses CoinGecko price approximations for MVRV/NUPL. Real on-chain metrics require a paid API (Glassnode) or a self-hosted mempool.space instance. This is a business/infrastructure decision.; [HT-005] **Set DATABASE_URL in production environment** \u2014 Reason: Task 001 (Prisma schema) adds DB persistence. Someone needs to provision a PostgreSQL database (managed or self-hosted) and set the connection string in the production environment....",
-  "blocked_at": "2026-02-28T07:28:53.188798"
-}

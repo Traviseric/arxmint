@@ -19,6 +19,8 @@ import { validateAmount, errorResponse } from "@/lib/validation";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 import { db } from "@/lib/db";
+import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { observeApiRoute } from "@/lib/api-observability";
 
 /** In-process challenge registry (process lifetime) */
 export const _challenges = new Map<
@@ -64,10 +66,28 @@ function prune() {
 }
 
 export async function POST(request: NextRequest) {
+  return observeApiRoute(request, "/api/payment", async () => {
   prune();
 
   // Optional: identify the caller (ArxMint session cookie or marketplace Bearer JWT)
   const callerPubkey = getCallerFromRequest(request);
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "payment-create",
+    ip,
+    callerPubkey,
+    RATE_LIMITS.paymentWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, "/api/payment", rl.retryAfter ?? 60);
+    return NextResponse.json({ error: "Too many requests" }, {
+      status: 429,
+      headers: { "Retry-After": String(rl.retryAfter ?? 60) },
+    });
+  }
 
   let body: {
     amount?: unknown;
@@ -172,4 +192,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  });
 }

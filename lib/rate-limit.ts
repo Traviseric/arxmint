@@ -43,6 +43,29 @@ export function checkRateLimit(
   return { allowed: true };
 }
 
+/**
+ * Composite limiter for authenticated APIs:
+ * - always applies an IP bucket
+ * - additionally applies a principal bucket when a user identity is present
+ */
+export function checkPrincipalAndIpRateLimit(
+  scope: string,
+  ip: string,
+  principal: string | null | undefined,
+  config: RateLimitConfig
+): { allowed: boolean; retryAfter?: number } {
+  const ipResult = checkRateLimit(`rl:${scope}:ip:${ip}`, config);
+  if (!ipResult.allowed) return ipResult;
+
+  if (!principal) return ipResult;
+  const principalResult = checkRateLimit(
+    `rl:${scope}:principal:${principal}`,
+    config
+  );
+  if (!principalResult.allowed) return principalResult;
+  return principalResult;
+}
+
 /** Remove expired entries to prevent unbounded memory growth */
 export function cleanupExpiredEntries(): void {
   const now = Date.now();
@@ -56,4 +79,6 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   payment: { windowMs: 60_000, maxRequests: 10 },
   auth:    { windowMs: 60_000, maxRequests: 5 },
   public:  { windowMs: 60_000, maxRequests: 60 },
+  paymentWrite: { windowMs: 60_000, maxRequests: 8 },
+  settlementWrite: { windowMs: 60_000, maxRequests: 6 },
 };

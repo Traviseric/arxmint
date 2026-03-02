@@ -287,6 +287,10 @@ curl -s http://localhost:3000/api/health | jq .
 | Web health | `/api/health` returns unhealthy | Check §2 or §6 |
 | Memory usage | > 85% | Check §5 |
 
+**Alert rules as code:** `docker/prometheus-alerts.yml`
+- Validate changes with `promtool check rules docker/prometheus-alerts.yml`
+- CI also validates this file in the build pipeline.
+
 ---
 
 ## 9. Rollback Procedure

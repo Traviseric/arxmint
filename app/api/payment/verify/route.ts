@@ -17,6 +17,8 @@ import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { validateCashuToken } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { db } from "@/lib/db";
+import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { observeApiRoute } from "@/lib/api-observability";
 
 /** Load challenge entry from memory; fall back to DB if not found */
 async function getOrLoadChallenge(
@@ -49,8 +51,26 @@ async function dbMarkPaid(id: string, paidAt: number): Promise<void> {
 }
 
 export async function POST(request: NextRequest) {
+  return observeApiRoute(request, "/api/payment/verify", async () => {
   // Optional: identify the caller (ArxMint session cookie or marketplace Bearer JWT)
   const callerPubkey = getCallerFromRequest(request);
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "payment-verify",
+    ip,
+    callerPubkey,
+    RATE_LIMITS.paymentWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, "/api/payment/verify", rl.retryAfter ?? 60);
+    return NextResponse.json({ error: "Too many requests" }, {
+      status: 429,
+      headers: { "Retry-After": String(rl.retryAfter ?? 60) },
+    });
+  }
 
   let body: {
     type?: unknown;
@@ -156,4 +176,5 @@ export async function POST(request: NextRequest) {
     { error: "type must be 'l402' or 'cashu'" },
     { status: 400 }
   );
+  });
 }

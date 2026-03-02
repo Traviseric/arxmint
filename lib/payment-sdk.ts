@@ -12,6 +12,7 @@ import {
   buildCashuChallenge,
   type CashuPaywallConfig,
 } from "./cashu-paywall";
+import { resilientFetch } from "./net-resilience";
 
 /** LND connection configuration */
 export interface LndConfig {
@@ -64,13 +65,16 @@ async function createLNDInvoice(
   lnd: { restUrl: string; macaroonHex: string }
 ): Promise<{ paymentRequest: string; rHash: string } | null> {
   try {
-    const res = await fetch(`${lnd.restUrl}/v1/invoices`, {
+    const res = await resilientFetch(`${lnd.restUrl}/v1/invoices`, {
       method: "POST",
       headers: {
         "Grpc-Metadata-Macaroon": lnd.macaroonHex,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ value: String(amountSats), memo }),
+    }, {
+      timeoutMs: 5_000,
+      circuitKey: "lnd:create-invoice",
     });
     if (!res.ok) return null;
     const data = await res.json();

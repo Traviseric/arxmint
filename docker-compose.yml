@@ -148,6 +148,7 @@ services:
     volumes:
       - prometheus-data:/prometheus
       - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
     networks:
       - sovereign
 

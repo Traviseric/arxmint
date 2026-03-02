@@ -20,3 +20,6 @@ Naming convention:
 
 Template:
 - Use `docs/governance/ADR_TEMPLATE.md`
+
+Current ADRs:
+- `docs/governance/adr/ADR-20260302-progressive-delivery-optout.md`

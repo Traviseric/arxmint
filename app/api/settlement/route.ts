@@ -13,6 +13,8 @@ import { db } from "@/lib/db";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
+import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { observeApiRoute } from "@/lib/api-observability";
 
 // ---- Types --------------------------------------------------
 
@@ -105,11 +107,29 @@ async function createCashuMintQuote(
 // ---- POST /api/settlement -----------------------------------
 
 export async function POST(request: NextRequest) {
+  return observeApiRoute(request, "/api/settlement", async () => {
   // Require auth: accept ArxMint session cookie, Bearer JWT, or X-Marketplace-Secret
   // header (server-to-server from Teneo Marketplace via MARKETPLACE_SHARED_SECRET).
   const caller = getCallerFromRequest(request);
   if (!caller) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "settlement-create",
+    ip,
+    caller,
+    RATE_LIMITS.settlementWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, "/api/settlement", rl.retryAfter ?? 60);
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter ?? 60) } }
+    );
   }
 
   let body: Partial<SettlementRequest>;
@@ -305,14 +325,33 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(response, { status: 201 });
+  });
 }
 
 // ---- GET /api/settlement ------------------------------------
 
 export async function GET(request: NextRequest) {
+  return observeApiRoute(request, "/api/settlement", async () => {
   const caller = getCallerFromRequest(request);
   if (!caller) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "settlement-read",
+    ip,
+    caller,
+    RATE_LIMITS.paymentWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, "/api/settlement", rl.retryAfter ?? 60);
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter ?? 60) } }
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -339,4 +378,5 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ settlement });
+  });
 }

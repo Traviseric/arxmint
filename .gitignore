@@ -43,6 +43,4 @@ tsconfig.tsbuildinfo
 .claude/
 
 # Orchestrator runtime launchers/logs (can contain ephemeral auth material)
-.overnight/*.bat
-.overnight/*_stderr.log
-.overnight/*_managed_stderr.log
+.overnight/

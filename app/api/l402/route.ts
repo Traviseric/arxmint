@@ -13,6 +13,8 @@ import { checkRateLimit } from "@/lib/rate-limiter";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 import { db } from "@/lib/db";
+import { resilientFetch } from "@/lib/net-resilience";
+import { observeApiRoute } from "@/lib/api-observability";
 
 /** In-memory store: base64-macaroon → { rHashBase64, expiresAt } */
 const pendingL402 = new Map<
@@ -138,19 +140,28 @@ async function lookupLNDInvoice(
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/, "");
-    const res = await fetch(`${lndRestUrl}/v1/invoice/${rHashUrlSafe}`, {
+    const res = await resilientFetch(`${lndRestUrl}/v1/invoice/${rHashUrlSafe}`, {
       headers: { "Grpc-Metadata-Macaroon": lndMacaroon },
+    }, {
+      timeoutMs: 5_000,
+      circuitKey: "lnd:lookup-invoice",
     });
 
     if (!res.ok) {
-      console.warn(`[ArxMint] LND invoice lookup failed: HTTP ${res.status}`);
+      logger.warn("l402_lnd_lookup_failed", {
+        status: res.status,
+        action: "l402_lnd_lookup_failed",
+      });
       return null;
     }
 
     const data = await res.json();
     return { settled: data.settled === true };
   } catch (e: unknown) {
-    console.warn("[ArxMint] LND invoice lookup error:", e instanceof Error ? e.message : String(e));
+    logger.warn("l402_lnd_lookup_error", {
+      error: e instanceof Error ? e.message : String(e),
+      action: "l402_lnd_lookup_error",
+    });
     return null;
   }
 }
@@ -169,29 +180,40 @@ async function createLNDInvoice(
   if (!lndRestUrl || !lndMacaroon) return null;
 
   try {
-    const res = await fetch(`${lndRestUrl}/v1/invoices`, {
+    const res = await resilientFetch(`${lndRestUrl}/v1/invoices`, {
       method: "POST",
       headers: {
         "Grpc-Metadata-Macaroon": lndMacaroon,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ value: String(amountSats), memo }),
+    }, {
+      timeoutMs: 5_000,
+      circuitKey: "lnd:create-invoice",
     });
 
     if (!res.ok) {
-      console.warn(`[ArxMint] LND invoice creation failed: HTTP ${res.status}`);
+      logger.warn("l402_lnd_create_invoice_failed", {
+        status: res.status,
+        action: "l402_lnd_create_invoice_failed",
+      });
       return null;
     }
 
     const data = await res.json();
     if (!data.payment_request || !data.r_hash) {
-      console.warn("[ArxMint] LND response missing payment_request or r_hash");
+      logger.warn("l402_lnd_missing_invoice_fields", {
+        action: "l402_lnd_missing_invoice_fields",
+      });
       return null;
     }
 
     return { paymentRequest: data.payment_request as string, rHash: data.r_hash as string };
   } catch (e: unknown) {
-    console.warn("[ArxMint] LND invoice creation error:", e instanceof Error ? e.message : String(e));
+    logger.warn("l402_lnd_create_invoice_error", {
+      error: e instanceof Error ? e.message : String(e),
+      action: "l402_lnd_create_invoice_error",
+    });
     return null;
   }
 }
@@ -215,6 +237,7 @@ async function createLNDInvoice(
  * the L402 flow transparently for agents using lnget.
  */
 export async function GET(request: NextRequest) {
+  return observeApiRoute(request, "/api/l402", async () => {
   const macaroonGuard = requireMacaroonKey();
   if (macaroonGuard) return macaroonGuard;
 
@@ -458,4 +481,5 @@ export async function GET(request: NextRequest) {
   );
 
   return response;
+  });
 }
