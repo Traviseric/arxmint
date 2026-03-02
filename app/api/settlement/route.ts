@@ -84,7 +84,7 @@ async function findExistingSettlement(
       return record;
     }
   } catch {
-    // DB unavailable — rely on in-memory only
+    logger.warn("findExistingSettlement DB lookup failed; using in-memory cache only");
   }
   return null;
 }
@@ -99,7 +99,7 @@ async function createCashuMintQuote(
     return { invoice: quote.request, quoteId: quote.quote };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[ArxMint] Cashu mint quote creation failed:", message);
+    logger.warn("Cashu mint quote creation failed", { error: message });
     return null;
   }
 }
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     // DB unavailable — generate a temp ID and continue
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[ArxMint] Could not persist settlement to DB:", message);
+    logger.warn("Could not persist settlement to DB", { error: message });
     txId = `mem_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
@@ -344,7 +344,7 @@ export async function GET(request: NextRequest) {
     "settlement-read",
     ip,
     caller,
-    RATE_LIMITS.paymentWrite
+    RATE_LIMITS.settlementWrite
   );
   if (!rl.allowed) {
     logger.rateLimit(ip, "/api/settlement", rl.retryAfter ?? 60);

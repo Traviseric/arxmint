@@ -4,12 +4,7 @@ This folder tracks engineering governance controls required for production opera
 
 ## Branch Protection Policy
 
-`master` must enforce:
-- Pull request required before merge
-- At least 1 approving review
-- Required checks: `Security Scans`, `Lint`, `Type Check`, `Build & Unit Tests`, `E2E Tests`, `Container Build`
-- Dismiss stale approvals on new commits
-- Block force-pushes and direct commits
+See `docs/governance/BRANCH_PROTECTION_POLICY.md`.
 
 ## ADR Process
 
@@ -23,3 +18,6 @@ Template:
 
 Current ADRs:
 - `docs/governance/adr/ADR-20260302-progressive-delivery-optout.md`
+
+ADR index:
+- `docs/governance/adr/README.md`

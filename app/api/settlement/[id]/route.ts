@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthPubkey, requireAuth } from "@/lib/auth-middleware";
+import { logger } from "@/lib/logger";
 import {
   isCommunityOwnedByUser,
   requireSessionUserId,
@@ -79,7 +80,7 @@ export async function GET(
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[ArxMint] Could not fetch settlement from DB:", message);
+    logger.warn("Could not fetch settlement from DB", { error: message });
     return NextResponse.json(
       { error: "Settlement lookup failed — database may be unavailable" },
       { status: 503 }

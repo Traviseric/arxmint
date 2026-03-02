@@ -49,8 +49,9 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts need 'unsafe-inline' or nonce; 'unsafe-eval' required for WASM
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              // Next.js inline runtime currently requires 'unsafe-inline';
+              // use wasm-unsafe-eval (narrower than unsafe-eval) for WASM execution.
+              "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               // WebSocket for Next.js HMR in dev, and LNC WebSocket in prod

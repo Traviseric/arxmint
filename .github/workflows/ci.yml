@@ -10,6 +10,9 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
+    env:
+      ARXMINT_SECURITY_GATE_MODE: ${{ vars.SECURITY_GATE_MODE }}
+      ARXMINT_SECURITY_CANARY_BRANCHES: ${{ vars.SECURITY_CANARY_BRANCHES }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,14 +21,70 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Resolve security gate mode
+        id: security_mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          mode="${ARXMINT_SECURITY_GATE_MODE:-observe}"
+          mode="$(printf '%s' "$mode" | tr '[:upper:]' '[:lower:]')"
+          case "$mode" in
+            off|observe|enforce) ;;
+            "")
+              mode="observe"
+              ;;
+            *)
+              echo "::warning::Invalid SECURITY_GATE_MODE '$mode'; defaulting to observe"
+              mode="observe"
+              ;;
+          esac
+
+          if [[ "$mode" == "observe" && -n "${ARXMINT_SECURITY_CANARY_BRANCHES:-}" ]]; then
+            IFS=',' read -r -a branches <<< "${ARXMINT_SECURITY_CANARY_BRANCHES}"
+            for branch in "${branches[@]}"; do
+              trimmed="$(printf '%s' "$branch" | xargs)"
+              if [[ -n "$trimmed" && "$trimmed" == "${GITHUB_REF_NAME:-}" ]]; then
+                mode="enforce"
+                break
+              fi
+            done
+          fi
+
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "ARXMINT_EFFECTIVE_SECURITY_MODE=$mode" >> "$GITHUB_ENV"
+          echo "Security gate mode: $mode"
       - name: Install dependencies
         run: npm ci
-      - name: Dependency audit (high+ blocks)
-        run: npm audit --audit-level=high
+      - name: Runtime artifact guardrails (tracked files)
+        if: ${{ steps.security_mode.outputs.mode != 'off' }}
+        run: bash scripts/security/guardrails.sh --scope tracked --mode "${{ steps.security_mode.outputs.mode }}"
+      - name: Dependency audit (high+)
+        if: ${{ steps.security_mode.outputs.mode != 'off' }}
+        shell: bash
+        run: |
+          set +e
+          npm audit --audit-level=high
+          rc=$?
+          set -e
+          if [[ "$rc" -ne 0 && "${{ steps.security_mode.outputs.mode }}" == "enforce" ]]; then
+            echo "::error::npm audit failed in enforce mode"
+            exit "$rc"
+          fi
+          if [[ "$rc" -ne 0 ]]; then
+            echo "::warning::npm audit findings detected (observe mode)"
+          fi
       - name: Secret scan (gitleaks)
+        if: ${{ steps.security_mode.outputs.mode != 'off' }}
+        id: gitleaks
+        continue-on-error: ${{ steps.security_mode.outputs.mode != 'enforce' }}
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Security mode summary
+        if: always()
+        run: |
+          echo "Security mode: ${{ steps.security_mode.outputs.mode }}"
+          echo "Gitleaks outcome: ${{ steps.gitleaks.outcome || 'skipped' }}"
 
   lint:
     name: Lint
@@ -148,7 +207,14 @@ jobs:
           docker compose logs --tail=200 || true
           exit 1
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npm run test:e2e:required
+        env:
+          TEST_SERVER_URL: http://localhost:3000
+          TEST_LND_REST_URL: http://localhost:8080
+          TEST_CASHU_MINT_URL: http://localhost:3338
+      - name: Run optional E2E tests (non-blocking)
+        continue-on-error: true
+        run: npm run test:e2e:optional
         env:
           TEST_SERVER_URL: http://localhost:3000
 

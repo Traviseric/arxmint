@@ -10,12 +10,17 @@
     "start": "next start",
     "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "lint": "next lint",
+    "setup:githooks": "node scripts/setup-githooks.cjs",
+    "security:guardrails": "node scripts/security/run-guardrails.cjs --scope staged --mode observe",
+    "security:guardrails:enforce": "node scripts/security/run-guardrails.cjs --scope staged --mode enforce",
     "setup:cashu": "docker compose -f docker/docker-compose.cashu.yml up -d",
     "setup:full": "docker compose up -d",
     "setup:cdk": "docker compose -f docker-compose.yml -f docker/docker-compose.cdk.yml up -d",
     "setup:agents": "bash scripts/deploy-agent-tools.sh",
     "setup:regtest": "docker compose -f docker-compose.yml -f docker/docker-compose.regtest.yml up -d && bash scripts/wait-for-stack.sh && bash scripts/fund-regtest.sh",
-    "test:e2e": "node --experimental-strip-types --test \"tests/e2e/**/*.test.ts\""
+    "test:e2e": "node --experimental-strip-types --test \"tests/e2e/**/*.test.ts\"",
+    "test:e2e:required": "bash scripts/test-e2e-required.sh",
+    "test:e2e:optional": "bash scripts/test-e2e-optional.sh"
   },
   "dependencies": {
     "@cashu/cashu-ts": "^3.5.0",

@@ -45,7 +45,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ communities });
   } catch (error: unknown) {
     // DB not configured — return empty list so app degrades gracefully
-    console.warn("Could not fetch communities from DB:", error instanceof Error ? error.message : String(error));
+    logger.warn("Could not fetch communities from DB", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ communities: [] });
   }
 }
@@ -85,8 +87,10 @@ export async function POST(request: NextRequest) {
         },
       });
       savedId = saved.id;
-    } catch {
-      console.warn("Community not persisted: database not configured or unavailable");
+    } catch (error: unknown) {
+      logger.warn("Community not persisted", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     return NextResponse.json({

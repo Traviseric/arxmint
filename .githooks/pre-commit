@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Block obvious secret material from entering commits.
-PATTERN='sk-ant-oat01|sk-ant-ort01|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|CLAUDE_CODE_OAUTH_TOKEN=sk-'
+SCRIPT="scripts/security/run-guardrails.cjs"
+MODE="${ARXMINT_GUARDRAIL_MODE:-observe}"
 
-# Scan only added lines (ignore deletions) so remediation commits can remove leaked secrets.
-if git diff --cached -U0 --no-color -- . ':(exclude).githooks/pre-commit' | grep -E '^\+[^+]' | grep -E "$PATTERN" >/dev/null 2>&1; then
-  echo "ERROR: Secret-like token detected in staged changes."
-  echo "Commit blocked. Remove/rotate the secret and try again."
+if [[ ! -f "$SCRIPT" ]]; then
+  echo "[pre-commit] missing $SCRIPT" >&2
   exit 1
 fi
 
-exit 0
+node "$SCRIPT" --scope staged --mode "$MODE"

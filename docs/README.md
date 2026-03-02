@@ -17,6 +17,7 @@
 | [VPS_SETUP.md](VPS_SETUP.md) | Vultr/DigitalOcean server setup checklist |
 | [DR_DRILL.md](DR_DRILL.md) | Disaster recovery drill procedure |
 | [INCIDENT_RESPONSE.md](INCIDENT_RESPONSE.md) | Incident response runbook |
+| [security/HARDENING_ROLLOUT_PLAN.md](security/HARDENING_ROLLOUT_PLAN.md) | Security guardrail rollout and mode controls (`off`/`observe`/`enforce`) |
 | [MIGRATION_PLAN.md](MIGRATION_PLAN.md) | Mainnet migration + guardian distribution plan |
 | [FLAKY_TEST_POLICY.md](FLAKY_TEST_POLICY.md) | Flaky test quarantine ownership and expiry policy |
 | [TRUST_STATEMENT.md](TRUST_STATEMENT.md) | Single-host federation trust disclosure |

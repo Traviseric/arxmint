@@ -33,7 +33,11 @@ async function getOrLoadChallenge(
     const entry = { challenge: data.challenge, createdAt: data.createdAt };
     _challenges.set(id, entry);
     return entry;
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("Failed to load payment challenge from DB", {
+      challengeId: id,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -45,8 +49,11 @@ async function dbMarkPaid(id: string, paidAt: number): Promise<void> {
       where: { id },
       data: { status: "paid", paidAt: new Date(paidAt) },
     });
-  } catch {
-    // Silently fail — in-memory state is source of truth during this process lifetime
+  } catch (error: unknown) {
+    logger.warn("Failed to mark payment challenge as paid in DB", {
+      challengeId: id,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 

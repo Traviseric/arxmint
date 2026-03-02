@@ -5,6 +5,7 @@
 **Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Overnight tasks:** `OVERNIGHT_TASKS.md` (concrete implementation tasks derived from this roadmap)
 **E2E testing:** `docs/E2E_TESTING.md` (8 layers, 22 test flows)
+**Security rollout:** `docs/security/HARDENING_ROLLOUT_PLAN.md` (observe-first hardening with canary enforce)
 **Codename convention:** Phase names follow the brand versioning from positioning doc (Keystone → Spire → Aether)
 **Production gate:** This roadmap defines a clear Production Readiness Gate between Phase E and Phase 4. No real money until the gate passes.
 
