@@ -21,7 +21,8 @@ import {
   DollarSign,
   Ban,
   Radio,
-  ExternalLink
+  ExternalLink,
+  Store,
 } from "lucide-react";
 import TerminalDemo from "@/components/terminal-demo";
 
@@ -376,11 +377,38 @@ export default function HomePage() {
               The Sovereign Bridge.
             </h2>
             <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-              Not another wallet. A private money rail where humans and AI agents share the same infrastructure.
+              Not another wallet. Private payment rails where merchants, humans, and AI agents share the same infrastructure.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Merchants */}
+            <div className="bg-bg-elevated border border-accent/20 rounded-xl p-8 glow-card group relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl transition-colors" />
+              <div className="w-12 h-12 rounded-md bg-accent/10 border border-accent/20 flex items-center justify-center mb-8">
+                <Store className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold text-text-primary mb-4">For Merchants</h3>
+              <p className="text-text-secondary text-sm leading-relaxed mb-8">
+                Accept Bitcoin payments with near-zero fees. No Stripe. No chargebacks. Instant settlement. One API key or a printed QR code.
+              </p>
+              <ul className="space-y-3 font-mono text-xs text-text-muted">
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  ~0% fees vs Stripe 2.9%
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Hosted checkout + payment links
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-1 h-1 rounded-full bg-accent" />
+                  Lightning Address for POS
+                </li>
+              </ul>
+            </div>
+
             {/* Humans */}
             <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card group relative overflow-hidden">
               <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/5 rounded-full blur-2xl group-hover:bg-accent/10 transition-colors" />
@@ -408,12 +436,11 @@ export default function HomePage() {
             </div>
 
             {/* AI Agents */}
-            <div className="bg-bg-elevated border border-accent/20 rounded-xl p-8 glow-card group relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl transition-colors" />
+            <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card group relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/5 rounded-full blur-2xl group-hover:bg-accent/10 transition-colors" />
 
-              <div className="w-12 h-12 rounded-md bg-accent/10 border border-accent/20 flex items-center justify-center mb-8">
-                <Cpu className="w-5 h-5 text-accent" />
+              <div className="w-12 h-12 rounded-md bg-bg-surface border border-border-strong flex items-center justify-center mb-8">
+                <Cpu className="w-5 h-5 text-text-primary" />
               </div>
               <h3 className="text-xl font-semibold text-text-primary mb-4">For AI Agents</h3>
               <p className="text-text-secondary text-sm leading-relaxed mb-8">

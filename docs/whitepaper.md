@@ -724,6 +724,19 @@ Guardian governance framework, programmable ecash (STARK/Cairo spending conditio
 
 Longmont pilot deployment, grant applications (FBCE, OpenSats, Fedi), grant reporting dashboard, replication playbook ("BCE in a Box"), multi-city federation.
 
+### Phase 5: Bazaar — Decentralized Merchant Platform
+*"Any merchant accepts sats with one API key — zero Stripe fees."*
+
+Phase 5 transforms ArxMint from community infrastructure into a full merchant payment platform — a private, open-source, decentralized alternative to Stripe. The core payment loop (create challenge, pay, verify) is already production-quality from Phases A-E. Phase 5 adds the merchant-facing developer experience on top.
+
+**The problem:** Stripe charges 2.9% + $0.30 per transaction. A merchant doing $10K/month loses ~$320 to processing fees. Chargebacks add more. Customer payment data gets sold to advertisers. And Stripe can freeze your funds at any time.
+
+**The solution:** ArxMint ecash and Lightning payments cost fractions of a penny. Settlement is instant. Chargebacks are impossible (bearer ecash is final). No payment data leaves the system. The merchant controls their own infrastructure.
+
+Ten deliverables: Merchant API keys with sandbox mode (5.1), webhook system for automated fulfillment (5.2), hosted checkout page with payment links (5.3), payment status API with real-time SSE (5.4), client-side JavaScript SDK and React components (5.5), LNURL-pay and Lightning Address for physical POS (5.6), merchant dashboard with analytics (5.7), settlement automation with configurable payout schedules (5.8), public merchant directory with search (5.9), and idempotency with production hardening (5.10).
+
+**Target integration times:** Coffee shop with a printed QR code: 5 minutes. Online store with hosted checkout: 15 minutes. SaaS app with SDK and webhooks: 1 hour. AI agent with L402 API keys: 30 minutes.
+
 ### Dependency Graph
 
 ```
@@ -735,6 +748,9 @@ Phase 0 (Security) ──→ Phase 1 (Core)
 Phase 2 (Privacy) ──→ Phase 3 (Advanced)
     Phase 2.4 (Coco Multi-Mint) ──→ Phase 4.5 (Multi-City)
 Phase 4 depends on: Phase 0 + 1.3/1.4 + 2.7 + 3.1
+Phase 5 depends on: Phase 4 (pilot validation) + Phase A-E (production infrastructure)
+    Phase 5.1 (API Keys) ──→ 5.3 (Checkout) + 5.4 (Status) + 5.6 (LNURL) + 5.7 (Dashboard)
+    Phase 5.2 (Webhooks) ──→ 5.5 (Client SDK) + 5.8 (Settlement Auto)
 ```
 
 ---
@@ -771,15 +787,15 @@ Phase 4 depends on: Phase 0 + 1.3/1.4 + 2.7 + 3.1
 
 ## 14. Conclusion
 
-Bitcoin's promise was peer-to-peer electronic cash. Fifteen years later, most Bitcoin is held, not spent. The infrastructure gap is real: no local mints, no private payment rails, no merchant directories, no way for AI agents to participate in the economy.
+Bitcoin's promise was peer-to-peer electronic cash. Fifteen years later, most Bitcoin is held, not spent. The infrastructure gap is real: no local mints, no private payment rails, no merchant directories, no way for AI agents to participate in the economy. And the existing payment infrastructure — Stripe, Square, PayPal — extracts 2.9%+ from every transaction while selling customer data.
 
-ArxMint closes this gap by generating complete sovereign economy infrastructure from a single natural language prompt. Fedimint and Cashu provide private ecash. Lightning provides instant routing. L402 and NUT-24 enable machine commerce. The spend router optimizes for privacy. The governance framework ensures community control. The metrics dashboard proves economic health to grant funders.
+ArxMint closes both gaps. For communities, it generates complete sovereign economy infrastructure from a single natural language prompt. For merchants, it provides a Stripe-like developer experience with near-zero fees, instant settlement, and no customer KYC. Fedimint and Cashu provide private ecash. Lightning provides instant routing. L402 and NUT-24 enable machine commerce. The spend router optimizes for privacy. The governance framework ensures community control. The metrics dashboard proves economic health to grant funders.
 
-The thesis is simple: **humans and AI agents can share the same private commerce infrastructure.** The same sats that pay for coffee at a local shop can pay an AI agent for a privacy audit. The same mint that issues ecash to a community member issues ecash to an autonomous process. One prompt, one deploy, one economy.
+The thesis is simple: **humans and AI agents can share the same private commerce infrastructure — and merchants can accept payments on it as easily as adding a Stripe script tag.** The same sats that pay for coffee at a local shop can pay an AI agent for a privacy audit. The same mint that issues ecash to a community member issues ecash to an autonomous process. The same API key that powers a hosted checkout page powers a programmatic settlement between federated marketplaces.
 
-The Boulder-Longmont pilot will be the first test. Thirty merchants. Three hundred users. Six months. If the model works — and the technology says it should — the replication playbook makes it available to every community in the world.
+The Boulder-Longmont pilot will be the first test. Thirty merchants. Three hundred users. Six months. If the model works — and the technology says it should — the replication playbook and merchant platform make it available to every community and every merchant in the world.
 
-Build the citadel.
+Build the citadel. Open the bazaar.
 
 ---
 

@@ -8,6 +8,7 @@ import {
   Layers,
   Sparkles,
   Castle,
+  Store,
   Lock,
   Github,
   type LucideIcon,
@@ -18,7 +19,7 @@ import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll
 export const metadata = {
   title: "Roadmap — ArxMint",
   description:
-    "Five phases from security hardening to production deployment. Every task traces back to research. See where ArxMint is headed.",
+    "Six phases from security hardening to a decentralized Stripe alternative. Every task traces back to research. See where ArxMint is headed.",
 };
 
 type RoadmapStatus = "done" | "current" | "pending";
@@ -48,12 +49,12 @@ const phases: RoadmapPhase[] = [
     number: 0,
     codename: "Fortify",
     title: "Security Hardening",
-    status: "current" as const,
+    status: "done" as const,
     icon: Shield,
     description:
-      "Most P0 controls are shipped and tested. Final remote-signer transport hardening is still in progress.",
+      "All P0 security controls shipped and tested. Keyset validation, security tiers, and remote signer config complete.",
     humanDescription: "your sats and data are protected before anything else gets built",
-    timeline: "In Progress",
+    timeline: "Complete",
     tasks: [
       {
         id: "0.1",
@@ -93,12 +94,12 @@ const phases: RoadmapPhase[] = [
     number: 1,
     codename: "Keystone",
     title: "Core Architecture",
-    status: "current" as const,
+    status: "done" as const,
     icon: Wrench,
     description:
-      "Core architecture is largely shipped: spend routing, merchant onboarding, BCE metrics, and scoped agent controls.",
+      "Core architecture complete: spend routing, merchant onboarding, BCE metrics, NUT-24 paywalls, and scoped agent controls.",
     humanDescription: "merchants can accept payments, wallet auto-picks best way to pay",
-    timeline: "In Progress",
+    timeline: "Complete",
     tasks: [
       {
         id: "1.1",
@@ -162,12 +163,12 @@ const phases: RoadmapPhase[] = [
     number: 2,
     codename: "Spire",
     title: "Full Privacy + Commerce",
-    status: "current" as const,
+    status: "done" as const,
     icon: Layers,
     description:
-      "Mixed maturity phase: some capabilities are production-ready, others are partial integrations or prototype scaffolding.",
+      "Privacy and commerce stack complete: Fedimint v0.10, NUT-26 QR payments, monitoring, gateway bridge. Ark and CDK remain upstream-blocked.",
     humanDescription: "ecash across multiple mints, tap-to-pay, real-time monitoring",
-    timeline: "In Progress",
+    timeline: "Complete",
     tasks: [
       {
         id: "2.1",
@@ -286,12 +287,12 @@ const phases: RoadmapPhase[] = [
     number: 4,
     codename: "Citadel",
     title: "Production + Grants",
-    status: "pending" as const,
+    status: "current" as const,
     icon: Castle,
     description:
-      "Production rollout phase: pilot deployment, grant execution, and replication at community scale.",
-    humanDescription: "pilot deployment plus grant-backed expansion",
-    timeline: "Planning + Tooling",
+      "Pilot deployment in Longmont, CO. Grant applications drafted for OpenSats, HRF, and FBCE. KPI framework and replication playbook ready.",
+    humanDescription: "real merchants, real payments, real sats changing hands",
+    timeline: "In Progress",
     tasks: [
       {
         id: "4.1",
@@ -326,6 +327,89 @@ const phases: RoadmapPhase[] = [
         title: "Multi-city federation",
         humanTitle: "Connect Longmont to other cities on the same rails",
         description: "Expand pilot model into multi-city commerce via multi-mint and Lightning bridge routes.",
+        status: "pending" as const,
+      },
+    ],
+  },
+  {
+    number: 5,
+    codename: "Bazaar",
+    title: "Decentralized Merchant Platform",
+    status: "pending" as const,
+    icon: Store,
+    description:
+      "A decentralized Stripe alternative. Merchant API keys, webhooks, hosted checkout, client SDK, and a merchant dashboard. Near-zero fees, instant settlement, no KYC, self-hosted.",
+    humanDescription: "any merchant accepts sats with one API key — zero Stripe fees",
+    timeline: "Planned",
+    tasks: [
+      {
+        id: "5.1",
+        title: "Merchant API keys + scoped auth",
+        humanTitle: "sk_live_... and pk_test_... — programmatic access with sandbox mode",
+        description: "Issue HMAC-derived key pairs on merchant creation. Scoped permissions, key rotation, rate limits per key. Test keys route to regtest infrastructure.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.2",
+        title: "Webhook system",
+        humanTitle: "Get notified instantly when a customer pays",
+        description: "HTTP POST event delivery on payment state changes. HMAC-SHA256 signed payloads, exponential backoff retry, delivery logs for debugging.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.3",
+        title: "Hosted checkout page",
+        humanTitle: "A payment link that just works — no code required",
+        description: "Merchant-branded payment page with QR code, real-time status via SSE, auto-redirect on completion. Reusable payment links for fixed-price items.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.4",
+        title: "Payment status API + real-time updates",
+        humanTitle: "Know exactly when your customer paid",
+        description: "GET /payments/:id for polling, SSE for real-time push, WebSocket for high-frequency POS. Cursor-paginated payment history.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.5",
+        title: "Client-side SDK + React components",
+        humanTitle: "Add payments to any website in 10 lines of code",
+        description: "@arxmint/js (vanilla, <15KB) and @arxmint/react with PayButton, CheckoutForm, and QRPayment components. Handles the full challenge-pay-verify loop.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.6",
+        title: "LNURL-pay + Lightning Address",
+        humanTitle: "merchant@mint.arxmint.com — scan and pay at any register",
+        description: "Every merchant gets a Lightning Address and LNURL-pay endpoint. Static QR codes for physical POS. NFC tag provisioning via Numo integration.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.7",
+        title: "Merchant dashboard",
+        humanTitle: "See every payment, manage your keys, track your revenue",
+        description: "Payments, settlements, analytics, API key management, webhook config, developer integration guides. CSV/JSON export.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.8",
+        title: "Settlement automation",
+        humanTitle: "Invoice paid — ecash minted — sats in your wallet, automatically",
+        description: "LND invoice subscription watches for settlement. Auto-mints Cashu ecash and pushes to merchant wallet. Configurable payout schedule (instant, daily, weekly).",
+        status: "pending" as const,
+      },
+      {
+        id: "5.9",
+        title: "Public merchant directory",
+        humanTitle: "Customers find you — searchable by category and location",
+        description: "Unauthenticated directory at /merchants. Search by category, location, payment methods. Public merchant profile pages with QR code and Lightning Address.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.10",
+        title: "Idempotency + production hardening",
+        humanTitle: "No double charges, no duplicate records, no silent failures",
+        description: "Idempotency-Key header on all payment endpoints. 24-hour key retention. Structured error codes. Request logging with merchant ID and latency tracking.",
         status: "pending" as const,
       },
     ],
@@ -377,7 +461,7 @@ export default function RoadmapPage() {
                 </div>
                 <div className="text-right">
                   <span className="block text-text-muted mb-1">Architecture</span>
-                  <span className="text-text-primary">Phase 0 - 4</span>
+                  <span className="text-text-primary">Phase 0 - 5</span>
                 </div>
               </div>
             </div>
@@ -387,7 +471,7 @@ export default function RoadmapPage() {
             <div className="pl-6 border-l border-text-muted/30">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-text-primary mb-3">Abstract.</h2>
               <p className="text-sm leading-relaxed text-text-secondary pr-8">
-                A purely peer-to-peer version of electronic cash and AI agent commerce would allow online payments and autonomous economic activities to be sent directly from one party to another without going through a financial institution or centralized API provider. This document outlines the five phases of ArxMint&apos;s development, from foundational security hardening to production-grade deployment of sovereign Bitcoin economies integrating Fedimint, Cashu, and the Model Context Protocol (MCP). Every task traces back to rigorous core research, prioritized by security impact.
+                A purely peer-to-peer version of electronic cash and AI agent commerce would allow online payments and autonomous economic activities to be sent directly from one party to another without going through a financial institution or centralized API provider. This document outlines six phases of ArxMint&apos;s development, from foundational security hardening through a decentralized merchant payment platform. ArxMint integrates Fedimint, Cashu, Lightning L402, and the Model Context Protocol (MCP) into sovereign Bitcoin payment infrastructure that any merchant can adopt with one API key. Every task traces back to rigorous core research, prioritized by security impact.
               </p>
             </div>
           </ScrollReveal>
@@ -429,7 +513,7 @@ export default function RoadmapPage() {
               <h3 className="text-[11px] font-mono text-accent tracking-widest uppercase mb-6 flex items-center gap-2 border-b border-border-default/50 pb-2">
                 <Clock className="w-3 h-3" /> Execution Timeline
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
                 {phases.map((phase) => (
                   <div key={phase.number} className="text-left">
                     <span className="text-[10px] font-mono text-text-muted block mb-1 tracking-widest">PHASE {phase.number}.0</span>
