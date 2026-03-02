@@ -725,17 +725,19 @@ Guardian governance framework, programmable ecash (STARK/Cairo spending conditio
 Longmont pilot deployment, grant applications (FBCE, OpenSats, Fedi), grant reporting dashboard, replication playbook ("BCE in a Box"), multi-city federation.
 
 ### Phase 5: Bazaar — Decentralized Merchant Platform
-*"Any merchant accepts sats with one API key — zero Stripe fees."*
+*"Any merchant runs their own payment node — zero fees, zero middlemen."*
 
-Phase 5 transforms ArxMint from community infrastructure into a full merchant payment platform — a private, open-source, decentralized alternative to Stripe. The core payment loop (create challenge, pay, verify) is already production-quality from Phases A-E. Phase 5 adds the merchant-facing developer experience on top.
+Phase 5 transforms ArxMint from community infrastructure into a full merchant payment platform — a private, open-source, self-hosted alternative to Stripe. The core payment loop (create challenge, pay, verify) is already production-quality from Phases A-E. Phase 5 adds the merchant-facing developer experience on top.
 
 **The problem:** Stripe charges 2.9% + $0.30 per transaction. A merchant doing $10K/month loses ~$320 to processing fees. Chargebacks add more. Customer payment data gets sold to advertisers. And Stripe can freeze your funds at any time.
 
-**The solution:** ArxMint ecash and Lightning payments cost fractions of a penny. Settlement is instant. Chargebacks are impossible (bearer ecash is final). No payment data leaves the system. The merchant controls their own infrastructure.
+**The solution:** Merchants run their own ArxMint payment node. Customers pay the merchant's node directly — peer-to-peer via ecash or Lightning. Settlement is instant (no T+2 delay). Chargebacks are impossible (bearer ecash is final). No payment data leaves the merchant's infrastructure.
 
-Ten deliverables: Merchant API keys with sandbox mode (5.1), webhook system for automated fulfillment (5.2), hosted checkout page with payment links (5.3), payment status API with real-time SSE (5.4), client-side JavaScript SDK and React components (5.5), LNURL-pay and Lightning Address for physical POS (5.6), merchant dashboard with analytics (5.7), settlement automation with configurable payout schedules (5.8), public merchant directory with search (5.9), and idempotency with production hardening (5.10).
+**Architecture decision (locked by Research #7):** ArxMint must be strictly non-custodial open-source software, following the BTCPay Server legal model. A hosted platform where ArxMint receives customer payments and settles to merchants would constitute money transmission under FinCEN, require multi-state MSB licensing, EU MiCA CASP authorization, and UK FCA registration. The self-hosted model is protected under FinCEN's unhosted wallet exemption, the DOJ's 2025 safe harbor for non-custodial peer-to-peer software, and MiCA Article 2/Recital 83.
 
-**Target integration times:** Coffee shop with a printed QR code: 5 minutes. Online store with hosted checkout: 15 minutes. SaaS app with SDK and webhooks: 1 hour. AI agent with L402 API keys: 30 minutes.
+Ten deliverables: Local L402 macaroon auth tokens (5.1), webhook engine running on the merchant's node (5.2), self-hosted checkout page on the merchant's own domain (5.3), payment status API with real-time SSE (5.4), client-side SDK connecting to the merchant's endpoint (5.5), LNURL-pay and Lightning Address on the merchant's domain (5.6), self-hosted merchant dashboard (5.7), one-command Docker deployment (5.8), public merchant directory (5.9), and idempotency with production hardening (5.10).
+
+**Target integration times:** Coffee shop with `arxmint merchant init` + printed QR: 10 minutes. Online store with self-hosted checkout: 30 minutes. SaaS app with SDK and webhooks: 1-2 hours.
 
 ### Dependency Graph
 

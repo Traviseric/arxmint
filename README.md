@@ -40,25 +40,26 @@ ArxMint flips this: ecash payments cost fractions of a penny. Settlement is inst
 
 | | Stripe | ArxMint |
 |---|---|---|
-| **Transaction fee** | 2.9% + $0.30 | ~0.1% (Lightning) or 0% (ecash) |
-| **Settlement** | T+2 days | Instant |
+| **Transaction fee** | 2.9% + $0.30 | 0% (ecash) or ~0.1% (Lightning routing) |
+| **Settlement** | T+2 days | Instant — customer pays your node directly |
 | **Customer KYC** | Card + billing address | None — ecash is anonymous |
 | **Chargebacks** | Yes (merchant liability) | Impossible — payments are final |
-| **Data sold** | Yes | Never |
+| **Data sold** | Yes | Impossible — no central entity holds the data |
 | **Open source** | No | Yes — MIT license |
-| **Self-hosted** | No | Yes — full Docker stack |
-| **Censorship risk** | Platform can freeze funds | Sovereign — you control your mint |
+| **Self-hosted** | No | Required by design (legally protected) |
+| **Censorship risk** | Platform can freeze funds | Impossible — you control your own node |
+| **Custody** | Stripe holds funds T+2 | Never — peer-to-peer, you hold your keys |
 
 ## How It Works
 
-### For Merchants (Stripe-like Integration)
+### For Merchants (Self-Hosted, Non-Custodial)
 
 ```
-1. Onboard → get API keys (sk_live_... / pk_test_...)
-2. Create a checkout session or payment link
-3. Customer pays via ecash QR, Lightning, or hosted checkout page
-4. Webhook fires → fulfill order
-5. Sats settle instantly to your wallet
+1. arxmint merchant init → one Docker command, your payment node is live
+2. Create a checkout session or payment link on YOUR node
+3. Customer pays via ecash QR, Lightning, or your self-hosted checkout page
+4. Webhook fires from YOUR node → fulfill order
+5. Sats arrive directly in YOUR wallet — no middleman, no settlement delay
 ```
 
 ### For Communities (Prompt-Driven)
@@ -220,7 +221,7 @@ See [docs/roadmap.md](docs/roadmap.md) for the full phased plan with research tr
 | A-E | **Foundation → Hardening** — DB, vault, auth, payments, infra, E2E tests, production hardening | Code complete |
 | — | **Production Readiness Gate** — testnet VPS deployment | Pending (human action) |
 | 4 | **Citadel** — Longmont pilot + grant applications (OpenSats, HRF, FBCE) | In progress |
-| 5 | **Bazaar** — Decentralized merchant platform (API keys, webhooks, hosted checkout, client SDK) | Planned |
+| 5 | **Bazaar** — Self-hosted merchant platform (local auth, webhooks, checkout, client SDK, one-command deploy) | Planned |
 
 **Feature path:**
 
@@ -237,16 +238,16 @@ Phase 5 turns ArxMint into a full Stripe alternative. 10 scoped deliverables:
 
 | # | Feature | What It Unlocks |
 |---|---------|-----------------|
-| 5.1 | Merchant API keys | `sk_live_...` / `pk_test_...` — programmatic access + sandbox mode |
-| 5.2 | Webhook system | `payment.completed` events for automated fulfillment |
-| 5.3 | Hosted checkout | Link-based payment page — no code needed |
-| 5.4 | Payment status API | `GET /payments/:id` + SSE real-time stream |
-| 5.5 | Client SDK | `@arxmint/js` + `@arxmint/react` — 10-line integration |
-| 5.6 | LNURL-pay + Lightning Address | `merchant@mint.arxmint.com` — scan-and-pay for POS |
-| 5.7 | Merchant dashboard | Payments, settlements, analytics, API key management |
-| 5.8 | Settlement automation | Invoice-paid listener → auto-mint ecash → push to merchant |
+| 5.1 | Local auth tokens | L402 macaroons on your own node — programmatic access + sandbox mode |
+| 5.2 | Webhook engine (local) | `payment.completed` events from your own node for automated fulfillment |
+| 5.3 | Self-hosted checkout | Payment page on your domain — no code needed, no middleman |
+| 5.4 | Payment status API | `GET /payments/:id` + SSE real-time stream on your node |
+| 5.5 | Client SDK | `@arxmint/js` + `@arxmint/react` — connects to your endpoint |
+| 5.6 | LNURL-pay + Lightning Address | `name@pay.merchant.com` — scan-and-pay on your domain |
+| 5.7 | Merchant dashboard | Self-hosted: payments, analytics, node status, token management |
+| 5.8 | One-command deploy | `arxmint merchant init` → Docker Compose → live in 10 minutes |
 | 5.9 | Public merchant directory | Customer-facing discovery by category/location |
-| 5.10 | Idempotency + hardening | Duplicate request protection, structured error codes |
+| 5.10 | Idempotency + hardening | Duplicate request protection, auto-HTTPS, firewall rules |
 
 ## Built On
 
