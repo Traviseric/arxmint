@@ -385,3 +385,11 @@ Stack tags: spa, container, api
 | PE-021 | Testing | No flaky test quarantine policy | Track flaky tests with owner/expiry metadata | P3 | S |
 | PE-022 | Deployment | No canary/traffic-shift deployment pattern | Introduce progressive delivery pattern or documented opt-out ADR | P3 | L |
 | PE-023 | Observability | Alert definitions are largely manual/instructional | Codify alerts as config-as-code and validate in CI | P3 | M |
+
+## Implementation Update (2026-03-02)
+
+- **PE-005 (Restore drill evidence):** Attempted in this agent environment on **2026-03-02** but blocked because Docker and WSL were unavailable. Evidence and follow-up date are logged in `docs/DR_DRILL.md` under "Latest Attempt Evidence (2026-03-02)".
+- **PE-013 (CSP hardening):** Decision recorded in ADR `docs/governance/adr/ADR-20260302-csp-unsafe-inline-transition.md`.
+  - Enforced CSP remains compatibility mode for now.
+  - Strict CSP is enabled in `Content-Security-Policy-Report-Only`.
+  - Target enforcement cutover dates are defined in the ADR (staging: **2026-04-13**, production: **2026-04-27**).

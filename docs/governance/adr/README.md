@@ -21,3 +21,4 @@ Template:
 Current ADRs:
 
 - [`ADR-20260302-progressive-delivery-optout.md`](ADR-20260302-progressive-delivery-optout.md)
+- [`ADR-20260302-csp-unsafe-inline-transition.md`](ADR-20260302-csp-unsafe-inline-transition.md)

@@ -358,10 +358,16 @@ Fill in one row per drill run. Keep this log current.
 
 | # | Date | Operator | Duration | Backup age at drill | Phase 3 all pass? | Issues found | Follow-up actions |
 |---|------|----------|----------|---------------------|-------------------|--------------|-------------------|
-| 1 | | | | | | | |
+| 1 | 2026-03-02 | Codex (automated) | 00:08 | N/A | No (blocked) | Drill execution environment did not have Docker or WSL installed, so stack restore commands could not run | Run drill on a Docker-capable host and attach full Phase 1-3 evidence by 2026-03-05 |
 | 2 | | | | | | | |
 | 3 | | | | | | | |
 | 4 | | | | | | | |
+
+### Latest Attempt Evidence (2026-03-02)
+
+- `docker compose ps` failed: `docker` command not found
+- `docker ps` failed: `docker` command not found
+- `wsl -e ...` failed: WSL not installed
 
 ---
 

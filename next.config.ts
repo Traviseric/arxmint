@@ -22,6 +22,21 @@ const nextConfig: NextConfig = {
   // Headers for WASM + SharedArrayBuffer (required by Web Workers) + security hardening
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
+    const cspReportOnlyEnabled =
+      isProd && process.env.CSP_REPORT_ONLY !== "false";
+    const strictReportOnlyCsp = [
+      "default-src 'self'",
+      "script-src 'self' 'wasm-unsafe-eval'",
+      "style-src 'self'",
+      "img-src 'self' data: blob:",
+      "connect-src 'self' ws: wss: https:",
+      "worker-src 'self' blob:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "report-uri /api/csp-report",
+    ].join("; ");
     return [
       {
         source: "/(.*)",
@@ -64,6 +79,14 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
             ].join("; "),
           },
+          ...(cspReportOnlyEnabled
+            ? [
+                {
+                  key: "Content-Security-Policy-Report-Only",
+                  value: strictReportOnlyCsp,
+                },
+              ]
+            : []),
         ],
       },
     ];

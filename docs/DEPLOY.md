@@ -124,6 +124,10 @@ GRAFANA_PASSWORD=changeme
 
 # L402 pricing
 L402_PRICE_SATS=100
+
+# CSP migration control (recommended for production)
+# Keeps strict CSP in report-only mode while nonce/hash rollout is in progress.
+CSP_REPORT_ONLY=true
 ```
 
 **Optional values (for full Lightning functionality):**
@@ -146,6 +150,8 @@ GLASSNODE_API_KEY=
 ```
 
 > **Security note:** Never commit `.env` to version control. Keep `SKIP_PAYMENT_VERIFY` empty in production — setting it to `true` disables the paywall entirely.
+>
+> **CSP note:** `CSP_REPORT_ONLY=true` enables strict CSP telemetry at `/api/csp-report` without breaking runtime behavior. Keep this enabled unless you are performing an emergency rollback.
 
 ---
 

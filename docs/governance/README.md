@@ -23,6 +23,7 @@ Template:
 
 Current ADRs:
 - `docs/governance/adr/ADR-20260302-progressive-delivery-optout.md`
+- `docs/governance/adr/ADR-20260302-csp-unsafe-inline-transition.md`
 
 ADR index:
 - `docs/governance/adr/README.md`
