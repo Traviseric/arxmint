@@ -10,6 +10,7 @@
     "start": "next start",
     "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
     "lint": "next lint",
+    "lint:silent-catch": "node scripts/run-bash.cjs scripts/quality/no-silent-catch.sh",
     "setup:githooks": "node scripts/setup-githooks.cjs",
     "security:guardrails": "node scripts/security/run-guardrails.cjs --scope staged --mode observe",
     "security:guardrails:enforce": "node scripts/security/run-guardrails.cjs --scope staged --mode enforce",
