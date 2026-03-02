@@ -100,6 +100,8 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+      - name: Enforce no-silent-catch policy
+        run: npm run lint:silent-catch
 
   type-check:
     name: Type Check

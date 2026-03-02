@@ -23,7 +23,7 @@
 | [FLAKY_TEST_POLICY.md](FLAKY_TEST_POLICY.md) | Flaky test quarantine ownership and expiry policy |
 | [TRUST_STATEMENT.md](TRUST_STATEMENT.md) | Single-host federation trust disclosure |
 | [audits/](audits/) | Quarterly production engineering audits |
-| [governance/](governance/) | Branch protection policy + ADR process |
+| [governance/](governance/) | Branch protection policy, ADR process, and prompt/template review controls |
 
 ## Grants & Pilot
 

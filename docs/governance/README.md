@@ -6,6 +6,11 @@ This folder tracks engineering governance controls required for production opera
 
 See `docs/governance/BRANCH_PROTECTION_POLICY.md`.
 
+## Prompt Review Policy
+
+Prompt and template change controls are defined in:
+- `docs/governance/PROMPT_CHANGE_REVIEW_POLICY.md`
+
 ## ADR Process
 
 Architecture changes affecting auth, payment, settlement, data model, or deployment must include an ADR in `docs/governance/adr/`.
