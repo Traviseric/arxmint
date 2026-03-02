@@ -36,10 +36,9 @@ if (!MACAROON_ROOT_KEY) {
       { action: "l402_misconfigured" }
     );
   } else {
-    console.warn(
-      "[ArxMint] DEV: MACAROON_ROOT_KEY is not set. " +
-        "Using unsigned macaroons (development only). Set MACAROON_ROOT_KEY for production."
-    );
+    logger.warn("DEV: MACAROON_ROOT_KEY is not set. Using unsigned macaroons.", {
+      action: "l402_dev_unsigned_macaroons",
+    });
   }
 }
 
@@ -299,7 +298,7 @@ export async function GET(request: NextRequest) {
               pendingL402.set(macaroon, pending);
             }
           }
-        } catch (e) {
+        } catch (e: unknown) {
           logger.warn("l402_db_lookup_failed", {
             error: e instanceof Error ? e.message : String(e),
           });
@@ -353,14 +352,13 @@ export async function GET(request: NextRequest) {
       // SKIP_PAYMENT_VERIFY bypass — must be explicitly opted in, never works in production
       if (process.env.SKIP_PAYMENT_VERIFY === "true") {
         if (process.env.NODE_ENV === "production") {
-          console.error(
-            "[ArxMint] SKIP_PAYMENT_VERIFY cannot be set in production. Ignoring bypass."
-          );
+          logger.error("SKIP_PAYMENT_VERIFY cannot be set in production. Ignoring bypass.", {
+            action: "l402_payment_bypass_blocked",
+          });
         } else if (!pending) {
-          console.warn(
-            "[ArxMint] SKIP_PAYMENT_VERIFY=true: No pending L402 record found " +
-              "(server may have restarted). Accepting well-formed token. " +
-              "Remove this flag in production."
+          logger.warn(
+            "DEV: SKIP_PAYMENT_VERIFY=true with no pending L402 record. Accepting well-formed token.",
+            { action: "l402_payment_bypass_without_pending" }
           );
           return NextResponse.json({
             success: true,
@@ -406,16 +404,16 @@ export async function GET(request: NextRequest) {
 
   // Sign the macaroon with HMAC-SHA256.
   // In production MACAROON_ROOT_KEY is required (requireMacaroonKey() gates above);
-  // in dev, fall back to an unsigned macaroon with an explicit console warning.
+  // in dev, fall back to an unsigned macaroon with an explicit logger warning.
   let macaroon: string;
   try {
     macaroon = signMacaroon(macaroonPayload);
   } catch (error: unknown) {
     // MACAROON_ROOT_KEY not set — only reachable in development (production blocked above)
-    console.warn(
-      `[ArxMint] DEV: issuing unsigned macaroon (${error instanceof Error ? error.message : String(error)}). ` +
-        "Set MACAROON_ROOT_KEY for production."
-    );
+    logger.warn("DEV: issuing unsigned macaroon", {
+      action: "l402_dev_unsigned_macaroon_issued",
+      error: error instanceof Error ? error.message : String(error),
+    });
     macaroon = Buffer.from(JSON.stringify(macaroonPayload)).toString("base64");
   }
 
@@ -429,10 +427,9 @@ export async function GET(request: NextRequest) {
     rHash = lndResult.rHash;
   } else if (process.env.NODE_ENV === "development") {
     // Explicit dev mode fallback — not a silent failure
-    console.warn(
-      "[ArxMint] DEV MODE: LND not configured. Returning placeholder invoice. " +
-        "Set LND_REST_URL and LND_MACAROON_HEX for real invoice generation."
-    );
+    logger.warn("DEV MODE: LND not configured. Returning placeholder invoice.", {
+      action: "l402_dev_placeholder_invoice",
+    });
     invoice = "lnbc1000n1dev_placeholder_invoice_not_payable";
     // Generate a random rHash so the preimage check is consistent within the session
     rHash = randomBytes(32).toString("base64");
@@ -503,3 +500,6 @@ export async function GET(request: NextRequest) {
   return response;
   });
 }
+
+
+

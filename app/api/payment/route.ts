@@ -46,7 +46,7 @@ async function dbWriteChallenge(
         notes: JSON.stringify({ challenge: entry.challenge, createdAt: entry.createdAt }),
       },
     });
-  } catch (e) {
+  } catch (e: unknown) {
     logger.warn("challenge_db_persist_failed", {
       error: e instanceof Error ? e.message : String(e),
     });
