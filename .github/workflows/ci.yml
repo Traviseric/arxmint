@@ -175,8 +175,9 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
+            --entrypoint /bin/promtool \
             prom/prometheus:v2.55.0 \
-            promtool check rules docker/prometheus-alerts.yml
+            check rules docker/prometheus-alerts.yml
       - name: Run unit tests
         run: npm test
 
