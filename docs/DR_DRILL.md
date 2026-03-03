@@ -39,6 +39,12 @@ Before running the drill, confirm ALL of the following are in place on the *sour
 - [ ] **Fedimint guardian volume exports** — Docker volume snapshots of `guardian-0-data`, `guardian-1-data`, `guardian-2-data`. See the export commands in Phase 2.
 - [ ] **`docker-compose.yml` and `docker/` config directory** — keep a copy alongside your `.env` backup. The application image can be pulled from the registry; the config files are what you need.
 
+If using a local Windows drill host, additionally confirm:
+- [ ] BIOS/UEFI virtualization is enabled.
+- [ ] WSL2 and Virtual Machine Platform are enabled.
+- [ ] `docker version` returns a healthy Server section (not `hasNoVirtualization=true`).
+- [ ] `docker compose ps` runs without daemon errors.
+
 ---
 
 ## Phase 1: Backup Verification (no downtime, ~30 min)
@@ -369,6 +375,28 @@ Fill in one row per drill run. Keep this log current.
 - `docker ps` failed: `docker` command not found
 - `wsl -e ...` failed: WSL not installed
 - Follow-up attempt after Docker install: backend log at `C:\Users\Gaming pc\AppData\Local\Docker\log\host\com.docker.backend.exe.log` reported `hasNoVirtualization=true`, `docker=stopped`, `dockerAPI=stopped`.
+
+### Reboot Resume Checklist (Windows host)
+
+Run in **Administrator PowerShell** before retrying this drill:
+
+```powershell
+dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism /online /enable-feature /featurename:Microsoft-Hyper-V-All /all /norestart
+bcdedit /set hypervisorlaunchtype auto
+wsl --install --no-distribution
+```
+
+Then reboot and verify:
+
+```powershell
+wsl --status
+docker version
+docker compose version
+```
+
+If healthy, resume drill execution from **Phase 2.0**.
 
 ---
 

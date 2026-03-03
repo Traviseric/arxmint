@@ -443,6 +443,43 @@ docker compose down && docker compose up -d
 
 ## 12. Troubleshooting
 
+### Docker Desktop shows installed but engine is stopped (Windows)
+
+Symptoms:
+- `docker version` shows Client info but no healthy Server info.
+- Docker backend state includes `hasNoVirtualization=true`.
+- `docker compose` commands fail even though Docker Desktop is installed.
+
+Fix prerequisites:
+1. Run PowerShell as Administrator.
+2. Enable BIOS/UEFI virtualization (`VT-x` / `Intel Virtualization Technology`; optionally `VT-d`).
+3. Enable Windows virtualization features:
+
+```powershell
+dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism /online /enable-feature /featurename:Microsoft-Hyper-V-All /all /norestart
+bcdedit /set hypervisorlaunchtype auto
+wsl --install --no-distribution
+```
+
+4. Reboot Windows.
+
+Post-reboot verification:
+
+```powershell
+wsl --status
+docker version
+docker compose version
+```
+
+Gate-resume commands after verification:
+
+```bash
+npm run setup:regtest
+npm run test:e2e:required
+```
+
 ### LND won't start / stays unhealthy
 
 LND takes 60–120 seconds to sync neutrino headers on first start. Check logs:
