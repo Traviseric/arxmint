@@ -6,9 +6,9 @@
 
 ---
 
-Self-hosted Bitcoin payments have an onboarding problem. BTCPay Server — the gold standard — takes 2 to 48 hours to get a merchant from zero to first payment. Most of that time isn't Docker or code. It's waiting for a full Bitcoin node to sync, figuring out DNS, and hoping you picked the right VPS.
+The tools to accept Bitcoin payments without a middleman exist today. The problem is that setting them up feels like a second job. DNS configuration, Docker networking, Lightning channel management, chain sync — each one is a wall between a merchant and their first payment.
 
-ArxMint's target is under 15 minutes. Here's how we're getting there.
+ArxMint's target: answer three questions and receive your first payment in under 15 minutes. No Docker. No SSH. No DNS. Here's how.
 
 ## The Competitive Reality
 
@@ -93,3 +93,5 @@ The core insight from our research: "Eliminate being a sysadmin, not running a s
 Updates ship as tested stack BOMs (bill of materials) — locked versions applied as a unit with automatic rollback on failed health checks. The merchant sees "update available" in their dashboard, taps apply, and the node handles the rest. No SSH, no `docker compose pull`, no prayer.
 
 That's how you get to 15 minutes. Not by making the server optional — by making it invisible.
+
+The infrastructure for sovereign commerce already exists. It's just trapped behind a technical wall. ArxMint is the door.

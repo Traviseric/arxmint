@@ -6,9 +6,9 @@
 
 ---
 
-Every merchant considering self-hosted Bitcoin payments asks the same question: what's it actually going to cost me to run this?
+Stripe takes 2.9% + $0.30 per transaction. A merchant doing $10K/month loses ~$320 to processing fees. A self-hosted ArxMint node costs $7/month — regardless of volume. That's $313/month back in your pocket, and it only grows as your sales grow.
 
-The answer is less than you think — if you pick the right setup. We tested every viable option. Here's what we found.
+But what does $7/month actually get you? We tested every hosting option, from $3 instances that crash to $80 servers that are overkill. Here's the reality.
 
 ## The Minimum Viable Merchant Node
 
@@ -103,3 +103,5 @@ For most merchants, Neutrino is the right default. You're trusting the Bitcoin n
 A self-hosted Bitcoin payment node costs less than a Netflix subscription. The hardware requirements are modest — 2 vCPU, 2 GB RAM, 40 GB SSD. The software is open source. The only ongoing cost is the VPS hosting.
 
 The expensive part of accepting Bitcoin payments was never the infrastructure. It was the knowledge required to set it up. That's what ArxMint is eliminating.
+
+Accept payments directly. Keep 100% of every sale. The server costs less than a Netflix subscription. The software is free. No permission needed.

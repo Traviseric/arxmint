@@ -6,11 +6,9 @@
 
 ---
 
-When a merchant self-hosts their payment node, backups become life-or-death for their business. Lose your Lightning channel state and you might lose all your channel funds. Lose your Cashu mint database and you can't honor the ecash you've issued. Lose your config and you're rebuilding from scratch.
+Your payment node is your business. If it disappears — disk failure, provider outage, mistake — you need to be back online fast. But if the backup service can read your data, you've just handed a third party access to your financial records and keys. That defeats the point of self-hosting.
 
-But here's the tension: if ArxMint stores your backups, and ArxMint can read them, then ArxMint has access to your financial data. That breaks the non-custodial model — and potentially crosses the money transmission line we designed the entire architecture to avoid.
-
-The solution: zero-knowledge encrypted backups. ArxMint stores the data but literally cannot read it.
+ArxMint's answer: we store your backups but we literally cannot read them. Your seed phrase is the only key. Write it down once, and you can rebuild your entire payment infrastructure from scratch on any new machine.
 
 ## Why Lightning Backups Are Different
 

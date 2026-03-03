@@ -73,3 +73,5 @@ Providing DNS for merchant nodes is infrastructure, not exchange. Running Cloudf
 You run the node. You hold the keys. You keep 100% of every sale. No one can freeze your account, reverse a payment, or sell your transaction data. The trade-off is that you're responsible for your own infrastructure — but ArxMint's provisioning service makes that feel like downloading an app, not administering a server.
 
 The legal architecture isn't a constraint. It's the feature.
+
+Accept payments directly. No fees. No middleman. No permission needed. That's what self-hosted buys you — and no regulator can take it away, because there's no one in the middle to regulate.

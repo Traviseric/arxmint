@@ -6,9 +6,9 @@
 
 ---
 
-BTCPay Server is one of the most important projects in Bitcoin. It proved that self-hosted, non-custodial payment processing works — not just as a concept, but as production software running real merchants for seven years. Every design decision in ArxMint's merchant platform started by studying what BTCPay got right.
+If you accept Bitcoin payments without a middleman today, you probably owe BTCPay Server something. It proved the model works — seven years of real merchants, real payments, fully open source. ArxMint wouldn't exist without the path BTCPay cut.
 
-This post is about those lessons, and where we're taking a different path.
+But BTCPay was built for merchants who are willing to be operators. ArxMint is built for merchants who just want to stop paying 2.9% per transaction. Same goal — no middleman — different audience. Here's what we learned studying BTCPay, and where we're taking a different path.
 
 ## Lesson 1: The One-Click Deploy Is About DNS, Not Docker
 
