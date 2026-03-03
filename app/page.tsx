@@ -37,15 +37,13 @@ if (typeof window !== "undefined") {
 
 /* ── Stripe vs ArxMint comparison data ── */
 const COMPARISON_ROWS = [
-  { feature: "Transaction Fees", stripe: "2.9% + 30¢", arxmint: "~0% (network only)", advantage: true },
-  { feature: "Settlement Time", stripe: "2-7 business days", arxmint: "Instant", advantage: true },
-  { feature: "KYC Required", stripe: "Full identity verification", arxmint: "Zero", advantage: true },
-  { feature: "Chargebacks", stripe: "Yes — merchant liable", arxmint: "Impossible", advantage: true },
-  { feature: "Custody", stripe: "Stripe holds funds", arxmint: "Self-custody — you hold keys", advantage: true },
-  { feature: "Censorship Risk", stripe: "Account freezes possible", arxmint: "Uncensorable", advantage: true },
-  { feature: "Open Source", stripe: "No", arxmint: "MIT Licensed", advantage: true },
-  { feature: "Data Privacy", stripe: "Stripe sees everything", arxmint: "Ecash blinding — zero visibility", advantage: true },
-  { feature: "Hosting", stripe: "Stripe's servers", arxmint: "Your server, your rules", advantage: true },
+  { feature: "Transaction Fees", stripe: "2.9% + 30¢", arxmint: "~0% (network only)" },
+  { feature: "Settlement", stripe: "2–7 business days", arxmint: "Instant — direct to your wallet" },
+  { feature: "Chargebacks", stripe: "Yes — merchant liable", arxmint: "Impossible — payments are final" },
+  { feature: "KYC Required", stripe: "Full identity verification", arxmint: "Zero" },
+  { feature: "Custody", stripe: "Stripe holds your funds", arxmint: "Self-custody — your keys, your node" },
+  { feature: "Censorship", stripe: "Account freezes possible", arxmint: "Uncensorable — you run the infra" },
+  { feature: "Privacy", stripe: "Stripe sees all transaction data", arxmint: "Ecash blinding — zero visibility" },
 ];
 
 export default function HomePage() {
@@ -211,22 +209,26 @@ export default function HomePage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border-default">
-                      <th className="text-left p-4 font-mono text-xs text-text-muted uppercase tracking-wider w-1/3">Feature</th>
-                      <th className="text-left p-4 font-mono text-xs text-text-muted uppercase tracking-wider w-1/3">Stripe</th>
-                      <th className="text-left p-4 font-mono text-xs text-accent uppercase tracking-wider w-1/3">ArxMint</th>
+                      <th className="text-left px-4 py-3 font-mono text-xs text-text-muted uppercase tracking-wider w-1/3">Feature</th>
+                      <th className="text-left px-4 py-3 font-mono text-xs text-text-muted uppercase tracking-wider w-1/3">Stripe</th>
+                      <th className="text-left px-4 py-3 font-mono text-xs text-accent uppercase tracking-wider w-1/3">ArxMint</th>
                     </tr>
                   </thead>
                   <tbody>
                     {COMPARISON_ROWS.map((row) => (
                       <tr key={row.feature} className="border-b border-border-subtle last:border-0 hover:bg-bg-surface/50 transition-colors">
-                        <td className="p-4 text-text-primary font-medium">{row.feature}</td>
-                        <td className="p-4 text-text-muted flex items-center gap-2">
-                          <XCircle className="w-4 h-4 text-red-500/60 shrink-0" />
-                          {row.stripe}
+                        <td className="px-4 py-2.5 text-text-primary font-medium">{row.feature}</td>
+                        <td className="px-4 py-2.5 text-text-muted">
+                          <span className="flex items-center gap-2">
+                            <XCircle className="w-3.5 h-3.5 text-red-500/60 shrink-0" />
+                            {row.stripe}
+                          </span>
                         </td>
-                        <td className="p-4 text-green-400 font-medium flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                          {row.arxmint}
+                        <td className="px-4 py-2.5 text-green-400 font-medium">
+                          <span className="flex items-center gap-2">
+                            <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                            {row.arxmint}
+                          </span>
                         </td>
                       </tr>
                     ))}

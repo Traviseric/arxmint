@@ -1,7 +1,7 @@
 {
   "name": "arxmint",
   "version": "0.1.0",
-  "description": "Your Bitcoin economy, one prompt away — private Fedimint/Cashu mints with Lightning AI agent rails",
+  "description": "Accept Bitcoin payments. Zero fees. No middleman. Self-hosted payment infrastructure — the open-source Stripe alternative.",
   "private": false,
   "scripts": {
     "dev": "next dev",

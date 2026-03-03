@@ -5,8 +5,8 @@
 <h1 align="center">ArxMint</h1>
 
 <p align="center">
-  <strong>Private, open-source Bitcoin payments for merchants and AI agents.</strong><br/>
-  <em>A decentralized Stripe alternative — near-zero fees, no KYC, self-hosted.</em>
+  <strong>Accept Bitcoin payments. Zero fees. No middleman.</strong><br/>
+  <em>Self-hosted payment infrastructure — the open-source Stripe alternative.</em>
 </p>
 
 <p align="center">
@@ -26,11 +26,11 @@
 
 ---
 
-ArxMint is sovereign Bitcoin payment infrastructure for local merchants, online stores, and AI agents. Accept ecash ([Cashu](https://cashu.space)), Lightning, and [Fedimint](https://fedimint.org) federation payments — with near-zero fees, instant settlement, and no customer KYC.
+ArxMint is self-hosted Bitcoin payment infrastructure — the open-source Stripe alternative. Accept ecash ([Cashu](https://cashu.space)), Lightning, and [Fedimint](https://fedimint.org) federation payments with near-zero fees, instant settlement, no chargebacks, and no customer KYC.
 
-Spin up a private circular economy from a natural language prompt. Or integrate the merchant API into any app with a few lines of code. Answer three questions, and your merchant node is live in under 15 minutes — managed DNS, auto-HTTPS, Lightning liquidity included. Humans and agents share the same sovereign infrastructure.
+Answer three questions and your merchant node is live in under 15 minutes — managed DNS, auto-HTTPS, Lightning liquidity included. Or spin up a full private circular economy from a natural language prompt. Humans and AI agents share the same sovereign infrastructure.
 
-**Three questions. One node. Your economy is live.**
+**Three questions. One command. Live in 15 minutes.**
 
 ## Why ArxMint?
 
@@ -288,4 +288,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines and [open issues]
 
 ---
 
-_Sound money infrastructure for a parallel voluntary economy. Protection from hacks, overreach, and future controls. Not evasion — sovereignty._
+_Accept Bitcoin payments. Zero fees. No middleman. Self-hosted. Non-custodial. Unstoppable._
