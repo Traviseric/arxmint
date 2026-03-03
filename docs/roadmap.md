@@ -1013,7 +1013,7 @@ Build in this order — deployment must come first in the self-hosted model:
 
 ### Phase 5 Production Readiness Gate
 
-**Everything below must be true before merchant nodes accept mainnet funds.** This is the exit criteria for Phase 5 core items (5.1–5.8). Parallels the Phase A–E gate but scoped to merchant infrastructure.
+**Everything below must be true before merchant nodes accept mainnet funds.** This is the exit criteria for Phase 5 core items (5.1–5.8) plus required lifecycle controls (5.11a–5.11c). Parallels the Phase A–E gate but scoped to merchant infrastructure.
 
 #### Merchant Node Safety
 - [ ] Merchant holds seed phrase and admin macaroons — ArxMint provisioning service retains neither after bootstrap

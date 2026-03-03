@@ -6,9 +6,9 @@
 
 ---
 
-We could have built ArxMint as a hosted platform. Sign up, get an API key, start accepting Bitcoin. It would have been faster to build and easier to explain.
+You keep 100% of every sale. No one can freeze your account. No one sells your payment data. That's what self-hosted means for a merchant.
 
-We didn't. And the reason isn't philosophical — it's legal.
+We could have built ArxMint as a hosted platform — sign up, get an API key, start accepting Bitcoin. Faster to build, easier to explain. We didn't. The reason isn't philosophical. It's that the hosted model would make ArxMint a middleman, and middlemen get regulated into charging you fees, demanding your identity, and controlling your money.
 
 ## The Hosted Trap
 

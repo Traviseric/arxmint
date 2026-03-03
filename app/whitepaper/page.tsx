@@ -52,7 +52,7 @@ export default function WhitepaperPage() {
 
           <ScrollReveal delay={0.3}>
             <p className="text-lg text-text-primary font-medium max-w-2xl mx-auto leading-relaxed mb-8 drop-shadow">
-              Version 1.0 — <span className="text-text-secondary font-light">February 2026</span>
+              Version 1.1 - <span className="text-text-secondary font-light">March 2026</span>
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
@@ -80,7 +80,7 @@ export default function WhitepaperPage() {
       <div className="relative z-10 pb-32">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal delay={0.4} direction="up">
-            <div className="glass-heavy border border-border-default rounded-xl p-6 sm:p-10 lg:p-16 glow-card relative overflow-hidden">
+            <div className="glass-heavy border border-border-default rounded-xl p-6 sm:p-10 lg:p-16 glow-card whitepaper-static-card relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-3xl rounded-full pointer-events-none" />
               <div className="relative z-10 w-full overflow-hidden">
                 <WhitepaperContent content={content} />

@@ -103,6 +103,11 @@
     border-color: var(--border-strong);
   }
 
+  /* Whitepaper layout needs static positioning to avoid overlap with hero CTAs. */
+  .whitepaper-static-card:hover {
+    transform: none;
+  }
+
   .antigravity-btn {
     @apply relative inline-flex items-center justify-center gap-2 px-6 py-3 bg-text-primary text-bg-base font-semibold rounded-md transition-all duration-[300ms] overflow-hidden;
     transition-timing-function: var(--ease-out-expo);

@@ -133,11 +133,10 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-xl sm:text-2xl text-text-primary font-medium max-w-lg leading-relaxed drop-shadow-md">
-                  Your Bitcoin economy, one prompt away.
+                  Private Bitcoin payments for merchants and AI agents.
                 </p>
                 <p className="text-text-secondary max-w-lg mt-4 leading-relaxed font-mono text-sm drop-shadow">
-                  ArxMint generates private Fedimint federations, Cashu mints,
-                  Lightning agent rails, and deploys them instantly. Humans and AI agents share the same sovereign infrastructure.
+                  A decentralized Stripe alternative. Self-hosted, non-custodial, near-zero fees. Three questions, fifteen minutes — your payment node is live. Or generate a full community economy from a single prompt.
                 </p>
               </motion.div>
 
@@ -391,7 +390,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-text-primary mb-4">For Merchants</h3>
               <p className="text-text-secondary text-sm leading-relaxed mb-8">
-                Accept Bitcoin payments with near-zero fees. No Stripe. No chargebacks. Instant settlement. One API key or a printed QR code.
+                Accept Bitcoin payments with near-zero fees. Self-hosted, non-custodial — you run the node, you keep 100%. Three-question wizard, live in under 15 minutes.
               </p>
               <ul className="space-y-3 font-mono text-xs text-text-muted">
                 <li className="flex items-center gap-3">
@@ -400,11 +399,11 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-1 h-1 rounded-full bg-accent" />
-                  Hosted checkout + payment links
+                  Self-hosted checkout on your domain
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-1 h-1 rounded-full bg-accent" />
-                  Lightning Address for POS
+                  Lightning Address + QR for POS
                 </li>
               </ul>
             </div>
@@ -531,9 +530,9 @@ export default function HomePage() {
 
                 <div className="glass border border-border-default rounded-2xl p-8 flex-1 glow-card flex flex-col justify-center">
                   <Box className="w-6 h-6 text-text-primary mb-4" />
-                  <h3 className="text-xl font-semibold text-text-primary mb-2">Containerized Deploy</h3>
+                  <h3 className="text-xl font-semibold text-text-primary mb-2">One-Wizard Deploy</h3>
                   <p className="text-text-secondary text-sm">
-                    LND, Cashu, Fedimint, and Aperture. Three questions, managed DNS, live in under 15 minutes.
+                    Three questions. Managed DNS. Auto-HTTPS. LSP liquidity. Your merchant node or community stack — live in under 15 minutes. No Docker or SSH required.
                   </p>
                 </div>
 
