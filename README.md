@@ -55,11 +55,13 @@ ArxMint flips this: ecash payments cost fractions of a penny. Settlement is inst
 ### For Merchants (Self-Hosted, Non-Custodial)
 
 ```
-1. arxmint merchant init → one Docker command, your payment node is live
-2. Create a checkout session or payment link on YOUR node
-3. Customer pays via ecash QR, Lightning, or your self-hosted checkout page
-4. Webhook fires from YOUR node → fulfill order
-5. Sats arrive directly in YOUR wallet — no middleman, no settlement delay
+1. arxmint merchant init → three questions → your payment node is live in < 15 minutes
+2. Managed subdomain (storename.arxmint.cloud) + auto-HTTPS — no DNS setup
+3. LSP opens your first Lightning channel — you're receiving payments immediately
+4. Customer pays via ecash QR, Lightning, or your self-hosted checkout page
+5. Webhook fires from YOUR node → fulfill order
+6. Sats arrive directly in YOUR wallet — no middleman, no settlement delay
+7. Zero-knowledge encrypted backups — restore from seed phrase on any new host
 ```
 
 ### For Communities (Prompt-Driven)
@@ -221,7 +223,7 @@ See [docs/roadmap.md](docs/roadmap.md) for the full phased plan with research tr
 | A-E | **Foundation → Hardening** — DB, vault, auth, payments, infra, E2E tests, production hardening | Code complete |
 | — | **Production Readiness Gate** — testnet VPS deployment | Pending (human action) |
 | 4 | **Citadel** — Longmont pilot + grant applications (OpenSats, HRF, FBCE) | In progress |
-| 5 | **Bazaar** — Self-hosted merchant platform (local auth, webhooks, checkout, client SDK, one-command deploy) | Planned |
+| 5 | **Bazaar** — Self-hosted merchant platform (split-plane deploy, managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, Umbrel/StartOS) | Planned |
 
 **Feature path:**
 
@@ -234,7 +236,7 @@ See [docs/roadmap.md](docs/roadmap.md) for the full phased plan with research tr
 
 ### Phase 5: Bazaar — The Merchant Platform
 
-Phase 5 turns ArxMint into a full Stripe alternative. 10 scoped deliverables:
+Phase 5 turns ArxMint into a full Stripe alternative. Informed by 11 self-hosting UX research studies. 16 scoped deliverables:
 
 | # | Feature | What It Unlocks |
 |---|---------|-----------------|
@@ -244,10 +246,16 @@ Phase 5 turns ArxMint into a full Stripe alternative. 10 scoped deliverables:
 | 5.4 | Payment status API | `GET /payments/:id` + SSE real-time stream on your node |
 | 5.5 | Client SDK | `@arxmint/js` + `@arxmint/react` — connects to your endpoint |
 | 5.6 | LNURL-pay + Lightning Address | `name@pay.merchant.com` — scan-and-pay on your domain |
-| 5.7 | Merchant dashboard | Self-hosted: payments, analytics, node status, token management |
-| 5.8 | One-command deploy | `arxmint merchant init` → Docker Compose → live in 10 minutes |
+| 5.7 | Merchant dashboard | Self-hosted: payments, analytics, traffic-light health, push notifications |
+| 5.8a | Provisioning service | BYOC control plane — merchant creates cloud account, ArxMint provisions via OAuth |
+| 5.8b | Managed DNS + connectivity | `storename.arxmint.cloud` default + Cloudflare Tunnel — no DNS setup needed |
+| 5.8c | LSP liquidity bootstrap | JIT channel opening on first payment — receive sats immediately |
+| 5.8d | Merchant stack composition | LND Neutrino (no full chain sync) + Cashu mint — live in < 15 minutes |
 | 5.9 | Public merchant directory | Customer-facing discovery by category/location |
 | 5.10 | Idempotency + hardening | Duplicate request protection, auto-HTTPS, firewall rules |
+| 5.11 | Node lifecycle | Appliance updates (stack BOM + canary rings) + zero-knowledge encrypted backups + one-click restore from seed |
+| 5.12 | Home node packaging | Umbrel + StartOS app store packages for sovereignty-first node runners |
+| 5.13 | Mobile remote control | React Native POS + remote dashboard (PWA bridge via 5.7 first) |
 
 ## Built On
 
