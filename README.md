@@ -28,9 +28,9 @@
 
 ArxMint is sovereign Bitcoin payment infrastructure for local merchants, online stores, and AI agents. Accept ecash ([Cashu](https://cashu.space)), Lightning, and [Fedimint](https://fedimint.org) federation payments — with near-zero fees, instant settlement, and no customer KYC.
 
-Spin up a private circular economy from a natural language prompt. Or integrate the merchant API into any app with a few lines of code. Deploy with one Docker command. Humans and agents share the same sovereign infrastructure.
+Spin up a private circular economy from a natural language prompt. Or integrate the merchant API into any app with a few lines of code. Answer three questions, and your merchant node is live in under 15 minutes — managed DNS, auto-HTTPS, Lightning liquidity included. Humans and agents share the same sovereign infrastructure.
 
-**One prompt. One command. Your economy is live.**
+**Three questions. One node. Your economy is live.**
 
 ## Why ArxMint?
 
@@ -55,7 +55,7 @@ ArxMint flips this: ecash payments cost fractions of a penny. Settlement is inst
 ### For Merchants (Self-Hosted, Non-Custodial)
 
 ```
-1. arxmint merchant init → three questions → your payment node is live in < 15 minutes
+1. arxmint merchant init → three-question wizard → your payment node is live in < 15 minutes
 2. Managed subdomain (storename.arxmint.cloud) + auto-HTTPS — no DNS setup
 3. LSP opens your first Lightning channel — you're receiving payments immediately
 4. Customer pays via ecash QR, Lightning, or your self-hosted checkout page
@@ -80,6 +80,13 @@ ArxMint flips this: ecash payments cost fractions of a penny. Settlement is inst
 - **Spend router** — Auto-selects ecash → Lightning → Ark → on-chain based on amount and privacy score
 - **Merchant onboarding** — 4-step flow with QR codes, NFC (Numo) support, and payment method selection
 - **Settlement** — Referral fee settlement with idempotency, Cashu ecash minting, federation deposit paths
+
+### Merchant Node Security
+- **Split-plane trust boundary** — Data plane (merchant-owned: keys, funds, LND, mint) is fully isolated from control plane (ArxMint-managed: provisioning, DNS, updates). ArxMint never touches keys or funds.
+- **Network isolation** — Only Caddy binds to public ports (80/443). LND gRPC, Cashu mint admin, PostgreSQL are internal Docker network only.
+- **Macaroon lifecycle** — `arx_pub_` tokens safe for client-side (invoice-only). Rotation via `arxmint keys rotate`. Instant revocation via dashboard or CLI.
+- **Cloudflare Tunnel boundary** — Checkout page traffic visible to Cloudflare (acceptable — it's public during checkout anyway). LND gRPC, seed phrases, admin macaroons, mint keys never traverse the tunnel.
+- **API versioning** — `v1` is the stable API surface. Additive changes stay in `v1`. Breaking changes require `v2` with 6-month deprecation window. Client SDK (`@arxmint/js`) follows semver.
 
 ### Privacy Infrastructure
 - **Fedimint federation support** — Multi-guardian federated ecash with blinded Chaumian e-cash notes backed by BTC

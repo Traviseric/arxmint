@@ -479,7 +479,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-1 h-1 rounded-full bg-accent" />
-                  Docker one-command deploy
+                  Three-question wizard deploy
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-1 h-1 rounded-full bg-accent" />
@@ -533,7 +533,7 @@ export default function HomePage() {
                   <Box className="w-6 h-6 text-text-primary mb-4" />
                   <h3 className="text-xl font-semibold text-text-primary mb-2">Containerized Deploy</h3>
                   <p className="text-text-secondary text-sm">
-                    LND, Cashu, Fedimint, and Aperture. Spun up with a single Docker composition.
+                    LND, Cashu, Fedimint, and Aperture. Three questions, managed DNS, live in under 15 minutes.
                   </p>
                 </div>
 
