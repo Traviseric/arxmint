@@ -9,7 +9,7 @@ import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 import { generateSecretKey, getPublicKey, finalizeEvent } from "nostr-tools";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3000";
 const AUTH_URL = `${BASE_URL}/api/auth`;
 
 let serverAvailable = false;
@@ -87,11 +87,10 @@ describe("Nostr NIP-98 Auth — valid flow", () => {
       body: JSON.stringify({ pubkey: pk, signedEvent: event }),
     });
 
-    if (res.status !== 200 && res.status !== 201) {
-      // Auth endpoint may not be implemented yet — skip assertion
-      t.skip(`Auth returned ${res.status} — endpoint may not be fully wired yet`);
-      return;
-    }
+    assert.ok(
+      res.status === 200 || res.status === 201,
+      `Expected 200/201 for session-setting auth call, got ${res.status}`
+    );
 
     const setCookie = res.headers.get("set-cookie");
     assert.ok(

@@ -102,8 +102,6 @@ export function selectSpendPath(
   mintBackend: MintBackend = "cashu",
   privacyPreference: PrivacyPreference = "auto"
 ): SpendRoute {
-  const alternatives: SpendPath[] = [];
-
   // Build list of paths that have enough balance and are connected
   const viable: Array<{ path: SpendPath; score: number }> = [];
 

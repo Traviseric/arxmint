@@ -12,6 +12,12 @@ import {
   buildCashuChallenge,
   type CashuPaywallConfig,
 } from "./cashu-paywall";
+import { resilientFetch } from "./net-resilience";
+import { logger } from "./logger";
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 /** LND connection configuration */
 export interface LndConfig {
@@ -64,19 +70,25 @@ async function createLNDInvoice(
   lnd: { restUrl: string; macaroonHex: string }
 ): Promise<{ paymentRequest: string; rHash: string } | null> {
   try {
-    const res = await fetch(`${lnd.restUrl}/v1/invoices`, {
+    const res = await resilientFetch(`${lnd.restUrl}/v1/invoices`, {
       method: "POST",
       headers: {
         "Grpc-Metadata-Macaroon": lnd.macaroonHex,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ value: String(amountSats), memo }),
+    }, {
+      timeoutMs: 5_000,
+      circuitKey: "lnd:create-invoice",
     });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.payment_request || !data.r_hash) return null;
     return { paymentRequest: data.payment_request as string, rHash: data.r_hash as string };
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("payment_sdk_create_lnd_invoice_failed", {
+      error: getErrorMessage(error),
+    });
     return null;
   }
 }
@@ -95,7 +107,10 @@ function verifyMacaroon(token: string, rootKey: string): { identifier: string } 
     const expectedSig = createHmac("sha256", rootKey).update(JSON.stringify(payload)).digest("hex");
     if (sig !== expectedSig) return null;
     return payload as { identifier: string };
-  } catch {
+  } catch (error: unknown) {
+    logger.debug("payment_sdk_verify_macaroon_parse_failed", {
+      error: getErrorMessage(error),
+    });
     return null;
   }
 }
@@ -108,7 +123,10 @@ function verifyPreimage(preimage: string, rHashBase64: string): boolean {
     const expected = Buffer.from(rHashBase64, "base64");
     if (derived.length !== expected.length) return false;
     return timingSafeEqual(derived, expected);
-  } catch {
+  } catch (error: unknown) {
+    logger.debug("payment_sdk_verify_preimage_failed", {
+      error: getErrorMessage(error),
+    });
     return false;
   }
 }

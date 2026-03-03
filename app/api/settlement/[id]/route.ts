@@ -5,7 +5,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireAuth } from "@/lib/auth-middleware";
+import { getAuthPubkey, requireAuth } from "@/lib/auth-middleware";
+import { logger } from "@/lib/logger";
+import {
+  isCommunityOwnedByUser,
+  requireSessionUserId,
+  SessionUserError,
+} from "@/lib/session-user";
 
 export async function GET(
   request: NextRequest,
@@ -36,8 +42,31 @@ export async function GET(
     let parsedNotes: Record<string, unknown> = {};
     try {
       parsedNotes = JSON.parse(tx.notes ?? "{}");
-    } catch {
-      /* ignore */
+    } catch (error: unknown) {
+      logger.warn("Settlement notes parse failed", {
+        settlementId: id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    const callerPubkey = getAuthPubkey(request);
+    const initiatedBy =
+      typeof parsedNotes.initiatedBy === "string" ? parsedNotes.initiatedBy : null;
+
+    let hasAccess = initiatedBy === callerPubkey;
+    if (!hasAccess) {
+      try {
+        const userId = await requireSessionUserId(request);
+        hasAccess = await isCommunityOwnedByUser(tx.communityId, userId);
+      } catch (error: unknown) {
+        if (error instanceof SessionUserError && error.code === "UNAUTHENTICATED") {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+      }
+    }
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Strip sensitive internal fields — never expose raw notes blob or federation invites
@@ -54,7 +83,7 @@ export async function GET(
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[ArxMint] Could not fetch settlement from DB:", message);
+    logger.warn("Could not fetch settlement from DB", { error: message });
     return NextResponse.json(
       { error: "Settlement lookup failed — database may be unavailable" },
       { status: 503 }

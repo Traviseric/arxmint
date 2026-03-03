@@ -6,7 +6,7 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
@@ -95,19 +95,73 @@ async function validateToken(token: string): Promise<boolean> {
   }
 }
 
+function extractClientIp(request: NextRequest): string {
+  const forwarded =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  return forwarded.split(",")[0]?.trim() || "unknown";
+}
+
+function extractSessionPrincipal(request: NextRequest): string | undefined {
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) return undefined;
+  const lastDot = token.lastIndexOf(".");
+  const secondLastDot = token.lastIndexOf(".", lastDot - 1);
+  if (secondLastDot <= 0 || lastDot <= secondLastDot) return undefined;
+  const pubkey = token.substring(0, secondLastDot).trim();
+  return pubkey || undefined;
+}
+
+function makeRequestId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getOrCreateRequestId(request: NextRequest): string {
+  return (
+    request.headers.get("x-request-id") ??
+    request.headers.get("x-correlation-id") ??
+    makeRequestId()
+  );
+}
+
+function attachRequestId(
+  response: NextResponse,
+  requestId: string
+): NextResponse {
+  response.headers.set("X-Request-Id", requestId);
+  return response;
+}
+
+function nextWithRequestId(
+  request: NextRequest,
+  requestId: string
+): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-request-id", requestId);
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+  return attachRequestId(response, requestId);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isApiRoute = pathname.startsWith("/api/");
   const isProtectedPage = PROTECTED_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix)
   );
+  const requestId = getOrCreateRequestId(request);
 
   // ---- Rate limiting (API routes only) ----
   if (isApiRoute) {
-    const ip =
-      request.headers.get("x-forwarded-for") ??
-      request.headers.get("x-real-ip") ??
-      "unknown";
+    const ip = extractClientIp(request);
+    const principal = extractSessionPrincipal(request);
 
     let rateConfig = RATE_LIMITS.public;
     let rateBucket = "public";
@@ -125,18 +179,22 @@ export async function middleware(request: NextRequest) {
       rateBucket = "auth";
     }
 
-    const rateLimitKey = `${ip}:${rateBucket}`;
-    const { allowed, retryAfter } = checkRateLimit(rateLimitKey, rateConfig);
+    const { allowed, retryAfter } = checkPrincipalAndIpRateLimit(
+      rateBucket,
+      ip,
+      principal,
+      rateConfig
+    );
 
     if (!allowed) {
       logger.rateLimit(ip, pathname, retryAfter ?? 60);
-      return new NextResponse("Too Many Requests", {
+      return attachRequestId(new NextResponse("Too Many Requests", {
         status: 429,
         headers: {
           "Retry-After": String(retryAfter ?? 60),
           "Content-Type": "text/plain",
         },
-      });
+      }), requestId);
     }
   }
 
@@ -148,20 +206,20 @@ export async function middleware(request: NextRequest) {
     if (!isValid) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
+      return attachRequestId(NextResponse.redirect(loginUrl), requestId);
     }
   }
 
   // ---- CORS for API routes ----
   if (!isApiRoute) {
-    return NextResponse.next();
+    return nextWithRequestId(request, requestId);
   }
 
   const origin = request.headers.get("origin") ?? "";
 
   // Handle preflight OPTIONS requests
   if (request.method === "OPTIONS") {
-    const response = new NextResponse(null, { status: 204 });
+    const response = attachRequestId(new NextResponse(null, { status: 204 }), requestId);
     const marketplaceOriginsOpts = [
       process.env.TENEO_MARKETPLACE_URL,
       "http://localhost:3001",
@@ -182,7 +240,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const response = NextResponse.next();
+  const response = nextWithRequestId(request, requestId);
 
   // Agent/public API endpoints — allow broader CORS access
   const marketplaceOrigins = [

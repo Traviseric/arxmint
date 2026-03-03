@@ -5,6 +5,8 @@
 // instrumentation.ts or the health route).
 // ============================================================
 
+import { logger } from "@/lib/logger";
+
 interface EnvCheckResult {
   valid: boolean;
   missing: string[];
@@ -67,17 +69,24 @@ export function validateRequiredEnv(): EnvCheckResult {
   }
 
   if (missing.length > 0) {
-    console.error(
-      "[ArxMint] FATAL: Required environment variables are missing:\n" +
+    logger.error("env_required_missing", {
+      action: "env_required_missing",
+      missing,
+      message:
+        "[ArxMint] FATAL: Required environment variables are missing:\n" +
         missing.map((v) => `  • ${v}`).join("\n") +
-        "\nSet these variables and restart the server."
-    );
+        "\nSet these variables and restart the server.",
+    });
   }
 
   if (warnings.length > 0) {
-    console.warn(
-      "[ArxMint] Environment warnings:\n" + warnings.map((w) => `  • ${w}`).join("\n")
-    );
+    logger.warn("env_warnings", {
+      action: "env_warnings",
+      warnings,
+      message:
+        "[ArxMint] Environment warnings:\n" +
+        warnings.map((w) => `  • ${w}`).join("\n"),
+    });
   }
 
   return { valid: missing.length === 0, missing, warnings };

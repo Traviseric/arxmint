@@ -7,6 +7,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Shield, Zap, AlertCircle } from "lucide-react";
 import { useSovereignStore } from "@/lib/store";
 import { pubkeyToNpub, truncateNpub } from "@/lib/nostr-auth";
@@ -25,7 +26,7 @@ function LoginContent() {
   // Redirect if already authenticated (has valid session cookie)
   useEffect(() => {
     fetch("/api/agent")
-      .then((r) => {
+      .then(() => {
         // If the agent route returns 200, we have a valid API session
         // (It's public, so this just confirms server is running)
       })
@@ -201,9 +202,9 @@ function LoginContent() {
 
         {/* Links */}
         <div className="flex items-center justify-between mt-4 text-sm text-sovereign-muted">
-          <a href="/" className="text-btc-orange hover:underline">
+          <Link href="/" className="text-btc-orange hover:underline">
             ← Back to home
-          </a>
+          </Link>
           {!showRestore && (
             <button
               onClick={() => setShowRestore(true)}

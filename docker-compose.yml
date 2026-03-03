@@ -57,7 +57,7 @@ services:
       - MINT_LND_REST_MACAROON=/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon
       - MINT_LISTEN_HOST=0.0.0.0
       - MINT_LISTEN_PORT=3338
-      - MINT_PRIVATE_KEY=${CASHU_PRIVATE_KEY:?CASHU_PRIVATE_KEY is required — generate with: openssl rand -hex 32}
+      - "MINT_PRIVATE_KEY=${CASHU_PRIVATE_KEY:?CASHU_PRIVATE_KEY is required — generate with: openssl rand -hex 32}"
     ports:
       - "3338:3338"
     volumes:
@@ -148,6 +148,7 @@ services:
     volumes:
       - prometheus-data:/prometheus
       - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
     networks:
       - sovereign
 
@@ -176,12 +177,27 @@ services:
     image: postgres:15-alpine
     container_name: sf-postgres
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=60s
+      - -c
+      - archive_command=test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f
+      - -c
+      - max_wal_senders=5
+      - -c
+      - wal_keep_size=512MB
     environment:
       POSTGRES_DB: arxmint
       POSTGRES_USER: arxmint
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — set a strong password}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - postgres-wal-archive:/var/lib/postgresql/wal-archive
     networks:
       - sovereign  # internal only — no ports exposed to host
     healthcheck:
@@ -193,7 +209,7 @@ services:
 
   # === Aperture L402 Reverse Proxy ===
   aperture:
-    image: lightninglabs/aperture:latest
+    image: lightninglabs/aperture:v0.4.2
     container_name: sf-aperture
     restart: unless-stopped
     ports:
@@ -264,6 +280,7 @@ volumes:
   prometheus-data:
   grafana-data:
   postgres-data:
+  postgres-wal-archive:
   caddy-data:
   caddy-config:
 

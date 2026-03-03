@@ -12,7 +12,6 @@ import {
   ShoppingBag,
   MessageSquare,
   Zap,
-  Shield,
   Copy,
   Check,
   Loader2,
@@ -73,6 +72,7 @@ const DEMO_AGENTS: AgentService[] = [
 ];
 
 type Tab = "members" | "agents" | "merchants" | "chat";
+type AgentResponse = { demo?: boolean; [key: string]: unknown };
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<Tab>("agents");
@@ -328,7 +328,7 @@ function MerchantDirectory({ communityId }: { communityId: string }) {
 
 function AgentCard({ agent }: { agent: AgentService }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<AgentResponse | null>(null);
   const [error, setError] = useState("");
   const { lightningConnected } = useSovereignStore();
 

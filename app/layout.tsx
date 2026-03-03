@@ -15,14 +15,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ArxMint — Sovereign Bitcoin Economies",
+  title: "ArxMint — Accept Bitcoin Payments. Zero Fees.",
   description:
-    "Spin up your own private Bitcoin economy in minutes. Fedimint federations, Cashu mints, Lightning AI agents — censorship-resistant rails for the parallel voluntary economy.",
+    "Self-hosted Bitcoin payment infrastructure — the open-source Stripe alternative. Near-zero fees, instant settlement, no chargebacks. Three questions, one command, live in 15 minutes.",
   metadataBase: new URL("https://arxmint.com"),
   openGraph: {
-    title: "ArxMint — Sovereign Bitcoin Economies",
+    title: "ArxMint — Accept Bitcoin Payments. Zero Fees. No Middleman.",
     description:
-      "Your Bitcoin economy, one prompt away. Private Fedimint/Cashu mints with Lightning AI agent rails.",
+      "Self-hosted Bitcoin payment infrastructure. The open-source Stripe alternative. Near-zero fees, instant settlement, no KYC, no chargebacks.",
     url: "https://arxmint.com",
     siteName: "ArxMint",
     locale: "en_US",
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ArxMint — Sovereign Bitcoin Economies",
+    title: "ArxMint — Accept Bitcoin Payments. Zero Fees. No Middleman.",
     description:
-      "Your Bitcoin economy, one prompt away. Private Fedimint/Cashu mints with Lightning AI agent rails.",
+      "Self-hosted Bitcoin payment infrastructure. The open-source Stripe alternative. Near-zero fees, instant settlement, no KYC, no chargebacks.",
   },
 };
 

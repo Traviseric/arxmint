@@ -126,7 +126,63 @@ const MACAROON_ROLE_PERMISSIONS: Record<
 
 // ---- LNC Client (direct Lightning node access) ----
 
-let LNC: any = null;
+interface LncChannel {
+  chan_id: string;
+  remote_pubkey: string;
+  capacity: string | number;
+  local_balance: string | number;
+  remote_balance: string | number;
+  active: boolean;
+}
+
+interface LncLightningApi {
+  getInfo(): Promise<{
+    alias: string;
+    identity_pubkey: string;
+    version: string;
+    block_height: number;
+    synced_to_chain: boolean;
+    num_active_channels: number;
+  }>;
+  walletBalance(): Promise<{ total_balance: string | number }>;
+  channelBalance(): Promise<{ balance: string | number }>;
+  listChannels(): Promise<{ channels?: LncChannel[] }>;
+  addInvoice(args: {
+    value: string;
+    memo: string;
+  }): Promise<{ payment_request: string; r_hash: string }>;
+  lookupInvoice(args: {
+    r_hash_str: string;
+  }): Promise<{ settled: boolean; value: string | number; memo?: string }>;
+  sendPaymentSync(args: {
+    payment_request: string;
+    fee_limit?: { fixed: string };
+  }): Promise<{
+    payment_error?: string;
+    payment_preimage: string;
+    payment_route?: { total_fees?: string | number };
+  }>;
+  bakeMacaroon(args: {
+    permissions: Array<{ entity: string; action: string }>;
+    root_key_id: string;
+    allow_external_permissions: boolean;
+  }): Promise<{ macaroon: string }>;
+}
+
+interface LncInstance {
+  connect(): Promise<void>;
+  disconnect(): void;
+  lnd: {
+    lightning: LncLightningApi;
+  };
+}
+
+type LncCtor = new (args: {
+  pairingPhrase: string;
+  password: string;
+}) => LncInstance;
+
+let LNC: LncCtor | null = null;
 
 /**
  * Overridable probe function for the litd remote signer.
@@ -139,12 +195,12 @@ let _remoteSignerProber: ((config: RemoteSignerConfig) => Promise<void>) | null 
 async function loadLNC() {
   if (!LNC) {
     const mod = await import("@lightninglabs/lnc-web");
-    LNC = mod.default;
+    LNC = mod.default as unknown as LncCtor;
   }
 }
 
 export class SovereignLightningClient {
-  private lnc: any = null;
+  private lnc: LncInstance | null = null;
   private _connected = false;
   private _securityTier: SecurityTier = "watch-only";
   private _remoteSignerConfig: RemoteSignerConfig | null = null;
@@ -194,8 +250,11 @@ export class SovereignLightningClient {
       tier === "pay-only" && remoteSignerConfig ? "remote" : "local";
 
     await loadLNC();
+    if (!LNC) {
+      throw new Error("Failed to load Lightning connector");
+    }
     this.lnc = new LNC({ pairingPhrase, password });
-    await this.lnc.connect();
+    await this.lnc!.connect();
     this._connected = true;
   }
 
@@ -208,7 +267,7 @@ export class SovereignLightningClient {
   /** Get node info */
   async getInfo(): Promise<NodeInfo> {
     this.requireConnected();
-    const info = await this.lnc.lnd.lightning.getInfo();
+    const info = await this.lnc!.lnd.lightning.getInfo();
     return {
       alias: info.alias,
       publicKey: info.identity_pubkey,
@@ -225,8 +284,8 @@ export class SovereignLightningClient {
     channelSats: number;
   }> {
     this.requireConnected();
-    const balance = await this.lnc.lnd.lightning.walletBalance();
-    const channels = await this.lnc.lnd.lightning.channelBalance();
+    const balance = await this.lnc!.lnd.lightning.walletBalance();
+    const channels = await this.lnc!.lnd.lightning.channelBalance();
     return {
       onchainSats: Number(balance.total_balance),
       channelSats: Number(channels.balance),
@@ -236,8 +295,8 @@ export class SovereignLightningClient {
   /** List channels */
   async listChannels(): Promise<ChannelInfo[]> {
     this.requireConnected();
-    const res = await this.lnc.lnd.lightning.listChannels();
-    return (res.channels || []).map((ch: any) => ({
+    const res = await this.lnc!.lnd.lightning.listChannels();
+    return (res.channels || []).map((ch) => ({
       channelId: ch.chan_id,
       remotePubkey: ch.remote_pubkey,
       capacity: Number(ch.capacity),
@@ -257,7 +316,7 @@ export class SovereignLightningClient {
     this.requireConnected();
     this.requireTier("pay-only", "createInvoice");
 
-    const res = await this.lnc.lnd.lightning.addInvoice({
+    const res = await this.lnc!.lnd.lightning.addInvoice({
       value: amountSats.toString(),
       memo: memo || "ArxMint",
     });
@@ -279,7 +338,7 @@ export class SovereignLightningClient {
     this.requireConnected();
     this.requireTier("pay-only", "lookupInvoice");
 
-    const res = await this.lnc.lnd.lightning.lookupInvoice({ r_hash_str: rHash });
+    const res = await this.lnc!.lnd.lightning.lookupInvoice({ r_hash_str: rHash });
     return {
       settled: res.settled,
       amountSats: Number(res.value),
@@ -310,7 +369,7 @@ export class SovereignLightningClient {
       );
     }
 
-    const res = await this.lnc.lnd.lightning.sendPaymentSync({
+    const res = await this.lnc!.lnd.lightning.sendPaymentSync({
       payment_request: bolt11,
       fee_limit: maxFeeSats ? { fixed: maxFeeSats.toString() } : undefined,
     });
@@ -345,7 +404,7 @@ export class SovereignLightningClient {
 
     const permissions = MACAROON_ROLE_PERMISSIONS[config.role];
 
-    const res = await this.lnc.lnd.lightning.bakeMacaroon({
+    const res = await this.lnc!.lnd.lightning.bakeMacaroon({
       permissions,
       root_key_id: "0",
       allow_external_permissions: false,
@@ -374,7 +433,7 @@ export class SovereignLightningClient {
   /** Disconnect from the node */
   disconnect(): void {
     if (this.lnc) {
-      this.lnc.disconnect();
+      this.lnc!.disconnect();
       this._connected = false;
       this._securityTier = "watch-only";
       this._remoteSignerConfig = null;
@@ -414,7 +473,7 @@ export class SovereignLightningClient {
       if (!response.ok && response.status !== 401) {
         throw new Error(`Remote signer probe returned HTTP ${response.status}`);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(
         `Remote signer at ${signerUrl} is not reachable: ${message}. ` +
@@ -567,7 +626,7 @@ export function generateMCPConfig(mailboxServer?: string): object {
 
 /** Test-only hooks for deterministic unit tests */
 export const __lightningAgentTestUtils = {
-  setLNCMock(lncCtor: any): void {
+  setLNCMock(lncCtor: LncCtor): void {
     LNC = lncCtor;
     // Auto-install a no-op prober so tests never make real network calls
     // to the remote signer endpoint.

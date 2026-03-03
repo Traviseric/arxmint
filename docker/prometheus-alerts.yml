@@ -1,0 +1,23 @@
+groups:
+  - name: arxmint-availability
+    rules:
+      - alert: ArxMintTargetDown
+        expr: up{job=~"lnd|cashu-mint|fedimint-guardian-0|fedimint-guardian-1|fedimint-guardian-2"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ArxMint monitored target is down"
+          description: "Target {{ $labels.job }} has been down for at least 5 minutes."
+
+  - name: arxmint-health
+    rules:
+      - alert: ArxMintCriticalTargetMissing
+        expr: absent(up{job="lnd"}) or absent(up{job="cashu-mint"})
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ArxMint scrape target missing"
+          description: "Prometheus cannot find a critical job target (lnd or cashu-mint)."
+

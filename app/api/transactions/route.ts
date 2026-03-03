@@ -7,21 +7,107 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-middleware";
+import {
+  isCommunityOwnedByUser,
+  requireSessionUserId,
+  SessionUserError,
+} from "@/lib/session-user";
 import { validateAmount, errorResponse, errorStatus } from "@/lib/validation";
-import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import {
+  checkDailyVolumeCap,
+  checkSingleTxCap,
+  checkWalletBalanceCap,
+  ValueCapError,
+} from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
+
+function utcDayStart(date = new Date()): Date {
+  const start = new Date(date);
+  start.setUTCHours(0, 0, 0, 0);
+  return start;
+}
+
+async function getTodayCommunityVolumeSats(communityId: string): Promise<number> {
+  const start = utcDayStart();
+  const next = new Date(start);
+  next.setUTCDate(start.getUTCDate() + 1);
+
+  const aggregate = await db.transaction.aggregate({
+    _sum: { amount: true },
+    where: {
+      communityId,
+      timestamp: { gte: start, lt: next },
+      status: { not: "failed" },
+    },
+  });
+  return aggregate._sum.amount ?? 0;
+}
+
+async function getCommunityWalletBalanceSats(communityId: string): Promise<number> {
+  const rows = await db.transaction.findMany({
+    where: {
+      communityId,
+      status: { not: "failed" },
+    },
+    select: {
+      type: true,
+      amount: true,
+    },
+  });
+
+  let balance = 0;
+  for (const row of rows) {
+    switch (row.type) {
+      case "receive":
+        balance += row.amount;
+        break;
+      case "send":
+      case "settlement":
+        balance -= row.amount;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return Math.max(0, balance);
+}
+
+async function getUserIdOrAuthError(
+  request: NextRequest
+): Promise<string | NextResponse> {
+  try {
+    return await requireSessionUserId(request);
+  } catch (error: unknown) {
+    if (error instanceof SessionUserError) {
+      const status = error.code === "UNAUTHENTICATED" ? 401 : 503;
+      return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status });
+    }
+    return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status: 503 });
+  }
+}
 
 export async function GET(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const { searchParams } = new URL(request.url);
     const communityId = searchParams.get("communityId");
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 200);
 
+    if (communityId) {
+      const owned = await isCommunityOwnedByUser(communityId, userId);
+      if (!owned) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const transactions = await db.transaction.findMany({
-      where: communityId ? { communityId } : {},
+      where: communityId ? { communityId } : { community: { userId } },
       orderBy: { timestamp: "desc" },
       take: limit,
     });
@@ -29,7 +115,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ transactions });
   } catch (error: unknown) {
     // DB not configured — return empty list so UI degrades gracefully
-    console.warn("Could not fetch transactions from DB:", error instanceof Error ? error.message : String(error));
+    logger.warn("Could not fetch transactions from DB", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ transactions: [] });
   }
 }
@@ -37,6 +125,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  const userId = await getUserIdOrAuthError(request);
+  if (userId instanceof NextResponse) return userId;
 
   try {
     const body = await request.json();
@@ -54,6 +145,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "communityId is required" }, { status: 400 });
     }
 
+    const owned = await isCommunityOwnedByUser(communityId, userId);
+    if (!owned) {
+      return NextResponse.json(
+        { error: "Forbidden", code: "FORBIDDEN_COMMUNITY" },
+        { status: 403 }
+      );
+    }
+
     const validTypes = ["send", "receive", "swap"];
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: "type must be send | receive | swap" }, { status: 400 });
@@ -69,6 +168,12 @@ export async function POST(request: NextRequest) {
 
     const validatedAmount = validateAmount(amount);
     checkSingleTxCap(validatedAmount);
+    const todayVolumeSats = await getTodayCommunityVolumeSats(communityId);
+    checkDailyVolumeCap(todayVolumeSats, validatedAmount);
+    if (type === "receive") {
+      const currentBalanceSats = await getCommunityWalletBalanceSats(communityId);
+      checkWalletBalanceCap(currentBalanceSats + validatedAmount);
+    }
 
     const transaction = await db.transaction.create({
       data: {

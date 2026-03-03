@@ -10,9 +10,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Wallet } from "@cashu/cashu-ts";
 import { db } from "@/lib/db";
-import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
+import {
+  checkDailyVolumeCap,
+  checkSingleTxCap,
+  ValueCapError,
+} from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
+import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { observeApiRoute } from "@/lib/api-observability";
 
 // ---- Types --------------------------------------------------
 
@@ -32,6 +38,7 @@ interface SettlementRecord {
   method: "cashu" | "fedimint";
   status: "pending" | "initiated" | "completed" | "failed";
   invoice?: string;
+  initiatedBy?: string;
   createdAt: number;
 }
 
@@ -64,8 +71,11 @@ async function findExistingSettlement(
       let parsedNotes: Record<string, unknown> = {};
       try {
         parsedNotes = JSON.parse(existing.notes ?? "{}");
-      } catch {
-        /* ignore */
+      } catch (error: unknown) {
+        logger.warn("findExistingSettlement notes parse failed", {
+          saleId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
       const record: SettlementRecord = {
         txId: existing.id,
@@ -74,15 +84,42 @@ async function findExistingSettlement(
         method: (parsedNotes.method as "cashu" | "fedimint") ?? "cashu",
         status: (existing.status as SettlementRecord["status"]) ?? "initiated",
         invoice: (parsedNotes.invoice as string) ?? undefined,
+        initiatedBy: (parsedNotes.initiatedBy as string) ?? undefined,
         createdAt: existing.timestamp.getTime(),
       };
       _settlements.set(saleId, record);
       return record;
     }
-  } catch {
-    // DB unavailable — rely on in-memory only
+  } catch (error: unknown) {
+    logger.warn("findExistingSettlement DB lookup failed; using in-memory cache only", {
+      saleId,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
   return null;
+}
+
+function utcDayStart(date = new Date()): Date {
+  const start = new Date(date);
+  start.setUTCHours(0, 0, 0, 0);
+  return start;
+}
+
+async function getTodaySettlementVolumeSats(communityId: string): Promise<number> {
+  const start = utcDayStart();
+  const next = new Date(start);
+  next.setUTCDate(start.getUTCDate() + 1);
+
+  const aggregate = await db.transaction.aggregate({
+    _sum: { amount: true },
+    where: {
+      communityId,
+      type: "settlement",
+      timestamp: { gte: start, lt: next },
+      status: { not: "failed" },
+    },
+  });
+  return aggregate._sum.amount ?? 0;
 }
 
 async function createCashuMintQuote(
@@ -95,7 +132,7 @@ async function createCashuMintQuote(
     return { invoice: quote.request, quoteId: quote.quote };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[ArxMint] Cashu mint quote creation failed:", message);
+    logger.warn("Cashu mint quote creation failed", { error: message });
     return null;
   }
 }
@@ -103,17 +140,38 @@ async function createCashuMintQuote(
 // ---- POST /api/settlement -----------------------------------
 
 export async function POST(request: NextRequest) {
+  return observeApiRoute(request, "/api/settlement", async () => {
   // Require auth: accept ArxMint session cookie, Bearer JWT, or X-Marketplace-Secret
   // header (server-to-server from Teneo Marketplace via MARKETPLACE_SHARED_SECRET).
   const caller = getCallerFromRequest(request);
   if (!caller) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "settlement-create",
+    ip,
+    caller,
+    RATE_LIMITS.settlementWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, "/api/settlement", rl.retryAfter ?? 60);
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter ?? 60) } }
+    );
+  }
 
   let body: Partial<SettlementRequest>;
   try {
     body = await request.json();
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("POST /api/settlement invalid JSON body", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
@@ -147,6 +205,7 @@ export async function POST(request: NextRequest) {
   }
 
   const feeAmount = Math.floor(saleAmount * referralFeePct);
+  const effectiveCommunityId = communityId ?? "marketplace";
   if (feeAmount < 1) {
     return NextResponse.json(
       { error: "Calculated fee is less than 1 sat — too small to settle" },
@@ -156,6 +215,8 @@ export async function POST(request: NextRequest) {
 
   try {
     checkSingleTxCap(feeAmount);
+    const todayVolumeSats = await getTodaySettlementVolumeSats(effectiveCommunityId);
+    checkDailyVolumeCap(todayVolumeSats, feeAmount);
   } catch (e: unknown) {
     if (e instanceof ValueCapError) {
       return NextResponse.json(
@@ -185,7 +246,7 @@ export async function POST(request: NextRequest) {
   let invoice: string | undefined;
   let quoteId: string | undefined;
   let status: SettlementRecord["status"] = "initiated";
-  let extraNotes: Record<string, unknown> = {};
+  let extraNotes: Record<string, unknown> = { initiatedBy: caller };
 
   if (method === "cashu") {
     // Create a Cashu mint quote (bolt11 invoice) for the fee amount.
@@ -196,6 +257,7 @@ export async function POST(request: NextRequest) {
       invoice = quote.invoice;
       quoteId = quote.quoteId;
       extraNotes = {
+        ...extraNotes,
         method: "cashu",
         mintUrl,
         invoice,
@@ -206,6 +268,7 @@ export async function POST(request: NextRequest) {
       // Dev fallback: accept without a real invoice
       invoice = "lnbc1dev_settlement_placeholder_not_payable";
       extraNotes = {
+        ...extraNotes,
         method: "cashu",
         mintUrl,
         invoice,
@@ -222,6 +285,7 @@ export async function POST(request: NextRequest) {
     // Fedimint: the actual WASM join + deposit must be triggered client-side.
     // We record the initiation and return instructions to the caller.
     extraNotes = {
+      ...extraNotes,
       method: "fedimint",
       recipientFedimintInvite,
       status: "awaiting_client_deposit",
@@ -231,7 +295,6 @@ export async function POST(request: NextRequest) {
 
   // ---- Persist to Transaction table ----
   const notes = buildNotesJson(saleId, extraNotes);
-  const effectiveCommunityId = communityId ?? "marketplace";
 
   let txId: string;
   try {
@@ -250,7 +313,7 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     // DB unavailable — generate a temp ID and continue
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[ArxMint] Could not persist settlement to DB:", message);
+    logger.warn("Could not persist settlement to DB", { error: message });
     txId = `mem_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
@@ -261,6 +324,7 @@ export async function POST(request: NextRequest) {
     method,
     status,
     invoice,
+    initiatedBy: caller,
     createdAt: Date.now(),
   };
 
@@ -299,11 +363,35 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(response, { status: 201 });
+  });
 }
 
 // ---- GET /api/settlement ------------------------------------
 
 export async function GET(request: NextRequest) {
+  return observeApiRoute(request, "/api/settlement", async () => {
+  const caller = getCallerFromRequest(request);
+  if (!caller) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "settlement-read",
+    ip,
+    caller,
+    RATE_LIMITS.settlementWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, "/api/settlement", rl.retryAfter ?? 60);
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter ?? 60) } }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const saleId = searchParams.get("saleId");
 
@@ -319,5 +407,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Settlement not found" }, { status: 404 });
   }
 
+  // Only the original authenticated caller (or marketplace system integration)
+  // can read a settlement record.
+  if (caller !== "marketplace-system") {
+    if (!settlement.initiatedBy || settlement.initiatedBy !== caller) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   return NextResponse.json({ settlement });
+  });
 }

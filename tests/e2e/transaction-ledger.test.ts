@@ -8,7 +8,7 @@
 import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3000";
 
 let serverAvailable = false;
 
@@ -159,7 +159,10 @@ describe("Transaction Ledger — proof data privacy", () => {
     // it doesn't expose raw proof data (which would be a privacy violation)
     const res = await fetch(`${BASE_URL}/api/settlement`);
     if (res.status !== 200) {
-      t.skip("Settlement endpoint returned non-200 (auth required)");
+      assert.ok(
+        res.status === 401 || res.status === 403,
+        `Expected 200/401/403 from /api/settlement, got ${res.status}`
+      );
       return;
     }
 

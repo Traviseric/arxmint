@@ -671,6 +671,25 @@ export function NumoNFCSetup({
   const [defaultAmount, setDefaultAmount] = useState("");
   const [status, setStatus] = useState<"idle" | "provisioning" | "done">("idle");
 
+  // Detect Web NFC API support (Chrome on Android only)
+  const nfcSupported = typeof window !== "undefined" && "NDEFReader" in window;
+
+  if (!nfcSupported) {
+    return (
+      <div className="sovereign-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <CreditCard className="w-4 h-4 text-sovereign-muted" aria-hidden="true" />
+          <span className="text-sm font-bold text-sovereign-muted">
+            Numo NFC Card Setup
+          </span>
+        </div>
+        <p className="text-xs text-sovereign-muted">
+          NFC provisioning requires Chrome on Android. Use the QR code above to accept payments on this device.
+        </p>
+      </div>
+    );
+  }
+
   const handleProvision = () => {
     setStatus("provisioning");
     const config = generateNumoCardConfig(

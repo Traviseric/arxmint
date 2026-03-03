@@ -6,6 +6,11 @@ import { create } from "zustand";
 import type { Proof } from "@cashu/cashu-ts";
 import type { CommunityConfig, DeploymentConfig, CycleMetrics, WalletBalance, NostrUser, StoredTransaction, MerchantListing } from "./types";
 
+function warnStorageIssue(scope: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  console.warn(`[ArxMint][store] ${scope}: ${message}`);
+}
+
 interface SovereignState {
   // Community
   currentCommunity: CommunityConfig | null;
@@ -130,7 +135,9 @@ export const useSovereignStore = create<SovereignState>((set, get) => ({
     try {
       const { merchants } = get();
       localStorage.setItem(MERCHANT_STORAGE_KEY, JSON.stringify(merchants));
-    } catch { /* storage full or unavailable */ }
+    } catch (error: unknown) {
+      warnStorageIssue("saveMerchantsToStorage failed", error);
+    }
   },
 
   // Nostr identity
@@ -189,8 +196,8 @@ export function hydrateCashuSession(): void {
     const store = useSovereignStore.getState();
     store.setCashuProofs(allProofs);
     store.setBalance({ cashuSats });
-  } catch {
-    // Ignore storage read errors
+  } catch (error: unknown) {
+    warnStorageIssue("hydrateCashuSession failed", error);
   }
 }
 
@@ -210,8 +217,8 @@ export async function hydrateVaultProofs(mintUrls: string[]): Promise<void> {
       try {
         const proofs = await vault.getProofs(mintUrl);
         allProofs.push(...proofs);
-      } catch {
-        // Skip mints that fail — don't block hydration for all
+      } catch (error: unknown) {
+        warnStorageIssue(`hydrateVaultProofs failed for mint ${mintUrl}`, error);
       }
     }
 
@@ -222,8 +229,8 @@ export async function hydrateVaultProofs(mintUrls: string[]): Promise<void> {
     store.setCashuProofs(allProofs);
     store.setBalance({ cashuSats });
     store.setVaultUnlocked(true);
-  } catch {
-    // Ignore vault read errors
+  } catch (error: unknown) {
+    warnStorageIssue("hydrateVaultProofs failed", error);
   }
 }
 
@@ -238,8 +245,8 @@ export function hydrateMerchantsFromStorage(): void {
         useSovereignStore.setState({ merchants });
       }
     }
-  } catch {
-    // Corrupt data — ignore, start fresh
+  } catch (error: unknown) {
+    warnStorageIssue("hydrateMerchantsFromStorage failed", error);
   }
 }
 
@@ -252,7 +259,8 @@ export function hydrateNostrSession(): void {
       const user: NostrUser = JSON.parse(stored);
       useSovereignStore.getState().setNostrUser(user);
     }
-  } catch {
+  } catch (error: unknown) {
+    warnStorageIssue("hydrateNostrSession failed", error);
     localStorage.removeItem("arxmint:nostr-user");
   }
 }

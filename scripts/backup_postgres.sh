@@ -6,10 +6,10 @@
 set -euo pipefail
 
 BACKUP_DIR="${1:-/backups/postgres}"
-CONTAINER="sf-postgres"
-DB_NAME="arxmint"
-DB_USER="arxmint"
-RETENTION_DAYS=7
+CONTAINER="${POSTGRES_CONTAINER:-sf-postgres}"
+DB_NAME="${POSTGRES_DB:-arxmint}"
+DB_USER="${POSTGRES_USER:-arxmint}"
+RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/arxmint_${TIMESTAMP}.sql.gz"
 

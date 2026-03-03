@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Bot,
   CircleDollarSign,
   Cpu,
@@ -297,11 +296,11 @@ export default function AgentsPage() {
                     </div>
                     <div>
                       <span className="text-text-muted">2. Server 402 + Invoice:</span><br />
-                      <span className="text-accent">HTTP 402 — WWW-Authenticate: L402 macaroon="..." invoice="..."</span>
+                      <span className="text-accent">HTTP 402 — WWW-Authenticate: L402 macaroon=&quot;...&quot; invoice=&quot;...&quot;</span>
                     </div>
                     <div>
                       <span className="text-text-muted">3. Agent pays LN invoice:</span><br />
-                      <span className="text-text-primary">payInvoice("lnbc500n1...")</span> → preimage
+                      <span className="text-text-primary">payInvoice(&quot;lnbc500n1...&quot;)</span> → preimage
                     </div>
                     <div>
                       <span className="text-text-muted">4. Retry w/ proof:</span><br />
@@ -333,7 +332,7 @@ export default function AgentsPage() {
                     { icon: Radio, title: "Manage channels", desc: "Open, close, rebalance LN" },
                     { icon: Key, title: "Scoped credentials", desc: "Pay-only or read-only limits" },
                     { icon: MessageSquare, title: "Any agent runtime", desc: "Works with Claude, GPT, MCP" },
-                  ].map((item, idx) => (
+                  ].map((item) => (
                     <div key={item.title} className="glass border border-border-default rounded-lg p-5 glow-card">
                       <item.icon className="w-5 h-5 text-accent mb-3" />
                       <h3 className="text-sm font-semibold text-text-primary mb-1">{item.title}</h3>

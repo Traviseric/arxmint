@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, Minus, RefreshCw } from "lucide-react";
 import type { CycleMetrics } from "@/lib/types";
 import { SIGNAL_DESCRIPTIONS, getCycleMetrics } from "@/lib/cycle-monitor";
-import { formatSats } from "@/lib/utils";
 
 export function CycleAlerts() {
   const [metrics, setMetrics] = useState<CycleMetrics | null>(null);

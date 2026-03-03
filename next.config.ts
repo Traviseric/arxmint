@@ -9,11 +9,34 @@ const nextConfig: NextConfig = {
       asyncWebAssembly: true,
       layers: true,
     };
+    // Fedimint's WASM worker emits async code; declare support explicitly.
+    config.output = {
+      ...config.output,
+      environment: {
+        ...(config.output?.environment ?? {}),
+        asyncFunction: true,
+      },
+    };
     return config;
   },
   // Headers for WASM + SharedArrayBuffer (required by Web Workers) + security hardening
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
+    const cspReportOnlyEnabled =
+      isProd && process.env.CSP_REPORT_ONLY !== "false";
+    const strictReportOnlyCsp = [
+      "default-src 'self'",
+      "script-src 'self' 'wasm-unsafe-eval'",
+      "style-src 'self'",
+      "img-src 'self' data: blob:",
+      "connect-src 'self' ws: wss: https:",
+      "worker-src 'self' blob:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "report-uri /api/csp-report",
+    ].join("; ");
     return [
       {
         source: "/(.*)",
@@ -41,8 +64,9 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts need 'unsafe-inline' or nonce; 'unsafe-eval' required for WASM
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              // Next.js inline runtime currently requires 'unsafe-inline';
+              // use wasm-unsafe-eval (narrower than unsafe-eval) for WASM execution.
+              "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               // WebSocket for Next.js HMR in dev, and LNC WebSocket in prod
@@ -55,15 +79,17 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
             ].join("; "),
           },
+          ...(cspReportOnlyEnabled
+            ? [
+                {
+                  key: "Content-Security-Policy-Report-Only",
+                  value: strictReportOnlyCsp,
+                },
+              ]
+            : []),
         ],
       },
     ];
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
   },
 };
 

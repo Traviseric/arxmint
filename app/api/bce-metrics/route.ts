@@ -5,6 +5,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { computeBCEMetrics, getDemoBCEMetrics, type BCEMetrics } from "@/lib/bce-metrics";
+import { requireAuth } from "@/lib/auth-middleware";
+import {
+  isCommunityOwnedByUser,
+  requireSessionUserId,
+  SessionUserError,
+} from "@/lib/session-user";
+import { logger } from "@/lib/logger";
+import { observeApiRoute } from "@/lib/api-observability";
+
+async function getUserIdOrAuthError(
+  request: NextRequest
+): Promise<string | NextResponse> {
+  try {
+    return await requireSessionUserId(request);
+  } catch (error: unknown) {
+    if (error instanceof SessionUserError) {
+      const status = error.code === "UNAUTHENTICATED" ? 401 : 503;
+      return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status });
+    }
+    return NextResponse.json({ error: "Unable to resolve authenticated user" }, { status: 503 });
+  }
+}
 
 async function computeRealBCEMetrics(communityId?: string): Promise<BCEMetrics> {
   const where = communityId ? { communityId } : {};
@@ -28,7 +50,6 @@ async function computeRealBCEMetrics(communityId?: string): Promise<BCEMetrics> 
     allTxs.map((t) => t.counterparty).filter(Boolean)
   ).size;
   const confirmedTxs = allTxs.filter((t) => t.status === "confirmed");
-  const failedTxs = allTxs.filter((t) => t.status === "failed");
   const spendVelocity7d = recentTxs
     .filter((t) => t.status === "confirmed")
     .reduce((sum, t) => sum + t.amount, 0);
@@ -48,15 +69,32 @@ async function computeRealBCEMetrics(communityId?: string): Promise<BCEMetrics> 
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const communityId = searchParams.get("communityId") ?? undefined;
+  return observeApiRoute(request, "/api/bce-metrics", async () => {
+    const authError = requireAuth(request);
+    if (authError) return authError;
 
-  try {
-    const metrics = await computeRealBCEMetrics(communityId);
-    return NextResponse.json({ metrics, source: "database" });
-  } catch (error) {
-    // DB unavailable - fall back to demo metrics
-    const metrics = getDemoBCEMetrics();
-    return NextResponse.json({ metrics, source: "demo" });
-  }
+    const userId = await getUserIdOrAuthError(request);
+    if (userId instanceof NextResponse) return userId;
+
+    const { searchParams } = new URL(request.url);
+    const communityId = searchParams.get("communityId") ?? undefined;
+
+    if (communityId) {
+      const owned = await isCommunityOwnedByUser(communityId, userId);
+      if (!owned) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
+    try {
+      const metrics = await computeRealBCEMetrics(communityId);
+      return NextResponse.json({ metrics, source: "database" });
+    } catch (error: unknown) {
+      logger.warn("GET /api/bce-metrics fallback to demo", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      const metrics = getDemoBCEMetrics();
+      return NextResponse.json({ metrics, source: "demo" });
+    }
+  });
 }

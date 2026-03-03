@@ -8,15 +8,18 @@ import {
   Layers,
   Sparkles,
   Castle,
+  Store,
   Lock,
   Github,
+  type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
 
 export const metadata = {
   title: "Roadmap — ArxMint",
   description:
-    "Five phases from security hardening to production deployment. Every task traces back to research. See where ArxMint is headed.",
+    "Six phases from security hardening to a decentralized Stripe alternative. Every task traces back to research. See where ArxMint is headed.",
 };
 
 type RoadmapStatus = "done" | "current" | "pending";
@@ -34,7 +37,7 @@ type RoadmapPhase = {
   codename: string;
   title: string;
   status: RoadmapStatus;
-  icon: any;
+  icon: LucideIcon;
   description: string;
   humanDescription: string;
   timeline: string;
@@ -46,12 +49,12 @@ const phases: RoadmapPhase[] = [
     number: 0,
     codename: "Fortify",
     title: "Security Hardening",
-    status: "current" as const,
+    status: "done" as const,
     icon: Shield,
     description:
-      "Most P0 controls are shipped and tested. Final remote-signer transport hardening is still in progress.",
+      "All P0 security controls shipped and tested. Keyset validation, security tiers, and remote signer config complete.",
     humanDescription: "your sats and data are protected before anything else gets built",
-    timeline: "In Progress",
+    timeline: "Complete",
     tasks: [
       {
         id: "0.1",
@@ -91,12 +94,12 @@ const phases: RoadmapPhase[] = [
     number: 1,
     codename: "Keystone",
     title: "Core Architecture",
-    status: "current" as const,
+    status: "done" as const,
     icon: Wrench,
     description:
-      "Core architecture is largely shipped: spend routing, merchant onboarding, BCE metrics, and scoped agent controls.",
+      "Core architecture complete: spend routing, merchant onboarding, BCE metrics, NUT-24 paywalls, and scoped agent controls.",
     humanDescription: "merchants can accept payments, wallet auto-picks best way to pay",
-    timeline: "In Progress",
+    timeline: "Complete",
     tasks: [
       {
         id: "1.1",
@@ -160,12 +163,12 @@ const phases: RoadmapPhase[] = [
     number: 2,
     codename: "Spire",
     title: "Full Privacy + Commerce",
-    status: "current" as const,
+    status: "done" as const,
     icon: Layers,
     description:
-      "Mixed maturity phase: some capabilities are production-ready, others are partial integrations or prototype scaffolding.",
+      "Privacy and commerce stack complete: Fedimint v0.10, NUT-26 QR payments, monitoring, gateway bridge. Ark and CDK remain upstream-blocked.",
     humanDescription: "ecash across multiple mints, tap-to-pay, real-time monitoring",
-    timeline: "In Progress",
+    timeline: "Complete",
     tasks: [
       {
         id: "2.1",
@@ -284,12 +287,12 @@ const phases: RoadmapPhase[] = [
     number: 4,
     codename: "Citadel",
     title: "Production + Grants",
-    status: "pending" as const,
+    status: "current" as const,
     icon: Castle,
     description:
-      "Production rollout phase: pilot deployment, grant execution, and replication at community scale.",
-    humanDescription: "pilot deployment plus grant-backed expansion",
-    timeline: "Planning + Tooling",
+      "Pilot deployment in Longmont, CO. Grant applications drafted for OpenSats, HRF, and FBCE. KPI framework and replication playbook ready.",
+    humanDescription: "real merchants, real payments, real sats changing hands",
+    timeline: "In Progress",
     tasks: [
       {
         id: "4.1",
@@ -328,6 +331,110 @@ const phases: RoadmapPhase[] = [
       },
     ],
   },
+  {
+    number: 5,
+    codename: "Bazaar",
+    title: "Decentralized Merchant Platform",
+    status: "pending" as const,
+    icon: Store,
+    description:
+      "A self-hosted, non-custodial Stripe alternative. Three-question wizard provisions a merchant payment node in under 15 minutes — no Docker, SSH, or DNS knowledge required. Legally protected as open-source software + optional non-custodial infrastructure services. ArxMint never touches funds.",
+    humanDescription: "any merchant runs their own payment node — zero fees, zero middlemen",
+    timeline: "Planned",
+    tasks: [
+      {
+        id: "5.1",
+        title: "Local auth tokens + scoped macaroons",
+        humanTitle: "Your node, your keys — programmatic access with sandbox mode",
+        description: "L402 macaroon-based auth tokens generated on the merchant's own node. Scoped permissions (read/invoice/pay/admin), key rotation, rate limits. Non-custodial by design.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.2",
+        title: "Webhook engine (local)",
+        humanTitle: "Get notified instantly when a customer pays — on your own infrastructure",
+        description: "Webhook engine runs on the merchant's node, watching their own LND/Cashu for invoice settlements. HMAC-SHA256 signed payloads, exponential backoff retry, delivery logs.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.3",
+        title: "Self-hosted checkout page",
+        humanTitle: "A payment link on your own domain — no code required",
+        description: "Payment page served from the merchant's node. Invoices generated by their own LND. QR code, real-time SSE status, auto-redirect on completion. ArxMint provides the software; merchant hosts it.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.4",
+        title: "Payment status API + real-time updates",
+        humanTitle: "Know exactly when your customer paid",
+        description: "GET /payments/:id on the merchant's own node. SSE for real-time push, WebSocket for POS. Cursor-paginated payment history. All data stays local.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.5",
+        title: "Client-side SDK + React components",
+        humanTitle: "Add payments to any website in 10 lines of code",
+        description: "@arxmint/js and @arxmint/react — connects to the merchant's own endpoint, not a central server. PayButton, CheckoutForm, QRPayment components.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.6",
+        title: "LNURL-pay + Lightning Address",
+        humanTitle: "name@pay.merchant.com — scan and pay at any register",
+        description: "Lightning Address and LNURL-pay served from the merchant's own domain. Static QR codes for POS. NFC tag provisioning via Numo. No intermediary.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.7",
+        title: "Merchant dashboard (self-hosted)",
+        humanTitle: "See every payment, manage your node, track your revenue",
+        description: "Self-hosted dashboard with payments, analytics, auth token management, webhook config, node status. No data leaves the merchant's infrastructure.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.8",
+        title: "Merchant deploy wizard",
+        humanTitle: "Three questions, fifteen minutes — your payment node is live",
+        description: "arxmint merchant init asks three questions (where to run, store name, online or POS), then provisions a complete merchant node: LND (Neutrino — no chain sync), Cashu mint, checkout, dashboard, managed subdomain (storename.arxmint.cloud), auto-HTTPS, and LSP-bootstrapped liquidity. Cloud deploy buttons for DigitalOcean, Vultr, Hetzner. The merchant never sees Docker or SSH.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.9",
+        title: "Public merchant directory",
+        humanTitle: "Customers find you — searchable by category and location",
+        description: "Community-hosted merchant directory. Self-registration via CLI. Search by category, location, payment methods. The only Phase 5 item safe to host centrally (informational, no funds).",
+        status: "pending" as const,
+      },
+      {
+        id: "5.10",
+        title: "Idempotency + production hardening",
+        humanTitle: "No double charges, no duplicate records, hardened for the open internet",
+        description: "Idempotency-Key header on all payment endpoints. Structured error codes. Caddy auto-HTTPS, CSP headers, rate limiting, firewall rules generated by setup wizard.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.11",
+        title: "Merchant node lifecycle",
+        humanTitle: "Updates, backups, and disaster recovery — handled automatically",
+        description: "Three sub-systems: (a) Appliance update engine — signed stack BOMs with auto-rollback on failed health checks, canary rings for staged rollout. (b) Zero-knowledge encrypted backups — LND SCB event-driven on every channel change, Cashu mint DB encrypted with seed-derived key, automated restore rehearsal. (c) One-click restore — fresh host + seed phrase = full recovery.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.12",
+        title: "Home node packaging (Umbrel + StartOS)",
+        humanTitle: "One-click install from your home node app store",
+        description: "Package the merchant stack for Umbrel and StartOS app stores. Umbrel is the fastest target — Docker Compose maps directly to its packaging format. Checkout endpoints public via App Proxy, admin behind Umbrel auth. StartOS as secondary with richer ops UX.",
+        status: "pending" as const,
+      },
+      {
+        id: "5.13",
+        title: "Mobile merchant remote control",
+        humanTitle: "Manage your node from your phone — the VPS is invisible",
+        description: "React Native app as remote control for the merchant's VPS node. POS terminal, QR generation, daily sales, push notifications on invoice settlement. Wallet unlock via push notification (non-custodial — secret goes to node, never ArxMint). Near-term: PWA dashboard (5.7) covers 80%. Lite mode: LDK on mobile via Breez SDK for pop-up shops — no VPS needed.",
+        status: "pending" as const,
+      },
+    ],
+  },
 ];
 
 function StatusIcon({ status }: { status: "done" | "current" | "pending" }) {
@@ -357,7 +464,13 @@ export default function RoadmapPage() {
             <div className="border-b-2 border-text-primary pb-8 mb-8 relative">
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-3xl rounded-full" />
               <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-text-primary mb-6 uppercase !font-sans flex items-center gap-4">
-                <img src="/images/logo.png" alt="ArxMint Citadel Logo" className="w-12 h-12 rounded-lg shadow-[0_0_15px_rgba(247,147,26,0.2)]" />
+                <Image
+                  src="/images/logo.png"
+                  alt="ArxMint Citadel Logo"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-lg shadow-[0_0_15px_rgba(247,147,26,0.2)]"
+                />
                 ArxMint: Sovereign Economy Specification
               </h1>
               <div className="flex justify-between items-end text-xs text-text-secondary uppercase tracking-widest">
@@ -369,7 +482,7 @@ export default function RoadmapPage() {
                 </div>
                 <div className="text-right">
                   <span className="block text-text-muted mb-1">Architecture</span>
-                  <span className="text-text-primary">Phase 0 - 4</span>
+                  <span className="text-text-primary">Phase 0 - 5</span>
                 </div>
               </div>
             </div>
@@ -379,7 +492,7 @@ export default function RoadmapPage() {
             <div className="pl-6 border-l border-text-muted/30">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-text-primary mb-3">Abstract.</h2>
               <p className="text-sm leading-relaxed text-text-secondary pr-8">
-                A purely peer-to-peer version of electronic cash and AI agent commerce would allow online payments and autonomous economic activities to be sent directly from one party to another without going through a financial institution or centralized API provider. This document outlines the five phases of ArxMint's development, from foundational security hardening to production-grade deployment of sovereign Bitcoin economies integrating Fedimint, Cashu, and the Model Context Protocol (MCP). Every task traces back to rigorous core research, prioritized by security impact.
+                A purely peer-to-peer version of electronic cash and AI agent commerce would allow online payments and autonomous economic activities to be sent directly from one party to another without going through a financial institution or centralized API provider. This document outlines six phases of ArxMint&apos;s development, from foundational security hardening through a decentralized merchant payment platform. ArxMint integrates Fedimint, Cashu, Lightning L402, and the Model Context Protocol (MCP) into sovereign Bitcoin payment infrastructure that any merchant can self-host with a three-question wizard. Every task traces back to rigorous core research and 11 self-hosting UX studies, prioritized by security impact.
               </p>
             </div>
           </ScrollReveal>
@@ -421,7 +534,7 @@ export default function RoadmapPage() {
               <h3 className="text-[11px] font-mono text-accent tracking-widest uppercase mb-6 flex items-center gap-2 border-b border-border-default/50 pb-2">
                 <Clock className="w-3 h-3" /> Execution Timeline
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
                 {phases.map((phase) => (
                   <div key={phase.number} className="text-left">
                     <span className="text-[10px] font-mono text-text-muted block mb-1 tracking-widest">PHASE {phase.number}.0</span>

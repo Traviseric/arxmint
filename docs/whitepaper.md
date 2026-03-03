@@ -1,6 +1,6 @@
 # ArxMint: A Unified Framework for Human and AI Agent Commerce in Sovereign Bitcoin Circular Economies
 
-**Version 1.0 — February 2026**
+**Version 1.1 — March 2026**
 
 **Authors:** ArxMint Contributors
 
@@ -712,17 +712,36 @@ NUT-24 ecash paywalls, spend router, BCE metrics dashboard, merchant onboarding,
 ### Phase 2: Spire — Full Privacy and Commerce Stack
 *"Ecash across multiple mints, tap-to-pay, real-time monitoring."*
 
-Fedimint v0.10.0 upgrade, Ark SDK integration, CDK mint upgrade, multi-mint (Coco), NUT-26 QR/NFC payments, Silent Payments infrastructure, monitoring stack, Gateway bridge. All eight tasks complete.
+Fedimint v0.10.0 upgrade, NUT-26 QR/NFC payments, and monitoring stack are complete. Ark SDK, CDK mint upgrade, multi-mint (Coco), Silent Payments infrastructure, and gateway bridge remain partial/prototype with upstream dependencies.
 
 ### Phase 3: Aether — Advanced Features
 *"Programmable payments, hardware wallet support, community governance."*
 
-Guardian governance framework, programmable ecash (STARK/Cairo spending conditions), ZK-verified reissuance, hardware wallet support (BIP-392/BIP-376), advanced Cashu (NUT-28 P2BK), Numo NFC merchant integration. All six tasks complete.
+Guardian governance framework, programmable ecash (STARK/Cairo spending conditions), ZK-verified reissuance, hardware wallet support (BIP-392/BIP-376), advanced Cashu (NUT-28 P2BK), and Numo NFC merchant integration are post-pilot (Phase 3), with several items blocked on upstream maturity and hardware validation.
 
 ### Phase 4: Citadel — Production Deployment
 *"Live pilot with 30 Boulder-area merchants, replication playbook."*
 
 Longmont pilot deployment, grant applications (FBCE, OpenSats, Fedi), grant reporting dashboard, replication playbook ("BCE in a Box"), multi-city federation.
+
+### Phase 5: Bazaar — Decentralized Merchant Platform
+*"Any merchant runs their own payment node — zero fees, zero middlemen."*
+
+Phase 5 transforms ArxMint from community infrastructure into a full merchant payment platform — a private, open-source, self-hosted alternative to Stripe. The core payment loop (create challenge, pay, verify) is code-complete from Phases A-E and advancing through production-readiness verification. Phase 5 adds a merchant-grade operations layer and developer experience on top.
+
+**The problem:** Stripe charges 2.9% + $0.30 per transaction. A merchant doing $10K/month loses ~$320 to processing fees. Chargebacks add more. Customer payment data gets sold to advertisers. And Stripe can freeze your funds at any time.
+
+**The solution:** Merchants run their own ArxMint payment node. Customers pay the merchant's node directly — peer-to-peer via ecash or Lightning. Settlement is instant (no T+2 delay). Chargebacks are impossible (bearer ecash is final). No payment data leaves the merchant's infrastructure.
+
+**Architecture decision (locked by Research #7):** ArxMint must remain strictly non-custodial, following the BTCPay Server legal model. ArxMint provides open-source software plus optional non-custodial infrastructure services (BYOC provisioning, managed DNS, signed updates), while merchants run their own nodes and hold their own keys. A hosted platform where ArxMint receives customer payments and settles to merchants would constitute money transmission under FinCEN, require multi-state MSB licensing, EU MiCA CASP authorization, and UK FCA registration. The self-hosted model is protected under FinCEN's unhosted wallet exemption, the DOJ's 2025 safe harbor for non-custodial peer-to-peer software, and MiCA Article 2/Recital 83.
+
+Phase 5 deliverables now include:
+- Merchant APIs and UX: local auth tokens (5.1), webhook engine (5.2), self-hosted checkout (5.3), payment status API + SSE (5.4), client SDK (5.5), LNURL-pay + Lightning Address (5.6), merchant dashboard (5.7).
+- Deployment and onboarding: 5.8a provisioning control plane, 5.8b managed DNS/connectivity, 5.8c LSP liquidity bootstrap, 5.8d merchant stack composition.
+- Lifecycle and resilience: 5.11a appliance update engine, 5.11b zero-knowledge backups, 5.11c one-click restore.
+- Distribution and operations extensions: public directory (5.9), idempotency/hardening (5.10), Umbrel/StartOS packaging (5.12), mobile remote control roadmap (5.13).
+
+**Target integration times:** Coffee shop with `arxmint merchant init` + printed QR: < 15 minutes. Online store with self-hosted checkout: 30 minutes. SaaS app with SDK and webhooks: 1-2 hours.
 
 ### Dependency Graph
 
@@ -734,7 +753,11 @@ Phase 0 (Security) ──→ Phase 1 (Core)
     Phase 1.4 (Merchant Flow) ──→ Phase 4.1 (Pilot)
 Phase 2 (Privacy) ──→ Phase 3 (Advanced)
     Phase 2.4 (Coco Multi-Mint) ──→ Phase 4.5 (Multi-City)
-Phase 4 depends on: Phase 0 + 1.3/1.4 + 2.7 + 3.1
+Phase 4 depends on: Production Readiness Gate (Phases A-E) + Phase 0 + 1.3/1.4 + 2.7 (not blocked by Phase 3)
+Phase 5 depends on: Phase 4 (pilot validation) + Phase A-E (production infrastructure)
+    Phase 5.8d (Stack) ──→ 5.8a (Provisioning) ──→ 5.8b (DNS/Connectivity) ──→ 5.8c (LSP Bootstrap)
+    Phase 5.8a ──→ 5.1 (Local Auth) + 5.2 (Webhooks) + 5.3 (Checkout) + 5.4 (Status API) + 5.5 (Client SDK) + 5.6 (LNURL) + 5.7 (Dashboard)
+    Phase 5.8a ──→ 5.11a (Updates) ──→ 5.11b (Backups) ──→ 5.11c (Restore)
 ```
 
 ---
@@ -771,15 +794,15 @@ Phase 4 depends on: Phase 0 + 1.3/1.4 + 2.7 + 3.1
 
 ## 14. Conclusion
 
-Bitcoin's promise was peer-to-peer electronic cash. Fifteen years later, most Bitcoin is held, not spent. The infrastructure gap is real: no local mints, no private payment rails, no merchant directories, no way for AI agents to participate in the economy.
+Bitcoin's promise was peer-to-peer electronic cash. Fifteen years later, most Bitcoin is held, not spent. The infrastructure gap is real: no local mints, no private payment rails, no merchant directories, no way for AI agents to participate in the economy. And the existing payment infrastructure — Stripe, Square, PayPal — extracts 2.9%+ from every transaction while selling customer data.
 
-ArxMint closes this gap by generating complete sovereign economy infrastructure from a single natural language prompt. Fedimint and Cashu provide private ecash. Lightning provides instant routing. L402 and NUT-24 enable machine commerce. The spend router optimizes for privacy. The governance framework ensures community control. The metrics dashboard proves economic health to grant funders.
+ArxMint closes both gaps. For communities, it generates complete sovereign economy infrastructure from a single natural language prompt. For merchants, it provides a Stripe-like developer experience with near-zero fees, instant settlement, and no customer KYC. Fedimint and Cashu provide private ecash. Lightning provides instant routing. L402 and NUT-24 enable machine commerce. The spend router optimizes for privacy. The governance framework ensures community control. The metrics dashboard proves economic health to grant funders.
 
-The thesis is simple: **humans and AI agents can share the same private commerce infrastructure.** The same sats that pay for coffee at a local shop can pay an AI agent for a privacy audit. The same mint that issues ecash to a community member issues ecash to an autonomous process. One prompt, one deploy, one economy.
+The thesis is simple: **humans and AI agents can share the same private commerce infrastructure — and merchants can accept payments on it with app-like simplicity while keeping self-custody.** The same sats that pay for coffee at a local shop can pay an AI agent for a privacy audit. The same mint that issues ecash to a community member issues ecash to an autonomous process. The same non-custodial merchant node powers both human checkout and programmatic settlement between federated marketplaces.
 
-The Boulder-Longmont pilot will be the first test. Thirty merchants. Three hundred users. Six months. If the model works — and the technology says it should — the replication playbook makes it available to every community in the world.
+The Boulder-Longmont pilot will be the first test. Thirty merchants. Three hundred users. Six months. If the model works — and the technology says it should — the replication playbook and merchant platform make it available to every community and every merchant in the world.
 
-Build the citadel.
+Build the citadel. Open the bazaar.
 
 ---
 

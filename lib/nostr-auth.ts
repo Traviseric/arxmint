@@ -102,10 +102,19 @@ export async function connectNostr(): Promise<NostrUser> {
   return user;
 }
 
+interface NostrProfile {
+  name?: string;
+  displayName?: string;
+  picture?: string;
+  about?: string;
+  nip05?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Fetch NIP-01 Profile (kind: 0) metadata for a given pubkey using SimplePool.
  */
-export async function fetchNostrProfile(pubkey: string): Promise<Record<string, any> | null> {
+export async function fetchNostrProfile(pubkey: string): Promise<NostrProfile | null> {
   const relays = [
     "wss://relay.damus.io",
     "wss://nos.lol",

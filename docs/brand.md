@@ -6,8 +6,8 @@
 
 ## Taglines
 
+- "Accept Bitcoin payments. Zero fees. No middleman."
 - "Build the citadel."
-- "Your Bitcoin economy, one prompt away."
 
 ## Voice
 

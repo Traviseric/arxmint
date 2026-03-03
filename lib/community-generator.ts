@@ -778,7 +778,7 @@ export interface GovernanceConfig {
  */
 export function generateGovernanceConfig(
   guardianCount: number,
-  communityName: string
+  _communityName: string
 ): GovernanceConfig {
   // Byzantine fault tolerance: need 2f+1 guardians for f faults
   const consensusThreshold = Math.ceil((guardianCount * 2) / 3);

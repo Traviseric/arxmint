@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT="scripts/security/run-guardrails.cjs"
+MODE="${ARXMINT_GUARDRAIL_MODE:-observe}"
+
+if [[ ! -f "$SCRIPT" ]]; then
+  echo "[pre-commit] missing $SCRIPT" >&2
+  exit 1
+fi
+
+node "$SCRIPT" --scope staged --mode "$MODE"

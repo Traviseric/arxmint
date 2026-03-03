@@ -10,8 +10,8 @@
 import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 
-const BASE_URL = "http://localhost:3000";
-const LND_REST_URL = "http://localhost:8080";
+const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3000";
+const LND_REST_URL = process.env.TEST_LND_REST_URL ?? "http://localhost:8080";
 
 let serverAvailable = false;
 let lndAvailable = false;

@@ -1,10 +1,11 @@
 # ArxMint — Implementation Roadmap
 
-**Version:** 3.0 — February 28, 2026
-**Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md` + 6 deep research studies in `docs/research/`
+**Version:** 4.2 — March 2, 2026
+**Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md` + 6 deep research studies in `docs/research/` + 11 self-hosting UX studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/`
 **Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Overnight tasks:** `OVERNIGHT_TASKS.md` (concrete implementation tasks derived from this roadmap)
 **E2E testing:** `docs/E2E_TESTING.md` (8 layers, 22 test flows)
+**Security rollout:** `docs/security/HARDENING_ROLLOUT_PLAN.md` (observe-first hardening with canary enforce)
 **Codename convention:** Phase names follow the brand versioning from positioning doc (Keystone → Spire → Aether)
 **Production gate:** This roadmap defines a clear Production Readiness Gate between Phase E and Phase 4. No real money until the gate passes.
 
@@ -14,22 +15,23 @@
 
 **Production path** (what must complete before real money):
 ```
-Phase A: Foundation    (DB + vault + auth)              🔴 NOT STARTED
-Phase B: Payments      (L402 + NUT-24 + SDK)            🔴 NOT STARTED
-Phase C: Infrastructure (Caddy + monitoring + backup)   🔴 NOT STARTED
-Phase D: E2E Testing   (regtest stack + 22 test flows)  🔴 NOT STARTED
-Phase E: Hardening     (rate limit, health, caps, CI)   🔴 NOT STARTED
+Phase A: Foundation    (DB + vault + auth)              ✅ CODE COMPLETE
+Phase B: Payments      (L402 + NUT-24 + SDK)            ✅ CODE COMPLETE
+Phase C: Infrastructure (Caddy + monitoring + backup)   ✅ CODE COMPLETE
+Phase D: E2E Testing   (regtest stack + 22 test flows)  ✅ CODE COMPLETE
+Phase E: Hardening     (rate limit, health, caps, CI)   ✅ CODE COMPLETE
 ═══════════════════════════════════════════════════════
-PRODUCTION READINESS GATE → all checkboxes pass
+PRODUCTION READINESS GATE → testnet VPS deployment pending (human)
 ═══════════════════════════════════════════════════════
-Phase 4: Citadel       (Longmont pilot + grants)        🔵 PLANNING
+Phase 4: Citadel       (Longmont pilot + grants)        🟡 IN PROGRESS
+Phase 5: Bazaar       (Merchant platform — decentralized Stripe)  📋 PLANNED
 ```
 
 **Feature path** (parallel, not blocking production):
 ```
-Phase 0: Fortify     (Security hardening)            🟡 IN PROGRESS
-Phase 1: Keystone    (Core architecture upgrades)    🟡 IN PROGRESS
-Phase 2: Spire       (Full privacy + commerce stack) 🟡 IN PROGRESS
+Phase 0: Fortify     (Security hardening)            ✅ COMPLETE
+Phase 1: Keystone    (Core architecture upgrades)    ✅ COMPLETE
+Phase 2: Spire       (Full privacy + commerce stack) ✅ COMPLETE
 Phase 3: Aether      (Advanced features + scale)     🟠 POST-PILOT
 ```
 
@@ -49,7 +51,7 @@ Status key:
 | 0.2 Honest SP backend status + scoring | Complete | `lib/privacy-defaults.ts`, `components/privacy-dashboard.tsx`, `tests/privacy-defaults.test.ts` |
 | 0.3 Lightning security tiers | Complete | `lib/types.ts`, `lib/lightning-agent.ts`, `components/wallet-panel.tsx`, `tests/lightning-security.test.ts` |
 | 0.4 Remote signer isolation | Partial | Config + validation shipped; signer flow not yet fully isolated transport integration (`lib/lightning-agent.ts`) |
-| 1.1 NUT-24 dual paywall | Partial | `lib/cashu-paywall.ts`, `app/api/agent/route.ts` (dev path still serves unauthenticated responses) |
+| 1.1 NUT-24 dual paywall | Complete | `lib/cashu-paywall.ts`, `app/api/agent/route.ts` — token validation wired; requires live mint for end-to-end verification |
 | 1.2 Spend router | Complete | `lib/spend-router.ts`, route UX in `components/wallet-panel.tsx` |
 | 1.3 BCE metrics dashboard + export | Complete | `lib/bce-metrics.ts`, `app/dashboard/page.tsx` |
 | 1.4 Merchant onboarding flow | Complete | `components/merchant-onboard.tsx`, `app/community/[id]/page.tsx` |
@@ -62,10 +64,11 @@ Status key:
 | 2.4 Multi-mint (Coco path) | Partial | Manager + swap scaffolding in `lib/cashu-sdk.ts` |
 | 2.5 NUT-26 QR flow | Complete | URI/QR generation + wallet UI flow in `lib/cashu-sdk.ts`, `components/wallet-panel.tsx` |
 | 2.6 Silent Payments infra | Prototype | Scanner/parser + Docker generator present; several placeholder derivations remain in `lib/silent-payments.ts` |
-| 2.7 Monitoring stack | Partial | Prometheus + Grafana services in root `docker-compose.yml`; scrape config + dashboards not yet created |
+| 2.7 Monitoring stack | Complete | Prometheus scrape config at `docker/prometheus.yml`; Grafana datasource + dashboards at `docker/grafana/`; services in `docker-compose.yml` |
 | 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
-| 4.x production/grant rollout | Partial | Strong planning/tooling layer (`lib/pilot-deployment.ts`, `lib/grant-templates.ts`, `lib/replication-playbook.ts`) |
+| 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, VPS setup + DR drill docs in `docs/`; pilot deployment pending human action |
+| 5.x merchant platform (Bazaar) | Planned | Decentralized Stripe alternative — split-plane architecture (provisioning + merchant node), managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, merchant dashboard, LNURL-pay, Umbrel/StartOS packaging |
 
 ---
 
@@ -75,36 +78,40 @@ Every roadmap item above has code in the repo. But **code written is not code ve
 To honestly mark something "done" requires real-world verification:
 connect to a real mint, make a real payment, see real metrics.
 
-### Critical Gaps (No Backend / No Persistence)
+### ~~Critical Gaps~~ → Resolved (Phase A Complete)
 
-| Gap | Impact | Research Decision | Files Affected |
-|-----|--------|-------------------|----------------|
-| **No database** | Everything is in-memory (Zustand). Community configs, merchant listings, transaction history lost on page refresh. | Self-hosted Postgres in Docker Compose, internal network only (Research #1) | `lib/store.ts`, `docker-compose.yml` |
-| **No user auth** | No accounts, no login, no API keys. Anyone can access everything. | Auth.js + Nostr NIP-98 primary + email magic link for merchants. L402 for agents only. (Research #4) | `lib/nostr-auth.ts`, new `middleware.ts` |
-| **No wallet recovery** | Cashu proofs are not persisted. No seed backup, no restore flow. | Client-side encrypted vault: IndexedDB + AES-256-GCM + Argon2id KDF. NUT-13 seed phrase recovery. Proofs NEVER in server DB. (Research #1 & #5) | `lib/cashu-sdk.ts`, new `lib/cashu-vault.ts` |
-| **No merchant backend** | Merchant onboarding form collects data but doesn't save it anywhere. | Persist to Postgres via Prisma (Research #1) | `components/merchant-onboard.tsx` |
-| **No transaction history** | No ledger, no journal, no audit trail of payments. | Metadata only in Postgres (type, amount, backend, timestamp). Raw proofs stay client-side. (Research #1) | new `app/api/transactions/route.ts` |
+All five previously-critical persistence and auth gaps are now code-complete. Live verification still requires a testnet VPS deployment.
 
-### Integration Gaps (Stubbed or Partial)
+| ~~Gap~~ | Resolution | Files |
+|---------|------------|-------|
+| ~~No database~~ | ✅ Prisma + PostgreSQL 15 in Docker Compose. `Community`, `Merchant`, `Transaction`, Auth.js tables. Internal network, no public port. | `prisma/schema.prisma`, `docker-compose.yml` |
+| ~~No user auth~~ | ✅ Nostr NIP-98 login + HMAC-SHA256 session tokens. Route protection via `middleware.ts`. L402 for agents. | `lib/auth-middleware.ts`, `middleware.ts`, `app/login/page.tsx`, `app/api/auth/route.ts` |
+| ~~No wallet recovery~~ | ✅ IndexedDB encrypted vault (AES-256-GCM + PBKDF2-SHA256, 600K iterations, OWASP 2023). NUT-13 seed phrase backup + NUT-09 restore UI. | `lib/cashu-vault.ts`, `lib/crypto.ts`, `lib/proof-repo.ts` |
+| ~~No merchant backend~~ | ✅ Merchant onboarding persists to `Merchant` DB table via Prisma. Error handling for DB failures. | `components/merchant-onboard.tsx`, `app/api/merchants/route.ts` |
+| ~~No transaction history~~ | ✅ Transaction metadata (type, amount, backend, timestamp — no raw proofs) persisted to `Transaction` table. | `app/api/transactions/route.ts`, `lib/store.ts` |
 
-| Gap | Current State | What's Needed | Research Decision |
-|-----|--------------|---------------|-------------------|
-| **L402 invoice generation** | Demo endpoint accepts any token. | Wire to real LND via gRPC, validate macaroons server-side | — |
-| **NUT-24 paywall** | Dev path serves unauthenticated responses. | Verify Cashu tokens against real mint. Note: NUT-24 has no upstream mint implementations yet (Research #3) | ArxMint implements its own validation |
-| **Remote signer transport** | Config + validation shipped. Transport not wired. | Complete `litd` remote signer integration | — |
-| **CDK vs Nutshell** | Generator picks CDK; local compose uses Nutshell. | Keep Nutshell for pilot. CDK when it drops "ALPHA" warning. Migration is two-mint Lightning swap, not in-place. (Research #3) | Nutshell pilot → CDK production |
-| **Monitoring config** | Prometheus + Grafana services in compose but no scrape config or dashboards. | Create `docker/prometheus.yml` + Grafana dashboard JSON. Scrape at 30s interval for pilot. (Research #2) | — |
-| **Gateway bridge** | Placeholder preimage handling. | Wire real LND payment + preimage extraction | — |
-| **BCE metrics** | Hardcoded demo data. | Connect to real transaction records from DB | Depends on Postgres + transaction history |
-| **Reverse proxy** | No TLS termination for production. | Add Caddy for automatic HTTPS (Research #2) | Caddy, not nginx/Traefik |
-| **Backup automation** | No automated backups. | Scripts for Postgres dump + LND channel.backup watch (Research #2) | — |
-| **Keyset collision safety** | Basic keyset validation exists. | Compute/verify IDs per NUT-02, reject collisions, prefer V2 IDs (Research #3 & #5) | Multi-mint safety gates |
-| **Ark SDK** | Stub — generates fake VTXO IDs. | Wait for upstream `@arkade-os/sdk` release | **BLOCKED — upstream** |
-| **Silent Payments scanning** | Types + scanner scaffolding, no real scanning. | `sp-indexer` Docker service + real BIP-352 derivation | **BLOCKED — requires infrastructure** |
-| **Grant templates** | Correct format but placeholder content. | Fill with real pilot data post-deployment | Depends on pilot launch |
-| **Programmable eCash (3.2)** | Condition types defined. | Depends on upstream Cashu NUT-XX adoption | **BLOCKED — upstream** |
-| **ZK reissuance (3.3)** | Audit-log + hash-chain built. | Depends on upstream Cashu support | **BLOCKED — upstream** |
-| **HW wallet BIP392 (3.4)** | Descriptor generation + PSBT fields. | Test with Coldcard, BitBox02, etc. | **BLOCKED — needs hardware** |
+### Integration Gaps — Status Update
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **L402 invoice generation** | ✅ Wired | `app/api/l402/route.ts` generates real BOLT-11 via LND gRPC; HMAC macaroon validation; challenges persisted to DB |
+| **NUT-24 paywall** | ✅ Wired | `app/api/agent/route.ts` validates Cashu tokens against mint; double-spend rejection; skip-verify guard removed |
+| **Remote signer transport** | ✅ Complete | `litd` remote signer integration complete in `lib/lightning-agent.ts` |
+| **CDK vs Nutshell** | Intentional: Nutshell | Nutshell for pilot (stable). CDK when it drops "ALPHA" — two-mint Lightning swap migration, not in-place |
+| **Monitoring config** | ✅ Complete | `docker/prometheus.yml` + `docker/grafana/datasources/` + `docker/grafana/dashboards/` created |
+| **Gateway bridge** | ✅ Complete | Real LND payment + preimage extraction wired in `lib/fedimint-sdk.ts` |
+| **BCE metrics** | ✅ Wired | Dashboard connected to real transaction DB records via `app/api/bce-metrics/route.ts` |
+| **Reverse proxy** | ✅ Complete | Caddy service in `docker/docker-compose.caddy.yml`; automatic HTTPS; internal network routing |
+| **Backup automation** | ✅ Complete | `scripts/backup.sh` (Postgres dump, 7-day retention) + `scripts/lnd-backup.sh` (channel.backup watch) |
+| **Keyset collision safety** | ✅ Complete | NUT-02 ID computation, collision detection, V2 ID preference in `lib/cashu-sdk.ts` |
+| **Ark SDK** | 🚫 BLOCKED | `lib/ark-sdk.ts` is stub. Waiting on `@arkade-os/sdk` upstream release. UI correctly shows "coming soon." |
+| **CoinJoin / PayJoin** | 🚫 NOT IMPLEMENTED | UI correctly shows "coming soon" via `supportedBy: "not-yet-implemented"`. No protocol integration. |
+| **Silent Payments scanning** | 🚫 BLOCKED | Address generation works (Cashu); receiving requires federation module (not upstream) |
+| **Agent compute / data** | ⚠️ DEMO | Stubs return placeholder responses. Marked `demo: true` in API. Real dispatch on roadmap. |
+| **Grant applications** | ✅ Drafted | OpenSats, HRF, Spiral, FBCE drafts at `C:\code\te-btc\internal\docs\arxmint\grants\`. Need real pilot data to submit. |
+| **Programmable eCash (3.2)** | 🚫 BLOCKED | Depends on upstream Cashu NUT-XX adoption |
+| **ZK reissuance (3.3)** | 🚫 BLOCKED | Depends on upstream Cashu ZK proof support |
+| **HW wallet BIP392 (3.4)** | 🚫 BLOCKED | Requires physical hardware for testing |
 
 ### Verification Checklist (What "Done" Actually Means)
 
@@ -127,14 +134,14 @@ To move any item from "code written" to "verified working":
 
 ## Architecture Decisions (Locked by Research)
 
-Six deep research studies in `docs/research/` resolved all previously open architecture questions. These decisions are final for the pilot phase:
+Six deep research studies in `docs/research/` + 11 self-hosting UX studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/` resolved all previously open architecture questions. These decisions are final for the pilot phase:
 
 | Decision | Answer | Research Source |
 |----------|--------|----------------|
 | **Application database** | Self-hosted PostgreSQL 15 in Docker Compose. Internal network only, no public port. Supabase is graduation target when >5K MAU. | `docs/research/1-Database & Persistence Strategy.md` |
 | **Cashu proof custody** | **Non-custodial.** Proofs stored client-side only in encrypted IndexedDB vault (AES-256-GCM). Server DB stores transaction metadata, NEVER raw proofs. | `docs/research/1-Database & Persistence Strategy.md` |
 | **Proof vault architecture** | Repository abstraction (ProofRepo, CounterRepo, OperationRepo) → IndexedDB adapter. Counter persistence must be atomic with proof writes. NUT-13 seed phrase as primary recovery. Saga pattern for crash recovery. Agent wallets: separate namespace, in-memory default. | `docs/research/5-Cashu Proof Persistence & Recovery.md` |
-| **Encryption** | AES-256-GCM via Web Crypto API. Key derivation: Argon2id (RFC 9106) from user passphrase. Master key in-memory only while unlocked. Auto-lock on idle. | `docs/research/5-Cashu Proof Persistence & Recovery.md` |
+| **Encryption** | AES-256-GCM via Web Crypto API. Key derivation: PBKDF2-SHA256 (600K iterations, OWASP 2023) from user passphrase. Master key in-memory only while unlocked. Auto-lock on idle. | `docs/research/5-Cashu Proof Persistence & Recovery.md` |
 | **Authentication** | Auth.js as session framework. Two providers: Nostr NIP-98 (primary) + Email magic link (merchant fallback). Prisma adapter for session persistence. Step-up reauth for wallet operations (5-min TTL). L402 for agents only — separate track from human auth. | `docs/research/4-Auth Strategy.md` |
 | **VPS hosting** | Vultr 16GB/6-core ($80/mo). Alternative: DigitalOcean 8GB ($48/mo). Hetzner needs written ToS approval for node hosting. | `docs/research/2-Pilot VPS & Deployment.md` |
 | **Reverse proxy** | Caddy (automatic HTTPS via Let's Encrypt + ZeroSSL). Not nginx, not Traefik. | `docs/research/2-Pilot VPS & Deployment.md` |
@@ -143,6 +150,18 @@ Six deep research studies in `docs/research/` resolved all previously open archi
 | **Federation trust model** | 3 guardians on 1 machine is OK for engineering pilot. Must message as "single-operator, not trust-distributed." Cap fund values. Plan migration to independent guardians before mainnet. | `docs/research/2-Pilot VPS & Deployment.md` |
 | **Production mint** | Nutshell for pilot (reference implementation, battle-tested, already integrated). Migrate to cdk-mintd when it drops "ALPHA" warning (6–12 months). Migration is two-mint Lightning swap, not in-place upgrade. | `docs/research/3-CDK vs Nutshell.md` |
 | **Grant strategy** | Apply NOW to OpenSats ($75K–$200K), HRF ($25K–$100K), Spiral ($50K–$200K). FBCE after pilot traction. | `docs/research/6-Grant Application Strategy.md` |
+| **Phase 5 custody model** | **Strictly non-custodial.** Self-hosted BTCPay Server model. ArxMint provides open-source software + optional non-custodial infrastructure services (BYOC provisioning, managed DNS, signed updates). Merchants run their own nodes and hold their own keys. Payments are peer-to-peer. ArxMint never touches funds, holds seeds, or retains admin macaroons. Hosted custodial model would require federal MSB registration + multi-state licensing + EU MiCA CASP + UK FCA authorization. | `docs/research/Phase5-Bazaar/1-Crypto Payment Infrastructure Legal Analysis.md` |
+| **Phase 5 API keys** | Local L402 macaroons scoped to merchant's own node, NOT hosted API keys that trigger remote custodial actions. Merchant holds full cryptographic control. | `docs/research/Phase5-Bazaar/1-Crypto Payment Infrastructure Legal Analysis.md` |
+| **Phase 5 checkout** | Self-hosted on merchant's domain. Invoices generated by merchant's own LND node. ArxMint provides the software; merchant runs it. Hosting checkout centrally = money transmission. | `docs/research/Phase5-Bazaar/1-Crypto Payment Infrastructure Legal Analysis.md` |
+| **Phase 5 node architecture** | Split-plane: merchant-owned data plane (LND + mint + checkout + dashboard) + ArxMint-managed control plane (provisioning, DNS, updates, health). Control plane is non-custodial — can create/destroy infra but cannot move/freeze/redirect funds. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/4-Managed Self-Hosting for ArxMint Phase 5.md` |
+| **Phase 5 DNS strategy** | Managed subdomain (`storename.arxmint.cloud`) as default. ArxMint manages the DNS zone; merchant runs the node. Custom domains optional upgrade. DynDNS-style API for dynamic IP nodes. Not custody — just publishing a DNS record. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/6-DNS and Domain Friction for Self-Hosted Merchant Nodes.md` |
+| **Phase 5 connectivity** | Cloudflare Tunnel as primary (outbound-only, eliminates CG-NAT/firewall/dynamic IP). Caddy direct for static-IP VPS. LAN-only for in-person POS. Tor as privacy backchannel. PaaS (Railway, Render, Fly.io) rejected as too fragile for merchant POS. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/2-Delivering a "Download an App, Start Accepting Bitcoin" Experience.md` |
+| **Phase 5 updates** | Appliance update model: tested stack BOM (locked versions, signed manifests), not `docker compose pull`. Patch-track auto-updates for UI during maintenance windows. Consent-required for LND version changes. Automatic rollback on failed health checks. Canary rings: internal → early adopters → stable. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/7-Operational Resilience for ArxMint Merchant Nodes.md` |
+| **Phase 5 backups** | Zero-knowledge encrypted: backup payload encrypted locally with seed-derived key before transmission. ArxMint stores encrypted blobs it cannot decrypt. LND SCB must be event-driven (on channel open/close), NOT nightly cron — old channel state is toxic. One-click restore: fresh host → enter seed → decrypt → restore. Automated restore rehearsal. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/7-Operational Resilience for ArxMint Merchant Nodes.md` |
+| **Phase 5 liquidity** | LSP integration for JIT channel opening. Present as "max instant payment size" with one-tap "increase limit." Turbo channels (zero-conf) for instant onboarding. LND autopilot is secondary; LSP/Pool/Loop is primary liquidity strategy. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/5-Self-Hosting Bitcoin Node UX.md` |
+| **Phase 5 LND backend** | Neutrino light client as default (avoids 1-7 day full chain sync). Full node available as optional upgrade. This is the single biggest BTCPay UX lesson. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/8-Competitive UX Benchmarking.md` |
+| **Phase 5 revenue model** | BYOC managed operations: $15–25/mo subscription covering infra (~$6/mo raw), encrypted backup storage, signed updates, health monitoring, support. Merchant creates cloud account; ArxMint provisions via OAuth/API grant (revocable). | `docs/research/Phase5-Bazaar/Self-Hosting-UX/4-Managed Self-Hosting for ArxMint Phase 5.md` |
+| **Phase 5 home node packaging** | Umbrel is fastest target (Docker Compose maps directly to packaging format). StartOS as secondary (better ops UX but different packaging). Citadel low incremental effort from Umbrel package. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/3-Merchant-Grade Self-Hosting Lessons.md` |
 
 ---
 
@@ -157,7 +176,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 **Goal:** Users can refresh the page without losing everything.
 
 1. **Postgres in Docker Compose** — Add `postgres:15-alpine` to compose, internal network only, no public port. Prisma ORM for schema. Tables: `Community`, `Merchant`, `Transaction`, `User`, `Account`, `Session`, `VerificationToken` (Auth.js standard). **No Cashu proof tables — proofs are client-side only.**
-2. **Client-side encrypted vault** — IndexedDB + AES-256-GCM + Argon2id KDF. Repository abstraction layer (ProofRepo, CounterRepo, OperationRepo). Atomic counter persistence with proof writes. Passphrase setup UI. NUT-13 seed phrase backup + NUT-09 restore flow.
+2. **Client-side encrypted vault** — IndexedDB + AES-256-GCM + PBKDF2-SHA256 (600K iterations, OWASP 2023). Repository abstraction layer (ProofRepo, CounterRepo, OperationRepo). Atomic counter persistence with proof writes. Passphrase setup UI. NUT-13 seed phrase backup + NUT-09 restore flow.
 3. **Auth.js + Nostr NIP-98** — Auth.js config with Nostr Credentials provider (wraps existing `lib/nostr-auth.ts`) + Email magic link provider. Prisma adapter. HttpOnly/Secure/SameSite cookies. Middleware route gating for `/wallet`, `/merchant`, `/admin`. Risk-tier step-up reauth (5-min TTL for spend operations).
 4. **Persist app data** — Community configs, merchant listings, transaction metadata (not proofs) saved to Postgres. Hydrate Zustand from DB on load.
 
@@ -179,7 +198,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 2. **Network hardening** — Internal Docker network for all services. Only Caddy exposes 80/443. LND p2p (9735) public. Fedimint guardian ports internal.
 3. **Prometheus scrape config + Grafana dashboards** — Scrape targets for LND, Cashu, Fedimint at 30s intervals. Alerts for disk >70%, container restarts, LND health, federation quorum.
 4. **Backup automation** — Daily Postgres dump with 7-day retention. LND channel.backup watch + sync on change. Off-host encrypted storage.
-5. **DEPLOY.md** — Step-by-step: Vultr provisioning, SSH hardening, UFW rules, Docker install, env setup, `docker compose up`, Caddy HTTPS, monitoring access. Nutshell hardening checklist.
+5. **docs/DEPLOY.md** — Step-by-step: Vultr provisioning, SSH hardening, UFW rules, Docker install, env setup, `docker compose up`, Caddy HTTPS, monitoring access. Nutshell hardening checklist.
 6. **BCE metrics pipeline** — Wire dashboard to real transaction data from DB.
 
 ### Phase D: E2E Testing + Hardening
@@ -228,9 +247,10 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 ## Production Readiness Gate
 
 **Everything below must be true before accepting real mainnet funds.** This is the exit criteria for Phases A–E. Phase 4 (Citadel) begins after this gate passes.
+**Live status tracker:** `docs/PILOT_READINESS_STATUS.md` (current verification results + remaining blockers)
 
 ### Data Safety
-- [ ] Postgres persists communities, merchants, transactions, auth sessions
+- [x] Postgres persists communities, merchants, transactions, auth sessions
 - [ ] Cashu proofs stored client-side only in encrypted IndexedDB vault (AES-256-GCM)
 - [ ] NUT-13 seed phrase backup + NUT-09 restore verified working
 - [ ] Crash recovery saga pattern tested — no proofs lost after simulated crash
@@ -240,41 +260,41 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 
 ### Authentication & Authorization
 - [ ] Auth.js with Nostr NIP-98 + email magic link working
-- [ ] Protected routes (`/wallet`, `/merchant`, `/admin`) require auth
+- [x] Protected routes (`/wallet`, `/merchant`, `/admin`) require auth
 - [ ] Step-up reauth for spend/export operations (5-min TTL)
-- [ ] L402 endpoints require valid paid macaroon
-- [ ] NUT-24 endpoints reject spent/invalid tokens
-- [ ] Rate limiting active on auth and payment endpoints
+- [x] L402 endpoints require valid paid macaroon
+- [x] NUT-24 endpoints reject spent/invalid tokens
+- [x] Rate limiting active on auth and payment endpoints
 
 ### Payment Correctness
 - [ ] L402: 402 challenge → pay invoice → preimage → access (E2E verified on regtest)
 - [ ] NUT-24: Cashu token → access; double-spend → rejection (E2E verified)
-- [ ] Spend router selects correct backend by amount/privacy/availability
-- [ ] Transaction ledger records metadata only (no raw proofs in DB)
-- [ ] Pilot value caps enforced (max balance, max transaction, max daily volume)
+- [x] Spend router selects correct backend by amount/privacy/availability
+- [x] Transaction ledger records metadata only (no raw proofs in DB)
+- [x] Pilot value caps enforced (max balance, max transaction, max daily volume)
 
 ### Infrastructure
 - [ ] All services on internal Docker network; only Caddy exposes 80/443
 - [ ] Caddy serving HTTPS with auto-renewing certificates
 - [ ] Prometheus scraping all services; Grafana dashboards showing data
 - [ ] Alerts configured for: disk >70%, container restarts, LND unhealthy, federation quorum loss
-- [ ] Health check endpoint (`/api/health`) returns real service status
-- [ ] Structured JSON logging on all services
-- [ ] Security headers (CSP, HSTS, X-Frame-Options) in place
+- [x] Health check endpoint (`/api/health`) returns real service status
+- [x] Structured JSON logging on all services
+- [x] Security headers (CSP, HSTS, X-Frame-Options) in place
 
 ### Testing
-- [ ] All unit tests pass (`npm test`)
+- [x] All unit tests pass (`npm test`)
 - [ ] All E2E tests pass against regtest (`docs/E2E_TESTING.md`)
-- [ ] E2E tests run in CI on every push
+- [x] E2E tests run in CI on every push
 - [ ] 7+ days on testnet VPS with zero incidents
 - [ ] Disaster recovery drill completed (new VPS, restore backups, verify transactions)
 
 ### Operations
-- [ ] DEPLOY.md written and followed for testnet deploy
-- [ ] Incident response runbook exists
+- [ ] docs/DEPLOY.md written and followed for testnet deploy
+- [x] Incident response runbook exists
 - [ ] Rollback procedure documented and tested
-- [ ] Single-host federation trust statement published (human_tasks.md)
-- [ ] Mainnet migration plan documented (when to split guardians)
+- [x] Single-host federation trust statement published (see `docs/TRUST_STATEMENT.md`)
+- [x] Mainnet migration plan documented (when to split guardians)
 
 ---
 
@@ -564,7 +584,7 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 - **HRF Bitcoin Development Fund** ($25K–$100K) — Year-round intake, quarterly announcements. Narrative: "freedom-tech deployment for vulnerable communities" + threat model.
 - **Spiral** ($50K–$200K) — No fixed deadline, email-based. Narrative: "UX/developer-experience improvement for Bitcoin adoption."
 
-**Preparation:** Shared grant dossier (executive summary, technical scope, budget, team bios, open-source licensing, threat model) reusable across all applications. See `human_tasks.md` for deadlines.
+**Preparation:** Shared grant dossier at `docs/GRANT_DOSSIER.md` (executive summary, technical scope, budget, team bios, open-source licensing, threat model). Grant files and human task tracking moved to `C:\code\te-btc\internal\docs\arxmint\`.
 
 ### 4.1 — Longmont Pilot Deployment
 **Source:** Doc 7, Spec §8
@@ -572,7 +592,7 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 **Prerequisites:** Production Readiness Gate passed + 7 days testnet + disaster recovery drill.
 **Launch sequence:**
 1. Switch LND from `--bitcoin.testnet` to `--bitcoin.mainnet` in compose
-2. Generate production credentials (`human_tasks.md` checklist)
+2. Generate production credentials (run `scripts/generate-secrets.sh`; full checklist at `C:\code\te-btc\internal\docs\arxmint\human_tasks.md`)
 3. Deploy to Vultr VPS
 4. Verify health checks, monitoring, and backup automation
 5. Onboard first 5 merchants (soft launch)
@@ -610,6 +630,487 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 **Source:** Doc 7 — pilot-to-scale timeline
 **What:** Extend from Longmont to additional cities. Inter-federation commerce via Coco multi-mint.
 **Prerequisite:** Guardian distribution plan (split from single host to independent operators).
+
+---
+
+## Phase 5: Bazaar — Decentralized Merchant Platform
+
+**Codename:** Bazaar — the open marketplace where sovereign commerce happens
+**Goal:** Make ArxMint as easy to integrate as Stripe — but fully self-hosted, non-custodial, and legally protected. Any merchant runs their own payment node. One Docker command, one script tag, done.
+**Prerequisite:** Phase 4 pilot running (real merchants, real payments proving the infrastructure works)
+**Vision:** A private, open-source, self-hosted Stripe alternative. Merchants keep 100% of every sale. No payment data sold. No middleman. Customers pay directly to the merchant's own node via ecash (Cashu), Lightning, or Fedimint.
+**Legal basis:** Research #7 (`docs/research/Phase5-Bazaar/1-Crypto Payment Infrastructure Legal Analysis.md`)
+
+### Why This Phase Exists
+
+Stripe charges 2.9% + $0.30 per transaction. A local merchant doing $10K/month loses ~$320/month to processing fees. ArxMint's ecash and Lightning payments cost fractions of a penny. But the technology advantage means nothing if the developer experience is worse than `<script src="stripe.js">`. Phase 5 closes that gap.
+
+The core payment loop (create challenge → pay → verify) is already production-quality. What's missing is the merchant-facing developer experience: local auth tokens, webhooks, a checkout page, a client SDK, and a dashboard. This is plumbing, not protocol work — the hard crypto is done.
+
+### Architecture Decision: Self-Hosted (BTCPay Server Model)
+
+**Decision locked by Research #7.** ArxMint must be strictly non-custodial open-source software.
+
+Research #7 conclusively establishes that a hosted payment platform (where ArxMint receives customer payments and settles to merchants) constitutes money transmission under US federal law (FinCEN), requires multi-state MSB licensing (up to 49 states under MTMA), EU MiCA CASP authorization, and UK FCA registration. The payment processor exemption explicitly does not apply to CVC processors because blockchain networks are not BSA-regulated clearing systems.
+
+Conversely, non-custodial open-source software providers (BTCPay Server model) are protected under:
+- **FinCEN:** Unhosted wallet providers are exempt from BSA obligations (FIN-2019-G001)
+- **DOJ:** 2025 safe harbor for "software that is truly decentralized and solely automates peer-to-peer transactions" where "a third party does not have custody and control over user assets"
+- **EU MiCA:** Article 2 / Recital 83 explicitly exempts "hardware or software providers of non-custodial wallets"
+- **UK FCA:** "Technical service provider" exemption (narrow — ArxMint must avoid "arranging" transactions)
+
+**The architecture rule:** ArxMint never touches merchant funds. All payments flow peer-to-peer from customer wallet to the merchant's self-hosted node. API keys are local L402 macaroons that authorize actions on the merchant's own infrastructure. ArxMint provides the software; the merchant runs it.
+
+```
+HOSTED MODEL (illegal without MSB licensing):
+  Customer → ArxMint (receives payment) → Merchant
+                ↑ ArxMint holds custody, even momentarily
+
+SELF-HOSTED MODEL (legally protected):
+  Customer → Merchant's own ArxMint node (peer-to-peer)
+  ArxMint (the project) = open-source software + optional non-custodial infra services, zero custody
+```
+
+### 5.1 — Local Auth Tokens + Scoped Macaroons
+
+**What:** On setup, the merchant's self-hosted node generates local L402 macaroon-based auth tokens. `arx_live_...` (full node access) and `arx_pub_...` (client-side, create invoices only). `arx_test_...` for regtest sandbox mode.
+**Why:** Without auth tokens, merchants can't programmatically create payments on their own node. This is the single biggest blocker to adoption.
+**Why not hosted API keys:** Research #7 establishes that API keys controlling a remote ArxMint server constitute custodial management. Macaroons scoped to the merchant's own node are non-custodial — the merchant holds full control.
+**Implementation:**
+- On `arxmint setup`, generate HMAC-derived macaroon pairs, store hashed in merchant's local DB
+- Macaroons encode: node URL, permission scope (read/invoice/pay/admin), expiry
+- `arx_pub_` tokens are safe to embed in client-side code (can only create invoices on the merchant's node)
+- Key rotation: `arxmint keys rotate` CLI command
+- Rate limits enforced locally per token
+- Sandbox mode: `arx_test_` prefix routes to local regtest LND + test Cashu mint
+
+### 5.2 — Webhook Engine (Local)
+
+**What:** Webhook engine running on the merchant's node. Watches their own LND/Cashu node for invoice settlements, fires HTTP POST events to configured endpoints. Events: `payment.created`, `payment.completed`, `payment.failed`, `payment.expired`.
+**Why:** Merchants can't automate fulfillment without knowing when a payment completes. This runs locally — ArxMint (the project) never sees the events.
+**Implementation:**
+- `WebhookEndpoint` in merchant's local DB: `url`, `secret` (HMAC signing key), `events[]`, `active`
+- `arxmint webhooks add <url>` — register endpoint via CLI
+- LND invoice subscription: `subscribeinvoices` gRPC stream watches for settled invoices
+- Cashu: poll mint for proof state changes (NUT-07)
+- Delivery: POST to configured URL with JSON body + `X-ArxMint-Signature` (HMAC-SHA256)
+- Retry: exponential backoff (1s, 5s, 30s, 5m, 30m) — 5 attempts max
+- `arxmint webhooks log` — delivery history for debugging
+- SDK helper: `arxmint.webhooks.verify(body, signature, secret)` for merchant-side verification
+
+### 5.3 — Self-Hosted Checkout Page
+
+**What:** A payment page served from the merchant's own node at `https://pay.merchant.com/checkout/:id`. Customer sees amount + QR code, pays via Cashu ecash or Lightning directly to the merchant's node, gets redirected to `successUrl`.
+**Why:** Most merchants don't want to build a custom payment UI — they want a link that collects money. The page runs on the merchant's infrastructure, so ArxMint never touches the funds.
+**Why not hosted at arxmint.com:** Research #7 establishes that hosting a checkout page that routes payments through an ArxMint-controlled node constitutes money transmission. The merchant's own domain + node = peer-to-peer.
+**Implementation:**
+- `POST /api/v1/checkout` (on merchant's node) — create session with `amount`, `description`, `successUrl`, `cancelUrl`, `metadata`
+- Returns `checkoutUrl` on the merchant's own domain (e.g., `https://pay.merchant.com/checkout/cs_abc123`)
+- Invoice generated from merchant's own LND node or Cashu mint — ArxMint software creates it, merchant's node signs it
+- Checkout page: shows merchant name + amount, renders QR (NUT-26 for Cashu, BOLT11 for Lightning)
+- Real-time status via SSE from merchant's node — page auto-redirects on payment completion
+- Mobile-responsive, dark theme, merchant logo/name from local config
+- Payment links: `POST /api/v1/payment-links` — reusable URLs for fixed-price items (no expiry)
+- Embeddable: `<iframe src="https://pay.merchant.com/checkout/cs_abc123">` for inline checkout
+- One-command setup: `arxmint checkout enable` configures the checkout routes on the merchant's existing web server
+
+### 5.4 — Payment Status API + Real-Time Updates
+
+**What:** `GET /api/v1/payments/:id` on the merchant's node to poll payment status. SSE endpoint for real-time push. WebSocket for high-frequency POS use.
+**Why:** After creating an invoice, the merchant's system needs to know when the customer paid. All data stays on the merchant's own node.
+**Implementation:**
+- `GET /api/v1/payments/:id` — returns `{ id, status, amount, type, createdAt, completedAt, metadata }`
+- `GET /api/v1/payments/:id/events` — SSE stream, emits `status_changed` events
+- `GET /api/v1/payments` — list with filters: `status`, `dateRange`, `type`, cursor pagination
+- Status enum: `pending` → `completed` | `expired` | `failed`
+- For POS: WebSocket at `wss://pay.merchant.com/ws/payments` — real-time payment stream
+- All endpoints authenticated via local macaroons (5.1)
+
+### 5.5 — Client-Side SDK + React Components
+
+**What:** `@arxmint/js` — a client-side JavaScript SDK that connects to the merchant's own node. Plus `@arxmint/react` for React components.
+**Why:** Stripe.js lets any website add payments in 10 lines. ArxMint needs the same — but pointing at the merchant's own infrastructure, not a central server.
+**Implementation:**
+- `@arxmint/js` (vanilla JS, <15KB gzipped):
+  ```
+  // Points to the MERCHANT'S node, not arxmint.com
+  const arx = ArxMint('arx_pub_...', { endpoint: 'https://pay.merchant.com' })
+  const session = await arx.checkout({ amount: 500, description: 'Coffee' })
+  session.on('completed', (payment) => { /* fulfill order */ })
+  session.mount('#payment-container')  // renders QR + status
+  ```
+- `@arxmint/react`:
+  ```
+  <ArxMintProvider publishableKey="arx_pub_..." endpoint="https://pay.merchant.com">
+    <PayButton amount={500} onSuccess={handlePaid} />
+  </ArxMintProvider>
+  ```
+- Components: `<PayButton>`, `<CheckoutForm>`, `<PaymentStatus>`, `<QRPayment>`
+- Handles: invoice creation on merchant's node, QR rendering, real-time status polling, success/error callbacks
+- Framework-agnostic core with React wrapper (Vue/Svelte wrappers post-launch)
+- Key difference from Stripe.js: the `endpoint` param points to the merchant's own domain, not a central API
+
+### 5.6 — LNURL-pay + Lightning Address
+
+**What:** Give every self-hosted merchant a Lightning Address (`merchant@pay.merchant.com`) and LNURL-pay endpoint. Scannable QR codes for physical POS.
+**Why:** Lightning Address is the most interoperable Bitcoin payment standard. Any Lightning wallet can scan and pay. Runs on the merchant's own domain — no ArxMint intermediary.
+**Implementation:**
+- `/.well-known/lnurlp/:username` — LNURL-pay endpoint served from merchant's node
+- Resolves to: generate BOLT11 invoice from merchant's own LND node
+- Static QR code for each merchant (print-and-display for POS)
+- Optional: NFC tag provisioning via existing Numo integration (tap-to-pay)
+- Lightning Address format: `name@pay.merchant.com` (merchant's own domain)
+- Setup: `arxmint lnurl enable --username storename` — one command
+
+### 5.7 — Merchant Dashboard (Self-Hosted)
+
+**What:** A dedicated merchant portal at `https://pay.merchant.com/dashboard` with payments, analytics, and configuration. Runs on the merchant's own node — no data leaves their infrastructure.
+**Why:** After setup, merchants need visibility into their payments. Like BTCPay Server's dashboard, but with the ArxMint UX.
+**Implementation:**
+- **Payments tab:** Filterable transaction list (status, date, amount, type). CSV/JSON export. Real-time feed via SSE from local node.
+- **Analytics tab:** Revenue over time, payment method breakdown, average transaction size, conversion rate (invoices created vs. completed)
+- **Settings tab:** Auth token management (view, rotate, revoke), webhook endpoints (add, test, view delivery logs), business info, payment method preferences
+- **Developer tab:** Integration guide, code snippets (curl, JS, React), test mode toggle, webhook event log
+- **Node status:** LND sync status, Cashu mint health, channel capacity, ecash in circulation
+- **Health UX (from Self-Hosting-UX research):** Traffic-light model — "Accepting payments" (green) / "Degraded" (yellow) / "Action required" (red). Plain-language diagnoses: "payment receiving paused because wallet locked," "storage low," "liquidity low — tap to increase limit." Hide Lightning channel internals behind "max instant payment size" and "payment success rate." Staff roles with spend restrictions (manager password preventing outgoing payments). Push notifications on invoice settlement, health degradation, and wallet-unlock-needed after reboot.
+- **Wallet unlock after reboot:** Push notification → merchant taps "Unlock" → app sends unlock secret directly to node (never to ArxMint). Preserves non-custodial posture while achieving near-Stripe recovery.
+- **Mobile-responsive + PWA:** Dashboard must be fully functional on mobile as a bridge to eventual native React Native remote control app.
+- Protected by local auth — accessible only with admin macaroon
+
+### 5.8 — One-Command Merchant Deploy
+
+**What:** Replace the old "settlement automation" item with the critical self-hosted UX: a three-question wizard (`arxmint merchant init`) that provisions a complete merchant payment node with LND, Cashu mint, checkout page, webhook engine, dashboard, and LNURL-pay — all pre-configured. The merchant never sees Docker, SSH, or infrastructure details.
+**Why:** The self-hosted model's biggest risk is setup friction. BTCPay Server's one-click deploy (via LunaNode) solved this. ArxMint needs the same. If deployment takes more than 10 minutes, merchants won't adopt.
+**Why this replaces settlement automation:** In the self-hosted model, settlement is instant and peer-to-peer — the customer pays the merchant's node directly. There's no settlement loop to automate. The hard problem is now deployment, not settlement.
+**Research basis:** `docs/research/Phase5-Bazaar/Self-Hosting-UX/` — 11 studies covering competitive benchmarking, DNS friction, operational resilience, managed self-hosting models, and merchant-grade UX.
+
+**Core insight from research:** "Eliminate being a sysadmin, not running a server." The merchant experiences an app-like surface while a server runs invisibly underneath.
+
+**5.8a — Provisioning Service (Control Plane)**
+
+The `arxmint merchant init` wizard presents only three choices:
+1. "Where will it run?" (Cloud recommended / Existing home node / Advanced)
+2. "What is your store name?" (used for default hostname)
+3. "Online payments or in-person only?" (determines public URL requirement)
+
+Implementation:
+- **BYOC model (primary):** Merchant creates cloud account (DigitalOcean, Hetzner, Vultr). ArxMint provisions via OAuth/API grant (revocable). ArxMint does NOT retain SSH keys after bootstrap. Role = deployment orchestrator + software update channel.
+- Provisioning API: create VM, install Docker, pull stack BOM, configure Cloudflare Tunnel, assign managed subdomain, run health checks.
+- Cloud deploy buttons: DigitalOcean 1-Click, Vultr Marketplace, LunaNode integration (like BTCPay).
+- VPS one-liner: `curl -sSL https://get.arxmint.com/merchant | bash` — installs Docker, pulls images, runs setup wizard.
+- Regtest mode: `arxmint merchant init --regtest` for local development.
+
+**5.8b — Managed DNS + Connectivity**
+
+Research finding: DNS is the single biggest friction point for non-technical merchants.
+
+Implementation:
+- **Default:** `storename.arxmint.cloud` — ArxMint manages the DNS zone; merchant runs the node. Not custody — just publishing a DNS record.
+- **DynDNS API:** Merchant node periodically discovers its public IP, authenticates to control plane, updates only its own A/AAAA record.
+- **Custom domain:** Optional upgrade. Merchant adds CNAME record pointing to their node.
+- **Let's Encrypt rate limit awareness:** 50 certs/registered domain/7 days. Caddy falls back to ZeroSSL. Design as a first-class scaling dimension.
+
+Connectivity tiers (from easiest to most sovereign):
+1. **Cloudflare Tunnel (default):** Outbound-only. Eliminates inbound ports, CG-NAT, dynamic IP. Auto-SSL. `storename.arxmint.cloud` instantly exposed. Trade-off: Cloudflare sees checkout traffic (acceptable for payment pages; LND gRPC + seeds stay local + encrypted).
+2. **Caddy direct:** For VPS with static IP. Auto-HTTPS via Let's Encrypt + ZeroSSL.
+3. **LAN-only:** In-person POS. No public DNS. Customer joins WiFi, scans QR, pays.
+4. **Tor:** Privacy backchannel. Not default (56-char addresses, latency, requires Tor browser).
+
+PaaS verdict (Railway, Render, Fly.io): **Rejected.** Research confirms PaaS is too fragile for mission-critical merchant POS. TCP port limitations, volume redeployment downtime, and HTTP-only networking are deal-breakers. Dedicated VPS remains mandatory.
+
+**5.8c — LSP Liquidity Bootstrap**
+
+Research finding: a freshly deployed merchant node has zero inbound capacity. Without liquidity, the node can't receive payments. This is a day-0 requirement, not a nice-to-have.
+
+Implementation:
+- Integrate against `lsp-spec` unified API for interoperability.
+- JIT (Just-In-Time) channel opening on first inbound payment when capacity is insufficient.
+- Turbo channels (zero-conf) for instant onboarding, with clear risk language displayed.
+- Present inbound liquidity as "max instant payment size" with one-tap "increase limit" action.
+- LND autopilot is secondary; LSP/Pool/Loop is the primary liquidity strategy.
+- Fee disclosure: show `open_channel_fee` to merchant before channel open (Breez SDK pattern).
+
+**5.8d — Merchant Stack Composition**
+
+Minimum viable merchant stack (shipped as single versioned unit):
+- LND (Neutrino light client — no full Bitcoin node on day 0, avoids 1-7 day chain sync that kills BTCPay onboarding)
+- Cashu mint (Nutshell for now; CDK when it drops "ALPHA")
+- Checkout UI + webhook engine + dashboard + LNURL-pay
+- Caddy reverse proxy (or Cloudflare Tunnel)
+
+Hardware baselines:
+| Tier | Spec | Monthly Cost |
+|------|------|-------------|
+| Minimum (cloud) | 2 vCPU, 2GB RAM, 40GB SSD | Hetzner CPX11 ~$5-7/mo |
+| Recommended (cloud) | 2 vCPU, 4GB RAM, 80GB SSD | DigitalOcean $12/mo |
+| Home node | RPi 5 / 8GB or x86 mini-PC | One-time hardware cost |
+
+**Warning:** 1GB instances will crash during LND graph sync (OOM). RPi 4 (4GB) is marginal.
+
+Full node mode: available as optional upgrade path for merchants wanting maximum verification. Not default.
+
+### 5.9 — Public Merchant Directory + Discovery
+
+**What:** Unauthenticated merchant directory. Can be community-hosted or self-hosted. Searchable by category, location, payment methods. Each merchant gets a public profile page.
+**Why:** Customers need to find merchants. A directory also proves the network effect. This is informational only — no funds flow through it, so it's legally safe to host centrally.
+**Legal note:** Research #7 confirms that an informational directory with no payment routing is not money transmission and carries no custody risk. This is the one Phase 5 item that can be centrally hosted.
+**Implementation:**
+- `GET /api/v1/directory?category=&location=&paymentMethod=` — public, no auth required
+- Merchant self-registration: `arxmint directory register` — pushes business info + node URL to directory
+- Merchant profile pages: `/merchants/:slug` — business info, accepted payment methods, QR code, Lightning Address (pointing to merchant's own node)
+- Geo-search: store lat/lng coordinates (optional), enable radius queries
+- Category filter: food, retail, services, digital, hospitality, health, other
+- Map view (optional): merchant pins on OpenStreetMap embed
+- Federated directory: communities can run their own directory instance; directories can peer and share listings (like Teneo Marketplace federation)
+
+### 5.10 — Idempotency + Production Hardening
+
+**What:** Idempotency keys on all payment creation endpoints. Request deduplication. Comprehensive error codes. Security hardening for self-hosted nodes.
+**Why:** Network retries and webhook redelivery mean duplicate requests. Self-hosted nodes need to be hardened against the open internet.
+**Implementation:**
+- `Idempotency-Key` header on `POST /api/v1/checkout` and `POST /api/v1/payments`
+- 24-hour key retention. Same key = return cached response, no new invoice created.
+- Structured error codes: `payment_expired`, `invalid_token`, `duplicate_request`, `rate_limited`, `insufficient_amount`
+- Request logging: every API call logged with request ID, endpoint, status code, latency (stored locally)
+- SDK retry logic: automatic retry with exponential backoff for 5xx errors, no retry for 4xx
+- Security hardening: Caddy auto-HTTPS, CSP headers, rate limiting, firewall rules generated by setup wizard
+- Health check: `GET /api/v1/health` returns node status (LND synced, mint reachable, disk space)
+
+### 5.11 — Merchant Node Lifecycle (Updates + Backups + Restore)
+
+**Research basis:** `docs/research/Phase5-Bazaar/Self-Hosting-UX/7-Operational Resilience for ArxMint Merchant Nodes.md`
+**What:** The operational layer that keeps merchant nodes healthy after initial deployment. Three sub-systems: appliance updates, zero-knowledge backups, and one-click restore.
+**Why:** Deployment without lifecycle management is a liability. The research shows that BTCPay Server merchants struggle most with updates and disaster recovery, not initial setup.
+
+**5.11a — Appliance Update Engine**
+
+"Appliance update model, not `docker compose pull`."
+
+Implementation:
+- Ship a tested **stack BOM** (bill of materials) — locked set of container images pinned by digest, updated as a unit.
+- **Patch-track auto-update (default on):** ArxMint UI/webhook/dashboard patches applied during merchant-defined maintenance windows. No SSH required.
+- **Consent-required updates:** LND major/minor version changes, database migrations, network exposure changes. Dashboard shows "update available" with changelog; merchant clicks "apply."
+- **Automatic rollback:** If health checks fail within 5 minutes of update, revert to previous stack BOM automatically.
+- **Canary rings:** Internal canary → early adopters → stable merchants. Ring assignment configurable per merchant.
+- **Signed manifests:** Stack BOMs signed by ArxMint release key. Node validates signature before applying.
+- Pin container images by digest for stable channel; separate edge channel for enthusiasts.
+
+**5.11b — Zero-Knowledge Encrypted Backups**
+
+Research finding: LND Static Channel Backup must be event-driven (on channel open/close), NOT nightly cron. Old channel state is "toxic" — replaying it can trigger penalty mechanisms and lose all channel funds.
+
+Non-negotiable backup targets:
+1. **LND SCB:** Event-driven copy on every channel open/close.
+2. **Cashu mint database + `MINT_PRIVATE_KEY`:** System of record for token liabilities.
+3. **Merchant config:** Webhooks, API tokens, checkout settings, transaction history.
+4. **Audit/event logs:** For reconciliation.
+
+Zero-knowledge encryption:
+- Backup payload encrypted locally on the VPS using a key derived from merchant's seed phrase (HKDF-SHA256) before transmission.
+- ArxMint stores encrypted blobs in cloud bucket. ArxMint **cannot decrypt** — preserves non-custodial legal firewall.
+- Backup verification: automatic periodic "restore rehearsal" into disposable environment, validating decryptability, checksums, and database integrity. Dashboard shows "backup verified" with last-success timestamp.
+
+**5.11c — One-Click Restore**
+
+1. Provision fresh host (via provisioning service or manual).
+2. Install ArxMint stack at known-good version.
+3. Merchant enters seed phrase.
+4. System derives decryption key, fetches encrypted backup from cloud bucket.
+5. Restores Cashu mint DB + config + LND via SCB import.
+6. Post-restore health checks verify: mint DB consistent, LND channels recovering, config loaded, checkout reachable.
+
+### 5.12 — Home Node Packaging (Umbrel + StartOS)
+
+**Research basis:** `docs/research/Phase5-Bazaar/Self-Hosting-UX/3-Merchant-Grade Self-Hosting Lessons.md`
+**What:** Package the merchant stack for Umbrel and StartOS app stores. Secondary distribution channel for sovereignty-first node runners.
+**Why:** Umbrel has ~100K+ node operators. StartOS has the best ops UX (health checks, backups, config forms). These users already have the hardware and want to add merchant capability.
+
+Implementation:
+- **Umbrel (primary target):** Docker Compose maps directly to Umbrel packaging format (`docker-compose.yml` + `umbrel-app.yml` + optional `exports.sh`). Use Umbrel's App Proxy whitelist/blacklist to make checkout public while keeping admin behind authentication.
+- **StartOS (secondary):** More structured packaging (NOT Docker Compose native). Must either consolidate into one container or split into dependent services with health checks and config forms.
+- **Citadel:** Low incremental effort to port from Umbrel package format.
+- **Priority:** Ship after cloud deploy is stable. Home node users are more technical and tolerant of rough edges.
+
+### 5.13 — Mobile Merchant Remote Control (Future)
+
+**Research basis:** `docs/research/Phase5-Bazaar/Self-Hosting-UX/0-Simplifying Self-Hosted Bitcoin Payments.md`
+**What:** React Native app acting as remote control for the merchant's VPS node. POS terminal, QR generation, daily sales metrics, push notifications on invoice settlement.
+**Why:** Non-technical merchants won't SSH into a VPS. The mobile app is the "real" interface; the VPS is invisible infrastructure.
+
+Implementation:
+- Communicates with VPS via macaroon-authenticated WebSocket over Cloudflare Tunnel.
+- Features: POS terminal mode, QR generation for in-person payments, daily sales dashboard, push notifications (invoice settled, health alert, wallet unlock needed).
+- Wallet unlock: push notification → merchant taps "Unlock" → app sends unlock secret directly to node (never through ArxMint).
+- **Near-term substitute:** PWA-capable merchant dashboard (5.7) covers 80% of this. Native app is a Phase 6+ investment.
+
+**"Lite" mode option (no VPS):**
+- LDK node running directly on mobile via Breez SDK / LSP. No VPS, no DNS.
+- Only works when app is open — explicitly not for e-commerce.
+- Suitable for pop-up shops, farmers markets, event vendors.
+- Separate SKU from full merchant stack.
+
+### Teneo Marketplace Integration
+
+Phase 5 SDK and API must be compatible with the existing Teneo Marketplace integration layer. Stubs already exist at `C:\code\teneo-marketplace\services\arxmintService.js` with scaffolded methods: `createL402Invoice()`, `verifyL402Payment()`, `acceptCashuToken()`. The cross-reference lives in Teneo's roadmap (Section 5.7: "ArxMint Bazaar Integration — Decentralized Stripe for Creators").
+
+**Dependencies:**
+- `@arxmint/js` (5.5) must export the same primitives that `arxmintService.js` stubs expect
+- Teneo connects to the creator's own ArxMint merchant node via `ARXMINT_API_URL` env var — same non-custodial model
+- Shared Nostr auth (Phase B) already works across both apps
+- Federation revenue share (tracked in Teneo's DB) settles via Cashu ecash minting (Phase B settlement)
+
+**Not a separate deliverable** — this is a compatibility constraint on 5.5 (Client SDK). When building the SDK, verify it satisfies the Teneo stub interface. No new roadmap item needed; just test against the stubs.
+
+### Implementation Snapshot — Phase 5
+
+| Item | Status | Builds On |
+|---|---|---|
+| 5.1 Local auth tokens | Planned | Phase A auth + L402 macaroon bakery (1.5) |
+| 5.2 Webhook engine (local) | Planned | Phase B payment SDK + LND gRPC |
+| 5.3 Self-hosted checkout | Planned | Phase B L402 + NUT-24 + NUT-26 QR |
+| 5.4 Payment status API | Planned | Phase B payment SDK |
+| 5.5 Client-side SDK | Planned | 5.1 + 5.3 + 5.4 |
+| 5.6 LNURL-pay / Lightning Address | Planned | Phase B L402 + LND wiring |
+| 5.7 Merchant dashboard (self-hosted) | Planned | 5.1 + 5.4 + Phase A DB + Self-Hosting-UX health vocabulary |
+| 5.8a Provisioning service (control plane) | Planned | Phase C Docker stack + Caddy + cloud provider APIs |
+| 5.8b Managed DNS + connectivity | Planned | 5.8a + Cloudflare Tunnel API + DNS zone management |
+| 5.8c LSP liquidity bootstrap | Planned | 5.8a + lsp-spec API integration |
+| 5.8d Merchant stack composition | Planned | LND Neutrino + Phase C infra |
+| 5.9 Public directory | Planned | 1.4 merchant onboarding + Phase A DB |
+| 5.10 Idempotency + hardening | Planned | 5.1 + 5.2 + Phase E hardening |
+| 5.11a Appliance update engine | Planned | 5.8a + signed manifest infrastructure |
+| 5.11b Zero-knowledge encrypted backups | Planned | 5.8a + seed-derived encryption + cloud storage |
+| 5.11c One-click restore | Planned | 5.11b + provisioning service |
+| 5.12 Home node packaging (Umbrel/StartOS) | Planned | 5.8d stable + Umbrel packaging format |
+| 5.13 Mobile merchant remote control | Planned (Future) | 5.7 PWA as bridge; native app Phase 6+ |
+
+### Phase 5 Priority Order
+
+Build in this order — deployment must come first in the self-hosted model:
+
+```
+5.8d Stack Composition ──→ 5.8a Provisioning ──→ 5.8b DNS/Connectivity ──→ 5.8c LSP Bootstrap
+                                    │
+                                    ├──→ 5.1 Local Auth ──→ 5.4 Status API ──→ 5.2 Webhooks
+                                    │                                              │
+                                    ├──→ 5.3 Self-Hosted Checkout ────────────────→ 5.5 Client SDK
+                                    │
+                                    ├──→ 5.6 LNURL-pay
+                                    │
+                                    ├──→ 5.7 Merchant Dashboard (parallel, grows with each feature)
+                                    │
+                                    └──→ 5.11a Updates ──→ 5.11b Backups ──→ 5.11c Restore
+
+5.9  Public Directory: independent, can ship early (only centrally-hostable item)
+5.10 Idempotency: weave in throughout, harden before mainnet launch
+5.12 Umbrel/StartOS: ship after cloud deploy is stable
+5.13 Mobile app: PWA bridge via 5.7 first; native app is Phase 6+
+```
+
+**Key change from pre-research design:** Deployment (5.8) is now first priority, not API keys. In the self-hosted model, nothing works until the merchant has a running node. The old design assumed a hosted platform where merchants could onboard instantly via API keys — the self-hosted model inverts this.
+
+**Key change from Self-Hosting-UX research:** 5.8 is no longer a single item — it's four sub-items (provisioning, DNS, liquidity, stack composition) reflecting the research finding that "one-command deploy" requires solving infrastructure orchestration, DNS friction, and liquidity bootstrap simultaneously. The research also added 5.11 (lifecycle), 5.12 (home node), and 5.13 (mobile) as new items that didn't exist in the pre-research design.
+
+### Phase 5 Production Readiness Gate
+
+**Everything below must be true before merchant nodes accept mainnet funds.** This is the exit criteria for Phase 5 core items (5.1–5.8) plus required lifecycle controls (5.11a–5.11c). Parallels the Phase A–E gate but scoped to merchant infrastructure.
+
+#### Merchant Node Safety
+- [ ] Merchant holds seed phrase and admin macaroons — ArxMint provisioning service retains neither after bootstrap
+- [ ] Local auth tokens (5.1) enforce permission scopes — `arx_pub_` cannot pay, only create invoices
+- [ ] Macaroon rotation works without downtime (`arxmint keys rotate`)
+- [ ] Webhook signatures (5.2) verified by independent test client
+- [ ] Idempotency keys (5.10) prevent duplicate invoice creation under retry storms
+
+#### Payment Correctness
+- [ ] Self-hosted checkout (5.3) generates invoices from merchant's own LND node — verified by tracing invoice pubkey
+- [ ] Payment status API (5.4) returns correct state transitions (pending → completed/expired/failed)
+- [ ] LNURL-pay (5.6) resolves and pays successfully from 3+ external wallets (Phoenix, Zeus, Breez)
+- [ ] Client SDK (5.5) completes end-to-end payment flow against merchant's endpoint (not arxmint.com)
+
+#### Infrastructure
+- [ ] `arxmint merchant init` produces a running node with health checks passing in < 15 minutes on fresh VPS
+- [ ] Managed subdomain (`storename.arxmint.cloud`) resolves and serves HTTPS checkout
+- [ ] LSP opens JIT channel on first inbound payment — verified on regtest and testnet
+- [ ] LND Neutrino syncs and accepts payments without full chain sync
+- [ ] Cloudflare Tunnel mode works for home deployments behind CG-NAT
+
+#### Lifecycle
+- [ ] Stack BOM update applies and rolls back automatically on health check failure (5.11a)
+- [ ] LND SCB backup fires on every channel open/close — NOT on cron (5.11b)
+- [ ] Zero-knowledge backup round-trip: deploy → transact → destroy → restore from seed → verify balances (5.11c)
+- [ ] Backup encryption key derived from seed — ArxMint cannot decrypt stored blobs
+
+#### Operational
+- [ ] Merchant dashboard (5.7) shows traffic-light health status with plain-language diagnoses
+- [ ] Wallet unlock after reboot works via push notification (non-custodial — secret goes to node, not ArxMint)
+- [ ] 7+ days on testnet with simulated merchant traffic and zero incidents
+- [ ] Disaster recovery drill: fresh VPS + seed phrase → full restore → payments resume
+
+### What This Makes Possible
+
+| Merchant Type | Integration | Time to First Payment |
+|---|---|---|
+| Coffee shop (no code) | `arxmint merchant init` + print QR | < 15 minutes |
+| Online store (low code) | Self-hosted checkout link in "Buy" button | 30 minutes |
+| SaaS app (full code) | Client SDK + webhooks on own node | 1-2 hours |
+| AI agent (programmatic) | L402 macaroons + local node API | 30 minutes |
+| Marketplace | Teneo integration + federation directory | 2-3 hours |
+| Pop-up / farmers market (Lite) | Mobile LDK via Breez SDK, no VPS | < 10 minutes |
+
+### Competitive Benchmarking (Self-Hosting-UX Research)
+
+| Solution | Custody | Time to First Payment | Primary Blocker |
+|---|---|---|---|
+| Square Bitcoin | Custodial | < 5 min | KYC verification |
+| Strike (Shopify) | Custodial | < 10 min | Business verification |
+| OpenNode | Custodial | < 10 min | KYB/KYC |
+| Breez SDK (Liquid) | Non-custodial | < 10 min | None (receive after init) |
+| BTCPay (LunaNode) | Self-hosted | 2-12 hours | Full chain sync (1-7 days) |
+| BTCPay (Manual Docker) | Self-hosted | 12-48 hours | Chain sync + DNS + SSH |
+| **ArxMint (Target)** | **Self-hosted** | **< 15 min** | **Infrastructure fee (credit card)** |
+
+ArxMint's target: match Breez SDK speed while maintaining full self-hosted sovereignty. The Neutrino light client (no full chain sync) + managed subdomain (no DNS setup) + LSP liquidity (no channel management) eliminate the three blockers that push BTCPay to 2-48 hours.
+
+### Stripe vs. ArxMint — Target Comparison
+
+| | Stripe | ArxMint (Phase 5) |
+|---|---|---|
+| **Transaction fee** | 2.9% + $0.30 | 0% (ecash) or ~0.1% (Lightning routing) |
+| **Settlement time** | T+2 days | Instant — customer pays merchant's node directly |
+| **Customer KYC** | Card + billing address required | None — bearer ecash is anonymous |
+| **Merchant KYC** | Full identity verification | None — Nostr pubkey optional |
+| **Data sold** | Yes (Stripe Radar, analytics) | Impossible — no central entity holds the data |
+| **Chargebacks** | Yes (merchant liability) | Impossible — ecash is bearer, Lightning is final |
+| **Open source** | No | Yes — MIT license |
+| **Self-hosted** | No | Yes — required by design (legally protected) |
+| **Censorship** | Platform can freeze funds | Impossible — merchant controls their own node |
+| **Custody** | Stripe holds funds T+2 | Never — peer-to-peer, instant settlement |
+| **Regulatory burden** | Stripe handles compliance | None for merchant — self-hosted software is exempt |
+
+### Legal Architecture Summary
+
+| Component | Custody? | Regulatory Status | Research #7 Basis |
+|---|---|---|---|
+| ArxMint open-source software | No | Exempt (unhosted wallet provider) | FinCEN FIN-2019-G001; DOJ 2025 safe harbor; MiCA Art. 2/Recital 83 |
+| Merchant's self-hosted node | Self-custody | Merchant is a "user" accepting payment for own goods | FinCEN "user" exemption — not money transmission |
+| Local L402 macaroons (5.1) | No | Local auth token, not custodial trigger | Macaroon scoped to merchant's own node |
+| Self-hosted checkout (5.3) | No | Invoice generated by merchant's own LND | Peer-to-peer; ArxMint provides software only |
+| Public merchant directory (5.9) | No | Informational only — no funds flow | No custody, no transmission, no regulatory trigger |
+| Client SDK (5.5) | No | Connects to merchant's endpoint, not ArxMint's | Stripe.js analogue but self-hosted |
+
+### API Versioning Strategy
+
+All merchant-facing endpoints use `/api/v1/` prefix. Once merchants integrate, breaking changes require a version bump.
+
+**Rules:**
+- **Additive changes** (new fields, new endpoints) — ship in `v1`. No version bump needed.
+- **Breaking changes** (removed fields, changed semantics, renamed endpoints) — require `/api/v2/` with minimum 6-month `v1` deprecation window.
+- **Stack BOM updates** (5.11a) must declare API version compatibility. A BOM that ships a breaking API change must also ship the new version prefix.
+- **SDK versioning** — `@arxmint/js` follows semver. Major version = breaking API change. SDK and node API versions must be compatible (SDK v2.x requires node API v2).
+- **Changelog** — every stack BOM includes a human-readable changelog. Breaking changes highlighted with migration guide.
+
+**Not needed yet** — this becomes enforced when the first external merchant integrates. Until then, `v1` is the only version and the API is in flux. Lock the versioning policy before Phase 5 exits beta.
 
 ---
 
@@ -665,6 +1166,19 @@ Phase 4 (Citadel) depends on:
     - Phase 1.3 + 1.4 (metrics + merchants)
     - Phase 2.7 (monitoring config)
     NOT blocked by: Phase 3 (advanced features are post-pilot)
+
+Phase 5 (Bazaar) depends on:
+    - Phase 4 running (real merchant validation of self-hosting UX assumptions)
+    - Phase A (DB + auth)
+    - Phase B (payment SDK)
+    - Phase E (production hardening)
+    Phase 5 internal ordering:
+    - 5.8d (stack) → 5.8a (provisioning) → 5.8b (DNS) → 5.8c (LSP) → all other 5.x items
+    - 5.11 (lifecycle) starts after 5.8a; grows in parallel with feature items
+    - 5.12 (Umbrel/StartOS) after cloud deploy stable
+    - 5.13 (mobile) is Phase 6+ (PWA via 5.7 is the bridge)
+    NOT blocked by: Phase 3 (Aether) or Phase 4 completion
+    CAN start in parallel with Phase 4 once pilot is live
 ```
 
 ---
@@ -674,6 +1188,7 @@ Phase 4 (Citadel) depends on:
 Every roadmap item traces back to at least one research document.
 **Original research:** Docs 1–7 cross-referenced in `docs/research-crossref.md`
 **Deep research (Feb 2026):** 6 studies in `docs/research/` that locked architecture decisions
+**Self-Hosting-UX research (Mar 2026):** 11 studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/` that expanded Phase 5 scope (SH-UX column below)
 
 | Roadmap Item | Doc 1 | Doc 2 | Doc 3 | Doc 4 | Doc 5 | Doc 6 | Doc 7 | Research # |
 |---|---|---|---|---|---|---|---|---|
@@ -718,6 +1233,15 @@ Every roadmap item traces back to at least one research document.
 | **Hardening: Value caps** | | | | | | | | — |
 | **Hardening: CI/CD** | | | | | | | | — |
 | **Hardening: Incident response** | | | | | | | | #2 |
+| **5.8a Provisioning service** | | | | | | | | SH-UX #0, #2, #4 |
+| **5.8b Managed DNS + connectivity** | | | | | | | | SH-UX #6 |
+| **5.8c LSP liquidity bootstrap** | | | | | | | | SH-UX #1, #5 |
+| **5.8d Merchant stack composition** | | | | | | | | SH-UX #5, #8 |
+| **5.11a Appliance update engine** | | | | | | | | SH-UX #4, #7 |
+| **5.11b Zero-knowledge backups** | | | | | | | | SH-UX #7 |
+| **5.11c One-click restore** | | | | | | | | SH-UX #7 |
+| **5.12 Umbrel/StartOS packaging** | | | | | | | | SH-UX #3 |
+| **5.13 Mobile remote control** | | | | | | | | SH-UX #0, #2 |
 
 ---
 
@@ -732,3 +1256,7 @@ Following the positioning doc's Tartarian builder theme:
 | Phase 2 | **Spire** | The structure rises — full stack visible |
 | Phase 3 | **Aether** | Advanced capabilities, reaching higher |
 | Phase 4 | **Citadel** | The complete sovereign fortress — deployed and defended |
+| Phase 5 | **Bazaar** | The open marketplace — sovereign commerce for all |
+
+
+

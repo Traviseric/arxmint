@@ -16,6 +16,7 @@
 | Container logs stop / OOM | Disk/memory full | [§5](#5-disk-fills-up) |
 | Payment success rate drops | Payment routing | [§6](#6-payment-success-rate-drops) |
 | Suspected exploit / mint compromise | Emergency freeze | [§7](#7-emergency-freeze-the-mint) |
+| Secret or credential exposed | Secret compromise | [§12](#12-secret-compromise-credential-rotation) |
 
 ---
 
@@ -157,6 +158,20 @@ gunzip -c /backups/backup_TIMESTAMP.sql.gz \
   | docker exec -i sf-postgres psql -U arxmint arxmint
 ```
 
+**PITR restore (base backup + WAL replay):**
+```bash
+# Restore to latest available WAL state
+./scripts/restore_postgres_pitr.sh \
+  /backups/postgres-pitr/base/base_YYYYMMDD_HHMMSS.tar.gz
+
+# Restore to a specific timestamp
+./scripts/restore_postgres_pitr.sh \
+  /backups/postgres-pitr/base/base_YYYYMMDD_HHMMSS.tar.gz \
+  "2026-03-02 18:30:00+00"
+```
+
+See `docs/PITR_RUNBOOK.md` for full procedure and validation.
+
 ---
 
 ## 5. Disk Fills Up
@@ -286,6 +301,10 @@ curl -s http://localhost:3000/api/health | jq .
 | Web health | `/api/health` returns unhealthy | Check §2 or §6 |
 | Memory usage | > 85% | Check §5 |
 
+**Alert rules as code:** `docker/prometheus-alerts.yml`
+- Validate changes with `promtool check rules docker/prometheus-alerts.yml`
+- CI also validates this file in the build pipeline.
+
 ---
 
 ## 9. Rollback Procedure
@@ -367,4 +386,45 @@ docker exec sf-postgres psql -U arxmint -d arxmint \
 
 ---
 
-*Last updated: 2026-02-28 | Source: OVERNIGHT_TASKS.md ID 35*
+## 12. Secret Compromise: Credential Rotation
+
+**Target response time:** Start containment within 15 minutes. Complete credential rotation within 60 minutes for internet-facing secrets.
+
+Use this when any of these are leaked or suspected leaked:
+- `NEXTAUTH_SECRET`
+- `AUTH_SHARED_SECRET`
+- `MARKETPLACE_SHARED_SECRET`
+- `MACAROON_ROOT_KEY`
+- `CASHU_PRIVATE_KEY`
+- `LND_MACAROON_HEX`
+
+```bash
+# 1. Freeze external access if needed (high-confidence compromise)
+docker compose stop web
+
+# 2. Generate replacement secrets
+bash scripts/generate-secrets.sh --force
+
+# 3. Manually rotate shared integration secrets in .env
+# AUTH_SHARED_SECRET, MARKETPLACE_SHARED_SECRET, APERTURE_SHARED_SECRET,
+# LND_MACAROON_HEX (re-bake in LND), any third-party API keys
+
+# 4. Restart services with new credentials
+docker compose up -d
+
+# 5. Verify health
+curl -s http://localhost:3000/api/health | jq .
+
+# 6. Invalidate old sessions by restarting web with new NEXTAUTH_SECRET
+# Existing sessions become invalid automatically after secret rotation
+```
+
+**Post-incident actions (same day):**
+1. Revoke compromised credentials at the source system (LND macaroon, third-party API keys, etc.).
+2. Confirm old credentials no longer authenticate.
+3. Review logs for unauthorized use between exposure and rotation.
+4. Record timeline, blast radius, and root cause in incident notes.
+
+---
+
+*Last updated: 2026-03-02 | Source: OVERNIGHT_TASKS.md ID 35*

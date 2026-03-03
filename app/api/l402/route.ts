@@ -9,10 +9,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
 import { db } from "@/lib/db";
+import { resilientFetch } from "@/lib/net-resilience";
+import { observeApiRoute } from "@/lib/api-observability";
 
 /** In-memory store: base64-macaroon → { rHashBase64, expiresAt } */
 const pendingL402 = new Map<
@@ -30,14 +32,13 @@ const MACAROON_ROOT_KEY = process.env.MACAROON_ROOT_KEY;
 if (!MACAROON_ROOT_KEY) {
   if (process.env.NODE_ENV === "production") {
     logger.error(
-      { action: "l402_misconfigured" },
-      "MACAROON_ROOT_KEY not set in production — L402 endpoint will return 503"
+      "MACAROON_ROOT_KEY not set in production — L402 endpoint will return 503",
+      { action: "l402_misconfigured" }
     );
   } else {
-    console.warn(
-      "[ArxMint] DEV: MACAROON_ROOT_KEY is not set. " +
-        "Using unsigned macaroons (development only). Set MACAROON_ROOT_KEY for production."
-    );
+    logger.warn("DEV: MACAROON_ROOT_KEY is not set. Using unsigned macaroons.", {
+      action: "l402_dev_unsigned_macaroons",
+    });
   }
 }
 
@@ -78,7 +79,11 @@ function verifyPreimage(preimage: string, rHashBase64: string): boolean {
     const expected = Buffer.from(rHashBase64, "base64");
     if (derived.length !== expected.length) return false;
     return timingSafeEqual(derived, expected);
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("l402_preimage_verify_error", {
+      error: error instanceof Error ? error.message : String(error),
+      action: "l402_preimage_verify_error",
+    });
     return false;
   }
 }
@@ -115,7 +120,11 @@ function verifyMacaroon(token: string): { identifier: string } | null {
       .digest("hex");
     if (sig !== expectedSig) return null;
     return payload as { identifier: string };
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("l402_macaroon_parse_error", {
+      error: error instanceof Error ? error.message : String(error),
+      action: "l402_macaroon_parse_error",
+    });
     return null;
   }
 }
@@ -138,19 +147,28 @@ async function lookupLNDInvoice(
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/, "");
-    const res = await fetch(`${lndRestUrl}/v1/invoice/${rHashUrlSafe}`, {
+    const res = await resilientFetch(`${lndRestUrl}/v1/invoice/${rHashUrlSafe}`, {
       headers: { "Grpc-Metadata-Macaroon": lndMacaroon },
+    }, {
+      timeoutMs: 5_000,
+      circuitKey: "lnd:lookup-invoice",
     });
 
     if (!res.ok) {
-      console.warn(`[ArxMint] LND invoice lookup failed: HTTP ${res.status}`);
+      logger.warn("l402_lnd_lookup_failed", {
+        status: res.status,
+        action: "l402_lnd_lookup_failed",
+      });
       return null;
     }
 
     const data = await res.json();
     return { settled: data.settled === true };
   } catch (e: unknown) {
-    console.warn("[ArxMint] LND invoice lookup error:", e instanceof Error ? e.message : String(e));
+    logger.warn("l402_lnd_lookup_error", {
+      error: e instanceof Error ? e.message : String(e),
+      action: "l402_lnd_lookup_error",
+    });
     return null;
   }
 }
@@ -169,29 +187,40 @@ async function createLNDInvoice(
   if (!lndRestUrl || !lndMacaroon) return null;
 
   try {
-    const res = await fetch(`${lndRestUrl}/v1/invoices`, {
+    const res = await resilientFetch(`${lndRestUrl}/v1/invoices`, {
       method: "POST",
       headers: {
         "Grpc-Metadata-Macaroon": lndMacaroon,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ value: String(amountSats), memo }),
+    }, {
+      timeoutMs: 5_000,
+      circuitKey: "lnd:create-invoice",
     });
 
     if (!res.ok) {
-      console.warn(`[ArxMint] LND invoice creation failed: HTTP ${res.status}`);
+      logger.warn("l402_lnd_create_invoice_failed", {
+        status: res.status,
+        action: "l402_lnd_create_invoice_failed",
+      });
       return null;
     }
 
     const data = await res.json();
     if (!data.payment_request || !data.r_hash) {
-      console.warn("[ArxMint] LND response missing payment_request or r_hash");
+      logger.warn("l402_lnd_missing_invoice_fields", {
+        action: "l402_lnd_missing_invoice_fields",
+      });
       return null;
     }
 
     return { paymentRequest: data.payment_request as string, rHash: data.r_hash as string };
   } catch (e: unknown) {
-    console.warn("[ArxMint] LND invoice creation error:", e instanceof Error ? e.message : String(e));
+    logger.warn("l402_lnd_create_invoice_error", {
+      error: e instanceof Error ? e.message : String(e),
+      action: "l402_lnd_create_invoice_error",
+    });
     return null;
   }
 }
@@ -215,6 +244,7 @@ async function createLNDInvoice(
  * the L402 flow transparently for agents using lnget.
  */
 export async function GET(request: NextRequest) {
+  return observeApiRoute(request, "/api/l402", async () => {
   const macaroonGuard = requireMacaroonKey();
   if (macaroonGuard) return macaroonGuard;
 
@@ -224,8 +254,12 @@ export async function GET(request: NextRequest) {
     request.headers.get("x-forwarded-for") ??
     request.headers.get("x-real-ip") ??
     "unknown";
-  if (!checkRateLimit(`l402:${ip}`, 20, 60_000)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  const rl = checkRateLimit(`l402:${ip}`, RATE_LIMITS.payment);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter ?? 60) } }
+    );
   }
 
   const authHeader = request.headers.get("Authorization");
@@ -264,7 +298,7 @@ export async function GET(request: NextRequest) {
               pendingL402.set(macaroon, pending);
             }
           }
-        } catch (e) {
+        } catch (e: unknown) {
           logger.warn("l402_db_lookup_failed", {
             error: e instanceof Error ? e.message : String(e),
           });
@@ -293,7 +327,12 @@ export async function GET(request: NextRequest) {
         // Mark as paid in DB (fire-and-forget)
         void db.paymentChallenge
           .update({ where: { id: macaroon }, data: { status: "paid", paidAt: new Date() } })
-          .catch(() => undefined);
+          .catch((error: unknown) => {
+            logger.warn("l402_mark_paid_db_failed", {
+              error: error instanceof Error ? error.message : String(error),
+              action: "l402_mark_paid_db_failed",
+            });
+          });
         return NextResponse.json({
           success: true,
           data: {
@@ -313,14 +352,13 @@ export async function GET(request: NextRequest) {
       // SKIP_PAYMENT_VERIFY bypass — must be explicitly opted in, never works in production
       if (process.env.SKIP_PAYMENT_VERIFY === "true") {
         if (process.env.NODE_ENV === "production") {
-          console.error(
-            "[ArxMint] SKIP_PAYMENT_VERIFY cannot be set in production. Ignoring bypass."
-          );
+          logger.error("SKIP_PAYMENT_VERIFY cannot be set in production. Ignoring bypass.", {
+            action: "l402_payment_bypass_blocked",
+          });
         } else if (!pending) {
-          console.warn(
-            "[ArxMint] SKIP_PAYMENT_VERIFY=true: No pending L402 record found " +
-              "(server may have restarted). Accepting well-formed token. " +
-              "Remove this flag in production."
+          logger.warn(
+            "DEV: SKIP_PAYMENT_VERIFY=true with no pending L402 record. Accepting well-formed token.",
+            { action: "l402_payment_bypass_without_pending" }
           );
           return NextResponse.json({
             success: true,
@@ -366,13 +404,16 @@ export async function GET(request: NextRequest) {
 
   // Sign the macaroon with HMAC-SHA256.
   // In production MACAROON_ROOT_KEY is required (requireMacaroonKey() gates above);
-  // in dev, fall back to an unsigned macaroon with an explicit console warning.
+  // in dev, fall back to an unsigned macaroon with an explicit logger warning.
   let macaroon: string;
   try {
     macaroon = signMacaroon(macaroonPayload);
-  } catch {
+  } catch (error: unknown) {
     // MACAROON_ROOT_KEY not set — only reachable in development (production blocked above)
-    console.warn("[ArxMint] DEV: issuing unsigned macaroon. Set MACAROON_ROOT_KEY for production.");
+    logger.warn("DEV: issuing unsigned macaroon", {
+      action: "l402_dev_unsigned_macaroon_issued",
+      error: error instanceof Error ? error.message : String(error),
+    });
     macaroon = Buffer.from(JSON.stringify(macaroonPayload)).toString("base64");
   }
 
@@ -386,10 +427,9 @@ export async function GET(request: NextRequest) {
     rHash = lndResult.rHash;
   } else if (process.env.NODE_ENV === "development") {
     // Explicit dev mode fallback — not a silent failure
-    console.warn(
-      "[ArxMint] DEV MODE: LND not configured. Returning placeholder invoice. " +
-        "Set LND_REST_URL and LND_MACAROON_HEX for real invoice generation."
-    );
+    logger.warn("DEV MODE: LND not configured. Returning placeholder invoice.", {
+      action: "l402_dev_placeholder_invoice",
+    });
     invoice = "lnbc1000n1dev_placeholder_invoice_not_payable";
     // Generate a random rHash so the preimage check is consistent within the session
     rHash = randomBytes(32).toString("base64");
@@ -458,4 +498,8 @@ export async function GET(request: NextRequest) {
   );
 
   return response;
+  });
 }
+
+
+

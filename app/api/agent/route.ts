@@ -67,9 +67,9 @@ async function checkPayment(
       });
       // Fall through to normal payment verification
     } else {
-      console.warn(
-        "[ArxMint] DEV: SKIP_PAYMENT_VERIFY=true — skipping payment verification."
-      );
+      logger.warn("DEV: SKIP_PAYMENT_VERIFY=true - skipping payment verification", {
+        action: "payment_bypass_dev",
+      });
       return { authenticated: true, method: "skip" };
     }
   }
@@ -257,7 +257,11 @@ export async function GET(request: NextRequest) {
           },
           timestamp: Date.now(),
         });
-      } catch {
+      } catch (error: unknown) {
+        logger.warn("cycle-signals live fetch failed; returning cached signal", {
+          error: error instanceof Error ? error.message : String(error),
+          action: "cycle_signals_fallback",
+        });
         return NextResponse.json({
           service: "cycle-signals",
           error: "Failed to fetch live data — returning cached signal",
@@ -272,11 +276,13 @@ export async function GET(request: NextRequest) {
     case "compute":
       return NextResponse.json({
         service: "compute",
+        demo: true,
+        disclaimer: "Demo endpoint — returns placeholder output. Real compute dispatch is on the roadmap.",
         paymentMethod,
         result: {
           jobId: `job_${Date.now().toString(36)}`,
           status: "completed",
-          output: "Compute task executed successfully",
+          output: "Compute task executed successfully (demo placeholder)",
           compute_units: 1,
           cost_sats: 500,
         },
@@ -286,18 +292,20 @@ export async function GET(request: NextRequest) {
     case "data":
       return NextResponse.json({
         service: "data-marketplace",
+        demo: true,
+        disclaimer: "Demo endpoint — returns placeholder dataset catalog. Real data delivery (mempool.space, Amboss) is on the roadmap.",
         paymentMethod,
         datasets: [
           {
             id: "btc-mempool-stats",
-            name: "BTC Mempool Statistics",
+            name: "BTC Mempool Stats (demo)",
             description: "Real-time mempool size, fee rates, and tx count",
             price_sats: 50,
             format: "json",
           },
           {
             id: "lightning-capacity",
-            name: "Lightning Network Capacity",
+            name: "Lightning Capacity (demo)",
             description: "Channel capacity distribution and routing stats",
             price_sats: 100,
             format: "json",
@@ -320,9 +328,11 @@ export async function GET(request: NextRequest) {
         pricing: {
           "privacy-audit": "200 sats",
           "cycle-signals": "50 sats",
-          compute: "500 sats/job",
-          data: "50-100 sats/dataset",
+          compute: "500 sats/job (demo — placeholder output)",
+          data: "50-100 sats/dataset (demo — static catalog)",
         },
+        demo_services: ["compute", "data"],
+        demo_notice: "compute and data endpoints are demo placeholders. privacy-audit and cycle-signals use real computations.",
         payment_methods: [
           "L402 (Lightning): Pay BOLT11 invoice, include preimage in Authorization header",
           "Cashu NUT-24: Send ecash token in Authorization: Cashu <token>",
@@ -331,3 +341,4 @@ export async function GET(request: NextRequest) {
       });
   }
 }
+

@@ -24,9 +24,9 @@ test("privacy score is weighted by backend-usable layers", () => {
   const fedimintScore = computePrivacyScore(cfg, "fedimint");
   const cashuScore = computePrivacyScore(cfg, "cashu");
 
-  // Fedimint excludes Silent Payments + Ark until available.
-  assert.equal(fedimintScore, 65);
-  // Cashu includes Silent Payments, still excludes Ark.
-  assert.equal(cashuScore, 80);
+  // Fedimint excludes Silent Payments + Ark + CoinJoin + PayJoin until available.
+  assert.equal(fedimintScore, 40);
+  // Cashu includes Silent Payments, still excludes Ark + CoinJoin + PayJoin.
+  assert.equal(cashuScore, 55);
   assert.ok(cashuScore > fedimintScore);
 });

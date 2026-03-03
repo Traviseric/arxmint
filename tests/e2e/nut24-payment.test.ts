@@ -7,8 +7,8 @@
 import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 
-const BASE_URL = "http://localhost:3000";
-const CASHU_MINT_URL = "http://localhost:3338";
+const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3000";
+const CASHU_MINT_URL = process.env.TEST_CASHU_MINT_URL ?? "http://localhost:3338";
 
 let serverAvailable = false;
 let mintAvailable = false;

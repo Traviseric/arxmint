@@ -5,12 +5,13 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { Copy, LogOut, Check, Zap } from "lucide-react";
 import { useSovereignStore } from "@/lib/store";
-import { hasNostrExtension, waitForExtension, connectNostr, truncateNpub, createNip98AuthEvent } from "@/lib/nostr-auth";
+import { hasNostrExtension, waitForExtension, connectNostr, createNip98AuthEvent } from "@/lib/nostr-auth";
 
 export function NostrLogin() {
-  const { nostrUser, nostrConnected, isAuthenticated, setNostrUser, clearNostrUser, setAuthenticated } =
+  const { nostrUser, nostrConnected, setNostrUser, clearNostrUser, setAuthenticated } =
     useSovereignStore();
 
   const [open, setOpen] = useState(false);
@@ -158,9 +159,12 @@ export function NostrLogin() {
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-xs sm:text-sm"
         >
           {nostrUser.picture ? (
-            <img
+            <Image
               src={nostrUser.picture}
               alt={nostrUser.displayName}
+              width={16}
+              height={16}
+              unoptimized
               className="w-4 h-4 rounded-full object-cover"
             />
           ) : (

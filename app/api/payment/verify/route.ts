@@ -17,6 +17,8 @@ import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { validateCashuToken } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { db } from "@/lib/db";
+import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { observeApiRoute } from "@/lib/api-observability";
 
 /** Load challenge entry from memory; fall back to DB if not found */
 async function getOrLoadChallenge(
@@ -31,7 +33,11 @@ async function getOrLoadChallenge(
     const entry = { challenge: data.challenge, createdAt: data.createdAt };
     _challenges.set(id, entry);
     return entry;
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("Failed to load payment challenge from DB", {
+      challengeId: id,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -43,14 +49,35 @@ async function dbMarkPaid(id: string, paidAt: number): Promise<void> {
       where: { id },
       data: { status: "paid", paidAt: new Date(paidAt) },
     });
-  } catch {
-    // Silently fail — in-memory state is source of truth during this process lifetime
+  } catch (error: unknown) {
+    logger.warn("Failed to mark payment challenge as paid in DB", {
+      challengeId: id,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
 export async function POST(request: NextRequest) {
+  return observeApiRoute(request, "/api/payment/verify", async () => {
   // Optional: identify the caller (ArxMint session cookie or marketplace Bearer JWT)
   const callerPubkey = getCallerFromRequest(request);
+  const ip =
+    request.headers.get("x-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkPrincipalAndIpRateLimit(
+    "payment-verify",
+    ip,
+    callerPubkey,
+    RATE_LIMITS.paymentWrite
+  );
+  if (!rl.allowed) {
+    logger.rateLimit(ip, "/api/payment/verify", rl.retryAfter ?? 60);
+    return NextResponse.json({ error: "Too many requests" }, {
+      status: 429,
+      headers: { "Retry-After": String(rl.retryAfter ?? 60) },
+    });
+  }
 
   let body: {
     type?: unknown;
@@ -64,7 +91,10 @@ export async function POST(request: NextRequest) {
 
   try {
     body = await request.json();
-  } catch {
+  } catch (error: unknown) {
+    logger.warn("POST /api/payment/verify invalid JSON body", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
@@ -156,4 +186,5 @@ export async function POST(request: NextRequest) {
     { error: "type must be 'l402' or 'cashu'" },
     { status: 400 }
   );
+  });
 }
