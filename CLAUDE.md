@@ -33,6 +33,9 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Wallet panel | `components/wallet-panel.tsx` | `receive send ecash` |
 | Privacy dashboard | `components/privacy-dashboard.tsx` | `score ring layer` |
 | Merchant onboarding | `components/merchant-onboard.tsx` | `NuMo NFC` |
+| Merchants page | `app/merchants/page.tsx`, `components/merchant-signup-form.tsx`, `app/api/pledge/route.ts` | `MerchantPledge MerchantSignupForm` |
+| Merchant redirects | `app/merchant/page.tsx`, `app/network/page.tsx` | `redirect /merchants` |
+| Merchant seed data | `prisma/seed.ts`, `prisma/seed-pledges.ts` | `Glacier Tony` |
 | Agent API | `app/api/agent/route.ts` | `privacy-audit cycle-signals` |
 | L402 demo | `app/api/l402/route.ts` | `WWW-Authenticate 402` |
 | Pilot deployment | `lib/pilot-deployment.ts` | `PilotKPITargets generatePilotTimeline MultiCityNetwork` |

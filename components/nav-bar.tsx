@@ -55,6 +55,12 @@ export function NavBar() {
             Roadmap
           </Link>
           <Link
+            href="/merchants"
+            className="text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors font-medium"
+          >
+            Merchants
+          </Link>
+          <Link
             href="/blog"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
           >
@@ -114,6 +120,13 @@ export function NavBar() {
               className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
             >
               Why
+            </Link>
+            <Link
+              href="/merchants"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm text-accent hover:text-accent/80 font-medium transition-colors"
+            >
+              Merchants
             </Link>
             <Link
               href="/whitepaper"

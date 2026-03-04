@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
@@ -27,6 +27,7 @@ import {
   Code,
   Server,
   BookOpen,
+  MapPin,
 } from "lucide-react";
 import TerminalDemo from "@/components/terminal-demo";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
@@ -45,6 +46,126 @@ const COMPARISON_ROWS = [
   { feature: "Censorship", stripe: "Account freezes possible", arxmint: "Uncensorable — you run the infra" },
   { feature: "Privacy", stripe: "Stripe sees all transaction data", arxmint: "Ecash blinding — zero visibility" },
 ];
+
+/* ── Early Adopters Section ── */
+const PLEDGE_CATEGORY_ICONS: Record<string, string> = {
+  "food-drink": "🍦",
+  retail: "🛍️",
+  services: "🛠️",
+  health: "💚",
+  entertainment: "🎵",
+  technology: "💻",
+  other: "⚡",
+};
+
+interface PledgePublic {
+  id: string;
+  businessName: string;
+  location: string | null;
+  category: string | null;
+  website: string | null;
+  reason: string | null;
+  featured: boolean;
+}
+
+function EarlyAdoptersSection() {
+  const [pledges, setPledges] = useState<PledgePublic[]>([]);
+  const [count, setCount] = useState(0);
+
+  const loadPledges = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pledge");
+      if (res.ok) {
+        const data = await res.json();
+        setPledges(data.pledges);
+        setCount(data.count);
+      }
+    } catch {
+      // Graceful degradation
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPledges();
+  }, [loadPledges]);
+
+  if (count === 0) return null;
+
+  return (
+    <section className="relative py-24 sm:py-32 border-t border-border-subtle">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ScrollReveal>
+          <div className="text-center mb-12">
+            <p className="text-accent font-mono text-sm mb-4">Fort Collins Network</p>
+            <h2 className="text-3xl sm:text-4xl font-semibold text-text-primary mb-4 tracking-tight">
+              <span className="text-accent">{count}</span>{" "}
+              {count === 1 ? "Merchant" : "Merchants"} Signed Up
+            </h2>
+            <p className="text-text-secondary max-w-lg mx-auto">
+              Local businesses joining the first fully interconnected Bitcoin payment network.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.1}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+            {pledges.slice(0, 6).map((pledge, i) => (
+              <motion.div
+                key={pledge.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05, duration: 0.3 }}
+                className={`bg-bg-elevated border rounded-xl p-5 ${
+                  pledge.featured
+                    ? "border-accent/40 ring-1 ring-accent/10"
+                    : "border-border-default"
+                }`}
+              >
+                {pledge.featured && (
+                  <div className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider mb-3">
+                    Early Adopter
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-md bg-bg-surface border border-border-strong flex items-center justify-center text-lg shrink-0">
+                    {PLEDGE_CATEGORY_ICONS[pledge.category ?? "other"] ?? "⚡"}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-text-primary truncate">
+                      {pledge.businessName}
+                    </h3>
+                    {pledge.location && (
+                      <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3" />
+                        {pledge.location}
+                      </p>
+                    )}
+                    {pledge.reason && (
+                      <p className="text-xs text-text-secondary mt-2 line-clamp-2">
+                        &ldquo;{pledge.reason}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.2}>
+          <div className="text-center">
+            <a href="/merchants" className="antigravity-btn !px-8 !py-3 inline-flex items-center gap-2">
+              <Store className="w-4 h-4" />
+              Join the Network
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+        </ScrollReveal>
+      </div>
+    </section>
+  );
+}
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -694,7 +815,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ===== SECTION 9: CTA — BUILD THE CITADEL ===== */}
+        {/* ===== SECTION 9: EARLY ADOPTERS — MERCHANT PLEDGES ===== */}
+        <EarlyAdoptersSection />
+
+        {/* ===== SECTION 10: CTA — BUILD THE CITADEL ===== */}
         <section className="relative py-24 sm:py-32 border-t border-border-subtle overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-bg-base to-bg-surface z-0" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent/10 blur-[100px] rounded-[100%] z-0" />

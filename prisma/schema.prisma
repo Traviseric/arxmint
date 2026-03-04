@@ -130,3 +130,19 @@ model PaymentChallenge {
 
   @@map("payment_challenges")
 }
+
+model MerchantPledge {
+  id           String   @id @default(cuid())
+  businessName String
+  contactName  String
+  email        String
+  location     String?
+  category     String?  // food-drink, retail, services, health, entertainment, technology, other
+  website      String?
+  reason       String?  // why they want to join the network
+  emailOptIn   Boolean  @default(false) // opted in to launch notifications
+  featured     Boolean  @default(false) // highlighted on landing page
+  createdAt    DateTime @default(now())
+
+  @@map("merchant_pledges")
+}
