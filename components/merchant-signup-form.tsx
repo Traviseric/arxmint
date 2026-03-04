@@ -84,7 +84,7 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
     if (submitted) return;
     const draft = { businessName, contactName, email, location, category, website, reason, emailOptIn };
     // Only save if at least one field has content
-    if (Object.values(draft).some((v) => v && v !== false)) {
+    if (Object.values(draft).some((v) => typeof v === "string" ? v.length > 0 : v)) {
       localStorage.setItem("arxmint-pledge-draft", JSON.stringify(draft));
     }
   }, [businessName, contactName, email, location, category, website, reason, emailOptIn, submitted]);
