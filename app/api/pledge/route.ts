@@ -47,7 +47,10 @@ function validatePledge(body: Record<string, unknown>) {
     body.category && VALID_CATEGORIES.includes(String(body.category))
       ? String(body.category) : null;
   const website = body.website ? String(body.website).trim().slice(0, 200) : null;
-  const logoUrl = body.logoUrl ? String(body.logoUrl).trim().slice(0, 500) : null;
+  const logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
+  if (logoUrl && !logoUrl.startsWith("data:image/") && logoUrl.length > 500) {
+    throw new Error("Logo URL must be 500 characters or less");
+  }
   const reason = body.reason ? String(body.reason).trim().slice(0, 500) : null;
   const emailOptIn = body.emailOptIn === true;
 
@@ -62,6 +65,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("merchant_pledges")
       .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt")
+      .eq("approved", true)
       .order("featured", { ascending: false })
       .order("createdAt", { ascending: true });
 

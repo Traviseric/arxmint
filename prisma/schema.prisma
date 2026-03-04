@@ -143,6 +143,7 @@ model MerchantPledge {
   reason       String?  // why they want to join the network
   emailOptIn   Boolean  @default(false) // opted in to launch notifications
   featured     Boolean  @default(false) // highlighted on landing page
+  approved     Boolean  @default(false) // must be approved before showing on /merchants
   createdAt    DateTime @default(now())
 
   @@map("merchant_pledges")
