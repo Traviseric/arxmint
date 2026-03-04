@@ -12,6 +12,22 @@ import { logger } from "@/lib/logger";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Seed merchants shown when DB is unavailable (or merged with DB results)
+const SEED_MERCHANTS = [
+  {
+    id: "seed-glacier",
+    businessName: "The Ice Cream Parlor by Glacier",
+    location: "Fort Collins, CO",
+    category: "food-drink",
+    website: "https://www.glacierparlor.com",
+    logoUrl: "/images/merchants/glacier.png",
+    reason:
+      "Ready to accept Bitcoin for ice cream. Zero fees, instant settlement — the way payments should work. Glacier serves the best homemade ice cream in Colorado and we want to be first to accept sats.",
+    featured: true,
+    createdAt: new Date("2025-01-15").toISOString(),
+  },
+];
+
 const VALID_CATEGORIES = [
   "food-drink",
   "retail",
@@ -72,12 +88,16 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ pledges, count: pledges.length });
+    // Merge seed merchants with DB results (avoid duplicates by name)
+    const dbNames = new Set(pledges.map((p: { businessName: string }) => p.businessName));
+    const seeds = SEED_MERCHANTS.filter((s) => !dbNames.has(s.businessName));
+    const all = [...seeds, ...pledges];
+    return NextResponse.json({ pledges: all, count: all.length });
   } catch (error: unknown) {
-    logger.warn("GET /api/pledge — DB unavailable, returning empty", {
+    logger.warn("GET /api/pledge — DB unavailable, returning seed merchants", {
       error: error instanceof Error ? error.message : String(error),
     });
-    return NextResponse.json({ pledges: [], count: 0 });
+    return NextResponse.json({ pledges: SEED_MERCHANTS, count: SEED_MERCHANTS.length });
   }
 }
 
