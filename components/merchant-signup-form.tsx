@@ -6,7 +6,7 @@
 // network. No auth required — pre-launch merchant acquisition.
 // ============================================================
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Store,
   MapPin,
@@ -51,12 +51,45 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
   const [reason, setReason] = useState("");
   const [emailOptIn, setEmailOptIn] = useState(false);
   const [showReason, setShowReason] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const draftLoaded = useRef(false);
+
+  // Restore draft from localStorage on mount
+  useEffect(() => {
+    if (draftLoaded.current) return;
+    draftLoaded.current = true;
+    try {
+      const raw = localStorage.getItem("arxmint-pledge-draft");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.businessName) setBusinessName(d.businessName);
+      if (d.contactName) setContactName(d.contactName);
+      if (d.email) setEmail(d.email);
+      if (d.location) setLocation(d.location);
+      if (d.category) setCategory(d.category);
+      if (d.website) setWebsite(d.website);
+      if (d.reason) { setReason(d.reason); setShowReason(true); }
+      if (d.emailOptIn) setEmailOptIn(d.emailOptIn);
+    } catch { /* ignore corrupt draft */ }
+  }, []);
+
+  // Auto-save draft on field changes (debounced via deps)
+  useEffect(() => {
+    if (submitted) return;
+    const draft = { businessName, contactName, email, location, category, website, reason, emailOptIn };
+    // Only save if at least one field has content
+    if (Object.values(draft).some((v) => v && v !== false)) {
+      localStorage.setItem("arxmint-pledge-draft", JSON.stringify(draft));
+    }
+  }, [businessName, contactName, email, location, category, website, reason, emailOptIn, submitted]);
+
+  const clearDraft = () => localStorage.removeItem("arxmint-pledge-draft");
 
   const handleLogoFile = useCallback((file: File) => {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
@@ -123,6 +156,7 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
       }
 
       setSubmitted(true);
+      clearDraft();
       onSuccess?.();
     } catch {
       setError("Network error. Please try again.");
@@ -270,12 +304,8 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
         />
       </div>
 
-      {/* Logo Upload */}
+      {/* Logo Upload (collapsible — optional) */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-1.5">
-          <Upload className="w-4 h-4 text-text-muted" />
-          Logo
-        </label>
         {logoPreview ? (
           <div className="flex items-center gap-4 p-3 border border-border-default rounded-lg bg-bg-elevated">
             <img
@@ -293,28 +323,48 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
             </button>
           </div>
         ) : (
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragging(false);
-              const file = e.dataTransfer.files[0];
-              if (file) handleLogoFile(file);
-            }}
-            onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-              dragging
-                ? "border-accent bg-accent/5"
-                : "border-border-default hover:border-accent/50 hover:bg-bg-elevated"
-            }`}
-          >
-            <Upload className="w-6 h-6 text-text-muted mx-auto mb-2" />
-            <p className="text-sm text-text-secondary">
-              Drop your logo here, or <span className="text-accent">browse</span>
-            </p>
-            <p className="text-xs text-text-muted mt-1">PNG, JPG, WebP, or SVG — max 2 MB</p>
-          </div>
+          <>
+            <button
+              type="button"
+              onClick={() => setShowLogo(!showLogo)}
+              className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+            >
+              <Upload className="w-4 h-4 text-text-muted" />
+              Add your logo (optional)
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${showLogo ? "rotate-180" : ""}`}
+              />
+            </button>
+            {showLogo && (
+              <div className="mt-2">
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragging(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) handleLogoFile(file);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                    dragging
+                      ? "border-accent bg-accent/5"
+                      : "border-border-default hover:border-accent/50 hover:bg-bg-elevated"
+                  }`}
+                >
+                  <Upload className="w-6 h-6 text-text-muted mx-auto mb-2" />
+                  <p className="text-sm text-text-secondary">
+                    Drop your logo here, or <span className="text-accent">browse</span>
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">PNG, JPG, WebP, or SVG — max 2 MB</p>
+                </div>
+                <p className="text-xs text-text-muted mt-1">
+                  Don&apos;t have it handy? Skip for now — we&apos;ll email you for it.
+                </p>
+              </div>
+            )}
+          </>
         )}
         <input
           ref={fileInputRef}
@@ -329,9 +379,6 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
         {fieldErrors.logo && (
           <p className="text-xs text-red-400 mt-1">{fieldErrors.logo}</p>
         )}
-        <p className="text-xs text-text-muted mt-1">
-          Displayed on the merchant directory.
-        </p>
       </div>
 
       {/* Reason (collapsible) */}
