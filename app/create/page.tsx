@@ -18,10 +18,10 @@ export default function CreatePage() {
         {/* Header */}
         <div className="text-center mb-16">
           <ScrollReveal delay={0.1}>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
-              <Zap className="w-4 h-4 text-accent animate-pulse" />
-              <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-                Live in 15 Minutes
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-accent/30 bg-accent/5 mb-8">
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="text-xs font-mono text-accent uppercase tracking-widest">
+                Beta Preview
               </span>
             </div>
           </ScrollReveal>

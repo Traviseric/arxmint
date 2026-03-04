@@ -306,7 +306,7 @@ export function MerchantSetupWizard() {
         </div>
       )}
 
-      {/* ===== STEP 3: Review & Deploy ===== */}
+      {/* ===== STEP 3: Review & Coming Soon ===== */}
       {step === 3 && !deployment && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Summary Card */}
@@ -341,7 +341,7 @@ export function MerchantSetupWizard() {
             </div>
           </div>
 
-          {/* What You Get */}
+          {/* What You'll Get */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { icon: Zap, label: "LND Lightning Node", desc: "Neutrino light client" },
@@ -356,46 +356,35 @@ export function MerchantSetupWizard() {
             ))}
           </div>
 
-          {/* Error */}
-          {generateError && (
-            <div role="alert" className="rounded-lg border border-red-500/50 bg-red-900/40 px-4 py-3 text-sm text-red-200">
-              <div className="flex items-center justify-between gap-3">
-                <span>{generateError}</span>
-                <button onClick={handleGenerate} className="sovereign-btn-outline text-xs px-3 py-1 shrink-0">
-                  Retry
-                </button>
-              </div>
+          {/* Beta Notice + Merchant Redirect */}
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-6 text-center space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20">
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="text-xs font-mono text-accent uppercase tracking-wider">Beta — Coming Soon</span>
             </div>
-          )}
-
-          <span aria-live="polite" className="sr-only">
-            {generating ? "Generating deployment configuration..." : ""}
-          </span>
-
-          <div className="flex gap-3">
-            <button onClick={() => setStep(2)} className="antigravity-btn-outline !py-3 flex-1">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </button>
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              aria-busy={generating}
-              className="antigravity-btn !py-3 flex-[2] text-lg"
+            <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
+              One-click node deployment is in development. We&apos;re building the hosted infrastructure so you won&apos;t need to run Docker yourself.
+            </p>
+            <p className="text-sm text-text-primary font-medium">
+              Want to be first in line when it&apos;s ready?
+            </p>
+            <a
+              href="/merchants"
+              className="antigravity-btn !py-3 !px-8 inline-flex items-center gap-2 text-base"
             >
-              {generating ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-bg-base/30 border-t-bg-base rounded-full animate-spin" />
-                  Deploying...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-5 h-5" />
-                  Deploy My Node
-                </>
-              )}
-            </button>
+              <Store className="w-5 h-5" />
+              Sign Up as a Merchant
+              <ArrowRight className="w-4 h-4" />
+            </a>
+            <p className="text-xs text-text-muted">
+              We&apos;ll notify you when your node is ready to deploy.
+            </p>
           </div>
+
+          <button onClick={() => setStep(2)} className="antigravity-btn-outline w-full !py-3">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </button>
         </div>
       )}
 

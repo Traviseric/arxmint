@@ -1,11 +1,14 @@
 import {
+  ArrowRight,
   Ban,
   Building2,
+  CheckCircle,
   CircleDollarSign,
   Cpu,
   Globe,
   Lock,
   Shield,
+  Store,
   Users,
   Zap,
 } from "lucide-react";
@@ -13,9 +16,9 @@ import {
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
 
 export const metadata = {
-  title: "Why ArxMint — The Case for Private Bitcoin Economies",
+  title: "Why ArxMint — Accept Bitcoin. Zero Fees. No Middleman.",
   description:
-    "Bitcoin was supposed to change everything. But most people are still trapped in fiat, just holding sats on the side. ArxMint closes the gap between hodling and living on a Bitcoin standard.",
+    "There's no good way for a small business to accept Bitcoin. Easy options are custodial. Sovereign options are hard. ArxMint is the middle ground that didn't exist.",
 };
 
 export default function WhyPage() {
@@ -31,88 +34,84 @@ export default function WhyPage() {
       </div>
 
       <div className="relative z-10 w-full">
-        {/* Hero */}
+
+        {/* ═══════════════════════════════════════════════
+            HERO — Lead with the merchant problem
+        ═══════════════════════════════════════════════ */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 text-center sm:text-left">
           <ScrollReveal delay={0.1}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
-              <Shield className="w-4 h-4 text-accent" />
+              <Store className="w-4 h-4 text-accent" />
               <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-                The thesis
+                For business owners
               </span>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-8">
-              Bitcoin doesn&apos;t need another wallet.<br />
+              Your customers pay.<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">
-                It needs economies.
+                You keep 100%.
               </span>
             </h1>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3}>
-            <p className="text-lg sm:text-xl text-text-secondary font-light max-w-3xl leading-relaxed">
-              Everyone&apos;s building on-ramps and off-ramps. Nobody&apos;s building the road.
-              ArxMint is the road — private infrastructure where Bitcoin actually circulates
-              as money, not just sits in cold storage waiting for a better price.
+            <p className="text-lg sm:text-xl text-text-secondary font-light max-w-3xl leading-relaxed mb-10">
+              Accept Bitcoin at your business with zero processing fees, instant settlement, and no middleman.
+              Your customers pay with any Bitcoin wallet they already have. You get the money immediately.
             </p>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.4}>
+            <a href="/merchants" className="antigravity-btn !px-8 !py-3 inline-flex items-center gap-2 text-base">
+              Become a Merchant
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </ScrollReveal>
         </section>
 
-        {/* The Problem — Holding isn't an economy */}
+        {/* ═══════════════════════════════════════════════
+            THE PROBLEM — Plain language
+        ═══════════════════════════════════════════════ */}
         <section className="relative w-full border-t border-border-subtle bg-bg-surface/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
             <ScrollReveal>
-              <div className="mb-20 max-w-3xl mx-auto text-center sm:text-left">
-                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
-                  The holding trap.
-                </h2>
-                <div className="space-y-6 text-text-secondary text-lg leading-relaxed">
-                  <p>
-                    Most Bitcoiners have the same daily experience: earn fiat, spend fiat, buy
-                    Bitcoin on an exchange, move it to cold storage. Repeat. The entire financial
-                    life still runs on fiat rails — Bitcoin is savings, not money.
-                  </p>
-                  <p>
-                    This isn&apos;t a criticism. Cold storage is the right first step. But it&apos;s
-                    supposed to be step one, not the endgame. The original promise was a{" "}
-                    <span className="text-text-primary font-medium">peer-to-peer electronic cash system</span>. Cash means circulation. Cash means merchants and customers and services
-                    flowing through a real economy.
-                  </p>
-                </div>
-              </div>
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
+                The problem.
+              </h2>
+              <p className="text-lg text-text-secondary max-w-3xl leading-relaxed mb-16">
+                You want to accept Bitcoin at your business. But your options today aren&apos;t great.
+              </p>
             </ScrollReveal>
 
             <StaggerContainer staggerDelay={0.15}>
               <div className="grid md:grid-cols-3 gap-6">
                 <StaggerItem>
                   <div className="glass rounded-xl p-8 glow-card border-red-500/10 transition-all h-full">
-                    <CircleDollarSign className="w-6 h-6 text-red-400 mb-6 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">Still on fiat rails</h3>
-                    <p className="text-sm text-text-secondary leading-relaxed space-y-2">
-                      Rent, groceries, gas — all paid in dollars. Bitcoin is a savings account
-                      that you convert out of, not money you live on.
+                    <CircleDollarSign className="w-6 h-6 text-red-400 mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Strike, OpenNode, Square</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Easy to set up, but they hold your money, require ID verification, charge fees, and can freeze your account whenever they want. You traded one middleman for another.
                     </p>
                   </div>
                 </StaggerItem>
                 <StaggerItem>
                   <div className="glass rounded-xl p-8 glow-card border-red-500/10 transition-all h-full">
-                    <Ban className="w-6 h-6 text-red-400 mb-6 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">KYC everywhere</h3>
+                    <Ban className="w-6 h-6 text-red-400 mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">BTCPay Server</h3>
                     <p className="text-sm text-text-secondary leading-relaxed">
-                      Every exchange, every on-ramp, every &quot;compliant&quot; service builds a map of
-                      your financial life. Privacy is opt-in and expensive.
+                      Truly self-hosted and sovereign. But you need a server, Docker, Lightning channel management, and DNS setup. Realistic for developers — not for most business owners.
                     </p>
                   </div>
                 </StaggerItem>
                 <StaggerItem>
                   <div className="glass rounded-xl p-8 glow-card border-red-500/10 transition-all h-full">
-                    <Building2 className="w-6 h-6 text-red-400 mb-6 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">No local infrastructure</h3>
+                    <Building2 className="w-6 h-6 text-red-400 mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Nothing</h3>
                     <p className="text-sm text-text-secondary leading-relaxed">
-                      Your town has no ecash mint, no private payment rails, no merchant
-                      directory. The parallel economy is a concept, not a reality.
+                      This is what most businesses choose. They&apos;d accept Bitcoin, but the custodial options defeat the purpose and the sovereign options are too hard. So they stay on Stripe.
                     </p>
                   </div>
                 </StaggerItem>
@@ -121,201 +120,102 @@ export default function WhyPage() {
           </div>
         </section>
 
-        {/* So What Actually Changes */}
+        {/* ═══════════════════════════════════════════════
+            THE ANSWER — What ArxMint does
+        ═══════════════════════════════════════════════ */}
         <section className="relative w-full border-t border-border-subtle">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
             <ScrollReveal>
               <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
-                So what actually changes?
+                ArxMint is the option<br />that didn&apos;t exist.
               </h2>
-              <p className="text-lg text-text-secondary max-w-3xl leading-relaxed mb-12">
-                Forget the jargon for a minute. Here&apos;s what a Bitcoin circular economy means for your daily life.
+              <p className="text-lg text-text-secondary max-w-3xl leading-relaxed mb-16">
+                The sovereignty of running your own node. The simplicity of signing up for Stripe. No compromise.
               </p>
             </ScrollReveal>
 
-            <StaggerContainer staggerDelay={0.15}>
-              <div className="space-y-6">
-                <StaggerItem>
-                  <div className="glass rounded-xl p-8 glow-card border-accent/10 transition-all">
-                    <div className="flex gap-6 items-start">
-                      <CircleDollarSign className="w-6 h-6 text-accent shrink-0 mt-1" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-text-primary mb-2">&quot;How do I get paid?&quot;</h3>
-                        <p className="text-text-secondary leading-relaxed">
-                          Community members pay you in sats for real work — teaching a workshop, fixing a bike, designing a logo. The sats land in your wallet instantly. No bank, no 3-5 business days, no fees.
-                        </p>
+            <StaggerContainer staggerDelay={0.12}>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {[
+                  { icon: CircleDollarSign, title: "Zero processing fees", desc: "Lightning routing costs less than a penny per transaction. Stripe charges 2.9% + 30\u00a2. On $10K/month, that\u2019s $320/month you\u2019re losing." },
+                  { icon: Zap, title: "Instant settlement", desc: "Money hits your wallet in seconds. Not 2\u20133 business days. Not \u201cpending.\u201d Instantly yours." },
+                  { icon: Lock, title: "Your money, your control", desc: "No one can freeze your account, hold your funds, or shut you down. There\u2019s no middleman to do it." },
+                  { icon: Ban, title: "No chargebacks", desc: "Bitcoin payments are final. No disputed charges, no fraud reversals, no chargeback fees." },
+                  { icon: Shield, title: "No KYC or ID required", desc: "You don\u2019t need to submit ID, tax forms, or bank statements to accept Bitcoin from your customers." },
+                  { icon: Globe, title: "Works online and in person", desc: "QR code at the counter or a payment button on your website. Same system, same instant settlement." },
+                ].map(({ icon: Icon, title, desc }, i) => (
+                  <StaggerItem key={i}>
+                    <div className="glass rounded-xl p-6 glow-card border-accent/10 transition-all h-full">
+                      <div className="flex gap-4 items-start">
+                        <Icon className="w-5 h-5 text-accent shrink-0 mt-1" />
+                        <div>
+                          <h3 className="text-base font-semibold text-text-primary mb-2">{title}</h3>
+                          <p className="text-sm text-text-secondary leading-relaxed">{desc}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </StaggerItem>
-
-                <StaggerItem>
-                  <div className="glass rounded-xl p-8 glow-card border-accent/10 transition-all">
-                    <div className="flex gap-6 items-start">
-                      <Users className="w-6 h-6 text-accent shrink-0 mt-1" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-text-primary mb-2">&quot;How do merchants accept this?&quot;</h3>
-                        <p className="text-text-secondary leading-relaxed">
-                          QR code on the counter. Customer scans, sends ecash, merchant sees sats. No card reader, no processor fees, no chargebacks. Works with any phone.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </StaggerItem>
-
-                <StaggerItem>
-                  <div className="glass rounded-xl p-8 glow-card border-accent/10 transition-all">
-                    <div className="flex gap-6 items-start">
-                      <Lock className="w-6 h-6 text-accent shrink-0 mt-1" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-text-primary mb-2">&quot;What happens to my cold storage?&quot;</h3>
-                        <p className="text-text-secondary leading-relaxed">
-                          Nothing. It stays cold. You peg in a small amount of spending money — like pulling cash from a safe. Your savings don&apos;t move. Your spending sats circulate locally as private ecash.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </StaggerItem>
+                  </StaggerItem>
+                ))}
               </div>
             </StaggerContainer>
           </div>
         </section>
 
-        {/* The Technology Exists */}
-        <section className="relative w-full border-t border-border-subtle">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-            <ScrollReveal>
-              <div className="mb-16">
-                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
-                  The technology exists.<br />The integration doesn&apos;t.
-                </h2>
-                <p className="text-lg text-text-secondary max-w-3xl leading-relaxed">
-                  This isn&apos;t 2018 anymore. The building blocks for a real private Bitcoin
-                  economy are production-ready:
-                </p>
-              </div>
-            </ScrollReveal>
-
-            <StaggerContainer staggerDelay={0.1}>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Pillar Cards */}
-                <StaggerItem>
-                  <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 blur-2xl rounded-full" />
-                    <Lock className="w-8 h-8 text-accent mb-6" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">Fedimint</h3>
-                    <p className="text-sm text-text-secondary leading-relaxed">
-                      Federated e-cash with trusted local guardians. Chaumian blind signatures
-                      make transactions inside the mint completely private.
-                    </p>
-                    <p className="text-xs text-accent/70 font-mono mt-3">
-                      → trusted community members run a shared vault, your transactions are invisible
-                    </p>
-                  </div>
-                </StaggerItem>
-
-                <StaggerItem>
-                  <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 blur-2xl rounded-full" />
-                    <Shield className="w-8 h-8 text-accent mb-6" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">Cashu</h3>
-                    <p className="text-sm text-text-secondary leading-relaxed">
-                      Lightweight ecash protocol. Faster to spin up than a federation — ideal for
-                      small communities, testing, or single-operator mints.
-                    </p>
-                    <p className="text-xs text-accent/70 font-mono mt-3">
-                      → lightweight version, one person can run it for a small group
-                    </p>
-                  </div>
-                </StaggerItem>
-
-                <StaggerItem>
-                  <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 blur-2xl rounded-full" />
-                    <Zap className="w-8 h-8 text-accent mb-6" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">Lightning + L402</h3>
-                    <p className="text-sm text-text-secondary leading-relaxed">
-                      Instant Bitcoin payments over Lightning. turns any API
-                      endpoint into a pay-per-request service — native system for AI commerce.
-                    </p>
-                    <p className="text-xs text-accent/70 font-mono mt-3">
-                      → instant payments, any service can charge per use
-                    </p>
-                  </div>
-                </StaggerItem>
-
-                <StaggerItem>
-                  <div className="glass-heavy rounded-xl p-8 glow-card relative overflow-hidden border-accent/20 h-full">
-                    <div className="absolute top-0 -right-4 w-32 h-32 bg-accent/10 blur-3xl rounded-full" />
-                    <Cpu className="w-8 h-8 text-accent mb-6" />
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">MCP + Agent Tools</h3>
-                    <p className="text-sm text-text-secondary leading-relaxed">
-                      Model Context Protocol hooks AI properly into Lightning.
-                      Agents pay invoices, create channels, manage balances seamlessly.
-                    </p>
-                    <p className="text-xs text-accent/70 font-mono mt-3">
-                      → how AI programs plug into the payment system
-                    </p>
-                  </div>
-                </StaggerItem>
-              </div>
-            </StaggerContainer>
-
-            <ScrollReveal direction="up" delay={0.4}>
-              <div className="mt-8 bg-black/40 border-l-2 border-accent p-6 text-sm text-text-secondary font-mono leading-relaxed">
-                <span className="text-accent">STATUS OF CURRENT MARKET:</span> Each of these is a separate project with its own setup, its own docs, its own Docker configs. Stitching them into a working economy takes weeks of DevOps expertise. Most communities never start.
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* The AI Agent Angle */}
+        {/* ═══════════════════════════════════════════════
+            HOW IT WORKS — Both sides, plain language
+        ═══════════════════════════════════════════════ */}
         <section className="relative w-full border-t border-border-subtle bg-bg-surface/30">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-            <ScrollReveal direction="up">
-              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-8 text-center sm:text-left">
-                AI agents need Bitcoin.<br />Bitcoin needs AI agents.
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <ScrollReveal>
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-16">
+                How it works.
               </h2>
             </ScrollReveal>
 
             <div className="grid md:grid-cols-2 gap-12">
-              <ScrollReveal direction="left" delay={0.2}>
-                <div className="space-y-6 text-text-secondary text-lg leading-relaxed font-light">
-                  <p>
-                    This is the part most people haven&apos;t connected yet. AI agents are
-                    becoming economic actors — buying compute, selling data, and paying for API
-                    access. They need money that works without identities, or bank accounts.
+              <ScrollReveal delay={0.1}>
+                <div className="glass-heavy border border-border-default rounded-xl p-8">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 mb-6">
+                    <Users className="w-4 h-4 text-accent" />
+                    <span className="text-xs font-mono text-accent uppercase tracking-wider">Your customers</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-text-primary mb-4">
+                    They don&apos;t need anything new.
+                  </h3>
+                  <p className="text-text-secondary leading-relaxed mb-6">
+                    Any Bitcoin wallet they already have works — Cash App, Strike, Phoenix, Muun, Wallet of Satoshi, Blue Wallet, Zeus, or any other Lightning wallet.
                   </p>
-                  <p>
-                    Credit cards require KYC. Banks require accounts. PayPal requires a human. The only money system where an autonomous agent can <span className="text-text-primary font-medium">earn, hold, and spend</span> without permission is Bitcoin on Lightning rails.
+                  <p className="text-text-secondary leading-relaxed mb-6">
+                    Customer scans a QR code, confirms the amount, done. No app to download, no account to create.
                   </p>
-                  <p>
-                    ArxMint puts humans and agents on the <span className="text-text-primary font-medium">same rails</span>. A community member pays a local coffee shop with ecash while an AI agent pays for severe inference with sats. Same federation.
-                  </p>
+                  <div className="border-t border-border-default pt-4 text-xs text-text-muted font-mono">
+                    If their wallet speaks Lightning, it works with your business.
+                  </div>
                 </div>
               </ScrollReveal>
 
-              <ScrollReveal direction="right" delay={0.4}>
-                <div className="glass-heavy p-8 border border-border-default rounded-xl relative overflow-hidden glow-card">
-                  <div className="absolute -inset-4 bg-accent/5 rounded-3xl blur-2xl -z-10" />
-                  <h3 className="text-sm font-mono tracking-widest text-accent uppercase mb-6 flex items-center gap-2"><Zap className="w-4 h-4" /> L402 Sequence</h3>
-                  <div className="space-y-4 font-mono text-xs">
-                    <div className="flex justify-between items-center text-text-secondary">
-                      <span>AGENT_REQUEST_API</span>
-                      <span>...</span>
-                    </div>
-                    <div className="flex justify-between items-center text-accent">
-                      <span>HTTP 402 PAYMENT RQD</span>
-                      <span>[LN INVOICE]</span>
-                    </div>
-                    <div className="flex justify-between items-center text-text-secondary">
-                      <span>PAY_INVOICE(LND)</span>
-                      <span>[PREIMAGE]</span>
-                    </div>
-                    <div className="flex justify-between items-center text-green-400">
-                      <span>HTTP 200 SUCCESS</span>
-                      <span>[DATA SERVED]</span>
-                    </div>
+              <ScrollReveal delay={0.2}>
+                <div className="glass-heavy border border-accent/20 rounded-xl p-8">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 mb-6">
+                    <Store className="w-4 h-4 text-accent" />
+                    <span className="text-xs font-mono text-accent uppercase tracking-wider">Your business</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-text-primary mb-4">
+                    You keep every dollar.
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      "Funds go directly to your wallet — not held by anyone",
+                      "Settlement in seconds, not days",
+                      "No monthly fees, no per-transaction fees",
+                      "No account applications or approval process",
+                      "Run Stripe and ArxMint side by side during transition",
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <CheckCircle className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                        <p className="text-sm text-text-secondary">{item}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </ScrollReveal>
@@ -323,67 +223,285 @@ export default function WhyPage() {
           </div>
         </section>
 
-        {/* Why Coffee Shop Owners Should Care About AI Agents */}
+        {/* ═══════════════════════════════════════════════
+            COMPARISON TABLE
+        ═══════════════════════════════════════════════ */}
         <section className="relative w-full border-t border-border-subtle">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
             <ScrollReveal>
-              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-8">
-                Why should a coffee shop owner care about AI agents?
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
+                The comparison.
               </h2>
+              <p className="text-lg text-text-secondary max-w-3xl leading-relaxed mb-12">
+                Here&apos;s how ArxMint stacks up against what&apos;s available today.
+              </p>
             </ScrollReveal>
 
             <ScrollReveal delay={0.2}>
-              <div className="glass-heavy border border-border-default rounded-xl p-8 relative overflow-hidden glow-card">
-                <div className="absolute -inset-4 bg-accent/5 rounded-3xl blur-2xl -z-10" />
-                <div className="space-y-6">
-                  <div className="flex gap-4 items-start">
-                    <Zap className="w-5 h-5 text-accent shrink-0 mt-1" />
-                    <p className="text-text-secondary leading-relaxed">
-                      <span className="text-text-primary font-medium">Agents generate revenue.</span> A cycle-signals agent running on your community&apos;s infrastructure earns sats from subscribers 24/7. That revenue flows back into the local economy — and some of it gets spent at your shop.
-                    </p>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                    <Shield className="w-5 h-5 text-accent shrink-0 mt-1" />
-                    <p className="text-text-secondary leading-relaxed">
-                      <span className="text-text-primary font-medium">Agents automate monitoring.</span> A privacy-audit agent can check your shop&apos;s payment setup, flag misconfigurations, and make sure your customers&apos; transactions stay private — without you learning cryptography.
-                    </p>
-                  </div>
-                  <div className="flex gap-4 items-start">
-                    <Users className="w-5 h-5 text-accent shrink-0 mt-1" />
-                    <p className="text-text-secondary leading-relaxed">
-                      <span className="text-text-primary font-medium">Agents bring economic activity.</span> Every agent transaction adds liquidity to your community&apos;s mint. More liquidity means more sats in circulation means more customers walking through your door.
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-8 pt-6 border-t border-border-default font-mono text-sm text-accent/80">
-                  Agents are the back office. Humans are the economy. Both run on the same rails.
-                </div>
+              <div className="overflow-x-auto -mx-4 px-4">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-default">
+                      <th className="text-left py-3 px-4 text-text-muted font-mono text-xs uppercase tracking-wider" />
+                      <th className="text-center py-3 px-4 text-text-muted font-mono text-xs uppercase tracking-wider">Stripe</th>
+                      <th className="text-center py-3 px-4 text-text-muted font-mono text-xs uppercase tracking-wider">Strike / OpenNode</th>
+                      <th className="text-center py-3 px-4 text-text-muted font-mono text-xs uppercase tracking-wider">BTCPay Server</th>
+                      <th className="text-center py-3 px-4 text-accent font-mono text-xs uppercase tracking-wider">ArxMint</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-text-secondary">
+                    {[
+                      ["Fees", "2.9% + 30\u00a2", "1\u20132%", "0%", "0%"],
+                      ["Settlement", "2\u20133 days", "Same day", "Instant", "Instant"],
+                      ["You hold the money", "No", "No", "Yes", "Yes"],
+                      ["KYC required", "Yes", "Yes", "No", "No"],
+                      ["Can freeze your funds", "Yes", "Yes", "No", "No"],
+                      ["Setup difficulty", "Easy", "Easy", "Hard", "Easy"],
+                      ["Chargebacks", "Yes", "Limited", "No", "No"],
+                      ["Any wallet can pay", "Cards only", "Lightning", "Lightning + on-chain", "Lightning + on-chain"],
+                      ["Open source", "No", "No", "Yes", "Yes"],
+                    ].map(([label, stripe, strike, btcpay, arx], i) => (
+                      <tr key={i} className="border-b border-border-subtle/50 hover:bg-bg-elevated/50 transition-colors">
+                        <td className="py-3 px-4 text-text-primary font-medium text-left">{label}</td>
+                        <td className="py-3 px-4 text-center">{stripe}</td>
+                        <td className="py-3 px-4 text-center">{strike}</td>
+                        <td className="py-3 px-4 text-center">{btcpay}</td>
+                        <td className="py-3 px-4 text-center text-accent font-medium">{arx}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.3}>
+              <div className="mt-8 bg-black/40 border-l-2 border-accent p-6 text-sm text-text-secondary leading-relaxed">
+                <span className="text-accent font-medium">Bottom line:</span> ArxMint is the only option that is self-custodial, easy to set up, and open source — all at the same time.
               </div>
             </ScrollReveal>
           </div>
         </section>
 
-        {/* Call To Action */}
-        <section className="relative py-32 border-t border-border-subtle overflow-hidden">
+        {/* ═══════════════════════════════════════════════
+            THE MATH
+        ═══════════════════════════════════════════════ */}
+        <section className="relative w-full border-t border-border-subtle bg-bg-surface/30">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <ScrollReveal>
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
+                The math.
+              </h2>
+              <p className="text-lg text-text-secondary max-w-3xl leading-relaxed mb-12">
+                Every dollar Stripe takes is a dollar that leaves your business.
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.2}>
+              <div className="overflow-x-auto -mx-4 px-4">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-default">
+                      <th className="text-left py-3 px-4 text-text-muted font-mono text-xs uppercase tracking-wider">Monthly Revenue</th>
+                      <th className="text-center py-3 px-4 text-text-muted font-mono text-xs uppercase tracking-wider">Stripe Fees / Year</th>
+                      <th className="text-center py-3 px-4 text-text-muted font-mono text-xs uppercase tracking-wider">ArxMint Fees / Year</th>
+                      <th className="text-center py-3 px-4 text-accent font-mono text-xs uppercase tracking-wider">You Save</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-text-secondary">
+                    {[
+                      ["$5,000", "$1,920", "~$0", "$1,920"],
+                      ["$10,000", "$3,840", "~$0", "$3,840"],
+                      ["$50,000", "$17,760", "~$0", "$17,760"],
+                      ["$100,000", "$36,000", "~$0", "$36,000"],
+                    ].map(([rev, stripe, arx, savings], i) => (
+                      <tr key={i} className="border-b border-border-subtle/50 hover:bg-bg-elevated/50 transition-colors">
+                        <td className="py-3 px-4 text-text-primary font-medium">{rev}</td>
+                        <td className="py-3 px-4 text-center text-red-400">{stripe}</td>
+                        <td className="py-3 px-4 text-center">{arx}</td>
+                        <td className="py-3 px-4 text-center text-accent font-semibold">{savings}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.3}>
+              <div className="mt-8 glass-heavy border border-accent/20 rounded-xl p-8 text-center">
+                <p className="text-2xl sm:text-3xl font-semibold text-text-primary mb-2">
+                  $76,800<span className="text-accent">/year</span>
+                </p>
+                <p className="text-text-secondary">
+                  saved by a community of 20 merchants averaging $10K/month each.
+                  <br />
+                  <span className="text-text-muted text-sm">That&apos;s money that stays local instead of going to payment processors.</span>
+                </p>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════
+            CIRCULAR ECONOMY — Why this matters for a community
+        ═══════════════════════════════════════════════ */}
+        <section className="relative w-full border-t border-border-subtle">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <ScrollReveal>
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
+                Better together.
+              </h2>
+              <p className="text-lg text-text-secondary max-w-3xl leading-relaxed mb-16">
+                One business accepting Bitcoin is good. A whole community doing it changes everything.
+              </p>
+            </ScrollReveal>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <ScrollReveal delay={0.1}>
+                <div className="glass rounded-xl p-8 border-red-500/10 h-full">
+                  <h3 className="text-lg font-semibold text-text-primary mb-4">Today: money leaves</h3>
+                  <div className="space-y-3 text-sm text-text-secondary">
+                    <p>Customer pays merchant via Stripe. Stripe takes 2.9%.</p>
+                    <p>Merchant pays supplier via Stripe. Stripe takes 2.9% again.</p>
+                    <p>Every transaction leaks money out of your community to payment processors, card networks, and banks.</p>
+                  </div>
+                </div>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.2}>
+                <div className="glass rounded-xl p-8 border-accent/20 h-full">
+                  <h3 className="text-lg font-semibold text-accent mb-4">With ArxMint: money stays</h3>
+                  <div className="space-y-3 text-sm text-text-secondary">
+                    <p>Customer pays merchant in sats. Zero fees.</p>
+                    <p>Merchant pays supplier in sats. Zero fees.</p>
+                    <p>Supplier pays another local business in sats. Money circulates locally instead of being extracted by middlemen.</p>
+                  </div>
+                </div>
+              </ScrollReveal>
+            </div>
+
+            <ScrollReveal delay={0.3}>
+              <div className="mt-8 bg-black/40 border-l-2 border-accent p-6 text-sm text-text-secondary leading-relaxed">
+                <span className="text-accent font-medium">This is a circular economy.</span> Not buying and holding — actually spending and earning Bitcoin as money. The more merchants in your area that join, the more valuable the network becomes for everyone.
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════
+            MERCHANT CTA
+        ═══════════════════════════════════════════════ */}
+        <section className="relative py-24 border-t border-border-subtle overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-bg-base to-bg-surface z-0" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[600px] h-[300px] bg-accent/10 blur-[100px] rounded-[100%] z-0" />
 
           <ScrollReveal direction="up">
             <div className="relative z-10 max-w-2xl mx-auto px-4 text-center">
               <h2 className="text-4xl sm:text-5xl font-semibold text-text-primary mb-6 tracking-tight">
-                Not evasion. <span className="text-accent drop-shadow-lg shadow-accent/20">Sovereignty.</span>
+                Ready to keep <span className="text-accent">100%</span>?
               </h2>
-              <p className="text-text-secondary text-lg mb-12 max-w-xl mx-auto">
-                ArxMint isn&apos;t about hiding. It&apos;s about building the infrastructure
-                that makes Bitcoin work as money — private, circulating, accessible. For your community and your agents.
+              <p className="text-text-secondary text-lg mb-10 max-w-xl mx-auto">
+                Join the merchants building the first fully interconnected Bitcoin economy in Colorado.
+                Sign up takes two minutes.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="/create" className="antigravity-btn !px-10 !py-4 text-lg w-full sm:w-auto">
-                  Create Your Economy
+              <a href="/merchants" className="antigravity-btn !px-10 !py-4 text-lg inline-flex items-center gap-2">
+                Become a Merchant
+                <ArrowRight className="w-5 h-5" />
+              </a>
+            </div>
+          </ScrollReveal>
+        </section>
+
+        {/* ═══════════════════════════════════════════════
+            DEEPER — For technical readers / grant reviewers
+        ═══════════════════════════════════════════════ */}
+        <section className="relative w-full border-t border-border-subtle bg-bg-surface/30">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <ScrollReveal>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
+                <Cpu className="w-4 h-4 text-accent" />
+                <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+                  Under the hood
+                </span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-text-primary mb-6">
+                The technology exists.<br />The integration didn&apos;t.
+              </h2>
+              <p className="text-lg text-text-secondary max-w-3xl leading-relaxed mb-16">
+                ArxMint integrates the best open-source Bitcoin tools into one deployable system.
+                Each is powerful alone — but connecting them takes weeks of DevOps.
+                ArxMint does it in minutes.
+              </p>
+            </ScrollReveal>
+
+            <StaggerContainer staggerDelay={0.1}>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StaggerItem>
+                  <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
+                    <Zap className="w-8 h-8 text-accent mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Lightning Network</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Instant Bitcoin payments. Any Lightning wallet can pay — Cash App, Strike, Phoenix, and hundreds more.
+                    </p>
+                  </div>
+                </StaggerItem>
+                <StaggerItem>
+                  <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
+                    <Shield className="w-8 h-8 text-accent mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Cashu Ecash</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Private digital cash tokens. Payments are unlinkable — the merchant can&apos;t track who paid what.
+                    </p>
+                  </div>
+                </StaggerItem>
+                <StaggerItem>
+                  <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
+                    <Lock className="w-8 h-8 text-accent mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Fedimint</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      Community-governed custody. Trusted local members run a shared vault — no single point of failure.
+                    </p>
+                  </div>
+                </StaggerItem>
+                <StaggerItem>
+                  <div className="bg-bg-elevated border border-border-default rounded-xl p-8 glow-card relative overflow-hidden h-full">
+                    <Cpu className="w-8 h-8 text-accent mb-6" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">L402 for AI Agents</h3>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      AI programs can buy and sell services using the same payment rails. No identity, no accounts required.
+                    </p>
+                  </div>
+                </StaggerItem>
+              </div>
+            </StaggerContainer>
+
+            <ScrollReveal delay={0.3}>
+              <div className="mt-8 bg-black/40 border-l-2 border-accent p-6 text-sm text-text-secondary leading-relaxed">
+                <span className="text-accent font-medium">Open source.</span> Self-hostable. No vendor lock-in. ArxMint is the integration layer — more deployments mean more real-world users for every ecash and federation project in the ecosystem.
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════
+            FINAL CTA
+        ═══════════════════════════════════════════════ */}
+        <section className="relative py-24 border-t border-border-subtle overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-bg-surface to-bg-base z-0" />
+
+          <ScrollReveal direction="up">
+            <div className="relative z-10 max-w-2xl mx-auto px-4 text-center">
+              <h2 className="text-3xl sm:text-4xl font-semibold text-text-primary mb-6 tracking-tight">
+                Bitcoin was supposed to be money.<br />
+                <span className="text-accent">Let&apos;s make it money.</span>
+              </h2>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+                <a href="/merchants" className="antigravity-btn !px-10 !py-4 text-lg w-full sm:w-auto inline-flex items-center justify-center gap-2">
+                  Become a Merchant
+                  <ArrowRight className="w-5 h-5" />
                 </a>
-                <a href="/roadmap" className="antigravity-btn-outline !px-10 !py-4 text-lg w-full sm:w-auto">
-                  <Globe className="w-5 h-5 mr-2" />
-                  View Roadmap
+                <a href="/create" className="antigravity-btn-outline !px-10 !py-4 text-lg w-full sm:w-auto inline-flex items-center justify-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Create Your Economy
                 </a>
               </div>
             </div>
