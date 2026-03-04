@@ -47,10 +47,11 @@ function validatePledge(body: Record<string, unknown>) {
       ? String(body.category)
       : null;
   const website = body.website ? String(body.website).trim().slice(0, 200) : null;
+  const logoUrl = body.logoUrl ? String(body.logoUrl).trim().slice(0, 500) : null;
   const reason = body.reason ? String(body.reason).trim().slice(0, 500) : null;
   const emailOptIn = body.emailOptIn === true;
 
-  return { businessName, contactName, email, location, category, website, reason, emailOptIn };
+  return { businessName, contactName, email, location, category, website, logoUrl, reason, emailOptIn };
 }
 
 export async function GET() {
@@ -63,6 +64,7 @@ export async function GET() {
         location: true,
         category: true,
         website: true,
+        logoUrl: true,
         reason: true,
         featured: true,
         createdAt: true,

@@ -17,6 +17,7 @@ import {
   CheckCircle,
   ArrowRight,
   Loader2,
+  ImageIcon,
 } from "lucide-react";
 
 const CATEGORY_OPTIONS = [
@@ -40,6 +41,7 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("");
   const [website, setWebsite] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -73,6 +75,7 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           location: location.trim() || undefined,
           category: category || undefined,
           website: website.trim() || undefined,
+          logoUrl: logoUrl.trim() || undefined,
           reason: reason.trim() || undefined,
         }),
       });
@@ -229,6 +232,24 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           placeholder="https://yoursite.com"
           className="sovereign-input w-full"
         />
+      </div>
+
+      {/* Logo URL */}
+      <div>
+        <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-1.5">
+          <ImageIcon className="w-4 h-4 text-text-muted" />
+          Logo URL
+        </label>
+        <input
+          type="url"
+          value={logoUrl}
+          onChange={(e) => setLogoUrl(e.target.value)}
+          placeholder="https://yoursite.com/logo.png"
+          className="sovereign-input w-full"
+        />
+        <p className="text-xs text-text-muted mt-1">
+          Link to your logo image. Displayed on the merchant directory.
+        </p>
       </div>
 
       {/* Reason */}

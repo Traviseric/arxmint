@@ -139,6 +139,7 @@ model MerchantPledge {
   location     String?
   category     String?  // food-drink, retail, services, health, entertainment, technology, other
   website      String?
+  logoUrl      String?  // URL to merchant logo image
   reason       String?  // why they want to join the network
   emailOptIn   Boolean  @default(false) // opted in to launch notifications
   featured     Boolean  @default(false) // highlighted on landing page

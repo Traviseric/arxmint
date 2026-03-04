@@ -231,3 +231,129 @@
   background-color: #333;
   border-radius: 9999px;
 }
+
+/* ─── Merchant Light Theme ─────────────────────────────────────
+   Applied via data-theme="merchant" on the page root.
+   Overrides dark tokens so merchant-facing pages feel warm,
+   approachable, and at home in a Fort Collins storefront.
+   ─────────────────────────────────────────────────────────── */
+
+[data-theme="merchant"] {
+  --bg-base: #fafafa;
+  --bg-surface: #f5f5f5;
+  --bg-elevated: #ffffff;
+  --bg-overlay: #eeeeee;
+
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-default: rgba(0, 0, 0, 0.10);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  --text-primary: #171717;
+  --text-secondary: #525252;
+  --text-muted: #737373;
+
+  --accent-dim: rgba(247, 147, 26, 0.08);
+  --accent-glow: rgba(247, 147, 26, 0.15);
+
+  color-scheme: light;
+}
+
+/* Background utilities */
+[data-theme="merchant"] .bg-bg-base { background-color: var(--bg-base); }
+[data-theme="merchant"] .bg-bg-surface { background-color: var(--bg-surface); }
+[data-theme="merchant"] .bg-bg-elevated { background-color: var(--bg-elevated); }
+[data-theme="merchant"] .bg-bg-overlay { background-color: var(--bg-overlay); }
+
+/* Text utilities */
+[data-theme="merchant"] .text-text-primary { color: var(--text-primary); }
+[data-theme="merchant"] .text-text-secondary { color: var(--text-secondary); }
+[data-theme="merchant"] .text-text-muted { color: var(--text-muted); }
+
+/* Border utilities */
+[data-theme="merchant"] .border-border-default { border-color: var(--border-default); }
+[data-theme="merchant"] .border-border-subtle { border-color: var(--border-subtle); }
+[data-theme="merchant"] .border-border-strong { border-color: var(--border-strong); }
+
+/* Selection */
+[data-theme="merchant"] ::selection {
+  background: rgba(247, 147, 26, 0.2);
+  color: var(--text-primary);
+}
+
+/* Glass — translucent white on light */
+[data-theme="merchant"] .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="merchant"] .glass-heavy {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Glow card hover */
+[data-theme="merchant"] .glow-card:hover {
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px var(--border-default),
+    0 0 20px var(--accent-glow);
+  border-color: var(--border-strong);
+}
+
+/* Primary button — orange on light */
+[data-theme="merchant"] .antigravity-btn,
+[data-theme="merchant"] .sovereign-btn {
+  background-color: #F7931A;
+  color: #ffffff;
+}
+
+[data-theme="merchant"] .antigravity-btn:hover,
+[data-theme="merchant"] .sovereign-btn:hover {
+  box-shadow: 0 10px 20px rgba(247, 147, 26, 0.25);
+}
+
+/* Outline button */
+[data-theme="merchant"] .antigravity-btn-outline,
+[data-theme="merchant"] .sovereign-btn-outline {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="merchant"] .antigravity-btn-outline:hover,
+[data-theme="merchant"] .sovereign-btn-outline:hover {
+  border-color: var(--border-strong);
+  background-color: var(--bg-surface);
+}
+
+/* Form inputs */
+[data-theme="merchant"] .sovereign-input {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+[data-theme="merchant"] .sovereign-input:focus {
+  border-color: #F7931A;
+}
+
+[data-theme="merchant"] .sovereign-input::placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme="merchant"] .sovereign-input option {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Error text needs more contrast on light */
+[data-theme="merchant"] .text-red-400 { color: #dc2626; }
+
+/* Scrollbar */
+[data-theme="merchant"] ::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+
+[data-theme="merchant"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}

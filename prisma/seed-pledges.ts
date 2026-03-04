@@ -14,7 +14,8 @@ const SEED_PLEDGES = [
     email: "tony@icecreamfortcollins.com",
     location: "Fort Collins, CO",
     category: "food-drink",
-    website: "https://www.icecreamfortcollins.com",
+    website: "https://www.glacierparlor.com",
+    logoUrl: "/images/merchants/glacier.png",
     reason:
       "Ready to accept Bitcoin for ice cream. Zero fees, instant settlement — the way payments should work. Glacier serves the best homemade ice cream in Colorado and we want to be first to accept sats.",
     featured: true,

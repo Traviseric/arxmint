@@ -2,24 +2,21 @@
 
 // ============================================================
 // ArxMint — Merchants Page
-// Sign up to join the Fort Collins Bitcoin payment network.
-// Public directory of merchants + signup form.
+// Merchant directory + application form at bottom.
 // ============================================================
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   Store,
   MapPin,
-  Zap,
-  Shield,
   ArrowRight,
+  ArrowDown,
   Globe,
-  Users,
-  CircleDollarSign,
   ExternalLink,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import { MerchantSignupForm } from "@/components/merchant-signup-form";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -38,36 +35,15 @@ interface MerchantPublic {
   location: string | null;
   category: string | null;
   website: string | null;
+  logoUrl: string | null;
   reason: string | null;
   featured: boolean;
 }
 
-const BENEFITS = [
-  {
-    icon: CircleDollarSign,
-    title: "Zero Fees",
-    desc: "No 2.9% + 30¢ per transaction. No monthly fees. No chargebacks. Keep what you earn.",
-  },
-  {
-    icon: Zap,
-    title: "Instant Settlement",
-    desc: "Funds hit your wallet the moment a customer pays. No 2–7 day holds. No intermediaries.",
-  },
-  {
-    icon: Shield,
-    title: "Self-Custody",
-    desc: "Your keys, your money. No platform can freeze your account or withhold your funds.",
-  },
-  {
-    icon: Users,
-    title: "AI Agent Ready",
-    desc: "Your business is instantly discoverable and payable by AI agents — the next wave of commerce.",
-  },
-];
-
 export default function MerchantsPage() {
   const [merchants, setMerchants] = useState<MerchantPublic[]>([]);
   const [count, setCount] = useState(0);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const loadMerchants = useCallback(async () => {
     try {
@@ -86,20 +62,23 @@ export default function MerchantsPage() {
     loadMerchants();
   }, [loadMerchants]);
 
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <div className="relative bg-bg-base text-text-primary overflow-x-hidden selection:bg-accent/30">
+    <div data-theme="merchant" className="relative bg-bg-base text-text-primary overflow-x-hidden min-h-screen">
 
       {/* Background Ambience */}
-      <div className="fixed top-0 left-0 w-full h-[100vh] z-0 pointer-events-none origin-top overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-[800px] h-[800px] rounded-full bg-accent/5 blur-[120px] mix-blend-screen" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[size:32px_32px] opacity-[0.03]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-bg-base/50 via-bg-base/80 to-bg-base" />
+      <div className="fixed top-0 left-0 w-full h-[100vh] z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 right-1/4 w-[800px] h-[800px] rounded-full bg-[#F7931A]/[0.04] blur-[150px]" />
+        <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] rounded-full bg-[#F7931A]/[0.03] blur-[120px]" />
       </div>
 
       <div className="relative z-10 w-full">
 
-        {/* ── Hero ── */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16 text-center">
+        {/* ── Hero with CTA ── */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12 text-center">
           <ScrollReveal delay={0.1}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
               <Store className="w-4 h-4 text-accent" />
@@ -121,178 +100,164 @@ export default function MerchantsPage() {
           </ScrollReveal>
 
           <ScrollReveal delay={0.3}>
-            <p className="text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto mb-4">
-              ArxMint is building an interconnected payment network in Fort Collins, CO —
-              where local businesses and AI agents share the same private commerce infrastructure.
-              Zero fees. Instant settlement. No middlemen.
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-8">
+              Zero fees. Instant settlement. No middlemen. Join the merchants building
+              Fort Collins into the first fully interconnected Bitcoin economy.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={0.4}>
-            <p className="text-sm text-text-muted max-w-xl mx-auto">
-              Sign up below to join the network when it launches. Be part of the first
-              fully interconnected Bitcoin economy in the country.
-            </p>
+            <button
+              onClick={scrollToForm}
+              className="antigravity-btn !px-8 !py-3 inline-flex items-center gap-2 text-sm"
+            >
+              Become a Merchant
+              <ArrowDown className="w-4 h-4" />
+            </button>
           </ScrollReveal>
         </section>
 
-        {/* ── Benefits Grid ── */}
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {BENEFITS.map((b) => (
-              <StaggerItem key={b.title}>
-                <div className="bg-bg-elevated border border-border-default rounded-xl p-5 h-full">
-                  <b.icon className="w-5 h-5 text-accent mb-3" />
-                  <h3 className="text-sm font-semibold text-text-primary mb-1">{b.title}</h3>
-                  <p className="text-xs text-text-secondary leading-relaxed">{b.desc}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </section>
-
-        {/* ── Signup + Merchant Directory ── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
-
-            {/* Left: Signup Form */}
-            <div className="lg:col-span-2">
-              <ScrollReveal>
-                <div className="bg-bg-elevated border border-border-default rounded-xl p-6 sm:p-8 sticky top-24">
-                  <h2 className="text-xl font-semibold text-text-primary mb-1">
-                    Join the Network
-                  </h2>
-                  <p className="text-sm text-text-secondary mb-6">
-                    Sign up now — we&apos;ll onboard you when Fort Collins goes live.
-                  </p>
-                  <MerchantSignupForm onSuccess={loadMerchants} />
-                </div>
-              </ScrollReveal>
-            </div>
-
-            {/* Right: Merchant Directory */}
-            <div className="lg:col-span-3">
-              <ScrollReveal delay={0.1}>
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-text-primary">
-                      Merchant Directory
-                    </h2>
-                    <p className="text-sm text-text-muted mt-1">
-                      {count > 0 ? (
-                        <>
-                          <span className="text-accent font-medium">{count}</span>{" "}
-                          {count === 1 ? "business" : "businesses"} signed up
-                        </>
-                      ) : (
-                        "Be the first to join"
-                      )}
-                    </p>
-                  </div>
-                  {count > 0 && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-                      <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                      <span className="text-xs text-accent font-mono">Pre-Launch</span>
-                    </div>
+        {/* ── Merchant Directory ── */}
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+          <ScrollReveal>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-semibold text-text-primary">
+                  Merchants
+                </h2>
+                <p className="text-sm text-text-muted mt-1">
+                  {count > 0 ? (
+                    <>
+                      <span className="text-accent font-medium">{count}</span>{" "}
+                      {count === 1 ? "business" : "businesses"} on the network
+                    </>
+                  ) : (
+                    "Be the first to join"
                   )}
-                </div>
-              </ScrollReveal>
-
-              {count === 0 ? (
-                <ScrollReveal delay={0.2}>
-                  <div className="bg-bg-elevated border border-border-default border-dashed rounded-xl p-12 text-center">
-                    <Store className="w-10 h-10 text-text-muted mx-auto mb-4" />
-                    <p className="text-text-secondary text-sm">
-                      No merchants yet. Be the first Fort Collins business to join the network.
-                    </p>
-                  </div>
-                </ScrollReveal>
-              ) : (
-                <div className="space-y-3">
-                  {merchants.map((m, i) => (
-                    <motion.div
-                      key={m.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.04, duration: 0.25 }}
-                      className={`bg-bg-elevated border rounded-xl p-5 ${
-                        m.featured
-                          ? "border-accent/40 ring-1 ring-accent/10"
-                          : "border-border-default"
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="w-11 h-11 rounded-lg bg-bg-surface border border-border-strong flex items-center justify-center text-xl shrink-0">
-                          {CATEGORY_ICONS[m.category ?? "other"] ?? "⚡"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-semibold text-text-primary">
-                              {m.businessName}
-                            </h3>
-                            {m.featured && (
-                              <span className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider">
-                                Founding Merchant
-                              </span>
-                            )}
-                          </div>
-                          {m.location && (
-                            <p className="text-xs text-text-muted flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3" />
-                              {m.location}
-                            </p>
-                          )}
-                          {m.reason && (
-                            <p className="text-xs text-text-secondary mt-2 leading-relaxed">
-                              &ldquo;{m.reason}&rdquo;
-                            </p>
-                          )}
-                          {m.website && (
-                            <a
-                              href={m.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] text-accent hover:text-accent/80 mt-2 transition-colors"
-                            >
-                              <Globe className="w-3 h-3" />
-                              Visit website
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                </p>
+              </div>
+              {count > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                  <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  <span className="text-xs text-accent font-mono">Pre-Launch</span>
                 </div>
               )}
             </div>
-          </div>
+          </ScrollReveal>
+
+          {count === 0 ? (
+            <ScrollReveal delay={0.1}>
+              <div className="bg-bg-elevated border border-border-default border-dashed rounded-xl p-16 text-center">
+                <Store className="w-12 h-12 text-text-muted mx-auto mb-4" />
+                <p className="text-text-secondary mb-4">
+                  No merchants yet. Be the first Fort Collins business on the network.
+                </p>
+                <button
+                  onClick={scrollToForm}
+                  className="antigravity-btn-outline !px-6 !py-2 inline-flex items-center gap-2 text-sm"
+                >
+                  Apply Now
+                  <ArrowDown className="w-4 h-4" />
+                </button>
+              </div>
+            </ScrollReveal>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {merchants.map((m, i) => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  className={`bg-bg-elevated border rounded-xl p-6 ${
+                    m.featured
+                      ? "border-accent/40 ring-1 ring-accent/10"
+                      : "border-border-default"
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Logo or category icon */}
+                    {m.logoUrl ? (
+                      <div className="w-14 h-14 rounded-lg bg-white border border-border-strong overflow-hidden shrink-0 flex items-center justify-center">
+                        <Image
+                          src={m.logoUrl}
+                          alt={`${m.businessName} logo`}
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-contain p-1"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-bg-surface border border-border-strong flex items-center justify-center text-2xl shrink-0">
+                        {CATEGORY_ICONS[m.category ?? "other"] ?? "⚡"}
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-semibold text-text-primary">
+                          {m.businessName}
+                        </h3>
+                        {m.featured && (
+                          <span className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider">
+                            Founding Merchant
+                          </span>
+                        )}
+                      </div>
+
+                      {m.location && (
+                        <p className="text-xs text-text-muted flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3" />
+                          {m.location}
+                        </p>
+                      )}
+
+                      {m.reason && (
+                        <p className="text-sm text-text-secondary mt-3 leading-relaxed">
+                          &ldquo;{m.reason}&rdquo;
+                        </p>
+                      )}
+
+                      {m.website && (
+                        <a
+                          href={m.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 mt-3 transition-colors"
+                        >
+                          <Globe className="w-3 h-3" />
+                          {m.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </section>
 
-        {/* ── Bottom CTA ── */}
-        <section className="border-t border-border-subtle py-20">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+        {/* ── Application Form ── */}
+        <section ref={formRef} className="border-t border-border-subtle py-20">
+          <div className="max-w-xl mx-auto px-4 sm:px-6">
             <ScrollReveal>
-              <h2 className="text-2xl sm:text-3xl font-semibold text-text-primary mb-4 tracking-tight">
-                Fort Collins. Ground zero.
-              </h2>
-              <p className="text-text-secondary mb-8 max-w-lg mx-auto">
-                Every merchant that joins makes the network more valuable for every other merchant.
-                This is how Bitcoin adoption actually happens — one city, fully connected.
-              </p>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="antigravity-btn-outline !px-8 !py-3 inline-flex items-center gap-2"
-              >
-                <Store className="w-4 h-4" />
-                Sign Up Your Business
-                <ArrowRight className="w-4 h-4" />
-              </a>
+              <div className="text-center mb-10">
+                <h2 className="text-2xl sm:text-3xl font-semibold text-text-primary mb-3 tracking-tight">
+                  Apply to Join
+                </h2>
+                <p className="text-text-secondary max-w-md mx-auto">
+                  Fill out the form below and we&apos;ll add your business to the
+                  merchant directory. We&apos;ll reach out when the network goes live.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.1}>
+              <div className="bg-bg-elevated border border-border-default rounded-xl p-6 sm:p-8">
+                <MerchantSignupForm onSuccess={loadMerchants} />
+              </div>
             </ScrollReveal>
           </div>
         </section>
