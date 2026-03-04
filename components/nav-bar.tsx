@@ -13,7 +13,6 @@ import { NostrLogin } from "@/components/nostr-login";
 import { hydrateNostrSession } from "@/lib/store";
 
 const LEARN_LINKS = [
-  { href: "/why", label: "Why ArxMint" },
   { href: "/agents", label: "Agents" },
   { href: "/blog", label: "Blog" },
   { href: "/whitepaper", label: "Whitepaper" },
@@ -56,6 +55,12 @@ export function NavBar() {
           </span>
         </Link>
         <div className="flex items-center gap-3 sm:gap-6">
+          <Link
+            href="/why"
+            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block font-medium"
+          >
+            Why
+          </Link>
           <Link
             href="/roadmap"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
@@ -136,6 +141,13 @@ export function NavBar() {
       {mobileOpen && (
         <div className="sm:hidden absolute top-full left-0 right-0 bg-sovereign-panel border-b border-white/10 z-50">
           <div className="flex flex-col p-4 gap-3">
+            <Link
+              href="/why"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors font-medium"
+            >
+              Why
+            </Link>
             <Link
               href="/roadmap"
               onClick={() => setMobileOpen(false)}
