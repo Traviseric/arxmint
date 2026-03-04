@@ -96,7 +96,7 @@ function EarlyAdoptersSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal>
           <div className="text-center mb-12">
-            <p className="text-accent font-mono text-sm mb-4">Fort Collins Network</p>
+            <p className="text-accent font-mono text-sm mb-4">Merchant Network</p>
             <h2 className="text-3xl sm:text-4xl font-semibold text-text-primary mb-4 tracking-tight">
               <span className="text-accent">{count}</span>{" "}
               {count === 1 ? "Merchant" : "Merchants"} Signed Up

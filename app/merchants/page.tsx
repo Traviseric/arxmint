@@ -62,14 +62,27 @@ export default function MerchantsPage() {
     loadMerchants();
   }, [loadMerchants]);
 
+  // Apply merchant light theme to body + nav so the entire page feels light
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", "merchant");
+    document.body.style.background = "#fafafa";
+    return () => {
+      document.documentElement.removeAttribute("data-theme");
+      document.body.style.background = "";
+    };
+  }, []);
+
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <div data-theme="merchant" className="relative bg-bg-base text-text-primary overflow-x-hidden min-h-screen">
+    <div data-theme="merchant" className="relative overflow-x-hidden min-h-screen" style={{ background: '#fafafa', color: '#171717' }}>
 
-      {/* Background Ambience */}
+      {/* Full-bleed light background to prevent dark body bleeding through */}
+      <div className="fixed inset-0 z-0" style={{ background: '#fafafa' }} />
+
+      {/* Background Ambience — warm orange glow */}
       <div className="fixed top-0 left-0 w-full h-[100vh] z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 right-1/4 w-[800px] h-[800px] rounded-full bg-[#F7931A]/[0.04] blur-[150px]" />
         <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] rounded-full bg-[#F7931A]/[0.03] blur-[120px]" />
@@ -83,14 +96,14 @@ export default function MerchantsPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
               <Store className="w-4 h-4 text-accent" />
               <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-                Fort Collins Pilot
+                Colorado Front Range
               </span>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-6">
-              The first city where{" "}
+              Be the first city where{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">
                 every merchant
               </span>
@@ -101,8 +114,8 @@ export default function MerchantsPage() {
 
           <ScrollReveal delay={0.3}>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-8">
-              Zero fees. Instant settlement. No middlemen. Join the merchants building
-              Fort Collins into the first fully interconnected Bitcoin economy.
+              Zero fees. Instant settlement. No middlemen. Join the merchants across
+              Colorado building the first fully interconnected Bitcoin economy.
             </p>
           </ScrollReveal>
 
@@ -150,7 +163,7 @@ export default function MerchantsPage() {
               <div className="bg-bg-elevated border border-border-default border-dashed rounded-xl p-16 text-center">
                 <Store className="w-12 h-12 text-text-muted mx-auto mb-4" />
                 <p className="text-text-secondary mb-4">
-                  No merchants yet. Be the first Fort Collins business on the network.
+                  No merchants yet. Be the first business on the network.
                 </p>
                 <button
                   onClick={scrollToForm}
