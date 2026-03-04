@@ -152,11 +152,22 @@ function nextWithRequestId(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const requestId = getOrCreateRequestId(request);
+
+  try {
+    return await _middleware(request, pathname, requestId);
+  } catch (err) {
+    // Never let middleware crash take down the request — pass through
+    console.error("[middleware] uncaught error, passing through:", err);
+    return nextWithRequestId(request, requestId);
+  }
+}
+
+async function _middleware(request: NextRequest, pathname: string, requestId: string) {
   const isApiRoute = pathname.startsWith("/api/");
   const isProtectedPage = PROTECTED_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix)
   );
-  const requestId = getOrCreateRequestId(request);
 
   // ---- Rate limiting (API routes only) ----
   if (isApiRoute) {
