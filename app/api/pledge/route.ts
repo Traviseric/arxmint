@@ -5,15 +5,6 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { ValidationError, errorResponse, errorStatus } from "@/lib/validation";
-import { logger } from "@/lib/logger";
-
-// Lazy-load Prisma so the route module still loads if the engine is missing
-async function getDb() {
-  const { db } = await import("@/lib/db");
-  return db;
-}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -46,21 +37,21 @@ const VALID_CATEGORIES = [
 function validatePledge(body: Record<string, unknown>) {
   const businessName = String(body.businessName ?? "").trim();
   if (!businessName || businessName.length === 0)
-    throw new ValidationError("businessName", "Business name is required");
+    throw new Error("Business name is required");
   if (businessName.length > 100)
-    throw new ValidationError("businessName", "Business name must be 100 characters or less");
+    throw new Error("Business name must be 100 characters or less");
   if (/<script/i.test(businessName))
-    throw new ValidationError("businessName", "Invalid characters");
+    throw new Error("Invalid characters");
 
   const contactName = String(body.contactName ?? "").trim();
   if (!contactName || contactName.length === 0)
-    throw new ValidationError("contactName", "Contact name is required");
+    throw new Error("Contact name is required");
   if (contactName.length > 100)
-    throw new ValidationError("contactName", "Contact name must be 100 characters or less");
+    throw new Error("Contact name must be 100 characters or less");
 
   const email = String(body.email ?? "").trim().toLowerCase();
   if (!email || !EMAIL_RE.test(email))
-    throw new ValidationError("email", "A valid email address is required");
+    throw new Error("A valid email address is required");
 
   const location = body.location ? String(body.location).trim().slice(0, 200) : null;
   const category =
@@ -77,7 +68,7 @@ function validatePledge(body: Record<string, unknown>) {
 
 export async function GET() {
   try {
-    const db = await getDb();
+    const { db } = await import("@/lib/db");
     const pledges = await db.merchantPledge.findMany({
       orderBy: [{ featured: "desc" }, { createdAt: "asc" }],
       select: {
@@ -90,7 +81,6 @@ export async function GET() {
         reason: true,
         featured: true,
         createdAt: true,
-        // NOTE: email and contactName intentionally excluded (private)
       },
     });
 
@@ -99,49 +89,26 @@ export async function GET() {
     const seeds = SEED_MERCHANTS.filter((s) => !dbNames.has(s.businessName));
     const all = [...seeds, ...pledges];
     return NextResponse.json({ pledges: all, count: all.length });
-  } catch (error: unknown) {
-    logger.warn("GET /api/pledge — DB unavailable, returning seed merchants", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
+    // DB unavailable — return seed merchants so the page still works
     return NextResponse.json({ pledges: SEED_MERCHANTS, count: SEED_MERCHANTS.length });
   }
 }
 
 export async function POST(request: NextRequest) {
-  // Rate limit: 5 pledges per IP per hour
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = checkRateLimit(`pledge:${ip}`, { windowMs: 3_600_000, maxRequests: 5 });
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Try again later.", code: "RATE_LIMITED" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter ?? 60) } }
-    );
-  }
-
   try {
     const body = await request.json();
     const data = validatePledge(body);
 
-    const db = await getDb();
+    const { db } = await import("@/lib/db");
     const pledge = await db.merchantPledge.create({ data });
-
-    logger.info("New merchant pledge", {
-      action: "pledge.create",
-      pledgeId: pledge.id,
-      businessName: pledge.businessName,
-      location: pledge.location,
-    });
 
     return NextResponse.json(
       { pledge: { id: pledge.id, businessName: pledge.businessName } },
       { status: 201 }
     );
   } catch (error: unknown) {
-    if (!(error instanceof ValidationError)) {
-      logger.error("POST /api/pledge error", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-    return NextResponse.json(errorResponse(error), { status: errorStatus(error) });
+    const message = error instanceof Error ? error.message : "Something went wrong";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
