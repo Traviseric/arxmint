@@ -5,10 +5,15 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { ValidationError, errorResponse, errorStatus } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+
+// Lazy-load Prisma so the route module still loads if the engine is missing
+async function getDb() {
+  const { db } = await import("@/lib/db");
+  return db;
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -72,6 +77,7 @@ function validatePledge(body: Record<string, unknown>) {
 
 export async function GET() {
   try {
+    const db = await getDb();
     const pledges = await db.merchantPledge.findMany({
       orderBy: [{ featured: "desc" }, { createdAt: "asc" }],
       select: {
@@ -116,6 +122,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validatePledge(body);
 
+    const db = await getDb();
     const pledge = await db.merchantPledge.create({ data });
 
     logger.info("New merchant pledge", {
