@@ -8,7 +8,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 
 Humans and AI agents share the same private commerce infrastructure. Agents sell data/compute via L402 paywalls; humans transact in ecash; both use the same Lightning-connected federation.
 
-**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. Production Readiness Gate pending testnet VPS deployment (human action required). Phase 4 (Citadel pilot) in progress — grants drafted, KPI framework ready, pilot materials complete. Phase 5 (Bazaar) planned — decentralized Stripe alternative with merchant API keys, webhooks, hosted checkout, client SDK, and merchant dashboard. See `docs/roadmap.md`.
+**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. Production Readiness Gate pending testnet VPS deployment (human action required). Phase 4 (Citadel pilot) in progress — merchant pledge directory live at arxmint.com/merchants, Glacier Ice Cream as seed merchant, public signup form working, grants drafted, KPI framework ready. Phase 5 (Bazaar) planned — decentralized Stripe alternative. See `docs/roadmap.md`.
 
 ## Lookup Table
 
@@ -35,7 +35,8 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Merchant onboarding | `components/merchant-onboard.tsx` | `NuMo NFC` |
 | Merchants page | `app/merchants/page.tsx`, `components/merchant-signup-form.tsx`, `app/api/pledge/route.ts` | `MerchantPledge MerchantSignupForm` |
 | Merchant redirects | `app/merchant/page.tsx`, `app/network/page.tsx` | `redirect /merchants` |
-| Merchant seed data | `prisma/seed.ts`, `prisma/seed-pledges.ts` | `Glacier Tony` |
+| Supabase client | `lib/supabase.ts` | `createClient supabase` |
+| Merchant seed data | `app/api/pledge/route.ts` (SEED_MERCHANTS const) | `Glacier seed-glacier` |
 | Agent API | `app/api/agent/route.ts` | `privacy-audit cycle-signals` |
 | L402 demo | `app/api/l402/route.ts` | `WWW-Authenticate 402` |
 | Pilot deployment | `lib/pilot-deployment.ts` | `PilotKPITargets generatePilotTimeline MultiCityNetwork` |
@@ -51,7 +52,7 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 
 ## Tech Stack
 
-Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark theme, `#F7931A` accents), Zustand, `@fedimint/core` 0.1.3 (WASM), `@cashu/cashu-ts` 3.5.0, `@lightninglabs/lnc-web` 0.3.5-alpha, Aperture L402 proxy, Docker Compose (LND + Nutshell + Fedimint + Aperture).
+Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark theme, `#F7931A` accents), Zustand, `@supabase/supabase-js` (production DB), `@fedimint/core` 0.1.3 (WASM), `@cashu/cashu-ts` 3.5.0, `@lightninglabs/lnc-web` 0.3.5-alpha, Aperture L402 proxy, Docker Compose (LND + Nutshell + Fedimint + Aperture).
 
 ## Key Architecture Rules
 
@@ -60,6 +61,9 @@ Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark theme, `#F7931A`
 3. **Cashu `cashu-ts` v3 API.** `createMintQuoteBolt11()` → `mintProofs()`. Melt preimage at `result.quote.payment_preimage`.
 4. **L402 flow:** HTTP 402 → parse `WWW-Authenticate` → pay invoice → get preimage → retry with `Authorization: L402 <macaroon>:<preimage>`.
 5. **Silent Payments require server-side federation module changes** — not a client toggle.
+6. **No Edge Runtime middleware.** `middleware.ts` was deleted — the WASM webpack config (`asyncWebAssembly`, `layers`) crashes Vercel's Edge Runtime, killing all serverless functions. Auth checks and rate limiting are per-route.
+7. **Database: Supabase JS client for Vercel.** `lib/supabase.ts` uses service role key. Prisma schema retained for self-hosted Docker path. API routes use dynamic import `await import("@/lib/supabase")` for graceful fallback when DB is unavailable.
+8. **Instrumentation hook must not throw.** `instrumentation.ts` warns on missing env vars but never crashes — a fatal throw kills ALL serverless functions.
 
 ## Style Conventions
 

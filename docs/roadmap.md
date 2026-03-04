@@ -1,6 +1,6 @@
 # ArxMint — Implementation Roadmap
 
-**Version:** 4.2 — March 2, 2026
+**Version:** 4.3 — March 4, 2026
 **Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md` + 6 deep research studies in `docs/research/` + 11 self-hosting UX studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/`
 **Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Overnight tasks:** `OVERNIGHT_TASKS.md` (concrete implementation tasks derived from this roadmap)
@@ -67,7 +67,7 @@ Status key:
 | 2.7 Monitoring stack | Complete | Prometheus scrape config at `docker/prometheus.yml`; Grafana datasource + dashboards at `docker/grafana/`; services in `docker-compose.yml` |
 | 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
-| 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, VPS setup + DR drill docs in `docs/`; pilot deployment pending human action |
+| 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, VPS setup + DR drill docs in `docs/`; merchant pledge directory live at arxmint.com/merchants (Glacier seed + public signup); Vercel + Supabase production deployment working; pilot deployment pending human action |
 | 5.x merchant platform (Bazaar) | Planned | Decentralized Stripe alternative — split-plane architecture (provisioning + merchant node), managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, merchant dashboard, LNURL-pay, Umbrel/StartOS packaging |
 
 ---
@@ -84,10 +84,10 @@ All five previously-critical persistence and auth gaps are now code-complete. Li
 
 | ~~Gap~~ | Resolution | Files |
 |---------|------------|-------|
-| ~~No database~~ | ✅ Prisma + PostgreSQL 15 in Docker Compose. `Community`, `Merchant`, `Transaction`, Auth.js tables. Internal network, no public port. | `prisma/schema.prisma`, `docker-compose.yml` |
-| ~~No user auth~~ | ✅ Nostr NIP-98 login + HMAC-SHA256 session tokens. Route protection via `middleware.ts`. L402 for agents. | `lib/auth-middleware.ts`, `middleware.ts`, `app/login/page.tsx`, `app/api/auth/route.ts` |
+| ~~No database~~ | ✅ Supabase (`@supabase/supabase-js`) for production (Vercel). Prisma schema retained for Docker self-hosted path. `merchant_pledges` table live. | `lib/supabase.ts`, `app/api/pledge/route.ts`, `prisma/schema.prisma` |
+| ~~No user auth~~ | ✅ Nostr NIP-98 login + HMAC-SHA256 session tokens. L402 for agents. Note: Edge Runtime middleware removed (crashed serverless functions due to WASM webpack config); route protection via per-route auth checks. | `lib/auth-middleware.ts`, `app/login/page.tsx`, `app/api/auth/route.ts` |
 | ~~No wallet recovery~~ | ✅ IndexedDB encrypted vault (AES-256-GCM + PBKDF2-SHA256, 600K iterations, OWASP 2023). NUT-13 seed phrase backup + NUT-09 restore UI. | `lib/cashu-vault.ts`, `lib/crypto.ts`, `lib/proof-repo.ts` |
-| ~~No merchant backend~~ | ✅ Merchant onboarding persists to `Merchant` DB table via Prisma. Error handling for DB failures. | `components/merchant-onboard.tsx`, `app/api/merchants/route.ts` |
+| ~~No merchant backend~~ | ✅ Merchant pledge directory live at `/merchants`. Public signup form → Supabase `merchant_pledges` table. Glacier Ice Cream as seed merchant. | `app/merchants/page.tsx`, `components/merchant-signup-form.tsx`, `app/api/pledge/route.ts` |
 | ~~No transaction history~~ | ✅ Transaction metadata (type, amount, backend, timestamp — no raw proofs) persisted to `Transaction` table. | `app/api/transactions/route.ts`, `lib/store.ts` |
 
 ### Integration Gaps — Status Update
@@ -138,11 +138,11 @@ Six deep research studies in `docs/research/` + 11 self-hosting UX studies in `d
 
 | Decision | Answer | Research Source |
 |----------|--------|----------------|
-| **Application database** | Self-hosted PostgreSQL 15 in Docker Compose. Internal network only, no public port. Supabase is graduation target when >5K MAU. | `docs/research/1-Database & Persistence Strategy.md` |
+| **Application database** | **Vercel deployment:** Supabase (`@supabase/supabase-js`) — no binary engine, works on serverless. **Self-hosted deployment:** PostgreSQL 15 in Docker Compose (Prisma schema available). Supabase instance: `ncddvxglmnnfagyyupeu`. | `docs/research/1-Database & Persistence Strategy.md` |
 | **Cashu proof custody** | **Non-custodial.** Proofs stored client-side only in encrypted IndexedDB vault (AES-256-GCM). Server DB stores transaction metadata, NEVER raw proofs. | `docs/research/1-Database & Persistence Strategy.md` |
 | **Proof vault architecture** | Repository abstraction (ProofRepo, CounterRepo, OperationRepo) → IndexedDB adapter. Counter persistence must be atomic with proof writes. NUT-13 seed phrase as primary recovery. Saga pattern for crash recovery. Agent wallets: separate namespace, in-memory default. | `docs/research/5-Cashu Proof Persistence & Recovery.md` |
 | **Encryption** | AES-256-GCM via Web Crypto API. Key derivation: PBKDF2-SHA256 (600K iterations, OWASP 2023) from user passphrase. Master key in-memory only while unlocked. Auto-lock on idle. | `docs/research/5-Cashu Proof Persistence & Recovery.md` |
-| **Authentication** | Auth.js as session framework. Two providers: Nostr NIP-98 (primary) + Email magic link (merchant fallback). Prisma adapter for session persistence. Step-up reauth for wallet operations (5-min TTL). L402 for agents only — separate track from human auth. | `docs/research/4-Auth Strategy.md` |
+| **Authentication** | Auth.js as session framework. Two providers: Nostr NIP-98 (primary) + Email magic link (merchant fallback). Session persistence via Supabase (Vercel) or Prisma adapter (self-hosted). Step-up reauth for wallet operations (5-min TTL). L402 for agents only — separate track from human auth. Note: Edge Runtime middleware removed — auth checks are per-route. | `docs/research/4-Auth Strategy.md` |
 | **VPS hosting** | Vultr 16GB/6-core ($80/mo). Alternative: DigitalOcean 8GB ($48/mo). Hetzner needs written ToS approval for node hosting. | `docs/research/2-Pilot VPS & Deployment.md` |
 | **Reverse proxy** | Caddy (automatic HTTPS via Let's Encrypt + ZeroSSL). Not nginx, not Traefik. | `docs/research/2-Pilot VPS & Deployment.md` |
 | **Network topology** | All services on internal Docker network. Only Caddy exposes ports 80/443. LND p2p (9735) stays public. Fedimint guardian ports internal (single-host pilot). | `docs/research/2-Pilot VPS & Deployment.md` |
@@ -175,9 +175,9 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 
 **Goal:** Users can refresh the page without losing everything.
 
-1. **Postgres in Docker Compose** — Add `postgres:15-alpine` to compose, internal network only, no public port. Prisma ORM for schema. Tables: `Community`, `Merchant`, `Transaction`, `User`, `Account`, `Session`, `VerificationToken` (Auth.js standard). **No Cashu proof tables — proofs are client-side only.**
+1. **Database** — **Vercel path:** Supabase (`@supabase/supabase-js`) with service role key. Tables created via SQL. **Self-hosted path:** `postgres:15-alpine` in Docker Compose, internal network only. Prisma schema available for self-hosted DDL. **No Cashu proof tables — proofs are client-side only.**
 2. **Client-side encrypted vault** — IndexedDB + AES-256-GCM + PBKDF2-SHA256 (600K iterations, OWASP 2023). Repository abstraction layer (ProofRepo, CounterRepo, OperationRepo). Atomic counter persistence with proof writes. Passphrase setup UI. NUT-13 seed phrase backup + NUT-09 restore flow.
-3. **Auth.js + Nostr NIP-98** — Auth.js config with Nostr Credentials provider (wraps existing `lib/nostr-auth.ts`) + Email magic link provider. Prisma adapter. HttpOnly/Secure/SameSite cookies. Middleware route gating for `/wallet`, `/merchant`, `/admin`. Risk-tier step-up reauth (5-min TTL for spend operations).
+3. **Auth.js + Nostr NIP-98** — Auth.js config with Nostr Credentials provider (wraps existing `lib/nostr-auth.ts`) + Email magic link provider. Supabase session adapter (Vercel) or Prisma adapter (self-hosted). HttpOnly/Secure/SameSite cookies. Per-route auth checks for `/wallet`, `/merchant`, `/admin` (Edge Runtime middleware removed — WASM webpack config crashes Vercel Edge). Risk-tier step-up reauth (5-min TTL for spend operations).
 4. **Persist app data** — Community configs, merchant listings, transaction metadata (not proofs) saved to Postgres. Hydrate Zustand from DB on load.
 
 ### Phase B: Real Payments — L402 + NUT-24 + Payment SDK
@@ -228,7 +228,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 5. **Structured logging** — JSON-formatted logs with timestamp, level, request ID, user ID. Log all payment operations (amount, backend, status — never proof secrets). Log auth events (login, logout, reauth, failure). Ship logs to stdout for Docker log aggregation.
 6. **Security headers** — Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy. Caddy adds HSTS. Next.js middleware adds CSP.
 7. **Dockerfile production audit** — Multi-stage build (deps → build → runtime). Run as non-root user. Pin base image versions. No dev dependencies in production image. Health check in Dockerfile.
-8. **Database migrations** — Prisma migration strategy: `prisma migrate deploy` on startup (not `prisma db push`). Migration files committed to git. Rollback procedure documented.
+8. **Database migrations** — **Vercel path:** Schema changes via SQL in Supabase dashboard or migration scripts. **Self-hosted path:** Prisma migration strategy: `prisma migrate deploy` on startup (not `prisma db push`). Migration files committed to git. Rollback procedure documented.
 9. **Pilot value caps** — Maximum wallet balance per user (configurable, default 50,000 sats for pilot). Maximum single transaction amount. Maximum daily transaction volume. Enforced server-side, not just UI. Clearly displayed to users.
 10. **Testnet validation** — Full deployment on testnet VPS before mainnet. Run all E2E tests against testnet stack. Merchant onboarding dry run with test merchants. Minimum 7 days on testnet with no incidents before mainnet.
 11. **CI/CD pipeline** — GitHub Actions: lint → build → unit tests → E2E tests (regtest Docker). Deploy to testnet on `main` push. Deploy to mainnet on tagged release only. Deployment requires passing all tests.
@@ -250,7 +250,7 @@ Research-informed — every decision below is locked. See `OVERNIGHT_TASKS.md` f
 **Live status tracker:** `docs/PILOT_READINESS_STATUS.md` (current verification results + remaining blockers)
 
 ### Data Safety
-- [x] Postgres persists communities, merchants, transactions, auth sessions
+- [x] Supabase persists merchant pledges (live). Schema ready for communities, transactions, auth sessions.
 - [ ] Cashu proofs stored client-side only in encrypted IndexedDB vault (AES-256-GCM)
 - [ ] NUT-13 seed phrase backup + NUT-09 restore verified working
 - [ ] Crash recovery saga pattern tested — no proofs lost after simulated crash
@@ -586,16 +586,24 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 
 **Preparation:** Shared grant dossier at `docs/GRANT_DOSSIER.md` (executive summary, technical scope, budget, team bios, open-source licensing, threat model). Grant files and human task tracking moved to `C:\code\te-btc\internal\docs\arxmint\`.
 
-### 4.1 — Longmont Pilot Deployment
+### 4.1 — Pilot Deployment
+
 **Source:** Doc 7, Spec §8
-**What:** Deploy full ArxMint stack for Longmont Bitcoin meetup.
-**Prerequisites:** Production Readiness Gate passed + 7 days testnet + disaster recovery drill.
-**Launch sequence:**
+**What:** Deploy ArxMint for Colorado Bitcoin circular economy pilot.
+
+**Current status (March 2026):**
+- Merchant pledge directory LIVE at https://www.arxmint.com/merchants
+- Glacier Ice Cream (Fort Collins) as seed merchant
+- Public signup form accepting new merchant pledges → Supabase
+- Vercel + Supabase production infrastructure working
+- API endpoints verified: `/api/health-check`, `/api/pledge` (GET + POST)
+
+**Remaining for full pilot:**
 1. Switch LND from `--bitcoin.testnet` to `--bitcoin.mainnet` in compose
 2. Generate production credentials (run `scripts/generate-secrets.sh`; full checklist at `C:\code\te-btc\internal\docs\arxmint\human_tasks.md`)
-3. Deploy to Vultr VPS
+3. Deploy full Docker stack (LND + Cashu + Fedimint) to VPS
 4. Verify health checks, monitoring, and backup automation
-5. Onboard first 5 merchants (soft launch)
+5. Onboard first 5 merchants (soft launch — directory already live)
 6. Monitor for 7 days — check alerts, backups, payment success rate
 7. Open to full community (30 merchant target)
 
