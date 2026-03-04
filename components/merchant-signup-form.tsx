@@ -6,7 +6,7 @@
 // network. No auth required — pre-launch merchant acquisition.
 // ============================================================
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Store,
   MapPin,
@@ -17,7 +17,9 @@ import {
   CheckCircle,
   ArrowRight,
   Loader2,
-  ImageIcon,
+  Upload,
+  X,
+  ChevronDown,
 } from "lucide-react";
 
 const CATEGORY_OPTIONS = [
@@ -34,6 +36,9 @@ interface MerchantSignupFormProps {
   onSuccess?: () => void;
 }
 
+const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2 MB
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+
 export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
   const [businessName, setBusinessName] = useState("");
   const [contactName, setContactName] = useState("");
@@ -42,11 +47,41 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
   const [category, setCategory] = useState("");
   const [website, setWebsite] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [emailOptIn, setEmailOptIn] = useState(false);
+  const [showReason, setShowReason] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoFile = useCallback((file: File) => {
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setFieldErrors((p) => ({ ...p, logo: "Please upload a PNG, JPG, WebP, or SVG" }));
+      return;
+    }
+    if (file.size > MAX_LOGO_SIZE) {
+      setFieldErrors((p) => ({ ...p, logo: "Image must be under 2 MB" }));
+      return;
+    }
+    setFieldErrors((p) => ({ ...p, logo: "" }));
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setLogoUrl(dataUrl);
+      setLogoPreview(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const clearLogo = () => {
+    setLogoUrl("");
+    setLogoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const validate = () => {
     const errors: Record<string, string> = {};
@@ -75,8 +110,9 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           location: location.trim() || undefined,
           category: category || undefined,
           website: website.trim() || undefined,
-          logoUrl: logoUrl.trim() || undefined,
+          logoUrl: logoUrl || undefined,
           reason: reason.trim() || undefined,
+          emailOptIn,
         }),
       });
 
@@ -234,42 +270,112 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
         />
       </div>
 
-      {/* Logo URL */}
+      {/* Logo Upload */}
       <div>
         <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-1.5">
-          <ImageIcon className="w-4 h-4 text-text-muted" />
-          Logo URL
+          <Upload className="w-4 h-4 text-text-muted" />
+          Logo
         </label>
+        {logoPreview ? (
+          <div className="flex items-center gap-4 p-3 border border-border-default rounded-lg bg-bg-elevated">
+            <img
+              src={logoPreview}
+              alt="Logo preview"
+              className="w-12 h-12 rounded object-contain bg-white/5"
+            />
+            <span className="text-sm text-text-secondary flex-1 truncate">Logo uploaded</span>
+            <button
+              type="button"
+              onClick={clearLogo}
+              className="text-text-muted hover:text-red-400 transition-colors p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const file = e.dataTransfer.files[0];
+              if (file) handleLogoFile(file);
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              dragging
+                ? "border-accent bg-accent/5"
+                : "border-border-default hover:border-accent/50 hover:bg-bg-elevated"
+            }`}
+          >
+            <Upload className="w-6 h-6 text-text-muted mx-auto mb-2" />
+            <p className="text-sm text-text-secondary">
+              Drop your logo here, or <span className="text-accent">browse</span>
+            </p>
+            <p className="text-xs text-text-muted mt-1">PNG, JPG, WebP, or SVG — max 2 MB</p>
+          </div>
+        )}
         <input
-          type="url"
-          value={logoUrl}
-          onChange={(e) => setLogoUrl(e.target.value)}
-          placeholder="https://yoursite.com/logo.png"
-          className="sovereign-input w-full"
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleLogoFile(file);
+          }}
+          className="hidden"
         />
+        {fieldErrors.logo && (
+          <p className="text-xs text-red-400 mt-1">{fieldErrors.logo}</p>
+        )}
         <p className="text-xs text-text-muted mt-1">
-          Link to your logo image. Displayed on the merchant directory.
+          Displayed on the merchant directory.
         </p>
       </div>
 
-      {/* Reason */}
+      {/* Reason (collapsible) */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-1.5">
+        <button
+          type="button"
+          onClick={() => setShowReason(!showReason)}
+          className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+        >
           <MessageSquare className="w-4 h-4 text-text-muted" />
-          Why do you want to accept Bitcoin?
-        </label>
-        <textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="Tell us why you're excited to join the network..."
-          className="sovereign-input w-full resize-none"
-          rows={3}
-          maxLength={500}
-        />
-        <p className="text-xs text-text-muted mt-1">
-          {reason.length}/500 — displayed on the merchant directory.
-        </p>
+          Add a note (optional)
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${showReason ? "rotate-180" : ""}`}
+          />
+        </button>
+        {showReason && (
+          <div className="mt-2">
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Tell us why you're excited to join the network..."
+              className="sovereign-input w-full resize-none"
+              rows={3}
+              maxLength={500}
+            />
+            <p className="text-xs text-text-muted mt-1">
+              {reason.length}/500 — displayed on the merchant directory.
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Email Opt-In */}
+      <label className="flex items-start gap-3 cursor-pointer group">
+        <input
+          type="checkbox"
+          checked={emailOptIn}
+          onChange={(e) => setEmailOptIn(e.target.checked)}
+          className="mt-0.5 w-4 h-4 rounded border-border-default bg-bg-elevated text-accent focus:ring-accent/50 accent-[#F7931A]"
+        />
+        <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
+          Keep me updated on network launches, merchant features, and Bitcoin payment tips.
+        </span>
+      </label>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-md px-4 py-3">
