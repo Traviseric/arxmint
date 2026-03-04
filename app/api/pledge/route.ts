@@ -25,39 +25,27 @@ const SEED_MERCHANTS = [
 ];
 
 const VALID_CATEGORIES = [
-  "food-drink",
-  "retail",
-  "services",
-  "health",
-  "entertainment",
-  "technology",
-  "other",
+  "food-drink", "retail", "services", "health",
+  "entertainment", "technology", "other",
 ];
 
 function validatePledge(body: Record<string, unknown>) {
   const businessName = String(body.businessName ?? "").trim();
-  if (!businessName || businessName.length === 0)
-    throw new Error("Business name is required");
-  if (businessName.length > 100)
-    throw new Error("Business name must be 100 characters or less");
-  if (/<script/i.test(businessName))
-    throw new Error("Invalid characters");
+  if (!businessName) throw new Error("Business name is required");
+  if (businessName.length > 100) throw new Error("Business name must be 100 characters or less");
+  if (/<script/i.test(businessName)) throw new Error("Invalid characters");
 
   const contactName = String(body.contactName ?? "").trim();
-  if (!contactName || contactName.length === 0)
-    throw new Error("Contact name is required");
-  if (contactName.length > 100)
-    throw new Error("Contact name must be 100 characters or less");
+  if (!contactName) throw new Error("Contact name is required");
+  if (contactName.length > 100) throw new Error("Contact name must be 100 characters or less");
 
   const email = String(body.email ?? "").trim().toLowerCase();
-  if (!email || !EMAIL_RE.test(email))
-    throw new Error("A valid email address is required");
+  if (!email || !EMAIL_RE.test(email)) throw new Error("A valid email address is required");
 
   const location = body.location ? String(body.location).trim().slice(0, 200) : null;
   const category =
     body.category && VALID_CATEGORIES.includes(String(body.category))
-      ? String(body.category)
-      : null;
+      ? String(body.category) : null;
   const website = body.website ? String(body.website).trim().slice(0, 200) : null;
   const logoUrl = body.logoUrl ? String(body.logoUrl).trim().slice(0, 500) : null;
   const reason = body.reason ? String(body.reason).trim().slice(0, 500) : null;
@@ -67,32 +55,37 @@ function validatePledge(body: Record<string, unknown>) {
 }
 
 export async function GET() {
-  try {
-    const { db } = await import("@/lib/db");
-    const pledges = await db.merchantPledge.findMany({
-      orderBy: [{ featured: "desc" }, { createdAt: "asc" }],
-      select: {
-        id: true,
-        businessName: true,
-        location: true,
-        category: true,
-        website: true,
-        logoUrl: true,
-        reason: true,
-        featured: true,
-        createdAt: true,
-      },
-    });
+  let dbPledges: typeof SEED_MERCHANTS = [];
 
-    // Merge seed merchants with DB results (avoid duplicates by name)
-    const dbNames = new Set(pledges.map((p: { businessName: string }) => p.businessName));
-    const seeds = SEED_MERCHANTS.filter((s) => !dbNames.has(s.businessName));
-    const all = [...seeds, ...pledges];
-    return NextResponse.json({ pledges: all, count: all.length });
+  try {
+    const { supabase } = await import("@/lib/supabase");
+    const { data, error } = await supabase
+      .from("merchant_pledges")
+      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt")
+      .order("featured", { ascending: false })
+      .order("createdAt", { ascending: true });
+
+    if (!error && data) {
+      dbPledges = data.map((r) => ({
+        id: r.id,
+        businessName: r.businessName,
+        location: r.location,
+        category: r.category,
+        website: r.website,
+        logoUrl: r.logoUrl,
+        reason: r.reason,
+        featured: r.featured,
+        createdAt: r.createdAt,
+      }));
+    }
   } catch {
-    // DB unavailable — return seed merchants so the page still works
-    return NextResponse.json({ pledges: SEED_MERCHANTS, count: SEED_MERCHANTS.length });
+    // DB unavailable — just use seeds
   }
+
+  const dbNames = new Set(dbPledges.map((p) => p.businessName));
+  const seeds = SEED_MERCHANTS.filter((s) => !dbNames.has(s.businessName));
+  const all = [...seeds, ...dbPledges];
+  return NextResponse.json({ pledges: all, count: all.length });
 }
 
 export async function POST(request: NextRequest) {
@@ -100,13 +93,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validatePledge(body);
 
-    const { db } = await import("@/lib/db");
-    const pledge = await db.merchantPledge.create({ data });
+    const { supabase } = await import("@/lib/supabase");
+    const { data: pledge, error } = await supabase
+      .from("merchant_pledges")
+      .insert(data)
+      .select("id, businessName")
+      .single();
 
-    return NextResponse.json(
-      { pledge: { id: pledge.id, businessName: pledge.businessName } },
-      { status: 201 }
-    );
+    if (error) {
+      console.error("Pledge insert error:", error.message);
+      return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
+    }
+
+    return NextResponse.json({ pledge }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Something went wrong";
     return NextResponse.json({ error: message }, { status: 400 });

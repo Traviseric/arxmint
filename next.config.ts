@@ -19,7 +19,8 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
-  // Headers for WASM + SharedArrayBuffer (required by Web Workers) + security hardening
+  // Headers for security hardening
+  // NOTE: COOP/COEP headers removed — they block Vercel serverless function execution
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
     const cspReportOnlyEnabled =
@@ -41,8 +42,6 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
