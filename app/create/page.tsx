@@ -1,4 +1,4 @@
-import { CreateCommunityForm } from "@/components/create-community-form";
+import { MerchantSetupWizard } from "@/components/merchant-setup-wizard";
 import { Zap } from "lucide-react";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
@@ -21,35 +21,34 @@ export default function CreatePage() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-border-default glass-heavy mb-8">
               <Zap className="w-4 h-4 text-accent animate-pulse" />
               <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-                Prompt-Driven Creation
+                Live in 15 Minutes
               </span>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-6 drop-shadow-md">
-              Forge your{" "}
+              Set Up Your{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-br from-accent to-accent/60">
-                sovereign community.
+                Payment Node.
               </span>
             </h1>
           </ScrollReveal>
 
           <ScrollReveal delay={0.3}>
             <p className="text-lg sm:text-xl text-text-primary font-medium max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-              Describe your community in plain English. ArxMint generates a
-              complete Fedimint/Cashu deployment with Lightning agent rails,
-              privacy defaults, and Docker configuration — ready to launch.
+              Three questions. One command. Self-hosted Bitcoin payments
+              with near-zero fees, instant settlement, and no middleman.
             </p>
           </ScrollReveal>
         </div>
 
-        {/* Form */}
+        {/* Wizard */}
         <ScrollReveal delay={0.4} direction="up">
           <div className="glass-heavy border border-border-default rounded-xl p-4 sm:p-8 max-w-3xl mx-auto glow-card relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-3xl rounded-full pointer-events-none" />
             <div className="relative z-10 w-full overflow-hidden">
-              <CreateCommunityForm />
+              <MerchantSetupWizard />
             </div>
           </div>
         </ScrollReveal>

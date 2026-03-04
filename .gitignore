@@ -48,3 +48,4 @@ worker_[0-9][0-9][0-9]*.bat
 round_[0-9]*_*.bat
 round_[0-9]*_*.sh
 _wezterm_spawn_*.bat
+.vercel
