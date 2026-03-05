@@ -129,6 +129,7 @@ To move any item from "code written" to "verified working":
 - [ ] **2.5 NUT-26 QR**: Generate a QR, scan it with a Cashu wallet, complete payment.
 - [ ] **2.7 Monitoring**: Run `docker compose up`. Confirm Prometheus scrapes all services. Confirm Grafana shows data.
 - [ ] **4.1 Longmont pilot**: Real merchants. Real payments. Real KPIs tracked.
+- [ ] **4.2 TE Code ecosystem merchants**: Turn all 20 internal tools into real ArxMint merchants. Each gets a Lightning checkout, processes a real payment, then lists on arxmint.com/merchants. Master playbook: `.claude/MERCHANT_MONETIZATION.md`. Individual plans: `<project>/docs/MERCHANT_PLAN.md`. Drip 3-4 merchants/week onto the directory.
 
 ---
 

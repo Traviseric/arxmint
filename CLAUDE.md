@@ -44,6 +44,7 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Grant applications | `C:\code\te-btc\internal\arxmint-internal\grants\` | `opensats-application.md hrf-application.md spiral-email.md common-app-application.md` |
 | Replication playbook | `lib/replication-playbook.ts` | `generateReplicationPlaybook exportPlaybookMarkdown` |
 | Spec + cross-ref | `docs/spec.md`, `docs/research-crossref.md` | — |
+| Ecosystem merchant pipeline | `.claude/MERCHANT_MONETIZATION.md`, `<project>/docs/MERCHANT_PLAN.md` | `merchant checkout Lightning ArxMint` |
 | Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel Bazaar` |
 | Brand guide | `docs/brand.md` | `tagline voice palette audience` |
 | Docs index | `docs/README.md` | — |
