@@ -185,79 +185,75 @@ export default function MerchantsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05, duration: 0.3 }}
-                  className={`bg-bg-elevated border rounded-xl p-6 ${
+                  className={`bg-bg-elevated border rounded-xl overflow-hidden ${
                     m.featured
                       ? "border-accent/40 ring-1 ring-accent/10"
                       : "border-border-default"
                   }`}
                 >
-                  <div className="flex items-start gap-4">
-                    {/* Logo or category icon */}
-                    {m.logoUrl ? (
-                      <div className="w-14 h-14 rounded-lg bg-white border border-border-strong overflow-hidden shrink-0 flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={m.logoUrl}
-                          alt={`${m.businessName} logo`}
-                          width={56}
-                          height={56}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-14 h-14 rounded-lg bg-bg-surface border border-border-strong flex items-center justify-center text-2xl shrink-0">
-                        {CATEGORY_ICONS[m.category ?? "other"] ?? "⚡"}
-                      </div>
+                  {/* Logo banner across top */}
+                  {m.logoUrl ? (
+                    <div className="w-full h-32 bg-white border-b border-border-default flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.logoUrl}
+                        alt={`${m.businessName} logo`}
+                        className="h-full w-full object-contain p-4"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-32 bg-bg-surface border-b border-border-default flex items-center justify-center text-4xl">
+                      {CATEGORY_ICONS[m.category ?? "other"] ?? "⚡"}
+                    </div>
+                  )}
+
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base font-semibold text-text-primary">
+                        {m.businessName}
+                      </h3>
+                      {m.featured && (
+                        <span className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider">
+                          Founding Merchant
+                        </span>
+                      )}
+                    </div>
+
+                    {m.location && (
+                      <p className="text-xs text-text-muted flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" />
+                        {m.location}
+                      </p>
                     )}
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-semibold text-text-primary">
-                          {m.businessName}
-                        </h3>
-                        {m.featured && (
-                          <span className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider">
-                            Founding Merchant
-                          </span>
-                        )}
-                      </div>
+                    {m.reason && (
+                      <p className="text-sm text-text-secondary mt-3 leading-relaxed">
+                        &ldquo;{m.reason}&rdquo;
+                      </p>
+                    )}
 
-                      {m.location && (
-                        <p className="text-xs text-text-muted flex items-center gap-1 mt-1">
-                          <MapPin className="w-3 h-3" />
-                          {m.location}
-                        </p>
+                    <div className="flex items-center gap-3 mt-3 flex-wrap">
+                      {m.website && (
+                        <a
+                          href={m.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors"
+                        >
+                          <Globe className="w-3 h-3" />
+                          {m.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
                       )}
-
-                      {m.reason && (
-                        <p className="text-sm text-text-secondary mt-3 leading-relaxed">
-                          &ldquo;{m.reason}&rdquo;
-                        </p>
+                      {m.checkoutEnabled && (
+                        <Link
+                          href={`/pay/${m.id}${m.defaultAmountSats ? `?amount=${m.defaultAmountSats}` : ""}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
+                        >
+                          <Zap className="w-3 h-3" />
+                          Pay
+                        </Link>
                       )}
-
-                      <div className="flex items-center gap-3 mt-3 flex-wrap">
-                        {m.website && (
-                          <a
-                            href={m.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors"
-                          >
-                            <Globe className="w-3 h-3" />
-                            {m.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                        {m.checkoutEnabled && (
-                          <Link
-                            href={`/pay/${m.id}${m.defaultAmountSats ? `?amount=${m.defaultAmountSats}` : ""}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
-                          >
-                            <Zap className="w-3 h-3" />
-                            Pay
-                          </Link>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </motion.div>
