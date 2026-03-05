@@ -14,6 +14,7 @@ import {
   Globe,
   ExternalLink,
   Zap,
+  ShoppingBag,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -50,11 +51,8 @@ export default function MerchantsPage() {
 
   const loadMerchants = useCallback(async () => {
     try {
-      // Pass admin token from URL if present (e.g. /merchants?admin=arx_pipeline_2026)
-      const params = new URLSearchParams(window.location.search);
-      const adminToken = params.get("admin");
-      const url = adminToken ? `/api/pledge?admin=${adminToken}` : "/api/pledge";
-      const res = await fetch(url);
+      // Session cookie sent automatically — admin sees pipeline merchants
+      const res = await fetch("/api/pledge");
       if (res.ok) {
         const data = await res.json();
         setMerchants(data.pledges);
@@ -266,6 +264,15 @@ export default function MerchantsPage() {
                         >
                           <Zap className="w-3 h-3" />
                           Pay
+                        </Link>
+                      )}
+                      {m.id === "seed-teneo" && (
+                        <Link
+                          href={`/bazaar?merchant=${m.id}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
+                        >
+                          <ShoppingBag className="w-3 h-3" />
+                          Shop
                         </Link>
                       )}
                     </div>

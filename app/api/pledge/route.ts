@@ -5,8 +5,14 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthPubkey } from "@/lib/auth-middleware";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Admin pubkeys (hex) — users who see pipeline merchants
+const ADMIN_PUBKEYS = new Set([
+  "c56a311f60a2af124959057e90c7f329fba6a8132ef9cd2c126fe5ae0c90c4e3", // Travis
+]);
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || "";
@@ -133,11 +139,9 @@ function validatePledge(body: Record<string, unknown>) {
   return { businessName, contactName, email, location, category, website, logoUrl, reason, emailOptIn };
 }
 
-const ADMIN_TOKEN = process.env.ADMIN_PIPELINE_TOKEN || "arx_pipeline_2026";
-
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const showPipeline = searchParams.get("admin") === ADMIN_TOKEN;
+  const pubkey = getAuthPubkey(request);
+  const showPipeline = pubkey !== null && ADMIN_PUBKEYS.has(pubkey);
 
   let dbPledges: typeof SEED_MERCHANTS = [];
 
