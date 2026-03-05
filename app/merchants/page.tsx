@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Link from "next/link";
 import {
   Store,
   MapPin,
@@ -14,6 +14,7 @@ import {
   ArrowDown,
   Globe,
   ExternalLink,
+  Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -38,6 +39,8 @@ interface MerchantPublic {
   logoUrl: string | null;
   reason: string | null;
   featured: boolean;
+  checkoutEnabled?: boolean;
+  defaultAmountSats?: number | null;
 }
 
 export default function MerchantsPage() {
@@ -193,7 +196,8 @@ export default function MerchantsPage() {
                     {/* Logo or category icon */}
                     {m.logoUrl ? (
                       <div className="w-14 h-14 rounded-lg bg-white border border-border-strong overflow-hidden shrink-0 flex items-center justify-center">
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                           src={m.logoUrl}
                           alt={`${m.businessName} logo`}
                           width={56}
@@ -232,18 +236,29 @@ export default function MerchantsPage() {
                         </p>
                       )}
 
-                      {m.website && (
-                        <a
-                          href={m.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 mt-3 transition-colors"
-                        >
-                          <Globe className="w-3 h-3" />
-                          {m.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
+                      <div className="flex items-center gap-3 mt-3 flex-wrap">
+                        {m.website && (
+                          <a
+                            href={m.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors"
+                          >
+                            <Globe className="w-3 h-3" />
+                            {m.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {m.checkoutEnabled && (
+                          <Link
+                            href={`/pay/${m.id}${m.defaultAmountSats ? `?amount=${m.defaultAmountSats}` : ""}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
+                          >
+                            <Zap className="w-3 h-3" />
+                            Pay
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
