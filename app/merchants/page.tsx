@@ -40,6 +40,7 @@ interface MerchantPublic {
   featured: boolean;
   checkoutEnabled?: boolean;
   defaultAmountSats?: number | null;
+  pipeline?: boolean;
 }
 
 export default function MerchantsPage() {
@@ -49,7 +50,11 @@ export default function MerchantsPage() {
 
   const loadMerchants = useCallback(async () => {
     try {
-      const res = await fetch("/api/pledge");
+      // Pass admin token from URL if present (e.g. /merchants?admin=arx_pipeline_2026)
+      const params = new URLSearchParams(window.location.search);
+      const adminToken = params.get("admin");
+      const url = adminToken ? `/api/pledge?admin=${adminToken}` : "/api/pledge";
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setMerchants(data.pledges);
@@ -186,11 +191,20 @@ export default function MerchantsPage() {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05, duration: 0.3 }}
                   className={`bg-bg-elevated border rounded-xl overflow-hidden ${
-                    m.featured
-                      ? "border-accent/40 ring-1 ring-accent/10"
-                      : "border-border-default"
+                    m.pipeline
+                      ? "border-border-default opacity-50 grayscale"
+                      : m.featured
+                        ? "border-accent/40 ring-1 ring-accent/10"
+                        : "border-border-default"
                   }`}
                 >
+                  {/* Pipeline badge (admin only) */}
+                  {m.pipeline && (
+                    <div className="bg-neutral-200 text-neutral-500 text-[10px] font-mono uppercase tracking-wider text-center py-1">
+                      Pipeline — awaiting first transaction
+                    </div>
+                  )}
+
                   {/* Logo banner across top */}
                   {m.logoUrl ? (
                     <div className="w-full h-32 bg-white border-b border-border-default flex items-center justify-center">

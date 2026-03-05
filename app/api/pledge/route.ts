@@ -133,7 +133,12 @@ function validatePledge(body: Record<string, unknown>) {
   return { businessName, contactName, email, location, category, website, logoUrl, reason, emailOptIn };
 }
 
-export async function GET() {
+const ADMIN_TOKEN = process.env.ADMIN_PIPELINE_TOKEN || "arx_pipeline_2026";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const showPipeline = searchParams.get("admin") === ADMIN_TOKEN;
+
   let dbPledges: typeof SEED_MERCHANTS = [];
 
   try {
@@ -167,6 +172,22 @@ export async function GET() {
   const dbNames = new Set(dbPledges.map((p) => p.businessName));
   const seeds = SEED_MERCHANTS.filter((s) => !dbNames.has(s.businessName));
   const all = [...seeds, ...dbPledges];
+
+  // Admin view: append pipeline merchants (marked for grayed-out display)
+  if (showPipeline) {
+    const pipelineNames = new Set(all.map((p) => p.businessName));
+    const pending = PIPELINE_MERCHANTS
+      .filter((p) => !pipelineNames.has(p.businessName))
+      .map((p) => ({
+        ...p,
+        featured: false,
+        createdAt: new Date("2025-02-01").toISOString(),
+        checkoutEnabled: false,
+        pipeline: true,
+      }));
+    return NextResponse.json({ pledges: [...all, ...pending], count: all.length, pipelineCount: pending.length });
+  }
+
   return NextResponse.json({ pledges: all, count: all.length });
 }
 
