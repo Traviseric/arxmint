@@ -49,9 +49,12 @@ export async function POST(request: NextRequest) {
       // DB unavailable — check seed merchants
     }
 
-    // Fallback: allow seed-glacier in demo mode
+    // Fallback: allow seed merchants in demo mode
     if (!merchant && merchantId === "seed-glacier") {
       merchant = { id: "seed-glacier", businessName: "The Ice Cream Parlor by Glacier", checkout_enabled: true };
+    }
+    if (!merchant && merchantId === "seed-teneo") {
+      merchant = { id: "seed-teneo", businessName: "Teneo", checkout_enabled: true };
     }
 
     if (!merchant) {
