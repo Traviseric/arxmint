@@ -8,6 +8,45 @@ import { NextRequest, NextResponse } from "next/server";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || "";
+
+async function notifyTelegram(pledge: { id: string; businessName: string }, data: Record<string, unknown>) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_ADMIN_CHAT_ID) return;
+  try {
+    const lines = [
+      `🏪 *New Merchant Signup*`,
+      ``,
+      `*${String(data.businessName).replace(/[*_`[\]]/g, "")}*`,
+      data.location ? `📍 ${data.location}` : "",
+      data.category ? `🏷 ${data.category}` : "",
+      data.website ? `🌐 ${data.website}` : "",
+      data.contactName ? `👤 ${data.contactName}` : "",
+      data.email ? `✉️ ${data.email}` : "",
+      data.reason ? `\n💬 _${String(data.reason).replace(/[_*`[\]]/g, "")}_` : "\n⚠️ _No description provided_",
+      data.logoUrl ? (String(data.logoUrl).startsWith("data:") ? "\n🖼 Logo uploaded" : `\n🖼 ${data.logoUrl}`) : "\n📷 No logo",
+    ].filter(Boolean).join("\n");
+
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_ADMIN_CHAT_ID,
+        text: lines,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [[
+            { text: "✅ Approve", callback_data: `approve:${pledge.id}` },
+            { text: "❌ Reject", callback_data: `reject:${pledge.id}` },
+          ]],
+        },
+      }),
+    });
+  } catch (e) {
+    console.error("Telegram notify failed:", e);
+  }
+}
+
 // Seed merchants shown when DB is unavailable (or merged with DB results)
 const SEED_MERCHANTS = [
   {
@@ -21,6 +60,8 @@ const SEED_MERCHANTS = [
       "Ready to accept Bitcoin for ice cream. Zero fees, instant settlement — the way payments should work. Glacier serves the best homemade ice cream in Colorado and we want to be first to accept sats.",
     featured: true,
     createdAt: new Date("2025-01-15").toISOString(),
+    checkoutEnabled: true,
+    defaultAmountSats: 500,
   },
 ];
 
@@ -64,7 +105,7 @@ export async function GET() {
     const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt")
+      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt, checkout_enabled, default_amount_sats")
       .eq("approved", true)
       .order("featured", { ascending: false })
       .order("createdAt", { ascending: true });
@@ -80,6 +121,8 @@ export async function GET() {
         reason: r.reason,
         featured: r.featured,
         createdAt: r.createdAt,
+        checkoutEnabled: r.checkout_enabled ?? false,
+        defaultAmountSats: r.default_amount_sats ?? null,
       }));
     }
   } catch {
@@ -108,6 +151,9 @@ export async function POST(request: NextRequest) {
       console.error("Pledge insert error:", error.message);
       return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
     }
+
+    // Fire-and-forget Telegram notification
+    notifyTelegram(pledge, data);
 
     return NextResponse.json({ pledge }, { status: 201 });
   } catch (error: unknown) {
