@@ -63,6 +63,20 @@ const SEED_MERCHANTS = [
     checkoutEnabled: true,
     defaultAmountSats: 500,
   },
+  {
+    id: "seed-teneo",
+    businessName: "Teneo",
+    location: "Fort Collins, CO",
+    category: "technology",
+    website: "https://www.teneo.pub",
+    logoUrl: "/images/merchants/teneo.png",
+    reason:
+      "AI-powered book publishing platform. We accept Bitcoin for publishing services — zero fees, instant settlement, privacy by default.",
+    featured: true,
+    createdAt: new Date("2025-01-20").toISOString(),
+    checkoutEnabled: true,
+    defaultAmountSats: 1000,
+  },
 ];
 
 const VALID_CATEGORIES = [
