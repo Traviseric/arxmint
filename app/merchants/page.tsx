@@ -10,7 +10,6 @@ import Link from "next/link";
 import {
   Store,
   MapPin,
-  ArrowRight,
   ArrowDown,
   Globe,
   ExternalLink,

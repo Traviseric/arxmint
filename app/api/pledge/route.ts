@@ -60,6 +60,8 @@ const SEED_MERCHANTS = [
       "Ready to accept Bitcoin for ice cream. Zero fees, instant settlement — the way payments should work. Glacier serves the best homemade ice cream in Colorado and we want to be first to accept sats.",
     featured: true,
     createdAt: new Date("2025-01-15").toISOString(),
+    checkoutEnabled: true,
+    defaultAmountSats: 500,
   },
 ];
 
@@ -103,7 +105,7 @@ export async function GET() {
     const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt")
+      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt, checkout_enabled, default_amount_sats")
       .eq("approved", true)
       .order("featured", { ascending: false })
       .order("createdAt", { ascending: true });
@@ -119,6 +121,8 @@ export async function GET() {
         reason: r.reason,
         featured: r.featured,
         createdAt: r.createdAt,
+        checkoutEnabled: r.checkout_enabled ?? false,
+        defaultAmountSats: r.default_amount_sats ?? null,
       }));
     }
   } catch {

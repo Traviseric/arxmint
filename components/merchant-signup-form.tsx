@@ -179,6 +179,10 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           on the list. We&apos;ll reach out when the Fort Collins network is ready
           for onboarding.
         </p>
+        <p className="text-xs text-text-muted mt-4">
+          Once approved, your checkout page will be live at{" "}
+          <span className="font-mono text-accent">arxmint.com/pay/your-id</span>
+        </p>
       </div>
     );
   }
