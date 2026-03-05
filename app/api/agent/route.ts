@@ -38,6 +38,7 @@ const SERVICE_PRICES: Record<string, number> = {
   "cycle-signals": 50,
   compute: 500,
   data: 100,
+  "verify-payment": 0, // Free — used by downstream TE services to verify agent payments
 };
 
 /**
@@ -314,6 +315,17 @@ export async function GET(request: NextRequest) {
         timestamp: Date.now(),
       });
 
+    case "verify-payment":
+      // Payment verification service for downstream TE services (e.g. teneo-publishing).
+      // If we reach here, checkPayment() already verified the payment is valid.
+      return NextResponse.json({
+        service: "verify-payment",
+        verified: true,
+        paymentMethod,
+        amount_sats: SERVICE_PRICES[service] || PAYWALL_CONFIG.priceSats,
+        timestamp: Date.now(),
+      });
+
     default:
       return NextResponse.json({
         service: "agent-query",
@@ -324,12 +336,14 @@ export async function GET(request: NextRequest) {
           "cycle-signals",
           "compute",
           "data",
+          "verify-payment",
         ],
         pricing: {
           "privacy-audit": "200 sats",
           "cycle-signals": "50 sats",
           compute: "500 sats/job (demo — placeholder output)",
           data: "50-100 sats/dataset (demo — static catalog)",
+          "verify-payment": "0 sats (TE service verification)",
         },
         demo_services: ["compute", "data"],
         demo_notice: "compute and data endpoints are demo placeholders. privacy-audit and cycle-signals use real computations.",
