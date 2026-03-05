@@ -37,6 +37,8 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Merchant redirects | `app/merchant/page.tsx`, `app/network/page.tsx` | `redirect /merchants` |
 | Supabase client | `lib/supabase.ts` | `createClient supabase` |
 | Merchant seed data | `app/api/pledge/route.ts` (SEED_MERCHANTS const) | `Glacier seed-glacier` |
+| Auth (Nostr NIP-98) | `lib/auth-middleware.ts`, `app/api/auth/route.ts`, `docs/auth.md` | `NIP-98 session HMAC pubkey ADMIN_PUBKEYS` |
+| Admin pipeline | `app/api/pledge/route.ts` (ADMIN_PUBKEYS + PIPELINE_MERCHANTS) | `pipeline admin npub` |
 | Agent API | `app/api/agent/route.ts` | `privacy-audit cycle-signals` |
 | L402 demo | `app/api/l402/route.ts` | `WWW-Authenticate 402` |
 | Pilot deployment | `lib/pilot-deployment.ts` | `PilotKPITargets generatePilotTimeline MultiCityNetwork` |
