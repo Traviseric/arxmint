@@ -42,7 +42,7 @@ services:
       - MINT_LND_REST_MACAROON=/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon
       - MINT_LISTEN_HOST=0.0.0.0
       - MINT_LISTEN_PORT=3338
-      - MINT_PRIVATE_KEY=${CASHU_PRIVATE_KEY:?CASHU_PRIVATE_KEY is required — generate with: openssl rand -hex 32}
+      - MINT_PRIVATE_KEY=${CASHU_PRIVATE_KEY:?Set CASHU_PRIVATE_KEY in .env}
     ports:
       - "3338:3338"
     volumes:
