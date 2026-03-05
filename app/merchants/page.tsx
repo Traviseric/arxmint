@@ -192,7 +192,7 @@ export default function MerchantsPage() {
                   transition={{ delay: i * 0.05, duration: 0.3 }}
                   className={`bg-bg-elevated border rounded-xl overflow-hidden ${
                     m.pipeline
-                      ? "border-border-default opacity-50 grayscale"
+                      ? "border-border-default opacity-75"
                       : m.featured
                         ? "border-accent/40 ring-1 ring-accent/10"
                         : "border-border-default"
