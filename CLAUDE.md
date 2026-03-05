@@ -48,7 +48,7 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Spec + cross-ref | `docs/spec.md`, `docs/research-crossref.md` | — |
 | Ecosystem merchant pipeline | `.claude/MERCHANT_MONETIZATION.md`, `<project>/docs/MERCHANT_PLAN.md` | `merchant checkout Lightning ArxMint` |
 | Agent commerce kit | `packages/agent-commerce/` | `@te-code/agent-commerce checkout l402 withL402 createInvoice` |
-| Hardware appliance | `docs/HARDWARE_PRODUCT.md` | `ArxMint Box Station Citadel NUC Starlink appliance` |
+| Hardware appliance | `te-btc/internal/arxmint-internal/HARDWARE_PRODUCT.md` | `ArxMint Box Station Citadel NUC Starlink appliance` |
 | Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel Bazaar` |
 | Brand guide | `docs/brand.md` | `tagline voice palette audience` |
 | Docs index | `docs/README.md` | — |
