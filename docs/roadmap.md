@@ -1,6 +1,6 @@
 # ArxMint — Implementation Roadmap
 
-**Version:** 4.3 — March 4, 2026
+**Version:** 4.4 — March 5, 2026
 **Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md` + 6 deep research studies in `docs/research/` + 11 self-hosting UX studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/`
 **Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Overnight tasks:** `OVERNIGHT_TASKS.md` (concrete implementation tasks derived from this roadmap)
@@ -21,7 +21,7 @@ Phase C: Infrastructure (Caddy + monitoring + backup)   ✅ CODE COMPLETE
 Phase D: E2E Testing   (regtest stack + 22 test flows)  ✅ CODE COMPLETE
 Phase E: Hardening     (rate limit, health, caps, CI)   ✅ CODE COMPLETE
 ═══════════════════════════════════════════════════════
-PRODUCTION READINESS GATE → testnet VPS deployment pending (human)
+PRODUCTION READINESS GATE → 🟡 NUC testnet deployment running (LND syncing, Cashu standing by)
 ═══════════════════════════════════════════════════════
 Phase 4: Citadel       (Longmont pilot + grants)        🟡 IN PROGRESS
 Phase 5: Bazaar       (Merchant platform — decentralized Stripe)  📋 PLANNED
@@ -594,19 +594,26 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 
 **Current status (March 2026):**
 - Merchant pledge directory LIVE at https://www.arxmint.com/merchants
-- Glacier Ice Cream (Fort Collins) as seed merchant
+- 2 live merchants: Glacier Ice Cream (Fort Collins) + Teneo (Boulder)
+- 13 ecosystem merchants in pipeline (admin-only visibility, AI logos generated)
+- Nostr NIP-98 admin auth live — admin sees pipeline merchants when logged in
+- Checkout pages live at `/pay/[merchant-id]` with Lightning QR codes
 - Public signup form accepting new merchant pledges → Supabase
 - Vercel + Supabase production infrastructure working
-- API endpoints verified: `/api/health-check`, `/api/pledge` (GET + POST)
+- **Testnet stack deployed on TE NUC** — LND syncing, Cashu standing by
+- API endpoints verified: `/api/health-check`, `/api/pledge` (GET + POST), `/api/auth`
 
 **Remaining for full pilot:**
-1. Switch LND from `--bitcoin.testnet` to `--bitcoin.mainnet` in compose
-2. Generate production credentials (run `scripts/generate-secrets.sh`; full checklist at `C:\code\te-btc\internal\docs\arxmint\human_tasks.md`)
-3. Deploy full Docker stack (LND + Cashu + Fedimint) to VPS
-4. Verify health checks, monitoring, and backup automation
-5. Onboard first 5 merchants (soft launch — directory already live)
-6. Monitor for 7 days — check alerts, backups, payment success rate
-7. Open to full community (30 merchant target)
+1. ~~Deploy Docker stack to hardware~~ ✅ Running on NUC (testnet)
+2. Complete first testnet payment end-to-end (LND → Cashu → checkout)
+3. Build merchant-scoped agent checkout (`lib/payment-sdk.ts`)
+4. Activate pipeline merchants as each service processes first transaction
+5. Switch LND from `--bitcoin.testnet` to `--bitcoin.mainnet` in compose
+6. Generate production credentials (run `scripts/generate-secrets.sh`)
+7. Verify health checks, monitoring, and backup automation
+8. Onboard first 5 merchants (soft launch — directory already live)
+9. Monitor for 7 days — check alerts, backups, payment success rate
+10. Open to full community (30 merchant target)
 
 **KPIs (from Doc 7 template):**
 - 30 merchants onboarded by month 6

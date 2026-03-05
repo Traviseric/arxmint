@@ -8,7 +8,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 
 Humans and AI agents share the same private commerce infrastructure. Agents sell data/compute via L402 paywalls; humans transact in ecash; both use the same Lightning-connected federation.
 
-**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. Production Readiness Gate pending testnet VPS deployment (human action required). Phase 4 (Citadel pilot) in progress — merchant pledge directory live at arxmint.com/merchants, Glacier Ice Cream as seed merchant, public signup form working, grants drafted, KPI framework ready. Phase 5 (Bazaar) planned — decentralized Stripe alternative. See `docs/roadmap.md`.
+**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. **Testnet deployment running on TE NUC** (LND syncing, Cashu standing by). Phase 4 (Citadel pilot) in progress — merchant pledge directory live at arxmint.com/merchants, 2 live merchants (Glacier, Teneo) + 13 in pipeline, Nostr admin auth working, checkout pages live, grants drafted, KPI framework ready. Phase 5 (Bazaar) planned — decentralized Stripe alternative. See `docs/roadmap.md`.
 
 ## Lookup Table
 
@@ -53,6 +53,8 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Brand guide | `docs/brand.md` | `tagline voice palette audience` |
 | Docs index | `docs/README.md` | — |
 | Payment SDK | `lib/payment-sdk.ts` (planned) | `createL402Challenge verifyL402Token routePayment` |
+| Checkout page | `app/pay/[merchant-id]/page.tsx`, `components/checkout-flow.tsx` | `CheckoutFlow Lightning QR merchant checkout` |
+| NUC deployment | `docs/DEPLOY.md`, `docker/docker-compose.cashu.yml` | `NUC testnet LND Cashu self-hosted` |
 | Marketplace integration | See `C:\code\teneo-marketplace` | `teneo-marketplace, storefront, federation, revenue share` |
 
 ## Tech Stack

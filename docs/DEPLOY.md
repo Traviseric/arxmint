@@ -266,6 +266,8 @@ docker compose logs -f
 
 After `docker compose up -d`, LND starts without a wallet. **You must create the wallet and save the seed phrase before funds can be received.**
 
+### Option A: Interactive (TTY available)
+
 ```bash
 # Wait for LND to start (takes ~60 seconds on first run), then:
 docker exec -it sf-lnd lncli --network=testnet create
@@ -276,14 +278,64 @@ Follow the prompts:
 2. Choose **n** when asked if you have an existing seed
 3. **SAVE THE 24-WORD SEED PHRASE SECURELY** — write it down and store it offline
 
-> **Critical:** This seed phrase is the only way to recover funds if the Docker volume (`lnd-data`) is lost. No seed phrase = permanent loss of all channel funds.
-
 For the Cashu-only stack (`sf-lnd-lite`):
 ```bash
 docker exec -it sf-lnd-lite lncli --network=testnet create
 ```
 
+### Option B: REST API (headless / SSH / scripted)
+
+When `lncli create` fails with "inappropriate ioctl for device" (no TTY), use the LND REST API instead:
+
+```bash
+CONTAINER=sf-lnd-lite  # or sf-lnd for full stack
+
+# 1. Generate seed
+docker exec $CONTAINER sh -c \
+  "curl -s --cacert /root/.lnd/tls.cert https://localhost:8080/v1/genseed"
+# → Save the cipher_seed_mnemonic array (24 words)
+
+# 2. Init wallet (use Python on the host to avoid shell quoting issues)
+python3 -c "
+import subprocess, json
+
+seed_raw = subprocess.check_output(['docker', 'exec', '$CONTAINER', 'sh', '-c',
+    'curl -s --cacert /root/.lnd/tls.cert https://localhost:8080/v1/genseed'])
+seed = json.loads(seed_raw)
+mnemonic = seed['cipher_seed_mnemonic']
+
+# Print seed for backup
+for i, w in enumerate(mnemonic):
+    print(f'  {i+1:2d}. {w}')
+
+# Base64-encode your wallet password (e.g. 'mypassword' → 'bXlwYXNzd29yZA==')
+import base64
+password_b64 = base64.b64encode(b'mypassword').decode()
+
+payload = json.dumps({
+    'wallet_password': password_b64,
+    'cipher_seed_mnemonic': mnemonic
+})
+
+result = subprocess.check_output(['docker', 'exec', '$CONTAINER', 'sh', '-c',
+    f\"curl -s --cacert /root/.lnd/tls.cert -X POST https://localhost:8080/v1/initwallet -d '{payload}'\"])
+print('Result:', result.decode())
+"
+```
+
+> **Critical:** This seed phrase is the only way to recover funds if the Docker volume (`lnd-data`) is lost. No seed phrase = permanent loss of all channel funds.
+
 **Subsequent restarts:** LND will require wallet unlock. Either run `lncli unlock` manually or configure an auto-unlock password file.
+
+### NUC / Self-Hosted Notes
+
+When deploying to a NUC or mini PC (Beelink, Intel NUC, Orange Pi):
+
+- LND neutrino sync takes **2–4 hours** on first start (downloading testnet headers)
+- Cashu mint will restart-loop until LND is fully synced — this is expected behavior
+- Check sync progress: `docker exec sf-lnd-lite lncli --network=testnet getinfo | grep synced`
+- Once `synced_to_chain: true`, Cashu connects automatically
+- For Starlink/CGNAT: use Cloudflare Tunnel (outbound-only, no port forwarding needed)
 
 ---
 

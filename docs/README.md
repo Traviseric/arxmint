@@ -13,7 +13,8 @@
 
 | Document | Description |
 |----------|-------------|
-| [DEPLOY.md](DEPLOY.md) | VPS provisioning, Docker setup, env config, Caddy HTTPS |
+| [auth.md](auth.md) | Authentication system — Nostr NIP-98, L402/Cashu agent auth, admin system |
+| [DEPLOY.md](DEPLOY.md) | VPS/NUC provisioning, Docker setup, env config, Caddy HTTPS |
 | [VPS_SETUP.md](VPS_SETUP.md) | Vultr/DigitalOcean server setup checklist |
 | [DR_DRILL.md](DR_DRILL.md) | Disaster recovery drill procedure |
 | [PITR_RUNBOOK.md](PITR_RUNBOOK.md) | Point-in-time recovery runbook for Postgres base backups + WAL replay |
