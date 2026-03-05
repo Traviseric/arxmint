@@ -79,6 +79,27 @@ const SEED_MERCHANTS = [
   },
 ];
 
+// Ecosystem merchants — logos ready, hidden until first real transaction.
+// To activate: move entry from PIPELINE_MERCHANTS into SEED_MERCHANTS above.
+const PIPELINE_MERCHANTS = [
+  { id: "seed-image-engine", businessName: "Image Engine", location: "Fort Collins, CO", category: "technology", website: "https://image-engine.app", logoUrl: "/images/merchants/image-engine.png", reason: "AI image generation for book covers, logos, avatars, and marketing campaigns. Pay per image with Lightning.", defaultAmountSats: 500 },
+  { id: "seed-conversos", businessName: "Conversos", location: "Fort Collins, CO", category: "technology", website: "https://conversos.app", logoUrl: "/images/merchants/conversos.png", reason: "AI chat intelligence with personality-aware routing. Pay per session via Lightning.", defaultAmountSats: 100 },
+  { id: "seed-profileengine", businessName: "ProfileEngine", location: "Fort Collins, CO", category: "technology", website: "https://profileengine.app", logoUrl: "/images/merchants/profileengine.png", reason: "5-layer psychological analysis from text. Pay per analysis with Lightning.", defaultAmountSats: 1000 },
+  { id: "seed-trendos", businessName: "TrendOS", location: "Fort Collins, CO", category: "technology", website: "https://trend-os.io", logoUrl: "/images/merchants/trendos.png", reason: "AI trend intelligence — keyword research, grant discovery, opportunity alerts. Pay per report via Lightning.", defaultAmountSats: 1000 },
+  { id: "seed-marketingos", businessName: "MarketingOS", location: "Fort Collins, CO", category: "technology", website: "https://marketingos.app", logoUrl: "/images/merchants/marketingos.png", reason: "AI marketing automation — email campaigns, social calendars, lead scoring. Pay per campaign via Lightning.", defaultAmountSats: 2000 },
+  { id: "seed-analyticsos", businessName: "AnalyticsOS", location: "Fort Collins, CO", category: "technology", website: "https://analyticsos.io", logoUrl: "/images/merchants/analyticsos.png", reason: "Behavioral web analytics with bot detection. Pay per report via Lightning.", defaultAmountSats: 1000 },
+  { id: "seed-detection-lab", businessName: "Detection Lab", location: "Fort Collins, CO", category: "technology", website: "https://detectionlab.app", logoUrl: "/images/merchants/detection-lab.png", reason: "25-signal behavioral biometrics and bot detection scoring engine. Pay per session via Lightning.", defaultAmountSats: 5000 },
+  { id: "seed-formforge", businessName: "FormForge", location: "Fort Collins, CO", category: "technology", website: "https://formforge.app", logoUrl: "/images/merchants/formforge.png", reason: "Drop-in form API with AI spam detection. Pay per form via Lightning.", defaultAmountSats: 500 },
+  { id: "seed-domainos", businessName: "DomainOS", location: "Fort Collins, CO", category: "technology", website: "https://domainos.app", logoUrl: "/images/merchants/domainos.png", reason: "AI domain intelligence — search, valuation, trademark checking. Pay per search via Lightning.", defaultAmountSats: 500 },
+  { id: "seed-faviforge", businessName: "FaviForge", location: "Fort Collins, CO", category: "technology", website: "https://faviforge.app", logoUrl: "/images/merchants/faviforge.png", reason: "AI favicon generator with iterative self-correction. Pay per icon via Lightning.", defaultAmountSats: 200 },
+  { id: "seed-video-engine", businessName: "Video Engine", location: "Fort Collins, CO", category: "entertainment", website: "https://video-engine.app", logoUrl: "/images/merchants/video-engine.png", reason: "12-stage AI video production pipeline. Pay per video via Lightning.", defaultAmountSats: 10000 },
+  { id: "seed-audio-engine", businessName: "Audio Engine", location: "Fort Collins, CO", category: "entertainment", website: "https://audio-engine.app", logoUrl: "/images/merchants/audio-engine.png", reason: "AI audio production — voiceovers, podcast editing, music production. Pay per clip via Lightning.", defaultAmountSats: 5000 },
+  { id: "seed-revenue-engine", businessName: "RevenueEngine", location: "Fort Collins, CO", category: "technology", website: "https://revenueengine.app", logoUrl: "/images/merchants/revenue-engine.png", reason: "Cross-service revenue intelligence and orchestration. Pay per analysis via Lightning.", defaultAmountSats: 2000 },
+];
+
+// Suppress unused-variable lint — PIPELINE_MERCHANTS is a ready-to-activate registry
+void PIPELINE_MERCHANTS;
+
 const VALID_CATEGORIES = [
   "food-drink", "retail", "services", "health",
   "entertainment", "technology", "other",
