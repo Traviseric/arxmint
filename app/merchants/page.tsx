@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Zap,
   ShoppingBag,
+  BadgeCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -281,6 +282,30 @@ export default function MerchantsPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ── Badge CTA ── */}
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+          <ScrollReveal>
+            <Link
+              href="/badge"
+              className="block bg-bg-elevated border border-border-default rounded-xl p-6 hover:border-accent/30 transition-colors group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <BadgeCheck className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors">
+                    Get Your &ldquo;Accepted Here&rdquo; Badge
+                  </h3>
+                  <p className="text-sm text-text-secondary mt-0.5">
+                    Embeddable badge for your website, printable stickers for your window, and a referral link to grow the network.
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </ScrollReveal>
         </section>
 
         {/* ── Application Form ── */}
