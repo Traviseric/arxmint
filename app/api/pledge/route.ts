@@ -66,12 +66,12 @@ const SEED_MERCHANTS = [
   {
     id: "seed-teneo",
     businessName: "Teneo",
-    location: "Fort Collins, CO",
+    location: "Boulder, Colorado",
     category: "technology",
-    website: "https://www.teneo.pub",
+    website: "https://teneo.io",
     logoUrl: "/images/merchants/teneo.png",
     reason:
-      "AI-powered book publishing platform. We accept Bitcoin for publishing services — zero fees, instant settlement, privacy by default.",
+      "AI-powered publishing and agent commerce. Teneo is the first platform where AI agents and humans share the same Bitcoin payment rails — agents sell data and compute via L402 paywalls, creators sell books and courses, all settled instantly in sats with zero platform fees.",
     featured: true,
     createdAt: new Date("2025-01-20").toISOString(),
     checkoutEnabled: true,

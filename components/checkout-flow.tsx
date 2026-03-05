@@ -18,6 +18,10 @@ import {
   RefreshCw,
   MapPin,
   AlertCircle,
+  Globe,
+  ExternalLink,
+  Star,
+  Users,
 } from "lucide-react";
 
 type CheckoutState = "amount" | "invoice" | "paid" | "expired" | "error";
@@ -27,6 +31,8 @@ interface CheckoutFlowProps {
   merchantName: string;
   merchantLogo: string | null;
   merchantLocation: string | null;
+  merchantWebsite?: string | null;
+  merchantDescription?: string | null;
   presetAmount?: number;
 }
 
@@ -35,6 +41,8 @@ export function CheckoutFlow({
   merchantName,
   merchantLogo,
   merchantLocation,
+  merchantWebsite,
+  merchantDescription,
   presetAmount,
 }: CheckoutFlowProps) {
   const [state, setState] = useState<CheckoutState>(presetAmount ? "invoice" : "amount");
@@ -152,7 +160,7 @@ export function CheckoutFlow({
               alt={`${merchantName} logo`}
               width={80}
               height={80}
-              className="w-full h-full object-contain p-2"
+              className="w-full h-full object-cover"
             />
           </div>
         )}
@@ -385,6 +393,58 @@ export function CheckoutFlow({
             <RefreshCw className="w-4 h-4" />
             Try Again
           </button>
+        </div>
+      )}
+
+      {/* Merchant Info Section */}
+      {merchantDescription && (
+        <div className="mt-8 bg-bg-elevated border border-border-default rounded-xl p-6 shadow-sm space-y-5">
+          <div>
+            <h2 className="text-base font-semibold text-text-primary mb-2">
+              About {merchantName}
+            </h2>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              {merchantDescription}
+            </p>
+          </div>
+
+          {merchantWebsite && (
+            <a
+              href={merchantWebsite}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-accent hover:text-accent/80 transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+              {merchantWebsite.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+
+          <div className="border-t border-border-default pt-5 space-y-3">
+            <p className="text-xs text-text-muted uppercase tracking-wider font-medium">
+              Get Involved
+            </p>
+
+            <a
+              href="/merchants"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-accent/10 border border-accent/20 text-accent text-sm font-medium hover:bg-accent/20 transition-colors"
+            >
+              <Users className="w-4 h-4" />
+              Join the Pilot — Become a Founding Merchant
+            </a>
+
+            <a
+              href="https://github.com/Traviseric/arxmint"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border-default hover:border-accent/50 text-text-secondary text-sm hover:text-text-primary transition-colors"
+            >
+              <Star className="w-4 h-4" />
+              Star on GitHub — Help us grow
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       )}
 

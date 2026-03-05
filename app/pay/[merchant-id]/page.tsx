@@ -15,15 +15,31 @@ interface MerchantData {
   location: string | null;
   checkout_enabled: boolean;
   default_amount_sats: number | null;
+  website: string | null;
+  reason: string | null;
 }
 
-const SEED_MERCHANT: MerchantData = {
-  id: "seed-glacier",
-  businessName: "The Ice Cream Parlor by Glacier",
-  logoUrl: "/images/merchants/glacier.png",
-  location: "Fort Collins, CO",
-  checkout_enabled: true,
-  default_amount_sats: 500,
+const SEED_MERCHANTS: Record<string, MerchantData> = {
+  "seed-glacier": {
+    id: "seed-glacier",
+    businessName: "The Ice Cream Parlor by Glacier",
+    logoUrl: "/images/merchants/glacier.png",
+    location: "Fort Collins, CO",
+    checkout_enabled: true,
+    default_amount_sats: 500,
+    website: "https://www.glacierparlor.com",
+    reason: null,
+  },
+  "seed-teneo": {
+    id: "seed-teneo",
+    businessName: "Teneo",
+    logoUrl: "/images/merchants/teneo.png",
+    location: "Boulder, Colorado",
+    checkout_enabled: true,
+    default_amount_sats: 1000,
+    website: "https://teneo.io",
+    reason: "AI-powered publishing and agent commerce. Teneo is the first platform where AI agents and humans share the same Bitcoin payment rails — agents sell data and compute via L402 paywalls, creators sell books and courses, all settled instantly in sats with zero platform fees.",
+  },
 };
 
 async function getMerchant(merchantId: string): Promise<MerchantData | null> {
@@ -32,7 +48,7 @@ async function getMerchant(merchantId: string): Promise<MerchantData | null> {
     const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName, logoUrl, location, checkout_enabled, default_amount_sats")
+      .select("id, businessName, logoUrl, location, checkout_enabled, default_amount_sats, website, reason")
       .eq("id", merchantId)
       .single();
 
@@ -41,8 +57,8 @@ async function getMerchant(merchantId: string): Promise<MerchantData | null> {
     // DB unavailable
   }
 
-  // Fallback: seed merchant
-  if (merchantId === "seed-glacier") return SEED_MERCHANT;
+  // Fallback: seed merchants
+  if (SEED_MERCHANTS[merchantId]) return SEED_MERCHANTS[merchantId];
 
   return null;
 }
@@ -93,6 +109,8 @@ export default async function PayMerchantPage({
         merchantName={merchant.businessName}
         merchantLogo={merchant.logoUrl}
         merchantLocation={merchant.location}
+        merchantWebsite={merchant.website}
+        merchantDescription={merchant.reason}
         presetAmount={presetAmount && !isNaN(presetAmount) ? presetAmount : undefined}
       />
     </div>
