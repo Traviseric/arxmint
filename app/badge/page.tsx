@@ -240,6 +240,61 @@ export default function BadgePage() {
           </div>
         </ScrollReveal>
 
+        {/* ── Full Artwork Gallery ── */}
+        <ScrollReveal delay={0.32}>
+          <div className="mb-10">
+            <h2 className="text-lg font-semibold mb-3">Merchant Kit Artwork</h2>
+            <p className="text-sm text-text-secondary mb-6">
+              Professional artwork for social media, storefronts, and marketing. Right-click to save any image.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/badge-dark.png" alt="Bitcoin Accepted Here badge (dark)" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Badge — Dark (website embed, glass doors)</div>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/badge-light.png" alt="Bitcoin Accepted Here badge (light)" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Badge — Light (print, counter cards)</div>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/window-sticker.png" alt="ArxMint window sticker" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Window Sticker — circular die-cut</div>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/counter-card.png" alt="ArxMint QR counter card" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Counter Card — Scan to Pay QR</div>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/logo-icon.png" alt="ArxMint logo icon" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Logo Icon — fortress + lightning</div>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/welcome-kit.png" alt="ArxMint merchant welcome kit" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Welcome Kit — full merchant package</div>
+              </div>
+            </div>
+            {/* Wide images */}
+            <div className="mt-4 space-y-4">
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/network-hero.png" alt="Join the ArxMint network" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Network Hero — &ldquo;Join the network&rdquo; promotional</div>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border-default">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/merchant-kit/social-banner.png" alt="Build the citadel social banner" className="w-full" />
+                <div className="p-3 bg-bg-elevated text-xs text-text-muted">Social Banner — &ldquo;Build the citadel&rdquo; header</div>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+
         {/* ── Instructions ── */}
         <ScrollReveal delay={0.35}>
           <div className="bg-bg-elevated border border-border-default rounded-xl p-6">
