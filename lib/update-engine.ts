@@ -1,11 +1,17 @@
 /**
  * ArxMint Stack Update Engine
  * Checks for updates via a signed version manifest and reports availability.
- * Signing: shape validation for pilot. Document where to insert GPG verification.
+ * Signing: SHA-256 checksum verification for pilot (Option A).
+ *   For production, replace with GPG detached signature (Option B):
+ *   - Place the ArxMint release signing public key at: update/arxmint-release.pub.asc
+ *   - Ship manifest.json.sig alongside manifest.json
+ *   - Verify with: gpg --verify manifest.json.sig manifest.json
+ *   - Set ARXMINT_RELEASE_KEY_ID env var to the expected key fingerprint
  *
  * T20 / Roadmap 5.11a
  */
 
+import { createHash } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -14,6 +20,8 @@ export interface VersionManifest {
   channel: "stable" | "beta";
   changelog: string;
   minNodeVersion: string;
+  /** SHA-256 hex digest of the primary release tarball for this version. */
+  checksum: string;
   sha256: Record<string, string>;
 }
 
@@ -58,18 +66,43 @@ export async function fetchRemoteManifest(
 }
 
 /**
- * Validates manifest shape (structural check for pilot).
- * TODO: Replace with GPG signature verification in production.
- * Place the ArxMint release signing public key at: update/arxmint-release.pub.asc
- * Use: `gpg --verify manifest.json.sig manifest.json`
+ * Verifies a downloaded artifact's integrity against its expected SHA-256 checksum.
+ * Call this after downloading the release tarball, before extracting or installing.
+ *
+ * @param data     Raw bytes of the downloaded artifact.
+ * @param expected Hex-encoded SHA-256 digest from the manifest's `checksum` field.
+ * @returns        true if the digest matches, false if tampered or mismatched.
+ */
+export function verifyChecksum(data: Buffer, expected: string): boolean {
+  if (!/^[0-9a-f]{64}$/i.test(expected)) return false;
+  const actual = createHash("sha256").update(data).digest("hex");
+  return actual === expected;
+}
+
+/** SHA-256 hex pattern — 64 lowercase hex characters. */
+const HEX64_RE = /^[0-9a-f]{64}$/i;
+
+/**
+ * Validates manifest structure and cryptographic fields (pilot: SHA-256 checksum format).
+ *
+ * Checks:
+ *  1. Required string fields are present and non-empty.
+ *  2. `channel` is one of the known enum values.
+ *  3. `checksum` is a valid 64-character hex digest (format check; content is
+ *     verified separately via `verifyChecksum()` after artifact download).
+ *
+ * Production upgrade path (Option B — GPG):
+ *   Replace or augment this function with GPG signature verification once the
+ *   ArxMint release signing key is distributed. See module-level doc comment.
  */
 export function verifyManifest(manifest: VersionManifest, _signature: string): boolean {
   return (
-    typeof manifest.version === "string" &&
+    typeof manifest.version === "string" && manifest.version.length > 0 &&
     typeof manifest.changelog === "string" &&
-    typeof manifest.minNodeVersion === "string" &&
+    typeof manifest.minNodeVersion === "string" && manifest.minNodeVersion.length > 0 &&
     (manifest.channel === "stable" || manifest.channel === "beta") &&
-    typeof manifest.sha256 === "object"
+    typeof manifest.sha256 === "object" &&
+    typeof manifest.checksum === "string" && HEX64_RE.test(manifest.checksum)
   );
 }
 
