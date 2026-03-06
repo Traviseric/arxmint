@@ -19,6 +19,7 @@ import { logger } from "@/lib/logger";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { checkPrincipalAndIpRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { observeApiRoute } from "@/lib/api-observability";
+import { withIdempotency } from "@/lib/idempotency";
 
 // ---- Types --------------------------------------------------
 
@@ -141,6 +142,7 @@ async function createCashuMintQuote(
 
 export async function POST(request: NextRequest) {
   return observeApiRoute(request, "/api/settlement", async () => {
+  return withIdempotency(request, async () => {
   // Require auth: accept ArxMint session cookie, Bearer JWT, or X-Marketplace-Secret
   // header (server-to-server from Teneo Marketplace via MARKETPLACE_SHARED_SECRET).
   const caller = getCallerFromRequest(request);
@@ -363,6 +365,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(response, { status: 201 });
+  });
   });
 }
 

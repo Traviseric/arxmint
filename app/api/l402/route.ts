@@ -15,6 +15,7 @@ import { logger } from "@/lib/logger";
 import { db } from "@/lib/db";
 import { resilientFetch } from "@/lib/net-resilience";
 import { observeApiRoute } from "@/lib/api-observability";
+import { withIdempotency } from "@/lib/idempotency";
 
 /** In-memory store: base64-macaroon → { rHashBase64, expiresAt } */
 const pendingL402 = new Map<
@@ -381,6 +382,9 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Challenge path: no valid token — generate invoice and return 402 ──
+  // Idempotency-Key is supported here so clients that retry on timeout
+  // receive the same challenge (macaroon + invoice) without creating a duplicate.
+  return withIdempotency(request, async () => {
   const amountSats = Number(process.env.L402_PRICE_SATS) || 100;
 
   try {
@@ -498,6 +502,7 @@ export async function GET(request: NextRequest) {
   );
 
   return response;
+  });
   });
 }
 
