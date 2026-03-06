@@ -119,17 +119,14 @@ export function parseSPAddress(address: string): SPAddress {
     throw new Error("Silent Payment address too short — missing key data");
   }
 
-  // In production, decode Bech32m and extract the two pubkeys.
-  // For now, derive placeholder keys from the address data.
-  const scanPubKey = `02${data.slice(0, 64).padEnd(64, "0")}`;
-  const spendPubKey = `02${data.slice(64, 128).padEnd(64, "0")}`;
-
-  return {
-    address,
-    network,
-    scanPubKey,
-    spendPubKey,
-  };
+  // BIP-352 Bech32m decoding not yet implemented.
+  // Full implementation requires @scure/base Bech32m decode + BIP-352 payload split.
+  // Throwing explicitly so callers surface this as an error rather than silently
+  // receiving cryptographically invalid pubkeys.
+  throw new Error(
+    'NotImplementedError: parseSPAddress() requires real Bech32m decoding (BIP-350/352). ' +
+    'Silent Payments address parsing is not yet implemented.'
+  );
 }
 
 /**
@@ -581,8 +578,15 @@ export function buildSPPSBTFields(
   _scanPubKey: string
 ): SPPSBTField {
   // In production, compute ECDH shared secret and derive output key
-  // For now, create the PSBT field structure
-  const parsed = parseSPAddress(recipientAddress);
+  // parseSPAddress() throws NotImplementedError until BIP-352 Bech32m decoding is done.
+  let parsed: SPAddress;
+  try {
+    parsed = parseSPAddress(recipientAddress);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[ArxMint] buildSPPSBTFields: cannot parse SP address —', msg);
+    throw new Error(`buildSPPSBTFields: SP address parsing failed — ${msg}`);
+  }
 
   return {
     scanData: {
