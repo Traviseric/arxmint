@@ -3,16 +3,18 @@
 # ArxMint CLI — thin wrapper around the ArxMint API
 #
 # Usage:
+#   ./scripts/arxmint.sh merchant init
 #   ./scripts/arxmint.sh keys rotate --merchant-id <id> --scope <live|pub|test>
 #   ./scripts/arxmint.sh keys list   --merchant-id <id>
 #   ./scripts/arxmint.sh keys revoke --merchant-id <id> --key <key_prefix>
 #
-# Auth:
+# Auth (required for keys commands):
 #   Set ARXMINT_SESSION to your session token (copy from the arxmint_session
 #   browser cookie after logging in at arxmint.com/merchants).
 #   Set ARXMINT_URL to override the default base URL (default: http://localhost:3000).
 #
 # Examples:
+#   ./scripts/arxmint.sh merchant init
 #   ARXMINT_SESSION="<token>" ./scripts/arxmint.sh keys list --merchant-id glacier
 #   ARXMINT_SESSION="<token>" ./scripts/arxmint.sh keys rotate --merchant-id glacier --scope live
 #   ARXMINT_SESSION="<token>" ./scripts/arxmint.sh keys revoke --merchant-id glacier --key arx_live_abc123
@@ -30,15 +32,17 @@ if ! command -v curl &>/dev/null; then
   exit 1
 fi
 
-if [ -z "$ARXMINT_SESSION" ]; then
-  echo "ERROR: ARXMINT_SESSION is not set." >&2
-  echo "" >&2
-  echo "  1. Log in at ${ARXMINT_URL}/merchants" >&2
-  echo "  2. Open browser DevTools → Application → Cookies" >&2
-  echo "  3. Copy the value of the 'arxmint_session' cookie" >&2
-  echo "  4. Export it: export ARXMINT_SESSION=\"<value>\"" >&2
-  exit 1
-fi
+require_session() {
+  if [ -z "$ARXMINT_SESSION" ]; then
+    echo "ERROR: ARXMINT_SESSION is not set." >&2
+    echo "" >&2
+    echo "  1. Log in at ${ARXMINT_URL}/merchants" >&2
+    echo "  2. Open browser DevTools → Application → Cookies" >&2
+    echo "  3. Copy the value of the 'arxmint_session' cookie" >&2
+    echo "  4. Export it: export ARXMINT_SESSION=\"<value>\"" >&2
+    exit 1
+  fi
+}
 
 # ── Argument parsing helpers ─────────────────────────────────
 
@@ -68,7 +72,18 @@ auth_cookie() {
 
 # ── Commands ─────────────────────────────────────────────────
 
+cmd_merchant_init() {
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  MERCHANT_INIT="$SCRIPT_DIR/merchant-init.sh"
+  if [[ ! -f "$MERCHANT_INIT" ]]; then
+    echo "Error: merchant-init.sh not found at $MERCHANT_INIT" >&2
+    exit 1
+  fi
+  bash "$MERCHANT_INIT"
+}
+
 cmd_keys_list() {
+  require_session
   parse_flags "$@"
   if [ -z "$MERCHANT_ID" ]; then
     echo "ERROR: --merchant-id is required" >&2; exit 1
@@ -81,6 +96,7 @@ cmd_keys_list() {
 }
 
 cmd_keys_rotate() {
+  require_session
   parse_flags "$@"
   if [ -z "$MERCHANT_ID" ]; then
     echo "ERROR: --merchant-id is required" >&2; exit 1
@@ -106,6 +122,7 @@ cmd_keys_rotate() {
 }
 
 cmd_keys_revoke() {
+  require_session
   parse_flags "$@"
   if [ -z "$MERCHANT_ID" ] || [ -z "$KEY" ]; then
     echo "ERROR: --merchant-id and --key are required" >&2; exit 1
@@ -124,12 +141,19 @@ usage() {
 ArxMint CLI
 
 Usage:
+  arxmint.sh merchant init
   arxmint.sh keys list   --merchant-id <id>
   arxmint.sh keys rotate --merchant-id <id> [--scope live|pub|test]
   arxmint.sh keys revoke --merchant-id <id> --key <key>
 
+Commands:
+  merchant init   Run the 3-question merchant node setup wizard (no auth required)
+  keys list       List API keys for a merchant
+  keys rotate     Issue a new API key for a merchant
+  keys revoke     Revoke an existing API key
+
 Environment:
-  ARXMINT_SESSION   Session token (from arxmint_session browser cookie) [required]
+  ARXMINT_SESSION   Session token (from arxmint_session browser cookie) [required for keys]
   ARXMINT_URL       Base URL (default: http://localhost:3000)
 EOF
   exit 1
@@ -141,8 +165,9 @@ COMMAND="${1:-}" ; shift || true
 SUBCOMMAND="${1:-}" ; shift || true
 
 case "${COMMAND} ${SUBCOMMAND}" in
-  "keys list")   cmd_keys_list "$@" ;;
-  "keys rotate") cmd_keys_rotate "$@" ;;
-  "keys revoke") cmd_keys_revoke "$@" ;;
-  *)             usage ;;
+  "merchant init") cmd_merchant_init ;;
+  "keys list")     cmd_keys_list "$@" ;;
+  "keys rotate")   cmd_keys_rotate "$@" ;;
+  "keys revoke")   cmd_keys_revoke "$@" ;;
+  *)               usage ;;
 esac
