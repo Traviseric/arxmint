@@ -25,6 +25,7 @@ PRODUCTION READINESS GATE → 🟡 NUC testnet deployment running (LND syncing, 
 ═══════════════════════════════════════════════════════
 Phase 4: Citadel       (Longmont pilot + grants)        🟡 IN PROGRESS
 Phase 5: Bazaar       (Merchant platform — decentralized Stripe)  🟡 EARLY PROTOTYPE
+Phase 6: Enterprise   (Audit, plugins, compliance, reach)         🔵 PLANNED
 ```
 
 **Feature path** (parallel, not blocking production):
@@ -69,6 +70,8 @@ Status key:
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
 | 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, deployment docs in `docs/`; merchant directory live at arxmint.com/merchants with Glacier + Teneo, 13 pipeline merchants, Nostr admin auth, public signup, and TE NUC testnet deployment running |
 | 5.x merchant platform (Bazaar) | Prototype | Early merchant-facing surfaces are live: `/pay/[merchant-id]` checkout prototype, `/badge` merchant kit, `/create` merchant setup wizard beta, and `/merchants` public directory. Self-hosted merchant node architecture, merchant-local APIs, SDK, webhooks, dashboard, and provisioning are not complete yet |
+| 4.6 developer portal & social proof | Planned | Docs site, case studies, content pipeline, SEO landing pages |
+| 6.x enterprise polish | Planned | External security audit (6.1), e-commerce plugins (6.2), compliance documentation kit (6.3) |
 
 ---
 
@@ -632,6 +635,7 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 - Weekly: Review transaction volumes, payment success rates, error logs
 - Monthly: KPI report (feeds grant reporting), balance audit, security review
 - Fix bugs in production — hotfix process: fix → test on regtest → deploy tagged release
+- **Merchant support channel:** Stand up a public Discord or Matrix community for merchant support, bug reports, and feature requests. Not paid support staff — community-driven with ArxMint team presence. Pin setup guides, FAQ, and troubleshooting docs. This is the indie-scale equivalent of 24/7 support that enterprise teams provide.
 
 ### 4.3 — Grant Reporting Dashboard
 **Source:** Doc 7 — OpenSats reporting requirements
@@ -650,6 +654,30 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 **Source:** Doc 7 — pilot-to-scale timeline
 **What:** Extend from Longmont to additional cities. Inter-federation commerce via Coco multi-mint.
 **Prerequisite:** Guardian distribution plan (split from single host to independent operators).
+
+### 4.6 — Developer Portal & Social Proof
+**Source:** Enterprise polish gap analysis — Stripe-quality docs are free to build and massively boost adoption.
+**Goal:** Make ArxMint as easy to evaluate and integrate as Stripe from a documentation and credibility standpoint.
+
+**Developer documentation portal:**
+- Deploy hosted docs site via Docusaurus or GitBook at `docs.arxmint.com`
+- Integration quickstart guides: "5 minutes from zero to first test payment" for each merchant type (coffee shop, online store, SaaS, AI agent)
+- API reference auto-generated from route handlers
+- Code samples: curl, JavaScript, React, Python
+- Interactive API explorer (test mode against regtest)
+
+**Case studies & social proof:**
+- Package Glacier Ice Cream pilot data into a published case study: "How Glacier Saved $X in Fees with ArxMint"
+- Template for future merchant case studies (problem → solution → metrics → quote)
+- Merchant testimonial collection as part of post-onboarding flow
+- "Powered by ArxMint" badge program (already live at `/badge`) — track badge embed adoption
+
+**Content pipeline:**
+- Blog at `arxmint.com/blog` — publish monthly: pilot updates, technical deep dives, merchant spotlights
+- SEO-targeted landing pages for key queries: "accept bitcoin payments no fees", "self-hosted payment processor", "BTCPay alternative"
+- RSS feed for grant reporting alignment (OpenSats monthly updates double as blog posts)
+
+**Priority:** High — low cost, high impact. Can begin during Phase 4 pilot with existing content. Developer portal is the single biggest credibility gap vs. enterprise competitors.
 
 ---
 
@@ -828,6 +856,13 @@ Implementation:
 - VPS one-liner: `curl -sSL https://get.arxmint.com/merchant | bash` — installs Docker, pulls images, runs setup wizard.
 - Regtest mode: `arxmint merchant init --regtest` for local development.
 
+**SLA framework (for managed hosting tier):**
+- Define uptime commitment for managed hosting subscribers ($15–25/mo): 99.5% monthly uptime target.
+- Response time SLA: critical issues (node down, payments failing) — 24h response. Non-critical — 72h response.
+- SLA applies to control plane services (provisioning, DNS, updates, health monitoring) only. Data plane uptime is merchant-owned infrastructure — ArxMint provides monitoring and alerting, not an uptime guarantee on merchant's VPS.
+- Publish SLA terms on `arxmint.com/sla` before managed hosting exits beta.
+- SLA violations: service credit (pro-rated month), not cash refund. Standard indie SaaS approach.
+
 **5.8b — Managed DNS + Connectivity**
 
 Research finding: DNS is the single biggest friction point for non-technical merchants.
@@ -904,6 +939,19 @@ Full node mode: available as optional upgrade path for merchants wanting maximum
 - Security hardening: Caddy auto-HTTPS, CSP headers, rate limiting, firewall rules generated by setup wizard
 - Health check: `GET /api/v1/health` returns node status (LND synced, mint reachable, disk space)
 
+### 5.10b — Scale & Load Testing
+
+**Source:** Enterprise polish gap analysis — E2E testing (Phase D) covers correctness but not throughput. Enterprise-grade confidence requires knowing the breaking point.
+**What:** Load test merchant nodes to establish capacity baselines and identify bottlenecks before mainnet launch.
+**Implementation:**
+- **Throughput targets:** 100 concurrent checkout sessions per merchant node, 1,000 transactions/day sustained, 10 webhooks/second delivery rate
+- **Load test harness:** k6 or Artillery scripts that simulate realistic merchant traffic patterns: checkout creation → payment → webhook delivery → status poll
+- **Stress test:** Ramp beyond targets to find breaking point. Document: "Node handles X concurrent sessions before Y degrades"
+- **Resource profiling:** CPU/memory/disk usage under load for each hardware tier (minimum, recommended, home node). Update hardware baselines table with real data.
+- **Capacity planning guide:** Add to DEPLOY.md — "At X transactions/day, expect Y resource usage. Upgrade when Z."
+- **Regtest automation:** Load tests run against regtest stack with simulated Lightning payments (no real sats, full payment flow)
+- **CI integration:** Run smoke-level load test (10 concurrent sessions) in CI. Full load test as manual pre-release gate.
+
 ### 5.11 — Merchant Node Lifecycle (Updates + Backups + Restore)
 
 **Research basis:** `docs/research/Phase5-Bazaar/Self-Hosting-UX/7-Operational Resilience for ArxMint Merchant Nodes.md`
@@ -977,6 +1025,31 @@ Implementation:
 - Suitable for pop-up shops, farmers markets, event vendors.
 - Separate SKU from full merchant stack.
 
+### 5.14 — UX Polish & Conversion Optimization
+
+**Source:** Enterprise polish gap analysis — functional UI ≠ converting UI. Professional design polish is the difference between 10% and 50% signup-to-first-payment conversion.
+**Goal:** Elevate all merchant-facing surfaces from "functional indie tool" to "enterprise-grade product" without losing the sovereignty ethos.
+
+**Design audit:**
+- Professional design pass on the 5 highest-traffic flows: merchant setup wizard, checkout page, merchant dashboard, merchant directory, landing page
+- Consistent component library — standardize spacing, typography hierarchy, button states, loading skeletons, empty states, and error states across all merchant surfaces
+- Accessibility audit: WCAG 2.1 AA compliance on checkout page (merchants' customers include everyone)
+- Dark/light theme support for checkout (merchant's customers may not want dark-only)
+
+**Conversion optimization:**
+- **Setup funnel analytics:** Track wizard step drop-off rates, time-to-first-payment by merchant type, setup failure reasons (which step, which error)
+- **Checkout conversion tracking:** Invoices created vs. completed ratio, time-to-payment, abandonment points
+- **A/B testing framework:** Test checkout page variants (QR placement, copy, payment method ordering). Lightweight — PostHog or self-hosted Plausible, not enterprise analytics bloat.
+- **Onboarding NPS:** Post-setup survey (1 question: "How easy was setup? 1-10") to track polish improvements over time
+
+**Error UX:**
+- Every error state gets a plain-language message + actionable next step (not just "something went wrong")
+- Checkout errors: "Payment expired — tap to generate a new invoice" instead of generic 400
+- Setup errors: "LND couldn't sync — check your internet connection" with retry button
+- Dashboard: "No payments yet — share your checkout link to start accepting Bitcoin" instead of empty table
+
+**Priority:** Medium — can begin with design audit after Phase 5.7 (dashboard) ships. Conversion tracking should wire in early (during 5.3 checkout). Grant-fundable via bounties ($500-2K per flow redesign) or design-focused grant applications.
+
 ### Teneo Marketplace Integration
 
 Phase 5 SDK and API must be compatible with the existing Teneo Marketplace integration layer. Stubs already exist at `C:\code\teneo-marketplace\services\arxmintService.js` with scaffolded methods: `createL402Invoice()`, `verifyL402Payment()`, `acceptCashuToken()`. The cross-reference lives in Teneo's roadmap (Section 5.7: "ArxMint Bazaar Integration — Decentralized Stripe for Creators").
@@ -1006,11 +1079,13 @@ Phase 5 SDK and API must be compatible with the existing Teneo Marketplace integ
 | 5.8d Merchant stack composition | Prototype | `/create` now presents a merchant setup wizard beta that builds intent and UX around merchant node setup, but it does not yet provision infrastructure or emit the final merchant stack path |
 | 5.9 Public directory | Partial | `/merchants` is live with public signup, two live merchants, admin-only pipeline merchants, checkout links, and merchant badge CTA; search, merchant self-service activation, and CLI registration remain |
 | 5.10 Idempotency + hardening | Planned | 5.1 + 5.2 + Phase E hardening |
+| 5.10b Scale & load testing | Planned | 5.8d + 5.10 + regtest stack |
 | 5.11a Appliance update engine | Planned | 5.8a + signed manifest infrastructure |
 | 5.11b Zero-knowledge encrypted backups | Planned | 5.8a + seed-derived encryption + cloud storage |
 | 5.11c One-click restore | Planned | 5.11b + provisioning service |
 | 5.12 Home node packaging (Umbrel/StartOS) | Planned | 5.8d stable + Umbrel packaging format |
-| 5.13 Mobile merchant remote control | Planned (Future) | 5.7 PWA as bridge; native app Phase 6+ |
+| 5.13 Mobile merchant remote control | Planned (Future) | 5.7 PWA as bridge; native app future |
+| 5.14 UX polish & conversion optimization | Planned | 5.3 (conversion tracking) + 5.7 (design audit) |
 
 **Live Phase 5-adjacent prototype surfaces (March 2026):**
 - `/badge` is live as a merchant acquisition + branding kit (embed badge, referral link, printable assets)
@@ -1033,10 +1108,12 @@ Build in this order — deployment must come first in the self-hosted model:
                                     │
                                     └──→ 5.11a Updates ──→ 5.11b Backups ──→ 5.11c Restore
 
-5.9  Public Directory: independent, can ship early (only centrally-hostable item)
-5.10 Idempotency: weave in throughout, harden before mainnet launch
-5.12 Umbrel/StartOS: ship after cloud deploy is stable
-5.13 Mobile app: PWA bridge via 5.7 first; native app is Phase 6+
+5.9    Public Directory: independent, can ship early (only centrally-hostable item)
+5.10   Idempotency: weave in throughout, harden before mainnet launch
+5.10b  Scale/Load Testing: weave in with 5.10, complete before mainnet merchant launch
+5.12   Umbrel/StartOS: ship after cloud deploy is stable
+5.13   Mobile app: PWA bridge via 5.7 first; native app is future
+5.14   UX Polish: design audit after 5.7; conversion tracking wires in during 5.3 checkout
 ```
 
 **Key change from pre-research design:** Deployment (5.8) is now first priority, not API keys. In the self-hosted model, nothing works until the merchant has a running node. The old design assumed a hosted platform where merchants could onboard instantly via API keys — the self-hosted model inverts this.
@@ -1146,6 +1223,71 @@ All merchant-facing endpoints use `/api/v1/` prefix. Once merchants integrate, b
 
 ---
 
+## Phase 6: Enterprise Polish — Credibility, Reach & Trust
+
+**Codename:** Enterprise Polish — the layer that turns an indie tool into a platform merchants trust with real money at scale
+**Prerequisite:** Phase 5 core items (5.1–5.8) stable and merchant nodes running on mainnet. Phase 4.6 (Developer Portal) ideally shipped first.
+**Goal:** Close the remaining gaps between ArxMint and what a $10M-funded, 10-person team would produce — without the team or the dilution. Prioritize the items that build trust and expand reach with the lowest cost.
+
+### 6.1 — External Security Audit
+
+**Source:** Enterprise polish gap analysis — the single strongest signal to enterprise merchants that the code is safe. No amount of internal testing replaces a third-party audit report.
+**What:** Engage a reputable security firm to audit the ArxMint merchant node stack (LND integration, Cashu mint interaction, macaroon auth, webhook engine, checkout flow, encrypted backup system).
+**Why:** Merchants (especially small chains, franchises, or merchants with compliance teams) will ask "has this been audited?" before running it with real money. An audit report is also a powerful grant deliverable (OpenSats/HRF fund audits).
+
+**Implementation:**
+- **Target firms:** Least Authority (Bitcoin-focused, audited BTCPay Server), Trail of Bits, NCC Group, or Cure53 (web/API focus)
+- **Scope:** Merchant node data plane (LND config, Cashu mint interaction, macaroon generation/validation, webhook HMAC, checkout flow, encrypted backup/restore, key derivation). NOT the full Next.js marketing site.
+- **Budget:** $10K–$50K depending on scope. Fund from OpenSats/HRF grants — both explicitly fund security audits for Bitcoin infrastructure.
+- **Deliverables:** Public audit report (redact critical vulns until fixed, then publish full). Fix all critical/high findings before mainnet merchant launch. Medium/low findings tracked in GitHub issues.
+- **Timeline:** Engage after Phase 5 core stabilizes. Audit takes 2–6 weeks. Fix cycle adds 2–4 weeks. Target: audit complete before Phase 5 exits beta.
+- **Ongoing:** Annual re-audit on major releases. Budget as recurring grant line item.
+
+### 6.2 — E-Commerce Platform Plugins
+
+**Source:** Enterprise polish gap analysis — the `@arxmint/js` SDK enables custom integrations, but pre-built plugins for existing platforms remove the biggest adoption barrier for non-technical merchants.
+**What:** Ship plugins for the top e-commerce platforms that connect to the merchant's own ArxMint node. Each plugin is a thin wrapper around `@arxmint/js` (5.5).
+**Why:** A WooCommerce shop owner shouldn't need to write code to accept Bitcoin. "Install plugin → enter your node URL → done" matches the Stripe/PayPal plugin experience they already know.
+
+**Implementation:**
+
+- **WooCommerce plugin (primary target):**
+  - WordPress is ~40% of e-commerce. WooCommerce is the dominant payment plugin ecosystem.
+  - Plugin settings: ArxMint node URL (`https://pay.merchant.com`), publishable key (`arx_pub_...`), payment methods (Lightning, ecash, both)
+  - Checkout: redirects to merchant's self-hosted checkout page (5.3) or inline iframe embed
+  - Webhook receiver: listens for `payment.completed` from merchant's node → marks WooCommerce order as paid
+  - Ship on WordPress.org plugin directory for discoverability
+  - **Non-custodial:** Plugin connects to merchant's own node. ArxMint never touches funds.
+
+- **Shopify app (secondary — evaluate feasibility):**
+  - Shopify's payment app ecosystem is more restrictive. Evaluate whether a self-hosted payment provider can pass Shopify's review.
+  - If Shopify blocks: ship as "manual payment method" integration guide instead of app store listing.
+  - Alternative: Shopify Buy Button + ArxMint checkout page (external redirect flow)
+
+- **Zapier integration:**
+  - Triggers: `payment.completed`, `payment.created`, `payment.failed`
+  - Actions: create payment link, check payment status
+  - Enables non-technical merchants to wire ArxMint into existing workflows (payment → Google Sheets, payment → email notification, payment → inventory update)
+  - Connects to merchant's own node via webhook (5.2) — Zapier receives events, ArxMint doesn't route them
+
+- **Priority order:** WooCommerce → Zapier → Shopify. Ship after `@arxmint/js` SDK (5.5) is stable. Each plugin is 1–2 weeks of work since they're SDK wrappers.
+
+### 6.3 — Compliance Documentation Kit
+
+**Source:** Enterprise polish gap analysis — even with a non-custodial model, merchants with compliance teams need documentation to justify adoption internally.
+**What:** A downloadable compliance package that merchants can hand to their legal/compliance team, IT department, or franchise HQ to answer "is this safe and legal to use?"
+**Why:** This is not ArxMint's own compliance (non-custodial model is exempt). This is helping merchants pass their own internal procurement review. The content already exists across Research #7 and the legal architecture section — it just needs packaging.
+
+**Contents:**
+- **Legal position paper** (2–3 pages): Summarizes the non-custodial architecture, cites FinCEN FIN-2019-G001, DOJ 2025 safe harbor, MiCA Art. 2/Recital 83, and UK FCA "technical service provider" exemption. Explains why the merchant is a "user" accepting payment for their own goods, not a money transmitter.
+- **Security architecture overview** (2–3 pages): Split-plane design, encryption standards (AES-256-GCM, PBKDF2-SHA256), no central custody, macaroon auth model, zero-knowledge backups. Reference external audit report (6.1) when available.
+- **Data handling statement** (1 page): What data ArxMint (the software) stores locally, what leaves the merchant's node (nothing except DNS updates and encrypted backup blobs), what ArxMint (the project) can and cannot access (nothing — no keys, no funds, no transaction data).
+- **FAQ for compliance teams:** "Does ArxMint hold our funds?" (No), "Is ArxMint a money transmitter?" (No — software provider exemption), "Where is customer payment data stored?" (On your node only), "Has the code been audited?" (Yes — link to 6.1 report), "What happens if ArxMint (the company) disappears?" (Software is MIT-licensed, self-hosted, runs independently).
+- **Format:** PDF download at `arxmint.com/compliance` + markdown in repo at `docs/compliance-kit/`
+- **Priority:** Low engineering cost (writing, not code). High value for merchant procurement. Can draft immediately from existing Research #7 content.
+
+---
+
 ## Dependency Graph
 
 ```
@@ -1206,11 +1348,22 @@ Phase 5 (Bazaar) depends on:
     - Phase E (production hardening)
     Phase 5 internal ordering:
     - 5.8d (stack) → 5.8a (provisioning) → 5.8b (DNS) → 5.8c (LSP) → all other 5.x items
+    - 5.10b (scale testing) weaves in with 5.10 hardening, before mainnet launch
     - 5.11 (lifecycle) starts after 5.8a; grows in parallel with feature items
     - 5.12 (Umbrel/StartOS) after cloud deploy stable
-    - 5.13 (mobile) is Phase 6+ (PWA via 5.7 is the bridge)
+    - 5.13 (mobile) is future (PWA via 5.7 is the bridge)
+    - 5.14 (UX polish) starts after 5.7 dashboard; conversion tracking wires in during 5.3
     NOT blocked by: Phase 3 (Aether) or Phase 4 completion
     CAN start in parallel with Phase 4 once pilot is live
+
+Phase 6 (Enterprise Polish) depends on:
+    - Phase 5 core (5.1–5.8) stable on mainnet
+    - 6.1 (security audit) → after Phase 5 stabilizes; feeds 6.3 compliance kit
+    - 6.2 (e-commerce plugins) → after 5.5 SDK stable; WooCommerce first
+    - 6.3 (compliance kit) → can draft anytime from Research #7; finalize after 6.1 audit
+    Phase 4.6 (dev portal) is a precursor — ideally ships during Phase 4
+    NOT blocked by: Phase 3 (Aether)
+    CAN start 6.3 drafting in parallel with Phase 5
 ```
 
 ---

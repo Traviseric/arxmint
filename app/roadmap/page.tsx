@@ -472,7 +472,7 @@ export default function RoadmapPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-3xl rounded-full" />
               <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-text-primary mb-6 uppercase !font-sans flex items-center gap-4">
                 <img
-                  src="/images/nav-logo-b.svg"
+                  src="/images/nav-logo-transparent.svg"
                   alt="ArxMint Citadel Logo"
                   className="w-12 h-12 rounded-lg"
                 />
