@@ -131,8 +131,6 @@ interface OverviewStats {
   completedCount: number;
   pendingCount: number;
   failedCount: number;
-  nodeStatus: "connected" | "disconnected" | "unknown";
-  cashuStatus: "reachable" | "unreachable" | "unknown";
 }
 
 function OverviewTab({ merchantId }: { merchantId: string }) {
@@ -141,20 +139,16 @@ function OverviewTab({ merchantId }: { merchantId: string }) {
     completedCount: 0,
     pendingCount: 0,
     failedCount: 0,
-    nodeStatus: "unknown",
-    cashuStatus: "unknown",
   });
   const [loading, setLoading] = useState(true);
+  const [nodeStatus, setNodeStatus] = useState<"connected" | "disconnected" | "checking">("checking");
+  const [cashuStatus, setCashuStatus] = useState<"reachable" | "unreachable" | "checking">("checking");
 
   useEffect(() => {
     const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    Promise.all([
-      fetch(`/api/v1/payments?merchant_id=${encodeURIComponent(merchantId)}&limit=100`).then((r) =>
-        r.ok ? r.json() : { payments: [] }
-      ),
-      fetch("/api/agent?service=cycle-signals").catch(() => null),
-    ])
-      .then(([paymentsData]) => {
+    fetch(`/api/v1/payments?merchant_id=${encodeURIComponent(merchantId)}&limit=100`)
+      .then((r) => r.ok ? r.json() : { payments: [] })
+      .then((paymentsData) => {
         const payments: Payment[] = paymentsData.payments ?? [];
         const recent = payments.filter((p) => p.createdAt >= cutoff);
         setStats({
@@ -162,13 +156,31 @@ function OverviewTab({ merchantId }: { merchantId: string }) {
           completedCount: payments.filter((p) => p.status === "paid").length,
           pendingCount: payments.filter((p) => p.status === "pending").length,
           failedCount: payments.filter((p) => p.status === "failed" || p.status === "expired").length,
-          nodeStatus: "connected", // optimistic — actual LND check requires node access
-          cashuStatus: "reachable",
         });
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [merchantId]);
+
+  useEffect(() => {
+    const checkNodeStatus = async () => {
+      try {
+        const res = await fetch("/api/health");
+        if (!res.ok) { setNodeStatus("disconnected"); setCashuStatus("unreachable"); return; }
+        const data = await res.json();
+        const lndOk = data.checks?.lnd?.status === "ok" || data.status === "ok";
+        const cashuOk = data.checks?.cashu?.status === "ok" || data.status === "ok";
+        setNodeStatus(lndOk ? "connected" : "disconnected");
+        setCashuStatus(cashuOk ? "reachable" : "unreachable");
+      } catch {
+        setNodeStatus("disconnected");
+        setCashuStatus("unreachable");
+      }
+    };
+    checkNodeStatus();
+    const interval = setInterval(checkNodeStatus, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -210,8 +222,10 @@ function OverviewTab({ merchantId }: { merchantId: string }) {
               <span className="text-sm text-sovereign-text">Lightning (LND)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${stats.nodeStatus === "connected" ? "bg-green-400" : "bg-sovereign-muted"}`} />
-              <span className="text-xs text-sovereign-muted capitalize">{stats.nodeStatus}</span>
+              <div className={`w-2 h-2 rounded-full ${nodeStatus === "connected" ? "bg-green-400" : nodeStatus === "checking" ? "bg-yellow-400 animate-pulse" : "bg-red-400"}`} />
+              {nodeStatus === "checking" && <span className="text-xs text-sovereign-muted">Checking...</span>}
+              {nodeStatus === "connected" && <span className="text-xs text-green-400">Connected</span>}
+              {nodeStatus === "disconnected" && <span className="text-xs text-red-400">Disconnected</span>}
             </div>
           </div>
           <div className="flex items-center justify-between p-3 bg-sovereign-dark rounded-lg border border-white/5">
@@ -220,8 +234,10 @@ function OverviewTab({ merchantId }: { merchantId: string }) {
               <span className="text-sm text-sovereign-text">Cashu Mint</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${stats.cashuStatus === "reachable" ? "bg-green-400" : "bg-sovereign-muted"}`} />
-              <span className="text-xs text-sovereign-muted capitalize">{stats.cashuStatus}</span>
+              <div className={`w-2 h-2 rounded-full ${cashuStatus === "reachable" ? "bg-green-400" : cashuStatus === "checking" ? "bg-yellow-400 animate-pulse" : "bg-red-400"}`} />
+              {cashuStatus === "checking" && <span className="text-xs text-sovereign-muted">Checking...</span>}
+              {cashuStatus === "reachable" && <span className="text-xs text-green-400">Reachable</span>}
+              {cashuStatus === "unreachable" && <span className="text-xs text-red-400">Unreachable</span>}
             </div>
           </div>
         </div>
@@ -530,6 +546,7 @@ function ApiKeysTab({ merchantId }: { merchantId: string }) {
   const [newScope, setNewScope] = useState<"live" | "pub" | "test">("live");
   const [newKeyVal, setNewKeyVal] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [revokingKey, setRevokingKey] = useState<string | null>(null);
 
   const fetchKeys = useCallback(() => {
     setLoading(true);
@@ -562,10 +579,23 @@ function ApiKeysTab({ merchantId }: { merchantId: string }) {
     }
   };
 
-  const handleRevoke = async (keyPreview: string) => {
-    // We only have the preview — can't revoke without the full key
-    // Show a message directing to API
-    alert("To revoke a key, call DELETE /api/merchant-keys?key=<full_key>&merchantId=... with the full key value.");
+  const confirmRevoke = async (keyPreview: string) => {
+    try {
+      const res = await fetch(
+        `/api/merchant-keys?key=${encodeURIComponent(keyPreview)}&merchantId=${encodeURIComponent(merchantId)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to revoke key");
+      } else {
+        setKeys((prev) => prev.filter((k) => k.keyPreview !== keyPreview));
+      }
+    } catch {
+      setError("Network error");
+    } finally {
+      setRevokingKey(null);
+    }
   };
 
   return (
@@ -633,13 +663,31 @@ function ApiKeysTab({ merchantId }: { merchantId: string }) {
                   {k.expiresAt && ` · Expires ${new Date(k.expiresAt).toLocaleDateString()}`}
                 </div>
               </div>
-              <button
-                onClick={() => handleRevoke(k.keyPreview)}
-                className="text-sovereign-muted hover:text-red-400 transition-colors flex-shrink-0"
-                title="Revoke key"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              {revokingKey === k.keyPreview ? (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-red-400">Confirm revoke?</span>
+                  <button
+                    onClick={() => confirmRevoke(k.keyPreview)}
+                    className="text-xs text-red-500 hover:text-red-300 transition-colors"
+                  >
+                    Yes, revoke
+                  </button>
+                  <button
+                    onClick={() => setRevokingKey(null)}
+                    className="text-xs text-sovereign-muted hover:text-sovereign-text transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setRevokingKey(k.keyPreview)}
+                  className="text-sovereign-muted hover:text-red-400 transition-colors flex-shrink-0"
+                  title="Revoke key"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           ))}
         </div>
