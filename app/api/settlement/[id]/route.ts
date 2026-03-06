@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getAuthPubkey, requireAuth } from "@/lib/auth-middleware";
+import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { logger } from "@/lib/logger";
 import {
   isCommunityOwnedByUser,
@@ -17,9 +17,6 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authError = requireAuth(request);
-  if (authError) return authError;
-
   const { id } = await params;
 
   if (!id || typeof id !== "string") {
@@ -39,6 +36,18 @@ export async function GET(
       return NextResponse.json({ error: "Transaction is not a settlement" }, { status: 404 });
     }
 
+    // Unauthenticated callers receive public fields only — no sensitive payment details
+    const caller = getCallerFromRequest(request);
+    if (!caller) {
+      return NextResponse.json({
+        settlementId: tx.id,
+        status: tx.status,
+        amount: tx.amount,
+        createdAt: tx.timestamp.toISOString(),
+      });
+    }
+
+    // Authenticated: parse notes and verify access before returning full details
     let parsedNotes: Record<string, unknown> = {};
     try {
       parsedNotes = JSON.parse(tx.notes ?? "{}");
@@ -49,11 +58,10 @@ export async function GET(
       });
     }
 
-    const callerPubkey = getAuthPubkey(request);
     const initiatedBy =
       typeof parsedNotes.initiatedBy === "string" ? parsedNotes.initiatedBy : null;
 
-    let hasAccess = initiatedBy === callerPubkey;
+    let hasAccess = initiatedBy === caller;
     if (!hasAccess) {
       try {
         const userId = await requireSessionUserId(request);
@@ -69,7 +77,7 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Strip sensitive internal fields — never expose raw notes blob or federation invites
+    // Authenticated + authorized: return full details, raw notes blob never exposed
     return NextResponse.json({
       settlementId: tx.id,
       saleId: parsedNotes.saleId ?? null,

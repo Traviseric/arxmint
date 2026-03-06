@@ -371,9 +371,6 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   return observeApiRoute(request, "/api/settlement", async () => {
   const caller = getCallerFromRequest(request);
-  if (!caller) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
   const ip =
     request.headers.get("x-forwarded-for") ??
     request.headers.get("x-real-ip") ??
@@ -407,14 +404,32 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Settlement not found" }, { status: 404 });
   }
 
-  // Only the original authenticated caller (or marketplace system integration)
-  // can read a settlement record.
+  // Unauthenticated callers receive public fields only — no sensitive payment details
+  if (!caller) {
+    return NextResponse.json({
+      settlementId: settlement.txId,
+      status: settlement.status,
+      amount: settlement.feeAmount,
+      createdAt: settlement.createdAt,
+    });
+  }
+
+  // Authenticated: verify caller has access (initiator or marketplace system)
   if (caller !== "marketplace-system") {
     if (!settlement.initiatedBy || settlement.initiatedBy !== caller) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
 
-  return NextResponse.json({ settlement });
+  // Return full details — raw notes blob never included in response
+  return NextResponse.json({
+    settlementId: settlement.txId,
+    saleId: settlement.saleId,
+    feeAmount: settlement.feeAmount,
+    method: settlement.method,
+    status: settlement.status,
+    invoice: settlement.invoice ?? null,
+    createdAt: settlement.createdAt,
+  });
   });
 }
