@@ -1,0 +1,60 @@
+# ============================================================
+# ArxMint — Umbrel App Store docker-compose
+# Extends the core Cashu stack with Umbrel-compatible networking.
+# The LND service is provided by Umbrel's built-in LND app.
+# ============================================================
+
+services:
+
+  arxmint:
+    image: arxmint/arxmint:0.5.0
+    container_name: arxmint_web
+    restart: unless-stopped
+    ports:
+      - "${APP_ARXMINT_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      # Point at Umbrel's LND node via the shared Umbrel network
+      - LND_REST_URL=https://lnd:8080
+      - LND_MACAROON_PATH=/lnd/data/chain/bitcoin/mainnet/admin.macaroon
+      - LND_TLS_CERT_PATH=/lnd/tls.cert
+      - CASHU_MINT_URL=http://cashu-mint:3338
+      - NEXTAUTH_URL=http://umbrel.local:${APP_ARXMINT_PORT:-3000}
+      - NEXTAUTH_SECRET=${APP_ARXMINT_NEXTAUTH_SECRET}
+      - CASHU_PRIVATE_KEY=${APP_ARXMINT_CASHU_PRIVATE_KEY}
+    volumes:
+      - lnd-data:/lnd:ro
+      - arxmint-data:/app/data
+    depends_on:
+      - cashu-mint
+    networks:
+      - umbrel_main_network
+
+  cashu-mint:
+    image: cashubtc/nutshell:latest
+    container_name: arxmint_cashu
+    restart: unless-stopped
+    environment:
+      - MINT_BACKEND_BOLT11_SAT=LndRestWallet
+      - MINT_LND_REST_ENDPOINT=https://lnd:8080
+      - MINT_LND_REST_CERT=/root/.lnd/tls.cert
+      - MINT_LND_REST_MACAROON=/root/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
+      - MINT_LISTEN_HOST=0.0.0.0
+      - MINT_LISTEN_PORT=3338
+      - MINT_PRIVATE_KEY=${APP_ARXMINT_CASHU_PRIVATE_KEY}
+    volumes:
+      - lnd-data:/root/.lnd:ro
+      - cashu-data:/app/data
+    networks:
+      - umbrel_main_network
+
+volumes:
+  lnd-data:
+    external: true
+    name: umbrel_lnd-data
+  arxmint-data:
+  cashu-data:
+
+networks:
+  umbrel_main_network:
+    external: true

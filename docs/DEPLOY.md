@@ -669,3 +669,49 @@ LND_DATA_DIR=/var/lib/docker/volumes/arxmint_lnd_data/_data \
 ```
 
 Uses `inotifywait` (inotify-tools) when available for efficient event-driven watching. Falls back to 60-second polling on macOS or systems without inotify.
+
+---
+
+## 13. Umbrel + Start9 (StartOS) Deployment
+
+ArxMint ships packaging manifests for both [Umbrel](https://umbrel.com) and [Start9 (StartOS)](https://start9.com) — the two dominant self-hosted Bitcoin node platforms.
+
+### Umbrel
+
+**Prerequisites:** Umbrel OS with the LND app installed and synced.
+
+1. Add the ArxMint community app store URL to Umbrel:
+   - In the Umbrel dashboard → App Store → Community App Stores
+   - Enter: `https://github.com/Traviseric/arxmint-umbrel-app`
+2. Find ArxMint in the app store and click **Install**.
+3. Umbrel will pull `umbrel/docker-compose.yml` and start the services.
+4. Access ArxMint at `http://umbrel.local:3000` (or your node's IP on port 3000).
+
+**Manual install (advanced):**
+```bash
+# From your Umbrel server
+git clone https://github.com/Traviseric/arxmint ~/umbrel/apps/arxmint
+cp umbrel/manifest.yml ~/umbrel/apps/arxmint/umbrel-app.yml
+cp umbrel/docker-compose.yml ~/umbrel/apps/arxmint/docker-compose.yml
+~/umbrel/scripts/app install arxmint
+```
+
+The Umbrel compose file uses the `umbrel_main_network` shared network so ArxMint can reach Umbrel's built-in LND node directly.
+
+### Start9 (StartOS)
+
+**Prerequisites:** Start9 Embassy OS with LND installed.
+
+1. Build the Docker image:
+   ```bash
+   cd start9
+   make build          # builds docker.io/arxmint/arxmint:0.5.0
+   make push           # pushes to Docker Hub (set REGISTRY env var for custom registry)
+   ```
+2. Install via the Start9 dashboard → Marketplace → Sideload:
+   - Upload `start9/manifest.toml`
+   - Start9 will pull the image defined in `[containers.main]`
+3. Configure environment variables in the Start9 UI (LND macaroon path, Cashu private key).
+
+**Manifest location:** `start9/manifest.toml`
+**Build target:** `start9/Makefile` (`make build`)

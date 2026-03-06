@@ -1,0 +1,76 @@
+id = "arxmint"
+title = "ArxMint"
+version = "0.5.0"
+release-notes = "Initial Start9 packaging — Cashu mint + Lightning checkout."
+license = "MIT"
+wrapper-repo = "https://github.com/Traviseric/arxmint"
+upstream-repo = "https://github.com/Traviseric/arxmint"
+support-site = "https://arxmint.com"
+marketing-site = "https://arxmint.com"
+build = ["make"]
+
+[description]
+short = "Sovereign Bitcoin payment infrastructure"
+long = "ArxMint provides Cashu ecash minting, Lightning L402 rails, and merchant checkout for self-sovereign communities. Turn a natural-language prompt into a full Bitcoin circular economy — one command, live in minutes."
+
+[assets]
+icon = "icon.png"
+
+[main]
+type = "docker"
+image = "main"
+entrypoint = []
+args = []
+mounts = {}
+io-format = "json"
+inject = false
+shm-size-mb = 0
+system = false
+sigterm-timeout = 5
+
+[health-checks.main]
+name = "ArxMint Web UI"
+success-message = "ArxMint is running"
+type = "docker"
+image = "main"
+entrypoint = []
+args = ["wget", "-qO-", "http://localhost:3000"]
+inject = false
+io-format = "json"
+system = false
+timeout = 5000
+
+[containers.main]
+image.source = "docker.io/arxmint/arxmint:0.5.0"
+
+[interfaces.main]
+name = "ArxMint Web Interface"
+description = "The ArxMint web UI for managing your sovereign payment network."
+tor-config = { port-mapping = { 80 = "3000" } }
+lan-config = { port-mapping = { 80 = { internal = 3000, ssl = false } } }
+ui = true
+protocols = ["tcp", "http"]
+
+[backup.create]
+type = "docker"
+image = "main"
+system = false
+entrypoint = ["sh", "-c", "echo 'ArxMint backup: copy /data to output'"]
+args = []
+mounts = { output = "/backup" }
+io-format = "json"
+inject = false
+
+[backup.restore]
+type = "docker"
+image = "main"
+system = false
+entrypoint = ["sh", "-c", "echo 'ArxMint restore: copy /backup to /data'"]
+args = []
+mounts = { input = "/backup" }
+io-format = "json"
+inject = false
+
+[migrations]
+from = {}
+to = {}

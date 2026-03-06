@@ -1,0 +1,24 @@
+manifestVersion: 1
+id: arxmint
+category: bitcoin
+name: ArxMint
+version: "0.5.0"
+tagline: "Sovereign Payment Network — ecash + Lightning for communities"
+description: >
+  ArxMint turns a natural-language prompt into a full Bitcoin circular economy:
+  Cashu ecash mint, Lightning L402 rails, merchant checkout, and privacy defaults.
+  One prompt → live sovereign economy. Humans and AI agents share the same
+  private commerce infrastructure. Near-zero fees, instant settlement, no KYC,
+  no chargebacks.
+developer: "Travis Bergsgaard"
+website: "https://arxmint.com"
+dependencies:
+  - lnd
+repo: "https://github.com/Traviseric/arxmint"
+support: "https://github.com/Traviseric/arxmint/issues"
+port: 3000
+gallery:
+  - "https://arxmint.com/images/hero_ambience.png"
+path: ""
+defaultUsername: ""
+defaultPassword: ""
