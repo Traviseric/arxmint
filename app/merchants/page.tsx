@@ -14,7 +14,6 @@ import {
   Globe,
   ExternalLink,
   Zap,
-  ShoppingBag,
   BadgeCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -265,15 +264,6 @@ export default function MerchantsPage() {
                         >
                           <Zap className="w-3 h-3" />
                           Pay
-                        </Link>
-                      )}
-                      {m.id === "seed-teneo" && (
-                        <Link
-                          href={`/bazaar?merchant=${m.id}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
-                        >
-                          <ShoppingBag className="w-3 h-3" />
-                          Shop
                         </Link>
                       )}
                     </div>

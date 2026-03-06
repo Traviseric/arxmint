@@ -73,13 +73,6 @@ export function NavBar() {
           >
             Merchants
           </Link>
-          <Link
-            href="/bazaar"
-            className="text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors font-medium hidden sm:block"
-          >
-            Bazaar
-          </Link>
-
           {/* Learn dropdown — desktop */}
           <div ref={learnRef} className="relative hidden sm:block">
             <button
@@ -167,13 +160,6 @@ export function NavBar() {
               className="text-sm text-accent hover:text-accent/80 font-medium transition-colors"
             >
               Merchants
-            </Link>
-            <Link
-              href="/bazaar"
-              onClick={() => setMobileOpen(false)}
-              className="text-sm text-accent hover:text-accent/80 font-medium transition-colors"
-            >
-              Bazaar
             </Link>
             {LEARN_LINKS.map((link) => (
               <Link
