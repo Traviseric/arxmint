@@ -84,7 +84,7 @@ ArxMint flips this: ecash payments cost fractions of a penny. Settlement is inst
 ### Merchant Node Security
 - **Split-plane trust boundary** — Data plane (merchant-owned: keys, funds, LND, mint) is fully isolated from control plane (ArxMint-managed: provisioning, DNS, updates). ArxMint never touches keys or funds.
 - **Network isolation** — Only Caddy binds to public ports (80/443). LND gRPC, Cashu mint admin, PostgreSQL are internal Docker network only.
-- **Macaroon lifecycle** — `arx_pub_` tokens safe for client-side (invoice-only). Rotation via `arxmint keys rotate`. Instant revocation via dashboard or CLI.
+- **Macaroon lifecycle** — `arx_pub_` tokens safe for client-side (invoice-only). Rotation: `POST /api/merchant-keys` (or `scripts/arxmint.sh keys rotate --merchant-id <id>`). Instant revocation via dashboard or `scripts/arxmint.sh keys revoke --merchant-id <id> --key <key>`.
 - **Cloudflare Tunnel boundary** — Checkout page traffic visible to Cloudflare (acceptable — it's public during checkout anyway). LND gRPC, seed phrases, admin macaroons, mint keys never traverse the tunnel.
 - **API versioning** — `v1` is the stable API surface. Additive changes stay in `v1`. Breaking changes require `v2` with 6-month deprecation window. Client SDK (`@arxmint/js`) follows semver.
 
