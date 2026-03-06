@@ -10,7 +10,7 @@
 // Persistence: in-memory store with graceful Supabase fallback.
 // ============================================================
 
-import { randomBytes, createHmac, timingSafeEqual } from "node:crypto";
+import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 import { logger } from "@/lib/logger";
 
 export type MerchantKeyScope = "live" | "pub" | "test";

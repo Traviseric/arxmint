@@ -291,6 +291,26 @@ export interface BazaarCollection {
   badge?: string;
 }
 
+// ============================================================
+// Payment State Machine
+// ============================================================
+
+/** All valid payment states — deterministic, spec'd transitions only */
+export type PaymentStatus = "pending" | "paid" | "expired" | "failed" | "refunded";
+
+/** Canonical payment response shape returned by all payment endpoints */
+export interface PaymentRecord {
+  id: string;
+  merchantId: string;
+  status: PaymentStatus;
+  amountSats: number;
+  memo?: string;
+  createdAt: string;
+  expiresAt: string;
+  paidAt?: string;
+  demoMode: boolean;
+}
+
 /** Parsed user prompt result */
 export interface ParsedPrompt {
   communityName: string;
