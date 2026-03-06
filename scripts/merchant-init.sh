@@ -3,7 +3,7 @@
 # ArxMint — Merchant Node Initializer
 # 3 questions → .env + docker-compose.merchant.yml
 # Usage: bash scripts/merchant-init.sh
-#        curl -fsSL https://arxmint.com/install.sh | bash
+#        curl -fsSL https://arxmint.com/scripts/merchant-init.sh | bash
 # ============================================================
 
 set -euo pipefail
