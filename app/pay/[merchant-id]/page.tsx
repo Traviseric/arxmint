@@ -40,6 +40,16 @@ const SEED_MERCHANTS: Record<string, MerchantData> = {
     website: "https://teneo.io",
     reason: "AI-powered publishing and agent commerce. Teneo is the first platform where AI agents and humans share the same Bitcoin payment rails — agents sell data and compute via L402 paywalls, creators sell books and courses, all settled instantly in sats with zero platform fees.",
   },
+  "arxmint-store": {
+    id: "arxmint-store",
+    businessName: "ArxMint Store",
+    logoUrl: "/images/logo.png",
+    location: null,
+    checkout_enabled: true,
+    default_amount_sats: null,
+    website: "https://arxmint.com/bazaar",
+    reason: "Official ArxMint merch — fortress-energy gear for Bitcoiners. Powered by OpenBazaar.ai.",
+  },
 };
 
 async function getMerchant(merchantId: string): Promise<MerchantData | null> {

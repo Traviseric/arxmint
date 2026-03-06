@@ -56,6 +56,9 @@ export async function POST(request: NextRequest) {
     if (!merchant && merchantId === "seed-teneo") {
       merchant = { id: "seed-teneo", businessName: "Teneo", checkout_enabled: true };
     }
+    if (!merchant && merchantId === "arxmint-store") {
+      merchant = { id: "arxmint-store", businessName: "ArxMint Store", checkout_enabled: true };
+    }
 
     if (!merchant) {
       return NextResponse.json({ error: "Merchant not found" }, { status: 404 });
