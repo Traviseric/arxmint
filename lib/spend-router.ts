@@ -11,7 +11,7 @@
 // ============================================================
 
 import type { MintBackend, WalletBalance } from "./types";
-import { ARK_SDK_AVAILABLE } from "./ark-sdk";
+import { ARK_SDK_AVAILABLE } from "./ark-sdk.ts";
 
 /** Payment path / backend */
 export type SpendPath =

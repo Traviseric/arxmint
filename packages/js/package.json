@@ -17,7 +17,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --experimental-test-module-mocks --test \"tests/*.test.ts\""
   },
   "devDependencies": {
     "tsup": "^8.0.0",
