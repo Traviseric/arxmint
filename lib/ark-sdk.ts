@@ -49,6 +49,13 @@ export interface ArkStatus {
   network?: string;
 }
 
+/**
+ * Whether the Ark SDK is available for production use.
+ * Remains false until @arkade-os/sdk is released and integrated.
+ * Used by spend-router.ts to gate Ark routing paths.
+ */
+export const ARK_SDK_AVAILABLE = false;
+
 export class SovereignArkClient {
   private _config: ArkServerConfig | null = null;
   private _connected = false;
@@ -56,6 +63,14 @@ export class SovereignArkClient {
 
   get isConnected(): boolean {
     return this._connected;
+  }
+
+  /**
+   * Whether the Ark SDK is available for production use.
+   * Always false until @arkade-os/sdk is released.
+   */
+  isAvailable(): boolean {
+    return false;
   }
 
   get balance(): number {

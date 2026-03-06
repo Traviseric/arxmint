@@ -117,6 +117,17 @@ export function WalletPanel() {
             value={formatSats(balance.onchainSats)}
             connected={lightningConnected}
           />
+          {/* Ark VTXO — SDK not yet released, shown as coming soon */}
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-sovereign-muted" />
+              <span className="text-sm text-sovereign-muted">Ark VTXO</span>
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-sovereign-border/40 text-sovereign-muted">
+                coming soon
+              </span>
+            </div>
+            <span className="text-sm text-sovereign-muted font-mono">—</span>
+          </div>
         </div>
 
         {/* Action Buttons */}

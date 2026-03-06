@@ -11,6 +11,7 @@
 // ============================================================
 
 import type { MintBackend, WalletBalance } from "./types";
+import { ARK_SDK_AVAILABLE } from "./ark-sdk";
 
 /** Payment path / backend */
 export type SpendPath =
@@ -118,8 +119,8 @@ export function selectSpendPath(
     viable.push({ path: "lightning", score: PRIVACY_SCORE.lightning });
   }
 
-  // Ark VTXOs — availability.ark is always false until @arkade-os/sdk is released
-  if (availability.ark && balance.arkSats >= amountSats) {
+  // Ark VTXOs — gated by ARK_SDK_AVAILABLE (false until @arkade-os/sdk is released)
+  if (ARK_SDK_AVAILABLE && availability.ark && balance.arkSats >= amountSats) {
     viable.push({ path: "ark", score: PRIVACY_SCORE.ark });
   }
 
