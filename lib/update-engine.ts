@@ -76,7 +76,7 @@ export async function fetchRemoteManifest(
 export function verifyChecksum(data: Buffer, expected: string): boolean {
   if (!/^[0-9a-f]{64}$/i.test(expected)) return false;
   const actual = createHash("sha256").update(data).digest("hex");
-  return actual === expected;
+  return actual === expected.toLowerCase();
 }
 
 /** SHA-256 hex pattern — 64 lowercase hex characters. */
