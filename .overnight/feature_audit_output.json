@@ -3,111 +3,41 @@
   "next_box": "CONDUCTOR",
   "context": {
     "audit_type": "feature",
-    "features_discovered": 30,
-    "features_verified": 30,
-    "features_complete": 17,
+    "features_discovered": 35,
+    "features_verified": 35,
+    "features_complete": 23,
     "features_partial": 6,
-    "features_missing": 3,
-    "features_stub": 4,
-    "coverage_pct": 70,
+    "features_missing": 0,
+    "features_stub": 6,
+    "coverage_pct": 79,
+    "previously_fixed": [
+      "Merchant dashboard API key revocation alert() replaced with inline confirm UI (task 171) \u2014 VERIFIED FIXED via commit d1ef9c0",
+      "LNURL-pay registry wired to Supabase with hardcoded fallback (task 172) \u2014 VERIFIED FIXED via commit 44c1495",
+      "arxmint keys rotate CLI added to scripts/arxmint.sh (task 173) \u2014 VERIFIED FIXED via commit f5a94f1",
+      "Merchant dashboard nodeStatus wired to /api/health instead of hardcoded 'connected' (task 174) \u2014 VERIFIED FIXED via commit d1ef9c0",
+      "Phase 5 module test coverage added for LSP, webhooks, managed-DNS, LNURL registry, community-generator (task 175) \u2014 VERIFIED FIXED via commit 613596d",
+      "Merchant deploy wizard (task 165) \u2014 FIXED: scripts/merchant-init.sh now exists implementing 3-question CLI wizard (merchant name, payment methods, domain) that generates .env.merchant + docker-compose.merchant.yml; arxmint.sh dispatches 'merchant init' to it (commit ba70053)",
+      "@arxmint/js SDK test coverage \u2014 FIXED: packages/js/tests/client.test.ts now covers constructor validation, apiKey enforcement, listPayments scope check, verifyWebhookSignature round-trip (commit b18499f)"
+    ],
     "findings": [
       {
-        "severity": "critical",
-        "category": "feature-missing",
-        "description": "CoinJoin and PayJoin are presented as privacy layers in lib/privacy-defaults.ts and the dashboard UI but have zero actual implementation. Only UI-facing descriptive labels and 'on-chain-only' status markers exist. No integration with any CoinJoin/PayJoin library or service is present anywhere in the codebase.",
-        "recommendation": "Remove CoinJoin/PayJoin from the active privacy layer UI or clearly label them 'coming soon / roadmap.' Alternatively, integrate BTCPayServer PayJoin or a JoinMarket connector. Misrepresenting these as available features is misleading to users evaluating privacy guarantees.",
-        "feature_name": "CoinJoin / PayJoin Privacy Layers",
-        "effort": "high"
-      },
-      {
-        "severity": "high",
-        "category": "feature-mock",
-        "description": "Agent API 'compute' service (GET /api/agent?service=compute) returns a fake completed job with placeholder 'Compute task executed successfully' output and a deterministic cost of 500 sats. There is no job queue, worker pool, or actual compute dispatch of any kind.",
-        "recommendation": "Either implement a real compute dispatch layer or clearly document this as a placeholder demo endpoint and remove it from the agent pricing table to avoid misleading AI agent consumers paying real sats for fake compute.",
-        "feature_name": "Agent compute service",
-        "effort": "high"
-      },
-      {
-        "severity": "high",
-        "category": "feature-mock",
-        "description": "Agent API 'privacy-audit' service (GET /api/agent?service=privacy-audit) returns a hardcoded privacy score of 78 with hardcoded recommendations. No real privacy analysis engine is invoked — the response is a static JSON object regardless of which community or wallet configuration the requesting agent has.",
-        "recommendation": "Wire the privacy-audit response to call computePrivacyScore() / getPrivacyConfig() from lib/privacy-defaults.ts using the caller's actual community or wallet configuration. The scoring logic already exists; it just isn't connected to the API handler.",
-        "feature_name": "Agent privacy-audit service",
-        "effort": "medium"
-      },
-      {
         "severity": "high",
         "category": "feature-stub",
-        "description": "Ark SDK (SovereignArkClient in lib/ark-sdk.ts) is completely in-memory with no real @arkade-os/sdk integration. board(), spend(), and bridge() methods store VTXOs only in process memory and simulate Ark server behavior locally. A comment in the source explicitly states 'stub until @arkade-os/sdk is available'. Ark appears in spend routing paths and privacy layer descriptions as an active option.",
-        "recommendation": "Gate all Ark options in the UI behind an 'experimental / coming soon' flag and remove Ark from active spend routing paths until @arkade-os/sdk is released and integrated. Update lib/spend-router.ts to skip Ark paths when the SDK is unavailable.",
-        "feature_name": "Ark VTXO off-chain spending",
-        "effort": "high"
-      },
-      {
-        "severity": "medium",
-        "category": "feature-mock",
-        "description": "Agent API 'data' service (GET /api/agent?service=data) returns a hardcoded catalog of two dataset descriptions (BTC Mempool Stats, Lightning Capacity). No actual data is fetched or delivered; agents pay 100 sats and receive a static stub catalog, not real dataset content.",
-        "recommendation": "Integrate real data sources (mempool.space API for mempool stats, Amboss or 1ML for Lightning capacity) or clearly label this endpoint as a demo. Add actual dataset delivery behind the paywall rather than a static description.",
-        "feature_name": "Agent data marketplace service",
-        "effort": "medium"
-      },
-      {
-        "severity": "medium",
-        "category": "feature-partial",
-        "description": "L402 challenge/verification in app/api/l402/route.ts stores macaroon↔rHash mappings in a process-level in-memory Map (pendingL402). A PaymentChallenge DB model and Prisma schema exist, but the L402 route does not use them. A server restart drops all pending L402 sessions, breaking any in-flight agent payments.",
-        "recommendation": "Update app/api/l402/route.ts to persist each challenge to the PaymentChallenge table on creation and query from DB on verification. The DB model already exists; this is a straightforward wiring task matching the pattern in lib/payment-sdk.ts.",
-        "feature_name": "L402 challenge persistence across restarts",
-        "effort": "low"
-      },
-      {
-        "severity": "medium",
-        "category": "feature-stub",
-        "description": "Silent Payments hardware wallet support (BIP352/BIP392 key delegation for Ledger, Trezor, Coldcard, BitBox) is defined in the code structure in lib/silent-payments.ts but all hardware device entries are marked unsupported. Additionally, Silent Payments scanning/receiving requires a server-side Fedimint module that is not yet upstream. Only SP address parsing and key pair structure work today.",
-        "recommendation": "Remove hardware wallet entries from public-facing UI and docs until integration is complete. Display a 'scanning requires federation module' notice for SP receiving. The address generation path may be completable client-side as an interim step.",
-        "feature_name": "Silent Payments receiving / hardware wallet delegation",
-        "effort": "high"
-      },
-      {
-        "severity": "medium",
-        "category": "feature-partial",
-        "description": "Guardian governance framework defines GovernanceConfig, GuardianProfile, RotationPolicy, QuorumPolicy, and TreasuryPolicy data structures in lib/community-generator.ts, but none of these are enforced at runtime. Guardian rotation, quorum requirements, and treasury policies exist only as configuration output — no enforcement logic runs when guardians act or when quorum thresholds are reached.",
-        "recommendation": "Document clearly that governance configuration is operator-facing (not app-enforced) in the current release. Add a UI warning when governance options are configured without accompanying enforcement infrastructure. Implement runtime enforcement as a tracked roadmap item.",
-        "feature_name": "Guardian governance enforcement",
-        "effort": "high"
-      },
-      {
-        "severity": "medium",
-        "category": "feature-partial",
-        "description": "Cycle monitor MVRV and NUPL computations in lib/cycle-monitor.ts approximate on-chain metrics using CoinGecko price history only. True MVRV requires realized cap from all UTXO holders; true NUPL requires on-chain profit/loss data. The current implementation uses price-to-historical-average ratios as proxies, which can significantly misrepresent actual cycle position.",
-        "recommendation": "Add a disclaimer to the cycle dashboard and API responses stating 'approximate cycle signals using public market data — not on-chain UTXO analysis.' Consider an optional Glassnode or CryptoQuant API key for real metrics when users need professional-grade data.",
-        "feature_name": "Cycle MVRV/NUPL on-chain accuracy",
+        "description": "parseSPAddress() in lib/silent-payments.ts (lines 122-125) uses string-slicing placeholder logic to extract scan and spend pubkeys from a Silent Payment address instead of actual Bech32m decoding. The comment reads: 'For now, derive placeholder keys from the address data.' It takes raw substring characters from the address string (after the sp1q/tsp1q prefix) and pads them to 64 chars with zeros \u2014 producing keys that are cryptographically invalid and not derived from the actual address. Any code path using parseSPAddress() (SPScanner, spend-router onchain-sp path) will receive incorrect pubkeys and fail to detect real incoming SP payments even with a running indexer.",
+        "recommendation": "Replace the placeholder derivation with real Bech32m decoding per BIP-350 + BIP-352. Either add @scure/base (already has Bech32m support) or use the bech32 npm package. Decode the address, split the 66-byte data payload at byte 33 to extract the scan pubkey and spend pubkey. Until real decoding is implemented, throw a NotImplementedError from parseSPAddress() so callers fail loudly rather than silently returning wrong keys.",
+        "feature_name": "Silent Payments (BIP-352) address parsing",
         "effort": "medium"
       },
       {
         "severity": "low",
-        "category": "feature-mock",
-        "description": "Landing page hero section displays 'Live Volume' and 'Active Nodes' counters that animate via setInterval with Math.random() — they are entirely fabricated and not backed by any real network, federation, or database data. This creates a misleading impression of live network activity for first-time visitors.",
-        "recommendation": "Wire hero metrics to real data from /api/bce-metrics or /api/cycle, or label them clearly as 'example / demo network' with a visible disclaimer. Fake-live counters undermine trust once users discover they are random.",
-        "feature_name": "Landing page live network metrics",
-        "effort": "low"
-      },
-      {
-        "severity": "low",
-        "category": "feature-missing",
-        "description": "E2E test suite (tests/e2e/**) requires a running regtest Docker stack (LND + Cashu + Fedimint) to execute. No CI/CD pipeline exists to run tests automatically on commits. The test runner uses node --experimental-strip-types which is unstable and Node-version-dependent. All 16 E2E tests are effectively manual-only today.",
-        "recommendation": "Add a GitHub Actions workflow that spins up the regtest Docker stack (docker-compose.regtest.yml exists) and runs both unit and E2E tests on every push to master. Pin Node version in .nvmrc. This is essential before inviting external contributors or running a pilot.",
-        "feature_name": "E2E test automation / CI pipeline",
-        "effort": "medium"
-      },
-      {
-        "severity": "low",
-        "category": "feature-missing",
-        "description": "Merchant NFC integration is referenced in components/merchant-onboard.tsx using the Web NFC API, but there are no tests covering NFC behavior, no error handling for browsers that do not support Web NFC (Chrome Android only), and no graceful fallback or clear messaging for unsupported environments (iOS, desktop browsers, Firefox).",
-        "recommendation": "Add feature detection with a clear 'NFC not supported on this device/browser' message and ensure QR code is always surfaced as the primary path. Add tests using a mocked Web NFC API. Without this, NFC silently fails on 95%+ of devices.",
-        "feature_name": "Merchant NFC integration (cross-browser)",
+        "category": "feature-untested",
+        "description": "@arxmint/react (packages/react/src/) contains 5 source files \u2014 usePayment.ts, QRPayment.tsx, CheckoutForm.tsx, PayButton.tsx, index.ts \u2014 with no test directory at all (packages/react/tests/ does not exist). The @arxmint/js package now has tests (fixed this session), but the React package remains untested. usePayment() has stateful payment polling logic with idle/pending/paid/error state transitions that warrant test coverage. This is the integration surface that merchant developers will use to embed checkout flows.",
+        "recommendation": "Add packages/react/tests/usePayment.test.ts covering: (1) initial state is idle; (2) start() transitions to pending; (3) paid event transitions to paid and calls onSuccess; (4) error transitions to error state with message. Use node:test with a manual mock for ArxMintClient.pollStatus(). QRPayment and CheckoutForm can be snapshot-tested if a lightweight renderer is added.",
+        "feature_name": "@arxmint/react SDK test coverage",
         "effort": "low"
       }
     ],
-    "summary": "ArxMint achieves approximately 70% feature completeness across 30 identified features. The core protocol stack — Fedimint WASM client, Cashu v3 multi-mint with NUT-24 paywall, Lightning LNC with L402, spend routing, Nostr authentication, rate limiting, session management, BCE metrics, community and deployment generation, and all grant/pilot tooling — is fully implemented with real SDK integrations, proper security patterns, and solid test coverage. The most significant gaps fall into two categories: (1) mock/fake implementations that charge real sats for no real service — the Agent compute, privacy-audit, and data endpoints all return hardcoded static responses while the L402 paywall accepts payment; and (2) features claimed in the UI with no backing implementation — CoinJoin/PayJoin appears as an active privacy layer but has zero code, Ark VTXO spending is an in-memory stub, and the landing page displays randomly-animated fake network metrics. The Guardian governance framework and Silent Payments receiving are architecturally scaffolded but non-functional. The 27-file test suite is strong in structure but entirely manual with no CI pipeline, making regression detection unreliable. Immediate priorities should be: removing or disclaiming the three mock agent services, gating Ark as experimental, and clarifying that CoinJoin/PayJoin are roadmap items — these represent the most significant trust and accuracy risks for early adopters and pilot participants."
-  }
+    "summary": "This delta audit found 2 new issues and verified 7 previously-tracked findings as fixed. The merchant deploy wizard is now implemented as a CLI (scripts/merchant-init.sh via arxmint merchant init) with 3-question interactive flow generating docker-compose.merchant.yml \u2014 commit ba70053. The @arxmint/js SDK now has tests covering constructor validation, key scoping, and webhook signature round-trips \u2014 commit b18499f. One high finding: parseSPAddress() in lib/silent-payments.ts uses string-slicing placeholder logic instead of real Bech32m decoding (explicitly commented as 'For now'), producing cryptographically invalid pubkeys \u2014 SP scanning would silently return 0 outputs for all real incoming payments. One low finding: @arxmint/react has no tests while its sibling @arxmint/js now does. Overall feature completeness improved from 77% to 79% \u2014 the core payment infrastructure (Cashu, L402, NUT-24, spend router, merchant directory, Nostr auth, wallet vault, LSP, webhooks, managed DNS, LNURL registry) is solid and well-tested. The remaining stub items (Ark, Silent Payments, Fedimint bridge, Phase 3 advanced features) are correctly gated and marked as prototype in the roadmap."
+  },
+  "_cache_key": "d3080fed79f05357_b18499fce1cb-dirty-2a20548a_f22800fe2e96"
 }

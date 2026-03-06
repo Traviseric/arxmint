@@ -327,6 +327,320 @@
     "confirmed_at": "2026-02-28T23:59:00Z",
     "switch_gate_note": "18 human tasks remain in switch_blocked.json. All require genuine human action. Maximum agent prep work done: generate-secrets.sh, DR_DRILL.md, VPS_SETUP.md, grant drafts, upstream tracking docs, human_tasks.md annotations, OVERNIGHT_TASKS.md checkboxes — all completed by previous worker rounds."
   },
+  "newly_rejected_2026_03_06_round16_phase5_synthesis": [
+    {
+      "source": "security_audit",
+      "finding": "L402 agent route auth bypass (CWE-287) — app/api/agent/route.ts accepts any L402 header",
+      "reason": "review_audit VERIFIED task 107 is fully implemented — X-Aperture-Verified header check in place",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "security_audit",
+      "finding": "POST /api/settlement no auth (CWE-306)",
+      "reason": "review_audit VERIFIED task 108 — getCallerFromRequest() + 401 at lines 105-111",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "security_audit",
+      "finding": "Hardcoded session secret fallback 'dev-secret-change-in-production' (CWE-321)",
+      "reason": "review_audit VERIFIED task 109 — production throws FATAL error, dev uses ephemeral key",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "security_audit",
+      "finding": "MACAROON_ROOT_KEY absent → unsigned macaroons (CWE-347)",
+      "reason": "review_audit VERIFIED task 110 — requireMacaroonKey() returns 503 in production",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "security_audit",
+      "finding": "Payment challenges in-process Map not persisted (CWE-400)",
+      "reason": "review_audit VERIFIED task 113 — PaymentChallenge Prisma model with DB persistence",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "CoinJoin/PayJoin presented as active privacy layers with no implementation",
+      "reason": "worker_001 CONFIRMED task 153 already done — privacy-defaults.ts has coinJoin/payJoin as not-yet-implemented",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "Agent privacy-audit returns hardcoded score 78",
+      "reason": "worker_002 CONFIRMED task 154 done — app/api/agent/route.ts has demo:true and disclaimer",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "Landing page live volume/active nodes counters use setInterval(Math.random())",
+      "reason": "Task 118 confirmed complete in prior session",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "E2E test automation / CI pipeline missing",
+      "reason": "Task 104 confirmed complete — .github/workflows/ci.yml has lint+build+test+e2e jobs",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "L402 challenge persistence — pendingL402 Map not persisted to PaymentChallenge DB",
+      "reason": "review_audit VERIFIED task 113 — PaymentChallenge model used by l402 route",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    }
+  ],
+  "newly_confirmed_complete_2026_03_06_round16": [
+    {
+      "source": "workers_001_002_003",
+      "finding": "task 153: Gate CoinJoin/PayJoin as not-yet-implemented",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "worker_001 confirmed lib/privacy-defaults.ts already had coinJoin/payJoin gated correctly. No code change needed."
+    },
+    {
+      "source": "workers_001_002_003",
+      "finding": "task 154: Demo disclaimer on agent compute/data endpoints",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "worker_002 confirmed app/api/agent/route.ts already has demo:true and disclaimers."
+    },
+    {
+      "source": "workers_001_002_003",
+      "finding": "task 155: NFC browser detection fallback in merchant-onboard",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "worker_003 confirmed merchant-onboard.tsx:674-691 already implements NFC detection with fallback UI."
+    }
+  ],
+  "newly_accepted_2026_03_06_round20": [
+    {
+      "source": "feature_audit_r102",
+      "finding": "parseSPAddress() in lib/silent-payments.ts uses string-slicing placeholder producing cryptographically invalid pubkeys",
+      "action": "ACCEPTED → task 179-P1 (safety fix: throw NotImplementedError loudly instead of silently returning wrong keys)",
+      "accepted_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "feature_audit_r102 + AGENT_TASKS.md line 168",
+      "finding": "@arxmint/react has no tests while sibling @arxmint/js now has 11 tests",
+      "action": "ACCEPTED → task 180-P3 (add packages/react/tests/usePayment.test.ts)",
+      "accepted_at": "2026-03-06T00:00:00Z"
+    }
+  ],
+  "newly_confirmed_complete_2026_03_06_round17": [
+    {
+      "source": "task_synthesizer_round_17_active_file_grep",
+      "finding": "All 67 active/ task files confirmed status:completed (grep for ^status: across all .md files)",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "Tasks 073-167 all status:completed. AGENT_TASKS.md updated: 59 items marked [x]. 3 new tasks created: 168 (path fix), 169 (LSP bootstrap), 170 (managed DNS)."
+    }
+  ],
+  "newly_rejected_2026_03_06_round17": [
+    {
+      "source": "security_audit",
+      "finding": "GET /api/community/merchants/transactions no auth (CWE-284)",
+      "reason": "Task 111 (add-auth-to-read-api-endpoints) active/ file confirmed status:completed. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T12:30:00Z"
+    },
+    {
+      "source": "security_audit",
+      "finding": "SKIP_PAYMENT_VERIFY no NODE_ENV production guard (CWE-489)",
+      "reason": "Task 112 (fix-skip-payment-verify-prod-guard) active/ file confirmed status:completed. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T12:30:00Z"
+    },
+    {
+      "source": "security_audit",
+      "finding": "GET /api/payment/status/:id no auth (CWE-284)",
+      "reason": "Task 115 (require-auth-payment-status-endpoint) active/ file confirmed status:completed. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T12:30:00Z"
+    }
+  ],
+  "newly_rejected_2026_03_06_round18": [
+    {
+      "source": "security_audit",
+      "finding": "All 16 security_audit findings (L402 bypass, settlement no auth, session secret, macaroon key, community/merchant/transaction GET no auth, settlement GET sensitive fields, SKIP_PAYMENT_VERIFY no guard, payment challenges Map, cycle catch-any, deleteSession no-op, GET payment status no auth, wildcard CORS, CSP unsafe-eval, in-memory rate limiter, XSS denylist, TS ignoreBuildErrors)",
+      "reason": "All 12 previously-addressed findings have completed tasks (107-115, 167). 4 findings (CORS, CSP, rate-limiter, XSS) remain in deferred_findings per lessons.json round 7. Auto-reject entire security_audit on re-encounter.",
+      "rejected_at": "2026-03-06T14:00:00Z"
+    },
+    {
+      "source": "ux_audit",
+      "finding": "All 30+ ux_audit findings: password labels, retry button, DB failure success, aria-hidden metric values, color-only status, aria-live, tab refs, doubled CSS prefixes, recordTransaction silent fail, Cashu loading, muted contrast, cycle fixed height, community select feedback, seed required fields, focus trap, merchant validation, aria-pressed, hamburger menu, active tab contrast, skip link, aria labels, GSAP reduced-motion",
+      "reason": "All addressed by completed tasks 120-140. Auto-reject all ux_audit findings on re-encounter.",
+      "rejected_at": "2026-03-06T14:00:00Z"
+    },
+    {
+      "source": "code_quality_audit",
+      "finding": "All catch(e: any) patterns in wallet-panel, cashu-sdk, cashu-paywall, community-generator, l402/route, community/[id]/page, cycle-alerts",
+      "reason": "Tasks 097 and 119 confirmed complete. Auto-reject catch-any findings.",
+      "rejected_at": "2026-03-06T14:00:00Z"
+    },
+    {
+      "source": "code_quality_audit",
+      "finding": "Silent DB error swallow in wallet-panel (.catch(() => {}))",
+      "reason": "Task 098 confirmed complete. Auto-reject.",
+      "rejected_at": "2026-03-06T14:00:00Z"
+    }
+  ],
+  "newly_accepted_2026_03_06_round18": [
+    {
+      "source": "feature_audit",
+      "finding": "Merchant dashboard API key revocation calls alert() instead of DELETE API",
+      "action": "ACCEPTED → task 171-P2",
+      "accepted_at": "2026-03-06T14:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "LNURL-pay Lightning Address hardcoded 2-merchant registry — new merchants not served",
+      "action": "ACCEPTED → task 172-P2",
+      "accepted_at": "2026-03-06T14:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "README claims arxmint keys rotate CLI that does not exist",
+      "action": "ACCEPTED → task 173-P2",
+      "accepted_at": "2026-03-06T14:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "Merchant dashboard hardcoded nodeStatus: 'connected' — never checks real LND",
+      "action": "ACCEPTED → task 174-P3",
+      "accepted_at": "2026-03-06T14:00:00Z"
+    },
+    {
+      "source": "feature_audit + code_quality_audit",
+      "finding": "Zero test coverage for Phase 5 modules (LSP, webhooks, DNS, LNURL) + community-generator + silent-payments",
+      "action": "ACCEPTED → task 175-P3",
+      "accepted_at": "2026-03-06T14:00:00Z"
+    }
+  ],
+  "newly_accepted_2026_03_06_round19": [
+    {
+      "source": "feature_audit_r94",
+      "finding": "scripts/arxmint.sh has no 'merchant init' subcommand — README hero claim 'arxmint merchant init → three-question wizard → live in 15 minutes' is inaccurate",
+      "action": "ACCEPTED → task 176-P2",
+      "accepted_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "feature_audit_r94",
+      "finding": "@arxmint/js and @arxmint/react SDK packages have real implementations but zero test files",
+      "action": "ACCEPTED → task 177-P3",
+      "accepted_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "review_audit_pre_existing",
+      "finding": "tests/spend-router.test.ts ERR_MODULE_NOT_FOUND for lib/ark-sdk (missing .ts extension) — 1 failing test in suite",
+      "action": "ACCEPTED → task 178-P3",
+      "accepted_at": "2026-03-06T00:00:00Z"
+    }
+  ],
+  "newly_rejected_2026_03_06_round19": [
+    {
+      "source": "security_audit",
+      "finding": "All 16 security_audit findings (same as rounds 16-18)",
+      "reason": "All 12 findings have completed tasks (107-115, 167). 4 findings (CORS, CSP, rate-limiter, XSS) remain in deferred per lessons.json round 7. Auto-reject entire security_audit batch on re-encounter.",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    },
+    {
+      "source": "code_quality_audit",
+      "finding": "All 21 code_quality_audit findings (same as rounds 16-18)",
+      "reason": "catch-any covered by tasks 097/119, WASM any deferred, god-files rejected/deferred, auth blocklist rejected, NFC rejected, console.log rejected, test coverage addressed by tasks 099/175/177. Auto-reject entire code_quality batch.",
+      "rejected_at": "2026-03-06T00:00:00Z"
+    }
+  ],
+  "newly_accepted_2026_03_06_round21": [
+    {"source": "agent_tasks_p2_roadmap", "finding": "T19 Idempotency-Key header support", "action": "ACCEPTED → task 181-P2", "accepted_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "T23 Umbrel + Start9 packaging manifests", "action": "ACCEPTED → task 182-P2", "accepted_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "T24 Graduate merchant directory — search, self-registration, referral", "action": "ACCEPTED → task 183-P2", "accepted_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "Merchant deploy wizard web UI — app/deploy/ page with 3-question flow", "action": "ACCEPTED → task 184-P2", "accepted_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "T20 Stack update engine — signed BOM + auto-rollback", "action": "ACCEPTED → task 185-P2", "accepted_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "T22 One-click restore — seed phrase to full stack recovery", "action": "ACCEPTED → task 186-P2", "accepted_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "T21 LND SCB encrypted backup engine", "action": "ACCEPTED → task 187-P2", "accepted_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "T25 PWA manifest + service worker for mobile remote control", "action": "ACCEPTED → task 188-P2", "accepted_at": "2026-03-06T18:00:00Z"}
+  ],
+  "newly_rejected_2026_03_06_round21": [
+    {
+      "source": "agent_tasks_p2_roadmap",
+      "finding": "@arxmint/react unit tests (AGENT_TASKS.md line 168 unchecked P3 item)",
+      "reason": "Already done — task 180 VERIFIED COMPLETE by review_audit_output (commit ec66ad6, 10 tests passing). Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T18:00:00Z"
+    }
+  ],
+  "newly_deferred_2026_03_06_round21": [
+    {"source": "agent_tasks_p2_roadmap", "finding": "Guardian governance framework (Roadmap 3.1)", "reason": "High effort protocol work. Not agent-doable as single task.", "deferred_at": "2026-03-06T18:00:00Z"},
+    {"source": "agent_tasks_p2_roadmap", "finding": "Multi-city federation + inter-federation commerce (Roadmap 4.5)", "reason": "High effort — multiple running federations required. Future phase.", "deferred_at": "2026-03-06T18:00:00Z"}
+  ],
+  "newly_accepted_2026_03_06_round23": [
+    {
+      "source": "review_audit_round_117_new_tasks",
+      "finding": "verifyChecksum() in lib/update-engine.ts:79 uses strict === comparison — uppercase expected digests pass HEX64_RE /i guard then fail comparison. 1 failing test at tests/update-engine.test.ts:44.",
+      "action": "ACCEPTED → task 191-P1 (fix: return actual === expected.toLowerCase();)",
+      "accepted_at": "2026-03-06T22:00:00Z"
+    }
+  ],
+  "newly_rejected_2026_03_06_round23": [
+    {
+      "source": "feature_audit",
+      "finding": "parseSPAddress() in lib/silent-payments.ts uses string-slicing placeholder producing cryptographically invalid pubkeys",
+      "reason": "Task 179 status:completed. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T22:00:00Z"
+    },
+    {
+      "source": "feature_audit",
+      "finding": "@arxmint/react has no test directory (packages/react/tests/ does not exist)",
+      "reason": "Task 180 status:completed. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T22:00:00Z"
+    }
+  ],
+  "newly_confirmed_complete_2026_03_06_round24": [
+    {
+      "source": "task_synthesizer_round_24_direct_code_inspection",
+      "finding": "task 179: parseSPAddress() NotImplementedError — VERIFIED COMPLETE by code inspection",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "Grep for 'placeholder|padEnd|For now, derive' returns NO MATCHES. Lines 122-129 of lib/silent-payments.ts confirm NotImplementedError throw. Feature audit was stale/cached. Auto-reject on re-encounter."
+    },
+    {
+      "source": "task_synthesizer_round_24_direct_code_inspection",
+      "finding": "task 180: @arxmint/react tests — packages/react/tests/usePayment.test.ts — VERIFIED COMPLETE by file inspection",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "Glob confirmed packages/react/tests/usePayment.test.ts EXISTS. Feature audit was stale/cached. Auto-reject on re-encounter."
+    },
+    {
+      "source": "task_synthesizer_round_24_direct_code_inspection",
+      "finding": "task 191: verifyChecksum() case-insensitive fix — VERIFIED COMPLETE by review_audit commit 4fb1b6e",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "review_audit_output: 321 tests 0 failures, all 16 update-engine tests pass including case-insensitive test. Commit 4fb1b6e."
+    }
+  ],
+  "newly_rejected_2026_03_06_round24": [
+    {
+      "source": "feature_audit (stale cache)",
+      "finding": "parseSPAddress() uses string-slicing placeholder (lib/silent-payments.ts:122-125)",
+      "reason": "Task 179 VERIFIED COMPLETE by direct code inspection — no placeholder code exists. Feature audit was cached from pre-fix state. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T23:59:00Z"
+    },
+    {
+      "source": "feature_audit (stale cache)",
+      "finding": "@arxmint/react has no test directory (packages/react/tests/ does not exist)",
+      "reason": "Task 180 VERIFIED COMPLETE — packages/react/tests/usePayment.test.ts confirmed present via glob. Feature audit was cached from pre-fix state. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-06T23:59:00Z"
+    }
+  ],
+  "round_24_exhaustion_confirmed_2026_03_06": {
+    "source": "task_synthesizer_round_24",
+    "finding": "SYNTHESIS_EXHAUSTED — Verified both AGENT_TASKS.md Round 24 unchecked items are actually done (tasks 179 and 180). Feature audit had stale cached results. 119 total tasks complete (073-191). 0 new automatable tasks remain. Recommend SWITCH_PROJECT.",
+    "action": "Returned 0 tasks. Recommend SWITCH_PROJECT after AGENT_TASKS.md checkbox update.",
+    "confirmed_at": "2026-03-06T23:59:00Z"
+  },
+  "newly_accepted_2026_03_06_round22": [
+    {
+      "source": "review_audit_round_112_partial_task_187",
+      "finding": "tests/backup-engine.test.ts uses node:test instead of vitest — 'No test suite found' under project CI runner",
+      "action": "ACCEPTED → task 189-P2 (convert imports to vitest)",
+      "accepted_at": "2026-03-06T20:00:00Z"
+    },
+    {
+      "source": "review_audit_round_112_partial_task_185",
+      "finding": "lib/update-engine.ts verifyManifest() TODO stub — structural checks only, no cryptographic verification",
+      "action": "ACCEPTED → task 190-P3 (implement SHA-256 checksum verification)",
+      "accepted_at": "2026-03-06T20:00:00Z"
+    }
+  ],
   "deferred_findings": [
     {
       "source": "code_quality_audit",

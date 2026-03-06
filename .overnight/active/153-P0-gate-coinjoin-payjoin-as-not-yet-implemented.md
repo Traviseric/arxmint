@@ -3,7 +3,7 @@ id: 153
 title: "Gate CoinJoin/PayJoin as 'not-yet-implemented' in privacy-defaults.ts"
 priority: P0
 severity: critical
-status: pending
+status: completed
 source: feature_audit
 file: lib/privacy-defaults.ts
 line: 76

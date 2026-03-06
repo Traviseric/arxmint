@@ -3,7 +3,7 @@ id: 155
 title: "Add NFC browser detection with fallback UI in NumoNFCSetup"
 priority: P3
 severity: low
-status: pending
+status: completed
 source: feature_audit
 file: components/merchant-onboard.tsx
 line: 660

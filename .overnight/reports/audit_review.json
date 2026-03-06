@@ -258,27 +258,246 @@
     ],
     "total_tasks_all_rounds": 83
   },
+  "round_16_phase5_synthesis": {
+    "run_at": "2026-03-06T00:00:00Z",
+    "session": "task_synthesizer_round_16_phase5_bazaar",
+    "sources_synthesized": ["security_audit_output", "feature_audit_output", "code_quality_audit_output", "ux_audit_output", "review_audit_output", "AGENT_TASKS.md", "conductor_output"],
+    "conductor_instructions": "All 57 task files status:completed (tasks 073-155, workers 001-003 confirmed 153/154/155 already done). ROADMAP_SYNC synced AGENT_TASKS.md with Phase 5 Bazaar items (T03, T08-T18) that have no task files. Generate new worker task files. Skip BLOCKED items (Ark SDK upstream, hardware items). Prioritize: T03, T09, T14, T08.",
+    "findings_reviewed": 38,
+    "new_tasks_accepted": 12,
+    "new_tasks_rejected": 17,
+    "new_tasks_deferred": 7,
+    "tasks_created": 12,
+    "task_id_range": "156-167",
+    "new_tasks": ["156-P1", "157-P1", "158-P1", "159-P1", "160-P1", "161-P1", "162-P1", "163-P1", "164-P1", "165-P1", "166-P1", "167-P2"],
+    "accepted_items": [
+      {"id": "156", "source": "feature_audit+AGENT_TASKS T03", "finding": "Ark VTXO shows as active option despite in-memory stub", "action": "Gate with 'coming soon' badge, remove from active spend paths"},
+      {"id": "157", "source": "AGENT_TASKS T08", "finding": "No scoped merchant macaroon system", "action": "Create lib/merchant-auth.ts with arx_live_/arx_pub_/arx_test_ key scopes"},
+      {"id": "158", "source": "AGENT_TASKS T09", "finding": "No webhook delivery system for payment events", "action": "Create lib/webhook-engine.ts + app/api/v1/webhooks/route.ts"},
+      {"id": "159", "source": "AGENT_TASKS T14", "finding": "No LNURL-pay / Lightning Address endpoints", "action": "Create app/.well-known/lnurlp/[username]/route.ts"},
+      {"id": "160", "source": "AGENT_TASKS T15", "finding": "No merchant operational dashboard", "action": "Replace redirect at app/merchant/page.tsx with tabbed dashboard"},
+      {"id": "161", "source": "AGENT_TASKS T10", "finding": "Checkout has demo fallback paths that bypass real payment verification", "action": "Remove demo bypasses, add DEMO MODE banner, wire real payment-sdk.ts"},
+      {"id": "162", "source": "AGENT_TASKS T11", "finding": "No deterministic payment state machine or SSE stream", "action": "Define PaymentStatus type, add SSE stream, add paginated /api/v1/payments"},
+      {"id": "163", "source": "AGENT_TASKS T12", "finding": "No @arxmint/js client SDK for merchant integration", "action": "Create packages/js/ with ArxMintClient class + verifyWebhookSignature"},
+      {"id": "164", "source": "AGENT_TASKS T13", "finding": "No @arxmint/react components for merchant storefronts", "action": "Create packages/react/ with PayButton, CheckoutForm, QRPayment, usePayment"},
+      {"id": "165", "source": "AGENT_TASKS T16", "finding": "No one-command merchant deploy script", "action": "Create scripts/merchant-init.sh + update merchant-setup-wizard.tsx"},
+      {"id": "166", "source": "AGENT_TASKS Phase 4.1 item 12", "finding": "No BTCMap.org integration on /merchants page", "action": "Add BTCMap link, badge, and submission instructions to app/merchants/page.tsx"},
+      {"id": "167", "source": "security_audit CWE-284", "finding": "GET /api/settlement/:id returns full internal data (Fedimint invites, invoices) without auth", "action": "Strip sensitive fields from unauthenticated settlement GET responses"}
+    ],
+    "rejections": [
+      {"finding": "security_audit: L402 auth bypass", "reason": "review_audit VERIFIED task 107 complete"},
+      {"finding": "security_audit: POST /api/settlement no auth", "reason": "review_audit VERIFIED task 108 complete"},
+      {"finding": "security_audit: Hardcoded session secret", "reason": "review_audit VERIFIED task 109 complete"},
+      {"finding": "security_audit: MACAROON_ROOT_KEY absent", "reason": "review_audit VERIFIED task 110 complete"},
+      {"finding": "security_audit: Payment challenges in-process Map", "reason": "review_audit VERIFIED task 113 complete"},
+      {"finding": "security_audit: deleteSession no-op", "reason": "In lessons.json as rejected — intentional HMAC expiry"},
+      {"finding": "security_audit: Wildcard CORS", "reason": "In lessons.json as deferred — intentional for L402 agent commerce"},
+      {"finding": "security_audit: CSP unsafe-eval", "reason": "In lessons.json as deferred — WASM required"},
+      {"finding": "security_audit: In-memory rate limiter", "reason": "In lessons.json as deferred — single-instance acceptable"},
+      {"finding": "security_audit: XSS denylist", "reason": "In lessons.json as deferred — JSON API context"},
+      {"finding": "security_audit: TS errors ignored", "reason": "In lessons.json as deferred — cascading type work"},
+      {"finding": "feature_audit: CoinJoin/PayJoin not implemented", "reason": "worker_001 CONFIRMED task 153 already done"},
+      {"finding": "feature_audit: Agent privacy-audit hardcoded", "reason": "worker_002 CONFIRMED task 154 already done"},
+      {"finding": "feature_audit: Agent compute stub", "reason": "In lessons.json as deferred — high effort, real backend needed"},
+      {"finding": "feature_audit: L402 persistence not in DB", "reason": "review_audit VERIFIED task 113 complete"},
+      {"finding": "feature_audit: Landing page fake metrics", "reason": "Task 118 confirmed complete in prior session"},
+      {"finding": "feature_audit: E2E test automation missing", "reason": "Task 104 confirmed complete — CI workflow exists"}
+    ],
+    "deferrals": [
+      {"finding": "feature_audit: Agent compute — real job queue", "reason": "Requires job queue + DB + LND. Product decision needed."},
+      {"finding": "feature_audit: Agent data — live API feeds", "reason": "External API credentials required. Post-pilot."},
+      {"finding": "feature_audit: Silent Payments HW wallet", "reason": "Upstream Fedimint module not available."},
+      {"finding": "feature_audit: Guardian governance enforcement", "reason": "Protocol-level work, not blocking P1."},
+      {"finding": "AGENT_TASKS: T17 LSP liquidity bootstrap", "reason": "Requires running LND + LSP partner. Infrastructure decision."},
+      {"finding": "AGENT_TASKS: T18 Managed DNS + Cloudflare Tunnel", "reason": "Requires Cloudflare account. Human decision."},
+      {"finding": "AGENT_TASKS: Replace checkout with real LND (Phase 4.1 item 3)", "reason": "Requires running LND hardware (testnet NUC)."}
+    ],
+    "project_declared": {
+      "total": 79,
+      "accepted": 12,
+      "merged": 0,
+      "rejected": 17,
+      "deferred": 7
+    },
+    "total_tasks_all_rounds": 95
+  },
+  "round_17_agent_tasks_reconciliation": {
+    "run_at": "2026-03-06T12:30:00Z",
+    "session": "task_synthesizer_round_17_agent_tasks_reconcile",
+    "sources_synthesized": ["AGENT_TASKS.md", "security_audit_output", "review_audit_output"],
+    "conductor_instructions": "All 67 active/ task files status:completed. AGENT_TASKS.md has many stale unchecked items. Cross-reference every unchecked item against active/ status. Mark [x] completed. Create tasks only for truly pending work. Focus on P0 first.",
+    "findings_reviewed": 16,
+    "new_tasks_accepted": 3,
+    "new_tasks_rejected": 10,
+    "new_tasks_deferred": 3,
+    "agent_tasks_unchecked_before": 62,
+    "agent_tasks_marked_completed": 59,
+    "agent_tasks_remaining_unchecked": 3,
+    "human_tasks_logged": 1,
+    "tasks_created": 3,
+    "task_id_range": "168-170",
+    "new_tasks": ["168-P3", "169-P1", "170-P1"],
+    "accepted_items": [
+      {
+        "id": "168",
+        "source": "review_audit minor_issues",
+        "finding": "PATH_INCONSISTENCY: scripts/merchant-init.sh:6 comment says /install.sh, wizard says /scripts/merchant-init.sh",
+        "action": "Fix comment to match wizard path. One-line change."
+      },
+      {
+        "id": "169",
+        "source": "AGENT_TASKS.md T17 — genuinely pending, no active/ file",
+        "finding": "LSP liquidity bootstrap (JIT channel opening) not implemented. New merchants have zero inbound liquidity.",
+        "action": "Create lib/lsp-bootstrap.ts, app/api/lsp/route.ts, update merchant-init.sh and wizard"
+      },
+      {
+        "id": "170",
+        "source": "AGENT_TASKS.md T18 — genuinely pending, no active/ file",
+        "finding": "Managed DNS + Cloudflare Tunnel not implemented. Merchants can't get public URLs.",
+        "action": "Create lib/managed-dns.ts, app/api/dns/route.ts, add cloudflared service to docker-compose template"
+      }
+    ],
+    "rejections": [
+      {"finding": "L402 agent auth bypass (CWE-287)", "reason": "lessons.json: task 107 verified complete"},
+      {"finding": "POST /api/settlement no auth (CWE-306)", "reason": "lessons.json: task 108 verified complete"},
+      {"finding": "Hardcoded session secret (CWE-321)", "reason": "lessons.json: task 109 verified complete"},
+      {"finding": "MACAROON_ROOT_KEY absent → unsigned macaroons (CWE-347)", "reason": "lessons.json: task 110 verified complete"},
+      {"finding": "Payment challenges in-process Map (CWE-400)", "reason": "lessons.json: task 113 verified complete"},
+      {"finding": "deleteSession() no-op (CWE-613)", "reason": "lessons.json: intentional HMAC expiry design"},
+      {"finding": "GET community/merchants/transactions no auth (CWE-284)", "reason": "task 111 active/ status:completed"},
+      {"finding": "GET settlement sensitive fields (CWE-284)", "reason": "task 167 active/ status:completed, review_audit VERIFIED"},
+      {"finding": "SKIP_PAYMENT_VERIFY no production guard (CWE-489)", "reason": "task 112 active/ status:completed"},
+      {"finding": "GET /api/payment/status/:id no auth (CWE-284)", "reason": "task 115 active/ status:completed"}
+    ],
+    "deferrals": [
+      {"finding": "Wildcard CORS on agent routes (CWE-942)", "reason": "lessons.json: intentional for L402 agent commerce"},
+      {"finding": "CSP unsafe-eval + unsafe-inline (CWE-116)", "reason": "lessons.json: required for WASM"},
+      {"finding": "In-memory rate limiter (CWE-770)", "reason": "lessons.json: acceptable single-instance pilot"}
+    ],
+    "human_tasks": [
+      {"item": "Complete first real testnet payment E2E on NUC (P0, Roadmap 4.1 item 2)", "reason": "Requires physical NUC access, live testnet LND. Agent cannot provision hardware."}
+    ],
+    "total_tasks_all_rounds": 98
+  },
+  "round_18_phase5_delta_synthesis": {
+    "run_at": "2026-03-06T14:00:00Z",
+    "session": "task_synthesizer_round_18_feature_delta",
+    "sources_synthesized": ["security_audit_output", "feature_audit_output", "code_quality_audit_output", "ux_audit_output", "review_audit_output", "last_mile_test_output", "roadmap_sync_output", "AGENT_TASKS.md"],
+    "conductor_instructions": "Round 18: Post-Phase-5 delta audit. Tasks 168-170 just completed (LSP bootstrap, managed DNS, path comment fix). Fresh feature_audit found 5 new issues in Phase 5 merchant dashboard + LNURL layer. Security/UX audits are stale re-runs — cross-reference against lessons.json and active/ status before creating any tasks.",
+    "findings_reviewed": 48,
+    "new_tasks_accepted": 5,
+    "new_tasks_rejected": 33,
+    "new_tasks_deferred": 10,
+    "tasks_created": 5,
+    "task_id_range": "171-175",
+    "new_tasks": ["171-P2", "172-P2", "173-P2", "174-P3", "175-P3"],
+    "accepted_items": [
+      {"id": "171", "source": "feature_audit", "finding": "Merchant dashboard API key revocation calls alert()", "action": "Replace alert() with inline confirm UI + DELETE API call"},
+      {"id": "172", "source": "feature_audit", "finding": "LNURL-pay Lightning Address registry hardcoded to 2 merchants", "action": "Replace hardcoded array with Supabase query by slug"},
+      {"id": "173", "source": "feature_audit", "finding": "README claims 'arxmint keys rotate' CLI that doesn't exist", "action": "Add scripts/arxmint.sh thin bash CLI wrapper or update README"},
+      {"id": "174", "source": "feature_audit", "finding": "Merchant dashboard always shows nodeStatus: 'connected'", "action": "Wire to GET /api/health, poll every 60s"},
+      {"id": "175", "source": "feature_audit + code_quality_audit", "finding": "Zero test coverage for Phase 5 modules", "action": "Create test files for LSP, webhooks, DNS, LNURL, community-generator, silent-payments"}
+    ],
+    "stale_rejections": [
+      "All 16 security_audit findings: 12 already have completed tasks (107-115, 167), 4 in lessons.json as deferred (CORS/CSP/rate-limiter/XSS)",
+      "All 30 ux_audit findings: 24 have completed tasks (120-140), 6 in lessons.json as deferred",
+      "All 7 code_quality_catch-any findings: tasks 097 + 119 completed",
+      "3 code_quality god-module findings: in lessons.json as rejected/deferred"
+    ],
+    "total_tasks_all_rounds": 103
+  },
+  "round_19_feature_r94_synthesis": {
+    "run_at": "2026-03-06T00:00:00Z",
+    "session": "task_synthesizer_round_19_feature_r94",
+    "sources_synthesized": ["security_audit_output", "feature_audit_output", "code_quality_audit_output", "review_audit_output", "AGENT_TASKS.md"],
+    "findings_reviewed": 40,
+    "new_tasks_accepted": 3,
+    "new_tasks_rejected": 32,
+    "new_tasks_deferred": 5,
+    "tasks_created": 3,
+    "task_id_range": "176-178",
+    "new_tasks": ["176-P2", "177-P3", "178-P3"],
+    "total_tasks_all_rounds": 106
+  },
+  "round_20_feature_r102_synthesis": {
+    "run_at": "2026-03-06T00:00:00Z",
+    "session": "task_synthesizer_round_20_feature_r102",
+    "sources_synthesized": ["feature_audit_output", "review_audit_output", "AGENT_TASKS.md"],
+    "findings_reviewed": 2,
+    "new_tasks_accepted": 2,
+    "new_tasks_rejected": 0,
+    "new_tasks_deferred": 0,
+    "tasks_created": 2,
+    "task_id_range": "179-180",
+    "new_tasks": ["179-P1", "180-P3"],
+    "total_tasks_all_rounds": 108
+  },
+  "round_21_p2_roadmap_synthesis": {
+    "run_at": "2026-03-06T18:00:00Z",
+    "session": "task_synthesizer_round_21_p2_roadmap",
+    "findings_reviewed": 12,
+    "new_tasks_accepted": 8,
+    "new_tasks_rejected": 1,
+    "new_tasks_deferred": 3,
+    "tasks_created": 8,
+    "task_id_range": "181-188",
+    "total_tasks_all_rounds": 116
+  },
+  "round_22_review_audit_partial_fixes": {
+    "run_at": "2026-03-06T20:00:00Z",
+    "session": "task_synthesizer_round_22_review_audit_partials",
+    "findings_reviewed": 2,
+    "new_tasks_accepted": 2,
+    "tasks_created": 2,
+    "task_id_range": "189-190",
+    "total_tasks_all_rounds": 118
+  },
+  "round_23_verify_checksum_fix": {
+    "run_at": "2026-03-06T22:00:00Z",
+    "session": "task_synthesizer_round_23_review_audit_117",
+    "findings_reviewed": 3,
+    "new_tasks_accepted": 1,
+    "new_tasks_rejected": 2,
+    "tasks_created": 1,
+    "task_id_range": "191",
+    "total_tasks_all_rounds": 119
+  },
   "round_14_exhaustion": {
     "run_at": "2026-02-28T23:59:00Z",
     "session": "task_synthesizer_round_14_exhaustion",
-    "sources_synthesized": ["security_audit_output", "code_quality_audit_output", "feature_audit_output", "ux_audit_output", "review_audit_output", "last_mile_test_output", "all_active_task_files"],
-    "conductor_instructions": "Review switch_blocked.json flagged items (HT-001 through HT-018). Find any remaining agent-doable sub-tasks. If no new tasks found, return 0 tasks to signal exhaustion.",
-    "findings_reviewed": 82,
+    "tasks_created": 0,
+    "total_tasks_all_rounds": 80
+  },
+  "round_24_synthesis_exhaustion_confirmed": {
+    "run_at": "2026-03-06T23:59:00Z",
+    "session": "task_synthesizer_round_24_final_verification",
+    "sources_synthesized": ["feature_audit_output", "review_audit_output", "digest_output", "last_mile_test_output", "conductor_output", "AGENT_TASKS.md"],
+    "conductor_instructions": "AGENT_TASKS.md Round 24 has 2 unchecked items: P1 parseSPAddress() Bech32m bug and P3 @arxmint/react tests. All 3 active task files (153, 154, 155) status:completed. Route TASK_SYNTHESIZER to generate task files for Round 24 items before SWITCH_PROJECT.",
+    "findings_reviewed": 2,
     "new_tasks_accepted": 0,
-    "new_rejections": 0,
-    "new_deferrals": 0,
-    "signal": "EXHAUSTED",
-    "disposition_summary": {
-      "security_audit_16_findings": "9 completed (tasks 107-115), 4 deferred (CORS/CSP/rate-limiter/XSS), 2 rejected (session revocation, ignoreBuildErrors)",
-      "code_quality_21_findings": "7 completed (tasks 096-102), 7 deferred (WASM typing, god modules), 3 rejected (wallet-panel refactor, NFC TODO, token blocklist)",
-      "feature_9_findings": "4 completed (tasks 116-118, 104), 5 deferred (Ark SDK, compute stub, data stub, cycle MVRV, silent payments HW)",
-      "ux_35_findings": "21 completed (tasks 120-140), 5 deferred (tooltip popover, password strength, expandedSection, multi-step jump, copied timeout), 4 n/a (hero breakpoints handled by 130)",
-      "review_1_finding": "1 completed (task 119)",
-      "last_mile_test": "GO — no findings"
-    },
-    "switch_gate_status": "18 items remain in human_tasks.md — all require genuine human action. Agent prep tooling maximally complete: generate-secrets.sh, DR_DRILL.md, VPS_SETUP.md, spiral-email.md, upstream-deps.md, fbce-outreach.md all exist. No further automation possible.",
+    "new_tasks_rejected": 2,
+    "new_tasks_deferred": 0,
     "tasks_created": 0,
     "task_id_range": "none",
-    "total_tasks_all_rounds": 80
+    "rejections": [
+      {
+        "finding": "parseSPAddress() uses string-slicing placeholder producing cryptographically invalid pubkeys (lib/silent-payments.ts:122-125)",
+        "reason": "Task 179 VERIFIED COMPLETE by direct code inspection. Grep for 'placeholder|padEnd|For now, derive' returns NO MATCHES in lib/silent-payments.ts. parseSPAddress() now throws NotImplementedError at lines 122-129. Feature audit was stale/cached — issue fixed in prior session."
+      },
+      {
+        "finding": "@arxmint/react has no test directory (packages/react/tests/ does not exist)",
+        "reason": "Task 180 VERIFIED COMPLETE by direct file inspection. packages/react/tests/usePayment.test.ts EXISTS (confirmed via glob). Feature audit was stale/cached — tests added in prior session."
+      }
+    ],
+    "verification_method": "Direct code inspection (Grep + Glob) against current codebase state, not stale audit cache",
+    "signal": "SYNTHESIS_EXHAUSTED — 0 new automatable tasks remain. All 119 tasks (073-191) complete or properly deferred. Both AGENT_TASKS.md Round 24 unchecked items are actually done. Recommend update AGENT_TASKS.md checkboxes to [x] then proceed to SWITCH_PROJECT.",
+    "project_declared": {
+      "total": 2,
+      "accepted": 0,
+      "merged": 0,
+      "rejected": 2,
+      "deferred": 0
+    },
+    "total_tasks_all_rounds": 119
   }
 }
