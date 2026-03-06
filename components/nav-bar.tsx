@@ -85,15 +85,9 @@ export function NavBar() {
           </Link>
           <Link
             href="/bazaar"
-            className="text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors font-medium hidden sm:block"
+            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors font-medium hidden sm:block"
           >
             Bazaar
-          </Link>
-          <Link
-            href="/deploy"
-            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
-          >
-            Deploy
           </Link>
 
           {/* Learn dropdown — desktop */}
@@ -193,13 +187,6 @@ export function NavBar() {
               className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors font-medium"
             >
               Bazaar
-            </Link>
-            <Link
-              href="/deploy"
-              onClick={() => setMobileOpen(false)}
-              className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
-            >
-              Deploy
             </Link>
             {LEARN_LINKS.map((link) => (
               <Link
