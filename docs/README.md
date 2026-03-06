@@ -44,6 +44,18 @@
 | [RESEARCH_PROMPTS.md](RESEARCH_PROMPTS.md) | Research prompts used during architecture decisions |
 | [research/](research/) | Deep research documents (6 studies) |
 
+## Bazaar & Commerce
+
+| Document | Description |
+|----------|-------------|
+| `te-btc/internal/arxmint-internal/BAZAAR_STRATEGY.md` | Bazaar strategy — OpenBazaar.ai integration, Printful setup, merch catalog, webhook contract |
+
+**Key routes:**
+- `/bazaar` — Merch storefront (fetches from `openbazaar.ai/api/storefront/catalog`)
+- `/bazaar/[id]` — Product detail page
+- `/pay/arxmint-store` — Checkout with shipping address collection for physical merch
+- `/api/checkout/webhook` — Forwards payment confirmation + shipping data to OpenBazaar.ai fulfillment
+
 ## Reference
 
 | Document | Description |

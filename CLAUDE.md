@@ -8,7 +8,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 
 Humans and AI agents share the same private commerce infrastructure. Agents sell data/compute via L402 paywalls; humans transact in ecash; both use the same Lightning-connected federation.
 
-**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. **Testnet deployment running on TE NUC** (LND syncing, Cashu standing by). Phase 4 (Citadel pilot) in progress — merchant pledge directory live at arxmint.com/merchants, 2 live merchants (Glacier, Teneo) + 13 in pipeline, Nostr admin auth working, checkout pages live, grants drafted, KPI framework ready. Phase 5 (Bazaar) planned — decentralized Stripe alternative. See `docs/roadmap.md`.
+**Status:** All implementation tasks complete. Phases A–E (production hardening) + Phases 0–2 (feature build-out) done. **Testnet deployment running on TE NUC** (LND syncing, Cashu standing by). Phase 4 (Citadel pilot) in progress — merchant pledge directory live at arxmint.com/merchants, 2 live merchants (Glacier, Teneo) + 13 in pipeline, Nostr admin auth working, checkout pages live, grants drafted, KPI framework ready. Phase 5 (Bazaar) in progress — arxmint.com/bazaar is a live merch store powered by OpenBazaar.ai (openbazaar.ai), with shipping address collection and fulfillment webhook to OpenBazaar.ai/Printful. See `docs/roadmap.md` and `te-btc/internal/arxmint-internal/BAZAAR_STRATEGY.md`.
 
 ## Lookup Table
 
@@ -53,9 +53,12 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Brand guide | `docs/brand.md` | `tagline voice palette audience` |
 | Docs index | `docs/README.md` | — |
 | Payment SDK | `lib/payment-sdk.ts` (planned) | `createL402Challenge verifyL402Token routePayment` |
-| Checkout page | `app/pay/[merchant-id]/page.tsx`, `components/checkout-flow.tsx` | `CheckoutFlow Lightning QR merchant checkout` |
+| Checkout page | `app/pay/[merchant-id]/page.tsx`, `components/checkout-flow.tsx` | `CheckoutFlow Lightning QR merchant checkout shipping` |
+| Checkout webhook | `app/api/checkout/webhook/route.ts` | `HMAC OpenBazaar fulfill arxmint-store` |
+| Bazaar storefront | `app/bazaar/page.tsx`, `app/bazaar/[id]/page.tsx` | `OpenBazaar catalog storefront merch` |
+| Bazaar strategy | `te-btc/internal/arxmint-internal/BAZAAR_STRATEGY.md` | `OpenBazaar Printful flywheel merch fulfillment` |
 | NUC deployment | `docs/DEPLOY.md`, `docker/docker-compose.cashu.yml` | `NUC testnet LND Cashu self-hosted` |
-| Marketplace integration | See `C:\code\teneo-marketplace` | `teneo-marketplace, storefront, federation, revenue share` |
+| OpenBazaar.ai integration | `openbazaar.ai/api/storefront/*` | `catalog checkout fulfill payment provider` |
 
 ## Tech Stack
 
@@ -90,7 +93,7 @@ ArxMint (Arx = citadel + Mint = ecash). Voice: confident builder, direct, protec
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm run build        # Production build (14 routes)
+npm run build        # Production build (56 routes)
 npm run setup:cashu  # Docker: LND + Cashu mint only
 npm run setup:full   # Docker: Full stack (LND + Cashu + Fedimint + Aperture)
 ```
