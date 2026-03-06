@@ -1,6 +1,6 @@
 # ArxMint — Implementation Roadmap
 
-**Version:** 4.4 — March 5, 2026
+**Version:** 4.5 — March 6, 2026
 **Informed by:** 7 research documents cross-referenced in `docs/research-crossref.md` + 6 deep research studies in `docs/research/` + 11 self-hosting UX studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/`
 **Canonical spec:** `docs/spec.md` (all `Spec §X` references point here)
 **Overnight tasks:** `OVERNIGHT_TASKS.md` (concrete implementation tasks derived from this roadmap)
@@ -24,7 +24,7 @@ Phase E: Hardening     (rate limit, health, caps, CI)   ✅ CODE COMPLETE
 PRODUCTION READINESS GATE → 🟡 NUC testnet deployment running (LND syncing, Cashu standing by)
 ═══════════════════════════════════════════════════════
 Phase 4: Citadel       (Longmont pilot + grants)        🟡 IN PROGRESS
-Phase 5: Bazaar       (Merchant platform — decentralized Stripe)  📋 PLANNED
+Phase 5: Bazaar       (Merchant platform — decentralized Stripe)  🟡 EARLY PROTOTYPE
 ```
 
 **Feature path** (parallel, not blocking production):
@@ -67,8 +67,8 @@ Status key:
 | 2.7 Monitoring stack | Complete | Prometheus scrape config at `docker/prometheus.yml`; Grafana datasource + dashboards at `docker/grafana/`; services in `docker-compose.yml` |
 | 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
-| 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, VPS setup + DR drill docs in `docs/`; merchant pledge directory live at arxmint.com/merchants (Glacier seed + public signup); Vercel + Supabase production deployment working; pilot deployment pending human action |
-| 5.x merchant platform (Bazaar) | Planned | Decentralized Stripe alternative — split-plane architecture (provisioning + merchant node), managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, merchant dashboard, LNURL-pay, Umbrel/StartOS packaging |
+| 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, deployment docs in `docs/`; merchant directory live at arxmint.com/merchants with Glacier + Teneo, 13 pipeline merchants, Nostr admin auth, public signup, and TE NUC testnet deployment running |
+| 5.x merchant platform (Bazaar) | Prototype | Early merchant-facing surfaces are live: `/pay/[merchant-id]` checkout prototype, `/bazaar` storefront prototype, `/badge` merchant kit, `/create` merchant setup wizard beta, and `/merchants` public directory. Self-hosted merchant node architecture, merchant-local APIs, SDK, webhooks, dashboard, and provisioning are not complete yet |
 
 ---
 
@@ -598,6 +598,9 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 - 13 ecosystem merchants in pipeline (admin-only visibility, AI logos generated)
 - Nostr NIP-98 admin auth live — admin sees pipeline merchants when logged in
 - Checkout pages live at `/pay/[merchant-id]` with Lightning QR codes
+- Bazaar storefront prototype live at `/bazaar` (seeded from Teneo catalog)
+- Merchant badge + artwork kit live at `/badge`
+- `/create` now uses a merchant setup wizard beta instead of the old freeform community prompt
 - Public signup form accepting new merchant pledges → Supabase
 - Vercel + Supabase production infrastructure working
 - **Testnet stack deployed on TE NUC** — LND syncing, Cashu standing by
@@ -605,15 +608,16 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 
 **Remaining for full pilot:**
 1. ~~Deploy Docker stack to hardware~~ ✅ Running on NUC (testnet)
-2. Complete first testnet payment end-to-end (LND → Cashu → checkout)
-3. Build merchant-scoped agent checkout (`lib/payment-sdk.ts`)
-4. Activate pipeline merchants as each service processes first transaction
-5. Switch LND from `--bitcoin.testnet` to `--bitcoin.mainnet` in compose
-6. Generate production credentials (run `scripts/generate-secrets.sh`)
-7. Verify health checks, monitoring, and backup automation
-8. Onboard first 5 merchants (soft launch — directory already live)
-9. Monitor for 7 days — check alerts, backups, payment success rate
-10. Open to full community (30 merchant target)
+2. Complete first real testnet payment end-to-end on the NUC (LND → checkout → status update)
+3. Replace prototype checkout internals with merchant-local payment plumbing (`lib/payment-sdk.ts`, real invoice verification, no demo fallback on pilot path)
+4. Activate pipeline merchants as each service processes its first real transaction
+5. Finish `/create` wizard so it provisions or exports a real merchant init path instead of ending at beta signup
+6. Switch LND from `--bitcoin.testnet` to `--bitcoin.mainnet` in compose
+7. Generate production credentials (run `scripts/generate-secrets.sh`)
+8. Verify health checks, monitoring, and backup automation
+9. Onboard first 5 merchants (soft launch — directory already live)
+10. Monitor for 7 days — check alerts, backups, payment success rate
+11. Open to full community (30 merchant target)
 
 **KPIs (from Doc 7 template):**
 - 30 merchants onboarded by month 6
@@ -656,6 +660,14 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 **Prerequisite:** Phase 4 pilot running (real merchants, real payments proving the infrastructure works)
 **Vision:** A private, open-source, self-hosted Stripe alternative. Merchants keep 100% of every sale. No payment data sold. No middleman. Customers pay directly to the merchant's own node via ecash (Cashu), Lightning, or Fedimint.
 **Legal basis:** Research #7 (`docs/research/Phase5-Bazaar/1-Crypto Payment Infrastructure Legal Analysis.md`)
+
+### OpenBazaar.ai Integration — Flagship Store
+
+**Strategy doc:** `te-btc/internal/arxmint-internal/BAZAAR_STRATEGY.md`
+
+`arxmint.com/bazaar` will be a live ArxMint merch store (branded gear: stickers, shirts, hoodies, signs) built with **OpenBazaar.ai** (`openbazaar.ai` / `github.com/Traviseric/openbazaar-ai`) — our open-source marketplace builder that replaces Clickfunnels, Gumroad, and Teachable. Payments flow through ArxMint's existing `/pay/` checkout. The bazaar page prominently displays "Powered by OpenBazaar.ai" with a GitHub link, driving downloads of the tool. New OpenBazaar.ai users adopt ArxMint as their payment provider, creating a flywheel: **tool adoption → payment volume → proof of concept → more tool adoption.**
+
+ArxMint owns the payment rails. OpenBazaar.ai owns the marketplace/storefront builder. The bazaar page is where they meet. See strategy doc for full spec, integration architecture, and what OpenBazaar.ai needs to deliver.
 
 ### Why This Phase Exists
 
@@ -983,22 +995,27 @@ Phase 5 SDK and API must be compatible with the existing Teneo Marketplace integ
 |---|---|---|
 | 5.1 Local auth tokens | Planned | Phase A auth + L402 macaroon bakery (1.5) |
 | 5.2 Webhook engine (local) | Planned | Phase B payment SDK + LND gRPC |
-| 5.3 Self-hosted checkout | Planned | Phase B L402 + NUT-24 + NUT-26 QR |
-| 5.4 Payment status API | Planned | Phase B payment SDK |
+| 5.3 Self-hosted checkout | Prototype | Public checkout exists today at `/pay/[merchant-id]` backed by `/api/checkout`; still centralized, Lightning-only, and uses polling/demo fallback instead of merchant-local self-hosted flow |
+| 5.4 Payment status API | Prototype | `/api/checkout/status/[id]` exists for polling current prototype sessions; not yet the merchant-local `/api/v1/payments` + SSE design |
 | 5.5 Client-side SDK | Planned | 5.1 + 5.3 + 5.4 |
 | 5.6 LNURL-pay / Lightning Address | Planned | Phase B L402 + LND wiring |
 | 5.7 Merchant dashboard (self-hosted) | Planned | 5.1 + 5.4 + Phase A DB + Self-Hosting-UX health vocabulary |
 | 5.8a Provisioning service (control plane) | Planned | Phase C Docker stack + Caddy + cloud provider APIs |
 | 5.8b Managed DNS + connectivity | Planned | 5.8a + Cloudflare Tunnel API + DNS zone management |
 | 5.8c LSP liquidity bootstrap | Planned | 5.8a + lsp-spec API integration |
-| 5.8d Merchant stack composition | Planned | LND Neutrino + Phase C infra |
-| 5.9 Public directory | Planned | 1.4 merchant onboarding + Phase A DB |
+| 5.8d Merchant stack composition | Prototype | `/create` now presents a merchant setup wizard beta that builds intent and UX around merchant node setup, but it does not yet provision infrastructure or emit the final merchant stack path |
+| 5.9 Public directory | Partial | `/merchants` is live with public signup, two live merchants, admin-only pipeline merchants, checkout links, and merchant badge CTA; search, merchant self-service activation, and CLI registration remain |
 | 5.10 Idempotency + hardening | Planned | 5.1 + 5.2 + Phase E hardening |
 | 5.11a Appliance update engine | Planned | 5.8a + signed manifest infrastructure |
 | 5.11b Zero-knowledge encrypted backups | Planned | 5.8a + seed-derived encryption + cloud storage |
 | 5.11c One-click restore | Planned | 5.11b + provisioning service |
 | 5.12 Home node packaging (Umbrel/StartOS) | Planned | 5.8d stable + Umbrel packaging format |
 | 5.13 Mobile merchant remote control | Planned (Future) | 5.7 PWA as bridge; native app Phase 6+ |
+
+**Live Phase 5-adjacent prototype surfaces (March 2026):**
+- `/bazaar` is live as a seeded storefront prototype routing purchases into the Teneo merchant checkout path
+- `/badge` is live as a merchant acquisition + branding kit (embed badge, referral link, printable assets)
+- `/create` is live as a merchant-first beta wizard, but still stops short of actual one-command deploy
 
 ### Phase 5 Priority Order
 
@@ -1273,6 +1290,3 @@ Following the positioning doc's Tartarian builder theme:
 | Phase 3 | **Aether** | Advanced capabilities, reaching higher |
 | Phase 4 | **Citadel** | The complete sovereign fortress — deployed and defended |
 | Phase 5 | **Bazaar** | The open marketplace — sovereign commerce for all |
-
-
-
