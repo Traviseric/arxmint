@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Accept Bitcoin payments. Zero fees. No middleman. Self-hosted payment infrastructure — the open-source Stripe alternative.",
   "private": false,
+  "workspaces": ["packages/*"],
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",

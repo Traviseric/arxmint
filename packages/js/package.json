@@ -1,0 +1,31 @@
+{
+  "name": "@arxmint/js",
+  "version": "0.1.0",
+  "description": "ArxMint JavaScript client SDK — Lightning payments, no middleman",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["bitcoin", "lightning", "payments", "arxmint", "l402"],
+  "license": "MIT"
+}
