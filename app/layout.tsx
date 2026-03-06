@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { NavBar } from "@/components/nav-bar";
 import { StorageHydrator } from "@/components/storage-hydrator";
+import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 import Image from "next/image";
 import "./globals.css";
 
@@ -17,6 +18,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "ArxMint — The Sovereign Payment Network",
+  manifest: "/manifest.json",
+  themeColor: "#F7931A",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ArxMint",
+  },
   description:
     "The sovereign payment network. Self-hosted Bitcoin infrastructure — the open-source Stripe alternative. Near-zero fees, instant settlement, no chargebacks. Three questions, one command, live in 15 minutes.",
   metadataBase: new URL("https://arxmint.com"),
@@ -52,6 +60,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <StorageHydrator />
+        <ServiceWorkerRegistrar />
         <NavBar />
 
         {/* Main content */}

@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
   // NOTE: COOP/COEP headers removed — they block Vercel serverless function execution
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
+    const swHeader = {
+      source: "/sw.js",
+      headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+    };
     const cspReportOnlyEnabled =
       isProd && process.env.CSP_REPORT_ONLY !== "false";
     const strictReportOnlyCsp = [
@@ -39,6 +43,7 @@ const nextConfig: NextConfig = {
       "report-uri /api/csp-report",
     ].join("; ");
     return [
+      swHeader,
       {
         source: "/(.*)",
         headers: [
