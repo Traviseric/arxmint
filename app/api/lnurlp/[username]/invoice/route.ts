@@ -60,7 +60,7 @@ export async function GET(
 ) {
   const { username } = await params;
 
-  const merchant = lookupLnurlMerchant(username);
+  const merchant = await lookupLnurlMerchant(username);
   if (!merchant) {
     return NextResponse.json(
       { status: "ERROR", reason: "Unknown username" },
