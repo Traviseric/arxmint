@@ -206,6 +206,9 @@ services:
       - LND_REST_ENDPOINT=https://lnd:8080
       - LND_TLS_CERT_PATH=/root/.lnd/tls.cert
       - LND_MACAROON_PATH=/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon
+      - LSP_URL=\${LSP_URL:-}
+      - CLOUDFLARE_API_TOKEN=\${CLOUDFLARE_API_TOKEN:-}
+      - CLOUDFLARE_ZONE_ID=\${CLOUDFLARE_ZONE_ID:-}
     ports:
       - "3000:3000"
     volumes:
@@ -215,6 +218,20 @@ services:
     networks:
       - merchant
 ${CASHU_SERVICE}
+  # Optional: Cloudflare Tunnel for public reachability.
+  # Set CF_TUNNEL_TOKEN in .env.merchant to activate.
+  # Get a token: cloudflared tunnel create ${MERCHANT_SLUG}
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: ${MERCHANT_SLUG}-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=\${CF_TUNNEL_TOKEN:-}
+    networks:
+      - merchant
+    profiles:
+      - tunnel
 volumes:
   lnd-data:
   cashu-data:
@@ -268,5 +285,80 @@ if [ "$DOMAIN" = "localhost" ]; then
   echo "  http://localhost:3000/pay/${MERCHANT_SLUG}"
 else
   echo "  https://${DOMAIN}/pay/${MERCHANT_SLUG}"
+fi
+echo ""
+
+# ── Optional: Inbound Lightning liquidity (LSP bootstrap) ────
+echo "========================================"
+echo " Optional: Inbound Liquidity"
+echo "========================================"
+echo ""
+echo "  New Lightning nodes have no inbound capacity."
+echo "  Without it, you cannot receive payments."
+echo ""
+printf "  Set up automatic inbound liquidity? [Y/n] "
+read -r LSP_REPLY
+LSP_REPLY="${LSP_REPLY:-Y}"
+echo ""
+
+if [[ "$LSP_REPLY" =~ ^[Yy]$ ]]; then
+  printf "  Your LND node public key (run 'lncli getinfo' after start): "
+  read -r LND_NODE_ID
+  echo ""
+  if [ -n "$LND_NODE_ID" ]; then
+    # Append LSP_URL to .env.merchant so the app knows the LSP endpoint
+    if ! grep -q "LSP_URL" "$ENV_FILE" 2>/dev/null; then
+      echo "" >> "$ENV_FILE"
+      echo "# LSP liquidity bootstrap (see /api/lsp/bootstrap)" >> "$ENV_FILE"
+      echo "LSP_URL=${LSP_URL:-https://lsp.voltage.cloud}" >> "$ENV_FILE"
+    fi
+    echo "  After your stack starts, bootstrap liquidity with:"
+    echo "    curl -X POST http://localhost:3000/api/lsp/bootstrap \\"
+    echo "         -H 'Content-Type: application/json' \\"
+    echo "         -d '{\"nodeId\":\"${LND_NODE_ID}\"}'"
+    echo ""
+    echo "  Or visit: http://localhost:3000/merchant/setup"
+  else
+    echo "  Skipped — run the liquidity step after your LND wallet is created."
+    echo "  Command: docker exec ${MERCHANT_SLUG}-lnd lncli getinfo"
+  fi
+fi
+
+# ── Optional: Public URL via Cloudflare Tunnel ───────────────
+echo ""
+echo "========================================"
+echo " Optional: Public URL (Cloudflare Tunnel)"
+echo "========================================"
+echo ""
+echo "  Expose your node to the internet so customers can reach"
+echo "  your checkout page from anywhere — no port forwarding needed."
+echo ""
+printf "  Set up a public URL? [Y/n] "
+read -r CF_REPLY
+CF_REPLY="${CF_REPLY:-Y}"
+echo ""
+
+if [[ "$CF_REPLY" =~ ^[Yy]$ ]]; then
+  if command -v cloudflared &>/dev/null; then
+    echo "  cloudflared detected. Creating tunnel..."
+    cloudflared tunnel login 2>/dev/null || true
+    cloudflared tunnel create "${MERCHANT_SLUG}" 2>/dev/null && \
+      echo "  Tunnel created: ${MERCHANT_SLUG}" || \
+      echo "  Could not create tunnel automatically."
+    echo ""
+    echo "  Run this to start the tunnel:"
+    echo "    cloudflared tunnel run ${MERCHANT_SLUG}"
+    echo ""
+    echo "  Your public checkout URL will be:"
+    echo "    https://${MERCHANT_SLUG}.arxmint.com/pay/${MERCHANT_SLUG}"
+  else
+    echo "  cloudflared not found. Install it first:"
+    echo "    https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
+    echo ""
+    echo "  Then run:"
+    echo "    cloudflared tunnel login"
+    echo "    cloudflared tunnel create ${MERCHANT_SLUG}"
+    echo "    cloudflared tunnel run ${MERCHANT_SLUG}"
+  fi
 fi
 echo ""

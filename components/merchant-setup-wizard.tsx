@@ -16,6 +16,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Loader2,
+  Link,
+  Radio,
 } from "lucide-react";
 import { generateApertureConfig } from "@/lib/community-generator";
 import type { DeploymentConfig } from "@/lib/types";
@@ -646,6 +648,89 @@ export function MerchantSetupWizard() {
               {deployment.instructions.join("\n")}
             </pre>
           </CollapsibleSection>
+
+          {/* Liquidity & Public URL */}
+          <div className="glass border border-border-default rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-border-default">
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <Zap className="w-4 h-4 text-accent" />
+                Next Steps — Liquidity &amp; Public URL
+              </h3>
+            </div>
+            <div className="px-6 py-5 space-y-5">
+              {/* Inbound Liquidity */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-accent shrink-0" />
+                  <span className="text-sm font-medium text-text-primary">Inbound Lightning Liquidity</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  New nodes have zero inbound capacity — run the LSP bootstrap after your node starts to
+                  receive your first payment.
+                </p>
+                <div className="rounded-lg bg-sovereign-dark border border-border-default relative">
+                  <pre className="px-4 py-3 text-xs text-text-primary font-mono overflow-x-auto">
+                    {`curl -X POST http://localhost:3000/api/lsp/bootstrap \\
+  -H 'Authorization: Bearer <your-macaroon>' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"nodeId":"<lncli getinfo pubkey>"}'`}
+                  </pre>
+                  <div className="absolute top-1.5 right-2">
+                    <span aria-live="polite" className="sr-only">{copied === "lsp-cmd" ? "Copied" : ""}</span>
+                    <button
+                      aria-label="Copy LSP bootstrap command"
+                      onClick={() => copyToClipboard(
+                        `curl -X POST http://localhost:3000/api/lsp/bootstrap -H 'Authorization: Bearer <your-macaroon>' -H 'Content-Type: application/json' -d '{"nodeId":"<lncli getinfo pubkey>"}'`,
+                        "lsp-cmd"
+                      )}
+                      className="p-1.5 rounded-md bg-sovereign-panel hover:bg-white/10 transition-colors"
+                    >
+                      {copied === "lsp-cmd" ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-sovereign-muted" />}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-text-muted">
+                  Get your pubkey: <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">docker exec {deployment.community.name.toLowerCase().replace(/\s+/g, "-")}-lnd lncli getinfo</code>
+                </p>
+              </div>
+
+              {/* Public URL */}
+              <div className="space-y-2 pt-2 border-t border-border-default">
+                <div className="flex items-center gap-2">
+                  <Link className="w-4 h-4 text-accent shrink-0" />
+                  <span className="text-sm font-medium text-text-primary">Public Checkout URL</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Expose your node to the internet — no port forwarding needed. Run the merchant-init script
+                  and choose <em>Yes</em> to set up the Cloudflare Tunnel, or provision via the API:
+                </p>
+                <div className="rounded-lg bg-sovereign-dark border border-border-default relative">
+                  <pre className="px-4 py-3 text-xs text-text-primary font-mono overflow-x-auto">
+                    {`curl -X POST http://localhost:3000/api/dns/provision \\
+  -H 'Authorization: Bearer <your-macaroon>' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"merchantId":"${deployment.community.name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")}"}'`}
+                  </pre>
+                  <div className="absolute top-1.5 right-2">
+                    <span aria-live="polite" className="sr-only">{copied === "dns-cmd" ? "Copied" : ""}</span>
+                    <button
+                      aria-label="Copy DNS provision command"
+                      onClick={() => copyToClipboard(
+                        `curl -X POST http://localhost:3000/api/dns/provision -H 'Authorization: Bearer <your-macaroon>' -H 'Content-Type: application/json' -d '{"merchantId":"${deployment.community.name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")}"}'`,
+                        "dns-cmd"
+                      )}
+                      className="p-1.5 rounded-md bg-sovereign-panel hover:bg-white/10 transition-colors"
+                    >
+                      {copied === "dns-cmd" ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-sovereign-muted" />}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-text-muted">
+                  Requires <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">CLOUDFLARE_API_TOKEN</code> + <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">CLOUDFLARE_ZONE_ID</code> in your <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">.env.merchant</code>.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Start Over */}
           <button
