@@ -357,14 +357,62 @@ export function MerchantSetupWizard() {
             ))}
           </div>
 
-          {/* Beta Notice + Merchant Redirect */}
-          <div className="rounded-xl border border-accent/30 bg-accent/5 p-6 text-center space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20">
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-xs font-mono text-accent uppercase tracking-wider">Beta — Coming Soon</span>
+          {/* One-Command Setup — primary path */}
+          <div className="rounded-xl border border-accent/40 bg-accent/5 p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-accent shrink-0" />
+              <span className="text-sm font-semibold text-text-primary">One-command setup</span>
+              <span className="ml-auto px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-mono">
+                recommended
+              </span>
             </div>
-            <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
-              One-click node deployment is in development. Until that ships, you can still generate the reference stack and setup instructions below.
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Run the setup script on your server — it asks 3 questions and writes your config files.
+              No account required. Everything runs on your own hardware.
+            </p>
+            <div className="relative rounded-lg bg-sovereign-dark border border-border-default">
+              <pre className="px-4 py-3 text-xs text-text-primary font-mono overflow-x-auto">
+                {`curl -fsSL https://arxmint.com/scripts/merchant-init.sh | bash`}
+              </pre>
+              <div className="absolute top-1.5 right-2">
+                <span aria-live="polite" className="sr-only">{copied === "curl-install" ? "Copied" : ""}</span>
+                <button
+                  aria-label="Copy install command"
+                  onClick={() => copyToClipboard("curl -fsSL https://arxmint.com/scripts/merchant-init.sh | bash", "curl-install")}
+                  className="p-1.5 rounded-md bg-sovereign-panel hover:bg-white/10 transition-colors"
+                >
+                  {copied === "curl-install" ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-sovereign-muted" />}
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px] text-text-muted">
+              Or clone the repo and run{" "}
+              <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">
+                bash scripts/merchant-init.sh
+              </code>{" "}
+              directly.
+            </p>
+          </div>
+
+          {/* Separator */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border-default" />
+            <span className="text-xs text-text-muted font-mono">or preview your config first</span>
+            <div className="flex-1 h-px bg-border-default" />
+          </div>
+
+          {/* Generate Reference Stack — secondary path */}
+          <div className="rounded-xl border border-border-default bg-bg-elevated p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-text-muted shrink-0" />
+              <span className="text-sm font-semibold text-text-primary">Preview reference stack</span>
+              <span className="ml-auto px-2 py-0.5 rounded-full bg-bg-surface border border-border-default text-text-muted text-xs font-mono">
+                optional
+              </span>
+            </div>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Generate a docker-compose template and setup instructions based on your selections above.
+              This is a <em>preview</em> — it won&apos;t deploy anything.
             </p>
             {generateError && (
               <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -374,7 +422,7 @@ export function MerchantSetupWizard() {
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="antigravity-btn !py-3 !px-8 inline-flex items-center gap-2 text-base"
+              className="antigravity-btn-outline w-full !py-2.5 inline-flex items-center justify-center gap-2 text-sm"
             >
               {generating ? (
                 <>
@@ -383,24 +431,28 @@ export function MerchantSetupWizard() {
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4" />
-                  Generate Reference Stack
+                  <Download className="w-4 h-4" />
+                  Generate docker-compose preview
                 </>
               )}
             </button>
+          </div>
+
+          {/* Merchant signup */}
+          <div className="rounded-xl border border-border-default p-5 text-center space-y-3">
             <p className="text-sm text-text-primary font-medium">
-              Want to be first in line when it&apos;s ready?
+              Want white-glove onboarding?
             </p>
             <a
               href="/merchants"
-              className="antigravity-btn !py-3 !px-8 inline-flex items-center gap-2 text-base"
+              className="antigravity-btn !py-2.5 !px-6 inline-flex items-center gap-2 text-sm"
             >
-              <Store className="w-5 h-5" />
-              Sign Up as a Merchant
+              <Store className="w-4 h-4" />
+              Join the merchant directory
               <ArrowRight className="w-4 h-4" />
             </a>
             <p className="text-xs text-text-muted">
-              We&apos;ll notify you when your node is ready to deploy.
+              Get listed on arxmint.com/merchants and notified when hosted deployment ships.
             </p>
           </div>
 
@@ -456,6 +508,40 @@ export function MerchantSetupWizard() {
               </a>
             </div>
           )}
+
+          {/* Deploy command callout */}
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-2">
+            <p className="text-xs font-mono text-text-muted uppercase tracking-wider">Deploy command</p>
+            <div className="relative rounded-lg bg-sovereign-dark border border-border-default">
+              <pre className="px-4 py-3 text-xs text-text-primary font-mono overflow-x-auto">
+                {`docker compose -f docker-compose.merchant.yml up -d`}
+              </pre>
+              <div className="absolute top-1.5 right-2">
+                <span aria-live="polite" className="sr-only">{copied === "deploy-cmd" ? "Copied" : ""}</span>
+                <button
+                  aria-label="Copy deploy command"
+                  onClick={() => copyToClipboard("docker compose -f docker-compose.merchant.yml up -d", "deploy-cmd")}
+                  className="p-1.5 rounded-md bg-sovereign-panel hover:bg-white/10 transition-colors"
+                >
+                  {copied === "deploy-cmd" ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-sovereign-muted" />}
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px] text-text-muted">
+              Run{" "}
+              <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">
+                bash scripts/merchant-init.sh
+              </code>{" "}
+              first to generate your{" "}
+              <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">
+                docker-compose.merchant.yml
+              </code>{" "}
+              and{" "}
+              <code className="font-mono bg-bg-elevated px-1 py-0.5 rounded text-text-secondary">
+                .env.merchant
+              </code>.
+            </p>
+          </div>
 
           {/* Docker Compose */}
           <CollapsibleSection
