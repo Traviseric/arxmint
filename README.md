@@ -93,7 +93,7 @@ ArxMint flips this: ecash payments cost fractions of a penny. Settlement is inst
 - **Cashu mint support** — Lightweight Nutshell + CDK compose generation for production
 - **Privacy defaults on** — CoinJoin/PayJoin routing + honest per-backend support matrix; SP/Ark paths include experimental scaffolding
 - **Encrypted client-side vault** — AES-256-GCM + PBKDF2-SHA256 (600K iterations). Proofs never touch the server.
-- **Nostr identity** — NIP-98 authentication. No email required. Same keypair works across ArxMint + Teneo Marketplace.
+- **Nostr identity** — NIP-98 login backed by custom HMAC-signed httpOnly cookie sessions. No email required. Same keypair works across ArxMint + Teneo Marketplace.
 
 ### AI Agent Commerce
 - **Lightning AI agent commerce** — L402 + NUT-24 paywall flows, scoped security tiers, macaroon baking, remote signer config validation
@@ -184,7 +184,7 @@ arxmint/
 │   ├── fedimint-sdk.ts          # Fedimint WASM client + gateway bridge
 │   ├── lightning-agent.ts       # LNC + L402 + macaroon bakery + security tiers
 │   ├── spend-router.ts          # Privacy-aware spend routing
-│   ├── auth-middleware.ts       # Nostr NIP-98 + session + L402 auth
+│   ├── auth-middleware.ts       # Nostr session cookies + cross-app session verification
 │   ├── cashu-vault.ts           # Encrypted client-side proof vault
 │   ├── db.ts                    # Prisma DB client + resilient queries
 │   ├── ark-sdk.ts               # Ark VTXO client (stub — waiting on upstream SDK)
@@ -210,7 +210,7 @@ arxmint/
 |-------|-----------|
 | Frontend | [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript, Tailwind CSS |
 | Database | PostgreSQL 15 (Prisma ORM), internal Docker network only |
-| Auth | Nostr NIP-98 + Auth.js sessions + L402 for agents |
+| Auth | Nostr NIP-98 + custom HMAC-signed cookie sessions; L402/Cashu paywalls for agents |
 | Ecash | [Fedimint SDK](https://sdk.fedimint.org/) (WASM) + [Cashu-TS](https://github.com/cashubtc/cashu-ts) v3 |
 | Lightning | [LNC-Web](https://github.com/lightninglabs/lnc-web) + [Aperture](https://github.com/lightninglabs/aperture) L402 proxy |
 | Agent Tools | [Lightning MCP Server](https://github.com/lightninglabs/lightning-agent-tools) (18 tools) |

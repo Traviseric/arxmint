@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { merchantId, memo } = body;
+    const { merchantId, memo, shipping } = body;
 
     if (!merchantId || typeof merchantId !== "string") {
       return NextResponse.json({ error: "merchantId is required" }, { status: 400 });
@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
         status: "pending",
         demo_mode: demoMode,
         expires_at: expiresAt.toISOString(),
+        ...(shipping && { shipping_data: shipping }),
       });
     } catch {
       // If DB insert fails, session still works in-memory for demo

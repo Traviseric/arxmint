@@ -14,6 +14,7 @@
 | Document | Description |
 |----------|-------------|
 | [auth.md](auth.md) | Authentication system — Nostr NIP-98, L402/Cashu agent auth, admin system |
+| [teneo-auth-integration.md](teneo-auth-integration.md) | Shared contract with TENEO Auth — identity/control plane vs payment/wallet plane |
 | [DEPLOY.md](DEPLOY.md) | VPS/NUC provisioning, Docker setup, env config, Caddy HTTPS |
 | [VPS_SETUP.md](VPS_SETUP.md) | Vultr/DigitalOcean server setup checklist |
 | [DR_DRILL.md](DR_DRILL.md) | Disaster recovery drill procedure |

@@ -1,0 +1,182 @@
+[
+    {
+        "title": "ArxMint Sticker Pack",
+        "description": "High-quality kiss-cut stickers featuring the 'Build the Citadel' design and ArxMint logo. Perfect for laptops, cases, and storefronts declaring Bitcoin accepted here.",
+        "price": 500,
+        "currency": "usd",
+        "category": "Accessories",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "3x3",
+                    "4x4",
+                    "5x5"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": [],
+        "badge": "STAFF PICK"
+    },
+    {
+        "title": "ArxMint Premium Heavyweight Tee",
+        "description": "Dark theme, minimal orange accent on the chest. Designed for builders. Fortress energy architecture outline on the back. Heavyweight durable cotton.",
+        "price": 3000,
+        "currency": "usd",
+        "category": "Apparel",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "S",
+                    "M",
+                    "L",
+                    "XL",
+                    "2XL"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    },
+    {
+        "title": "ArxMint Citadel Pullover Hoodie",
+        "description": "Premium heavyweight pullover featuring the cinematic fortress illustration on the back and a subtle ArxMint logo on the front. Stay warm while you build.",
+        "price": 5500,
+        "currency": "usd",
+        "category": "Apparel",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "S",
+                    "M",
+                    "L",
+                    "XL",
+                    "2XL"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    },
+    {
+        "title": "ArxMint Classic Dad Hat",
+        "description": "Low profile dad hat with an embroidered glowing Bitcoin orange ArxMint logo. Complete the uniform.",
+        "price": 2500,
+        "currency": "usd",
+        "category": "Accessories",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Color",
+                "options": [
+                    "Black",
+                    "Charcoal"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    },
+    {
+        "title": "Bitcoin Accepted Here Sign",
+        "description": "A sleek, premium merchant sign with a glowing orange B, perfect for sophisticated cafes or tech storefronts. Ready for a window, door, or counter.",
+        "price": 1500,
+        "currency": "usd",
+        "category": "Merchant Gear",
+        "fulfillment": "pod",
+        "active": true,
+        "images": []
+    },
+    {
+        "title": "ArxMint Vault Wallpapers Pack",
+        "description": "High-res digital download featuring the cinematic brutalist citadel glowing with Bitcoin orange light. Desktop, phone, and tablet resolutions included.",
+        "price": 200,
+        "currency": "usd",
+        "category": "Digital",
+        "fulfillment": "digital",
+        "active": true,
+        "images": []
+    },
+    {
+        "title": "Zero Fees. No Middleman. Sticker",
+        "description": "Minimalist typography graphic for a laptop or merchants. Bold sans-serif text glowing in Bitcoin orange on a dark charcoal background. High contrast confident developer aesthetic.",
+        "price": 500,
+        "currency": "usd",
+        "category": "Accessories",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "3x3",
+                    "4x4"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    },
+    {
+        "title": "ArxMint Cyberpunk Retro Hat",
+        "description": "A sleek, modern cyberpunk wordmark logo embroidered on a high-quality dad hat. Tech-wear aesthetic with clean sharp lines and a glowing Bitcoin orange accent against a pitch black background.",
+        "price": 2800,
+        "currency": "usd",
+        "category": "Apparel",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Color",
+                "options": [
+                    "Pitch Black"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    },
+    {
+        "title": "Glassmorphism Merchant Window Decal",
+        "description": "Clean, premium glassmorphism sticker design for merchants. A white and very light grey frosted background with a minimalist glowing orange Bitcoin 'B' logo and 'Accepted Here'. Elegant, modern, perfect for high-end coffee shop windows.",
+        "price": 800,
+        "currency": "usd",
+        "category": "Merchant Gear",
+        "fulfillment": "pod",
+        "active": true,
+        "images": []
+    },
+    {
+        "title": "Tech Stack Typography Tee",
+        "description": "Minimalist typography design for a developer t-shirt. The text reads 'L402 / CASHU / LIGHTNING' stacked vertically in a crisp, technical monospace font. Neon Bitcoin orange text on a solid dark black background. Understated, elite coder aesthetic.",
+        "price": 3000,
+        "currency": "usd",
+        "category": "Apparel",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "S",
+                    "M",
+                    "L",
+                    "XL",
+                    "2XL"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    }
+]

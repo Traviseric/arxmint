@@ -24,7 +24,16 @@ import {
   Users,
 } from "lucide-react";
 
-type CheckoutState = "amount" | "invoice" | "paid" | "expired" | "error";
+type CheckoutState = "amount" | "shipping" | "invoice" | "paid" | "expired" | "error";
+
+interface ShippingAddress {
+  email: string;
+  fullName: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}
 
 interface CheckoutFlowProps {
   merchantId: string;
@@ -34,6 +43,9 @@ interface CheckoutFlowProps {
   merchantWebsite?: string | null;
   merchantDescription?: string | null;
   presetAmount?: number;
+  presetMemo?: string;
+  /** Show shipping address form before payment (for physical merch) */
+  collectShipping?: boolean;
 }
 
 export function CheckoutFlow({
@@ -44,8 +56,13 @@ export function CheckoutFlow({
   merchantWebsite,
   merchantDescription,
   presetAmount,
+  presetMemo,
+  collectShipping,
 }: CheckoutFlowProps) {
-  const [state, setState] = useState<CheckoutState>(presetAmount ? "invoice" : "amount");
+  const initialState = presetAmount
+    ? collectShipping ? "shipping" : "invoice"
+    : "amount";
+  const [state, setState] = useState<CheckoutState>(initialState);
   const [amount, setAmount] = useState(presetAmount?.toString() ?? "");
   const [invoice, setInvoice] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -54,17 +71,25 @@ export function CheckoutFlow({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shipping, setShipping] = useState<ShippingAddress>({
+    email: "", fullName: "", street: "", city: "", state: "", zip: "",
+  });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasCreatedInvoice = useRef(false);
 
-  const createInvoice = useCallback(async (sats: number) => {
+  const createInvoice = useCallback(async (sats: number, shippingData?: ShippingAddress) => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchantId, amountSats: sats }),
+        body: JSON.stringify({
+          merchantId,
+          amountSats: sats,
+          memo: presetMemo,
+          ...(shippingData && { shipping: shippingData }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -82,15 +107,15 @@ export function CheckoutFlow({
     } finally {
       setLoading(false);
     }
-  }, [merchantId]);
+  }, [merchantId, presetMemo]);
 
-  // Auto-create invoice when preset amount provided
+  // Auto-create invoice when preset amount provided (skip if shipping needed)
   useEffect(() => {
-    if (presetAmount && !hasCreatedInvoice.current) {
+    if (presetAmount && !hasCreatedInvoice.current && !collectShipping) {
       hasCreatedInvoice.current = true;
       createInvoice(presetAmount);
     }
-  }, [presetAmount, createInvoice]);
+  }, [presetAmount, createInvoice, collectShipping]);
 
   // Poll for payment status
   useEffect(() => {
@@ -124,7 +149,28 @@ export function CheckoutFlow({
       setError("Enter an amount between 1 and 1,000,000 sats");
       return;
     }
-    createInvoice(sats);
+    if (collectShipping) {
+      setState("shipping");
+    } else {
+      createInvoice(sats);
+    }
+  };
+
+  const shippingComplete =
+    shipping.email.includes("@") &&
+    shipping.fullName.length > 0 &&
+    shipping.street.length > 0 &&
+    shipping.city.length > 0 &&
+    shipping.state.length === 2 &&
+    shipping.zip.length >= 5;
+
+  const handleSubmitShipping = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shippingComplete) return;
+    const sats = parseInt(amount, 10);
+    if (isNaN(sats) || sats <= 0) return;
+    hasCreatedInvoice.current = true;
+    createInvoice(sats, shipping);
   };
 
   const handleCopy = async () => {
@@ -244,6 +290,116 @@ export function CheckoutFlow({
                 <>
                   <Zap className="w-4 h-4" />
                   Generate Invoice
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Shipping Address */}
+      {state === "shipping" && (
+        <div className="bg-bg-elevated border border-border-default rounded-xl p-6 shadow-sm">
+          <form onSubmit={handleSubmitShipping} className="space-y-4">
+            <div className="text-center mb-2">
+              <p className="text-sm text-text-muted">Shipping to</p>
+              <p className="text-lg font-mono font-semibold text-text-primary">
+                {displayAmount.toLocaleString()} sats
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">Email (for receipt & tracking)</label>
+              <input
+                type="email"
+                value={shipping.email}
+                onChange={(e) => setShipping({ ...shipping, email: e.target.value })}
+                placeholder="you@email.com"
+                className="sovereign-input w-full"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">Full Name</label>
+              <input
+                type="text"
+                value={shipping.fullName}
+                onChange={(e) => setShipping({ ...shipping, fullName: e.target.value })}
+                placeholder="First Last"
+                className="sovereign-input w-full"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">Street Address</label>
+              <input
+                type="text"
+                value={shipping.street}
+                onChange={(e) => setShipping({ ...shipping, street: e.target.value })}
+                placeholder="123 Main St"
+                className="sovereign-input w-full"
+                required
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-text-muted mb-1 block">City</label>
+                <input
+                  type="text"
+                  value={shipping.city}
+                  onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
+                  placeholder="City"
+                  className="sovereign-input w-full"
+                  required
+                />
+              </div>
+              <div className="w-20">
+                <label className="text-xs text-text-muted mb-1 block">State</label>
+                <input
+                  type="text"
+                  value={shipping.state}
+                  onChange={(e) =>
+                    setShipping({ ...shipping, state: e.target.value.toUpperCase().slice(0, 2) })
+                  }
+                  placeholder="CO"
+                  className="sovereign-input w-full text-center"
+                  maxLength={2}
+                  required
+                />
+              </div>
+              <div className="w-24">
+                <label className="text-xs text-text-muted mb-1 block">ZIP</label>
+                <input
+                  type="text"
+                  value={shipping.zip}
+                  onChange={(e) =>
+                    setShipping({ ...shipping, zip: e.target.value.replace(/\D/g, "").slice(0, 5) })
+                  }
+                  placeholder="80301"
+                  className="sovereign-input w-full text-center"
+                  maxLength={5}
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !shippingComplete}
+              className="antigravity-btn w-full !py-3 flex items-center justify-center gap-2 mt-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating Invoice...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Continue to Payment
                 </>
               )}
             </button>

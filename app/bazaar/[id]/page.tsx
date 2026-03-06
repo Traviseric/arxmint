@@ -130,7 +130,8 @@ export default function BazaarProductPage() {
       ? product.price
       : Math.round((product.price / 100) * 1000); // ~1000 sats per USD for MVP
 
-  const checkoutUrl = `/pay/${MERCHANT_ID}?amount=${amountSats}&memo=${encodeURIComponent(product.title)}`;
+  const needsShipping = product.fulfillment === "pod" || product.fulfillment === "physical";
+  const checkoutUrl = `/pay/${MERCHANT_ID}?amount=${amountSats}&memo=${encodeURIComponent(product.title)}${needsShipping ? "&shipping=1" : ""}`;
 
   return (
     <div

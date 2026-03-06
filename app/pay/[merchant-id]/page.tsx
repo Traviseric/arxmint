@@ -98,10 +98,10 @@ export default async function PayMerchantPage({
   searchParams,
 }: {
   params: Promise<{ "merchant-id": string }>;
-  searchParams: Promise<{ amount?: string }>;
+  searchParams: Promise<{ amount?: string; memo?: string; shipping?: string }>;
 }) {
   const { "merchant-id": merchantId } = await params;
-  const { amount } = await searchParams;
+  const { amount, memo, shipping } = await searchParams;
   const merchant = await getMerchant(merchantId);
 
   if (!merchant) notFound();
@@ -122,6 +122,8 @@ export default async function PayMerchantPage({
         merchantWebsite={merchant.website}
         merchantDescription={merchant.reason}
         presetAmount={presetAmount && !isNaN(presetAmount) ? presetAmount : undefined}
+        presetMemo={memo}
+        collectShipping={shipping === "1"}
       />
     </div>
   );

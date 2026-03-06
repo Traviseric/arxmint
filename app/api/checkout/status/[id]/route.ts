@@ -47,6 +47,14 @@ export async function GET(
           .from("checkout_sessions")
           .update({ status: "paid", paid_at: paidAt })
           .eq("id", id);
+
+        // Fire webhook asynchronously so fulfillment happens in demo mode
+        fetch(new URL('/api/checkout/webhook', _request.url).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: id })
+        }).catch(err => console.error("Auto-webhook payload failed:", err));
+
         return NextResponse.json({ status: "paid", paidAt, amountSats: session.amount_sats });
       }
     }
