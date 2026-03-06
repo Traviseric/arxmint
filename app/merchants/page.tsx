@@ -15,6 +15,8 @@ import {
   ExternalLink,
   Zap,
   BadgeCheck,
+  Map,
+  ChevronDown,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -47,6 +49,7 @@ interface MerchantPublic {
 export default function MerchantsPage() {
   const [merchants, setMerchants] = useState<MerchantPublic[]>([]);
   const [count, setCount] = useState(0);
+  const [showBtcMapTips, setShowBtcMapTips] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   const loadMerchants = useCallback(async () => {
@@ -272,6 +275,75 @@ export default function MerchantsPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ── BTCMap Integration ── */}
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+          <ScrollReveal>
+            <div className="bg-bg-elevated border border-border-default rounded-xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Map className="w-6 h-6 text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-text-primary">
+                    Find ArxMint Merchants on BTCMap
+                  </h3>
+                  <p className="text-sm text-text-secondary mt-0.5">
+                    ArxMint merchants are listed on BTCMap.org — the global Bitcoin merchant directory used by the broader Bitcoin community.
+                  </p>
+                </div>
+                <a
+                  href="https://btcmap.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="View ArxMint merchants on BTCMap.org (opens in new window)"
+                  className="antigravity-btn-outline !px-5 !py-2 inline-flex items-center gap-2 text-sm shrink-0"
+                >
+                  <Map className="w-4 h-4" />
+                  View on BTCMap
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
+              {/* Collapsible submission instructions */}
+              <div className="mt-4 border-t border-border-subtle pt-4">
+                <button
+                  onClick={() => setShowBtcMapTips((v) => !v)}
+                  className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors w-full text-left"
+                  aria-expanded={showBtcMapTips}
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 transition-transform duration-200 ${showBtcMapTips ? "rotate-180" : ""}`}
+                  />
+                  How to get your business listed on BTCMap
+                </button>
+
+                {showBtcMapTips && (
+                  <div className="mt-3 space-y-2 text-sm text-text-secondary pl-6">
+                    <p>
+                      1.{" "}
+                      <a
+                        href="https://btcmap.org/add-merchant"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accent hover:text-accent/80 underline underline-offset-2 transition-colors"
+                      >
+                        Submit your business on BTCMap
+                      </a>{" "}
+                      — the form takes about 2 minutes.
+                    </p>
+                    <p>
+                      2. Listings typically appear within <span className="text-text-primary font-medium">24–48 hours</span> after review.
+                    </p>
+                    <p>
+                      3. ArxMint merchants qualify as Bitcoin-accepting businesses — Lightning and ecash payments both count.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollReveal>
         </section>
 
         {/* ── Badge CTA ── */}
