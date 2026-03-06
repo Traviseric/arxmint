@@ -9,7 +9,9 @@ import { validateAmount } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const INVOICE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const DEMO_MODE = process.env.DEMO_MODE === "true" || process.env.NODE_ENV !== "production";
+// Demo mode: only in development or when DEMO_MODE=true explicitly set.
+// Never auto-enabled in production — production failures return 503, not fake invoices.
+const DEMO_MODE = process.env.DEMO_MODE === "true" || process.env.NODE_ENV === "development";
 
 export async function POST(request: NextRequest) {
   // Rate limit: 10 per minute per IP
@@ -85,9 +87,11 @@ export async function POST(request: NextRequest) {
         // Extract r_hash if available (stored in the L402 pending map internally)
         rHash = null; // LND r_hash tracked internally by payment-sdk
       } catch {
-        // Fall back to demo mode if LND unavailable
-        invoice = generateDemoInvoice(amountSats);
-        demoMode = true;
+        // LND unavailable in production — return 503 instead of fake invoice
+        return NextResponse.json(
+          { error: "Payment backend temporarily unavailable. Please try again shortly." },
+          { status: 503 }
+        );
       }
     } else {
       invoice = generateDemoInvoice(amountSats);

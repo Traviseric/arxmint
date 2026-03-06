@@ -219,11 +219,14 @@ export function CheckoutFlow({
         )}
       </div>
 
-      {/* Demo Mode Banner */}
-      {demoMode && state === "invoice" && (
-        <div className="mb-4 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-center">
-          <p className="text-xs text-amber-700 font-medium">
-            Demo Mode — invoice will auto-settle in ~5 seconds
+      {/* Demo Mode Banner — shown whenever a demo session is active */}
+      {demoMode && (state === "invoice" || state === "paid") && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-amber-50 border-2 border-amber-400 text-center">
+          <p className="text-sm text-amber-800 font-semibold uppercase tracking-wide">
+            DEMO MODE
+          </p>
+          <p className="text-xs text-amber-700 mt-0.5">
+            Test environment — no real payment is processed
           </p>
         </div>
       )}

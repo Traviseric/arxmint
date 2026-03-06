@@ -38,8 +38,8 @@ export async function GET(
       return NextResponse.json({ status: "expired" });
     }
 
-    // Demo mode: auto-settle after 5 seconds
-    if (session.status === "pending" && session.demo_mode) {
+    // Demo mode: auto-settle after 5 seconds (development only — never fires in production)
+    if (session.status === "pending" && session.demo_mode && process.env.NODE_ENV === "development") {
       const createdAt = new Date(session.created_at).getTime();
       if (Date.now() - createdAt > DEMO_AUTO_PAY_DELAY_MS) {
         const paidAt = new Date().toISOString();
