@@ -53,6 +53,30 @@ services:
     networks:
       - sovereign
 
+  # ── Backup watcher (optional — uncomment to enable) ──────────────────────────
+  # Watches LND channel.backup for changes and runs a full backup on each change.
+  # Also runs a daily backup at 02:00 UTC.
+  # Enable with: docker compose -f docker/docker-compose.cashu.yml --profile backup up -d
+  #
+  # backup-watcher:
+  #   image: node:22-alpine
+  #   container_name: sf-backup-watcher
+  #   profiles: [backup]
+  #   restart: unless-stopped
+  #   working_dir: /app
+  #   command: node --experimental-strip-types dist/backup-watcher.js
+  #   environment:
+  #     - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY}
+  #     - BITCOIN_NETWORK=${BITCOIN_NETWORK:-testnet}
+  #     - LND_DATA_DIR=/root/.lnd
+  #     - BACKUP_DIR=/backup
+  #   volumes:
+  #     - lnd-data:/root/.lnd:ro
+  #     - ./backup:/backup
+  #     - .:/app:ro
+  #   networks:
+  #     - sovereign
+
 volumes:
   lnd-data:
   cashu-data:

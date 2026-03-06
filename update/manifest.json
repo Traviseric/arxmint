@@ -1,0 +1,7 @@
+{
+  "version": "0.5.0",
+  "channel": "stable",
+  "changelog": "Phase 5 Bazaar: merchant checkout, webhooks, @arxmint/js SDK, @arxmint/react, stack update engine, backup engine, one-click restore.",
+  "minNodeVersion": "22.0.0",
+  "sha256": {}
+}

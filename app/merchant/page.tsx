@@ -30,6 +30,7 @@ import {
   TrendingUp,
   ChevronLeft,
   ChevronRight,
+  ShieldAlert,
 } from "lucide-react";
 
 // ---- Types ----
@@ -254,6 +255,73 @@ function OverviewTab({ merchantId }: { merchantId: string }) {
             <TrendingUp className="w-4 h-4" /> Merchant Directory
           </a>
         </div>
+      </div>
+
+      {/* Disaster Recovery */}
+      <DisasterRecoveryCard />
+    </div>
+  );
+}
+
+function DisasterRecoveryCard() {
+  const [status, setStatus] = useState<{ ready: boolean; missingFiles: string[]; warnings: string[]; lastModified: string | null } | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const runCheck = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch("/api/restore-status");
+      if (res.ok) setStatus(await res.json());
+    } catch {
+      // ignore — server may not expose this endpoint in all envs
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <div className="sovereign-card p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldAlert className="w-4 h-4 text-btc-orange" />
+        <h3 className="text-sm font-semibold text-sovereign-muted uppercase tracking-wide">Disaster Recovery</h3>
+      </div>
+      {status ? (
+        <div className="space-y-2 text-sm">
+          <div className={`flex items-center gap-2 font-medium ${status.ready ? "text-green-400" : "text-yellow-400"}`}>
+            {status.ready ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {status.ready ? "Backup files ready for recovery" : "Missing backup files"}
+          </div>
+          {status.missingFiles.length > 0 && (
+            <ul className="text-xs text-red-400 space-y-0.5 ml-6 list-disc">
+              {status.missingFiles.map((f) => <li key={f}>{f}</li>)}
+            </ul>
+          )}
+          {status.warnings.map((w) => (
+            <div key={w} className="text-xs text-yellow-400 ml-6">{w}</div>
+          ))}
+          {status.lastModified && (
+            <div className="text-xs text-sovereign-muted ml-6">
+              Last backup: {new Date(status.lastModified).toLocaleString()}
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-sovereign-muted mb-3">
+          Verify your backup files are present before you need them.
+        </p>
+      )}
+      <div className="flex items-center gap-3 mt-3">
+        <button
+          onClick={runCheck}
+          disabled={checking}
+          className="sovereign-btn-outline text-xs flex items-center gap-1.5 disabled:opacity-50"
+        >
+          {checking ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldAlert className="w-3 h-3" />}
+          Run restore check
+        </button>
+        <a href="/docs/RESTORE.md" target="_blank" rel="noreferrer" className="text-xs text-btc-orange hover:underline">
+          Recovery guide
+        </a>
       </div>
     </div>
   );
