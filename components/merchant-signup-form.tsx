@@ -21,6 +21,7 @@ import {
   Upload,
   X,
   ChevronDown,
+  Share2,
 } from "lucide-react";
 
 const CATEGORY_OPTIONS = [
@@ -54,6 +55,7 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
   const [showReason, setShowReason] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [referredBy, setReferredBy] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +149,7 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           logoUrl: logoUrl || undefined,
           reason: reason.trim() || undefined,
           emailOptIn,
+          referredBy: referredBy.trim().toUpperCase() || undefined,
         }),
       });
 
@@ -173,12 +176,12 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           <CheckCircle className="w-8 h-8 text-accent" />
         </div>
         <h3 className="text-2xl font-semibold text-text-primary mb-3">
-          You&apos;re In.
+          Application Submitted.
         </h3>
         <p className="text-text-secondary max-w-md mx-auto">
           <span className="text-text-primary font-medium">{businessName}</span> is
-          on the list. We&apos;ll reach out when the Fort Collins network is ready
-          for onboarding.
+          under review. You&apos;ll hear back within 48 hours at{" "}
+          <span className="text-text-primary font-medium">{email}</span>.
         </p>
         <p className="text-xs text-text-muted mt-4">
           Once approved, your checkout page will be live at{" "}
@@ -307,6 +310,25 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           placeholder="https://yoursite.com"
           className="sovereign-input w-full"
         />
+      </div>
+
+      {/* Referral Code (optional) */}
+      <div>
+        <label className="flex items-center gap-2 text-sm font-medium text-text-primary mb-1.5">
+          <Share2 className="w-4 h-4 text-text-muted" />
+          Referral Code <span className="text-xs text-text-muted font-normal">(optional)</span>
+        </label>
+        <input
+          type="text"
+          value={referredBy}
+          onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
+          placeholder="e.g. GLACIER8"
+          className="sovereign-input w-full font-mono uppercase"
+          maxLength={12}
+        />
+        <p className="text-xs text-text-muted mt-1">
+          Got a referral code from a merchant? Enter it here.
+        </p>
       </div>
 
       {/* Logo Upload (collapsible — optional) */}

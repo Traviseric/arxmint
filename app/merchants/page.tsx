@@ -17,6 +17,9 @@ import {
   BadgeCheck,
   Map,
   ChevronDown,
+  Search,
+  X,
+  Share2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -31,6 +34,20 @@ const CATEGORY_ICONS: Record<string, string> = {
   technology: "💻",
   other: "⚡",
 };
+
+const CATEGORY_LABELS: Record<string, string> = {
+  "food-drink": "Food & Drink",
+  retail: "Retail",
+  services: "Services",
+  health: "Health",
+  entertainment: "Entertainment",
+  technology: "Technology",
+  other: "Other",
+};
+
+function deriveReferralCode(id: string): string {
+  return id.replace(/^seed-/, "").slice(0, 8).toUpperCase().replace(/-/g, "");
+}
 
 interface MerchantPublic {
   id: string;
@@ -50,6 +67,10 @@ export default function MerchantsPage() {
   const [merchants, setMerchants] = useState<MerchantPublic[]>([]);
   const [count, setCount] = useState(0);
   const [showBtcMapTips, setShowBtcMapTips] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   const loadMerchants = useCallback(async () => {
@@ -65,6 +86,48 @@ export default function MerchantsPage() {
       // Graceful degradation
     }
   }, []);
+
+  // Derived unique cities for city filter
+  const uniqueCities = Array.from(
+    new Set(
+      merchants
+        .filter((m) => !m.pipeline && m.location)
+        .map((m) => m.location as string)
+    )
+  ).sort();
+
+  // Derived unique categories present in the list
+  const uniqueCategories = Array.from(
+    new Set(merchants.filter((m) => !m.pipeline && m.category).map((m) => m.category as string))
+  ).sort();
+
+  // Client-side filtered merchants (pipeline merchants always shown to admin, not filtered)
+  const liveMerchants = merchants.filter((m) => !m.pipeline);
+  const pipelineMerchants = merchants.filter((m) => m.pipeline);
+
+  const filteredLive = liveMerchants.filter((m) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matches =
+        m.businessName.toLowerCase().includes(q) ||
+        (m.location?.toLowerCase().includes(q) ?? false) ||
+        (m.reason?.toLowerCase().includes(q) ?? false);
+      if (!matches) return false;
+    }
+    if (categoryFilter && m.category !== categoryFilter) return false;
+    if (cityFilter && m.location !== cityFilter) return false;
+    return true;
+  });
+
+  const filteredMerchants = [...filteredLive, ...pipelineMerchants];
+  const hasFilters = searchQuery || categoryFilter || cityFilter;
+
+  const copyReferralCode = (code: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    });
+  };
 
   useEffect(() => {
     loadMerchants();
@@ -141,7 +204,7 @@ export default function MerchantsPage() {
         {/* ── Merchant Directory ── */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
           <ScrollReveal>
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-semibold text-text-primary">
                   Merchants
@@ -166,6 +229,83 @@ export default function MerchantsPage() {
             </div>
           </ScrollReveal>
 
+          {/* ── Search & Filter Controls ── */}
+          {count > 0 && (
+            <ScrollReveal delay={0.05}>
+              <div className="mb-6 space-y-3">
+                {/* Text search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search merchants by name, city, or description…"
+                    className="sovereign-input w-full pl-9 pr-9"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Category pills + city dropdown */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {uniqueCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(categoryFilter === cat ? "" : cat)}
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                        categoryFilter === cat
+                          ? "bg-accent text-white border-accent"
+                          : "bg-bg-elevated border-border-default text-text-secondary hover:border-accent/50"
+                      }`}
+                    >
+                      <span>{CATEGORY_ICONS[cat] ?? "⚡"}</span>
+                      {CATEGORY_LABELS[cat] ?? cat}
+                    </button>
+                  ))}
+
+                  {uniqueCities.length > 1 && (
+                    <select
+                      value={cityFilter}
+                      onChange={(e) => setCityFilter(e.target.value)}
+                      className="sovereign-input !py-1 !text-xs"
+                    >
+                      <option value="">All cities</option>
+                      {uniqueCities.map((city) => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {hasFilters && (
+                    <button
+                      onClick={() => { setSearchQuery(""); setCategoryFilter(""); setCityFilter(""); }}
+                      className="text-xs text-text-muted hover:text-text-primary transition-colors underline underline-offset-2"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+
+                {/* Result count when filtering */}
+                {hasFilters && (
+                  <p className="text-xs text-text-muted">
+                    {filteredLive.length === 0
+                      ? "No merchants match your search."
+                      : `${filteredLive.length} ${filteredLive.length === 1 ? "merchant" : "merchants"} found`}
+                  </p>
+                )}
+              </div>
+            </ScrollReveal>
+          )}
+
           {count === 0 ? (
             <ScrollReveal delay={0.1}>
               <div className="bg-bg-elevated border border-border-default border-dashed rounded-xl p-16 text-center">
@@ -182,97 +322,131 @@ export default function MerchantsPage() {
                 </button>
               </div>
             </ScrollReveal>
+          ) : filteredMerchants.length === 0 && hasFilters ? (
+            <ScrollReveal delay={0.1}>
+              <div className="bg-bg-elevated border border-border-default border-dashed rounded-xl p-12 text-center">
+                <Search className="w-10 h-10 text-text-muted mx-auto mb-3" />
+                <p className="text-text-secondary">No merchants match your search.</p>
+                <button
+                  onClick={() => { setSearchQuery(""); setCategoryFilter(""); setCityFilter(""); }}
+                  className="mt-3 text-sm text-accent hover:text-accent/80 underline underline-offset-2"
+                >
+                  Clear filters
+                </button>
+              </div>
+            </ScrollReveal>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {merchants.map((m, i) => (
-                <motion.div
-                  key={m.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05, duration: 0.3 }}
-                  className={`bg-bg-elevated border rounded-xl overflow-hidden ${
-                    m.pipeline
-                      ? "border-border-default opacity-75"
-                      : m.featured
-                        ? "border-accent/40 ring-1 ring-accent/10"
-                        : "border-border-default"
-                  }`}
-                >
-                  {/* Pipeline badge (admin only) */}
-                  {m.pipeline && (
-                    <div className="bg-neutral-200 text-neutral-500 text-[10px] font-mono uppercase tracking-wider text-center py-1">
-                      Pipeline — awaiting first transaction
-                    </div>
-                  )}
-
-                  {/* Logo banner across top */}
-                  {m.logoUrl ? (
-                    <div className="w-full h-32 bg-white border-b border-border-default flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={m.logoUrl}
-                        alt={`${m.businessName} logo`}
-                        className="h-full w-full object-contain p-4"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-32 bg-bg-surface border-b border-border-default flex items-center justify-center text-4xl">
-                      {CATEGORY_ICONS[m.category ?? "other"] ?? "⚡"}
-                    </div>
-                  )}
-
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base font-semibold text-text-primary">
-                        {m.businessName}
-                      </h3>
-                      {m.featured && (
-                        <span className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider">
-                          Founding Merchant
-                        </span>
-                      )}
-                    </div>
-
-                    {m.location && (
-                      <p className="text-xs text-text-muted flex items-center gap-1 mt-1">
-                        <MapPin className="w-3 h-3" />
-                        {m.location}
-                      </p>
+              {filteredMerchants.map((m, i) => {
+                const referralCode = deriveReferralCode(m.id);
+                return (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05, duration: 0.3 }}
+                    className={`bg-bg-elevated border rounded-xl overflow-hidden ${
+                      m.pipeline
+                        ? "border-border-default opacity-75"
+                        : m.featured
+                          ? "border-accent/40 ring-1 ring-accent/10"
+                          : "border-border-default"
+                    }`}
+                  >
+                    {/* Pipeline badge (admin only) */}
+                    {m.pipeline && (
+                      <div className="bg-neutral-200 text-neutral-500 text-[10px] font-mono uppercase tracking-wider text-center py-1">
+                        Pipeline — awaiting first transaction
+                      </div>
                     )}
 
-                    {m.reason && (
-                      <p className="text-sm text-text-secondary mt-3 leading-relaxed">
-                        &ldquo;{m.reason}&rdquo;
-                      </p>
+                    {/* Logo banner across top */}
+                    {m.logoUrl ? (
+                      <div className="w-full h-32 bg-white border-b border-border-default flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={m.logoUrl}
+                          alt={`${m.businessName} logo`}
+                          className="h-full w-full object-contain p-4"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-32 bg-bg-surface border-b border-border-default flex items-center justify-center text-4xl">
+                        {CATEGORY_ICONS[m.category ?? "other"] ?? "⚡"}
+                      </div>
                     )}
 
-                    <div className="flex items-center gap-3 mt-3 flex-wrap">
-                      {m.website && (
-                        <a
-                          href={m.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors"
-                        >
-                          <Globe className="w-3 h-3" />
-                          {m.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
+                    <div className="p-6">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-semibold text-text-primary">
+                          {m.businessName}
+                        </h3>
+                        {m.featured && (
+                          <span className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider">
+                            Founding Merchant
+                          </span>
+                        )}
+                      </div>
+
+                      {m.location && (
+                        <p className="text-xs text-text-muted flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3" />
+                          {m.location}
+                        </p>
                       )}
-                      {m.checkoutEnabled && (
-                        <Link
-                          href={`/pay/${m.id}${m.defaultAmountSats ? `?amount=${m.defaultAmountSats}` : ""}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
-                        >
-                          <Zap className="w-3 h-3" />
-                          Pay
-                        </Link>
+
+                      {m.reason && (
+                        <p className="text-sm text-text-secondary mt-3 leading-relaxed">
+                          &ldquo;{m.reason}&rdquo;
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-3 mt-3 flex-wrap">
+                        {m.website && (
+                          <a
+                            href={m.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 transition-colors"
+                          >
+                            <Globe className="w-3 h-3" />
+                            {m.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {m.checkoutEnabled && (
+                          <Link
+                            href={`/pay/${m.id}${m.defaultAmountSats ? `?amount=${m.defaultAmountSats}` : ""}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
+                          >
+                            <Zap className="w-3 h-3" />
+                            Pay
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Referral code — live merchants only */}
+                      {!m.pipeline && (
+                        <div className="mt-3 pt-3 border-t border-border-subtle">
+                          <button
+                            onClick={() => copyReferralCode(referralCode)}
+                            className="inline-flex items-center gap-1.5 text-[10px] font-mono text-text-muted hover:text-text-secondary transition-colors"
+                            title="Copy referral code"
+                          >
+                            <Share2 className="w-3 h-3" />
+                            Refer a merchant:{" "}
+                            <span className="text-accent font-semibold">{referralCode}</span>
+                            {copiedCode === referralCode && (
+                              <span className="text-green-500 ml-1">Copied!</span>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </section>

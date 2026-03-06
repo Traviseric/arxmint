@@ -63,62 +63,66 @@ export function NavBar() {
             className="h-3.5 sm:h-4 w-auto shrink-0 mt-0.5"
           />
         </Link>
-        <div className="flex items-center justify-end flex-1">
-          {/* Main Links */}
-          <div className="hidden lg:flex items-center gap-4 xl:gap-6 mr-4 xl:mr-8">
-            <Link
-              href="/why"
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors font-medium whitespace-nowrap"
-            >
-              Why
-            </Link>
-            <Link
-              href="/roadmap"
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap"
-            >
-              Roadmap
-            </Link>
-            <Link
-              href="/merchants"
-              className="text-sm text-accent hover:text-accent/80 transition-colors font-medium whitespace-nowrap"
-            >
-              Merchants
-            </Link>
-            <Link
-              href="/bazaar"
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors font-medium whitespace-nowrap"
-            >
-              Bazaar
-            </Link>
 
-            {/* Learn dropdown — desktop */}
-            <div ref={learnRef} className="relative hidden lg:block">
-              <button
-                onClick={() => setLearnOpen(!learnOpen)}
-                className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap"
-              >
-                Learn
-                <ChevronDown className={`w-3 h-3 transition-transform ${learnOpen ? "rotate-180" : ""}`} />
-              </button>
-              {learnOpen && (
-                <div className="absolute top-full right-0 mt-2 w-44 py-2 rounded-lg border border-border-default glass-heavy shadow-xl">
-                  {LEARN_LINKS.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setLearnOpen(false)}
-                      className="block px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-surface/50 transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+        <div className="flex items-center gap-3 sm:gap-6">
+          <Link
+            href="/why"
+            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block font-medium"
+          >
+            Why
+          </Link>
+          <Link
+            href="/roadmap"
+            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
+          >
+            Roadmap
+          </Link>
+          <Link
+            href="/merchants"
+            className="text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors font-medium hidden sm:block"
+          >
+            Merchants
+          </Link>
+          <Link
+            href="/bazaar"
+            className="text-xs sm:text-sm text-accent hover:text-accent/80 transition-colors font-medium hidden sm:block"
+          >
+            Bazaar
+          </Link>
+          <Link
+            href="/deploy"
+            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
+          >
+            Deploy
+          </Link>
+
+          {/* Learn dropdown — desktop */}
+          <div ref={learnRef} className="relative hidden sm:block">
+            <button
+              onClick={() => setLearnOpen(!learnOpen)}
+              className="flex items-center gap-1 text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Learn
+              <ChevronDown className={`w-3 h-3 transition-transform ${learnOpen ? "rotate-180" : ""}`} />
+            </button>
+            {learnOpen && (
+              <div className="absolute top-full right-0 mt-2 w-44 py-2 rounded-lg border border-border-default glass-heavy shadow-xl">
+                {LEARN_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setLearnOpen(false)}
+                    className="block px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-surface/50 transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Action Group */}
-          <div className="flex items-center gap-2 sm:gap-3 lg:pl-4 lg:border-l border-border-default">
+          <div className="flex items-center gap-2 sm:gap-3">
             <a
               href="https://github.com/Traviseric/arxmint"
               target="_blank"
@@ -147,7 +151,7 @@ export function NavBar() {
 
             {/* Mobile hamburger trigger */}
             <button
-              className="block lg:hidden p-2 -mr-2 rounded-lg hover:bg-bg-surface transition-colors"
+              className="block sm:hidden p-2 -mr-2 rounded-lg hover:bg-bg-surface transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle mobile menu"
               aria-expanded={mobileOpen}
@@ -160,7 +164,7 @@ export function NavBar() {
 
       {/* Mobile dropdown — all items flat */}
       {mobileOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-sovereign-panel border-b border-white/10 z-50">
+        <div className="sm:hidden absolute top-full left-0 right-0 bg-sovereign-panel border-b border-white/10 z-50">
           <div className="flex flex-col p-4 gap-3">
             <Link
               href="/why"
@@ -189,6 +193,13 @@ export function NavBar() {
               className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors font-medium"
             >
               Bazaar
+            </Link>
+            <Link
+              href="/deploy"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
+            >
+              Deploy
             </Link>
             {LEARN_LINKS.map((link) => (
               <Link

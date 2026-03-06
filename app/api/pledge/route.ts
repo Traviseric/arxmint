@@ -135,8 +135,9 @@ function validatePledge(body: Record<string, unknown>) {
   }
   const reason = body.reason ? String(body.reason).trim().slice(0, 500) : null;
   const emailOptIn = body.emailOptIn === true;
+  const referredBy = body.referredBy ? String(body.referredBy).trim().toUpperCase().slice(0, 12) : null;
 
-  return { businessName, contactName, email, location, category, website, logoUrl, reason, emailOptIn };
+  return { businessName, contactName, email, location, category, website, logoUrl, reason, emailOptIn, referredBy };
 }
 
 export async function GET(request: NextRequest) {
@@ -199,17 +200,34 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const data = validatePledge(body);
+    const { referredBy, ...pledgeData } = data;
 
     const { supabase } = await import("@/lib/supabase");
     const { data: pledge, error } = await supabase
       .from("merchant_pledges")
-      .insert(data)
+      .insert({
+        ...pledgeData,
+        referred_by: referredBy ?? null,
+        registration_status: "pending_review",
+      })
       .select("id, businessName")
       .single();
 
     if (error) {
       console.error("Pledge insert error:", error.message);
       return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
+    }
+
+    // Email notification stub — replace with Resend/SendGrid when ready
+    console.log(`[arxmint] New self-registration: ${data.businessName} <${data.email}> → notify travis@arxmint.com`);
+
+    // Increment referral count for the referring merchant (best-effort)
+    if (referredBy) {
+      try {
+        await supabase.rpc("increment_referral_count", { p_referral_code: referredBy });
+      } catch (e) {
+        console.warn("Referral count increment skipped:", e);
+      }
     }
 
     // Fire-and-forget Telegram notification
