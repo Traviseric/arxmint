@@ -35,7 +35,7 @@
     "@fedimint/transport-web": "^0.1.2",
     "@gsap/react": "^2.1.2",
     "@lightninglabs/lnc-web": "0.3.5-alpha",
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "~5.22.0",
     "@supabase/supabase-js": "^2.98.0",
     "clsx": "^2.1.0",
     "framer-motion": "^12.34.3",
@@ -63,7 +63,7 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.4.0",
-    "prisma": "^5.22.0",
+    "prisma": "~5.22.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0"
   },
