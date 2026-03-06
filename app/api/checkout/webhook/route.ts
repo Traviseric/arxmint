@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { logger } from "@/lib/logger";
+import { triggerPaymentWebhooks } from "@/lib/webhook-engine";
 
 const OPENBAZAAR_FULFILL_URL = "https://openbazaar.ai/api/storefront/fulfill";
 
@@ -97,6 +98,17 @@ export async function POST(request: NextRequest) {
                 });
                 return NextResponse.json({ error: "Gateway error to OpenBazaar" }, { status: 504 });
             }
+        }
+
+        // Trigger merchant webhooks for payment.completed (fire-and-forget)
+        if (session.merchant_id) {
+            triggerPaymentWebhooks(
+                session.merchant_id,
+                sessionId,
+                session.amount_sats ?? 0,
+                "payment.completed",
+                { memo: session.memo }
+            );
         }
 
         return NextResponse.json({ success: true });
