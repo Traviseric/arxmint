@@ -658,3 +658,51 @@ export function getLightningClient(): SovereignLightningClient {
   }
   return _lnClient;
 }
+
+// ---- Merchant API Key Auth helpers ----
+// Accepts arx_live_*, arx_pub_*, arx_test_* keys as an alternative to L402/session auth.
+
+/**
+ * Extract an arx_* merchant API key from an Authorization header.
+ * Accepts: "Bearer arx_live_..." or raw "arx_live_..." value.
+ * Returns null if the header is absent or does not contain an arx_* key.
+ */
+export function extractMerchantKey(authHeader: string | null): string | null {
+  if (!authHeader) return null;
+  // Support "Bearer arx_..." and bare "arx_..." values
+  const candidate = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : authHeader.trim();
+  return candidate.startsWith("arx_") ? candidate : null;
+}
+
+/**
+ * Verify a merchant API key from a request's Authorization header.
+ * Returns the MerchantApiKey if valid, or null if absent/invalid.
+ *
+ * Scope enforcement applied:
+ *   - arx_test_* keys rejected in production (NODE_ENV === 'production')
+ *   - arx_pub_* keys allowed everywhere (read-only)
+ *   - arx_live_* keys allowed in production only
+ *
+ * Usage in an API route:
+ *   const merchantKey = await verifyMerchantKeyFromHeader(request, merchantId);
+ *   if (!merchantKey) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+ *   if (!scopeAllowsPayments(merchantKey.scope)) return 403;
+ */
+export async function verifyMerchantKeyFromHeader(
+  request: { headers: { get(name: string): string | null } },
+  merchantId: string
+): Promise<import("./merchant-auth").MerchantApiKey | null> {
+  const authHeader = request.headers.get("Authorization");
+  const key = extractMerchantKey(authHeader);
+  if (!key) return null;
+
+  const { verifyMerchantKey, scopeAllowedInProduction } = await import(
+    "./merchant-auth"
+  );
+  const record = await verifyMerchantKey(key, merchantId);
+  if (!record) return null;
+  if (!scopeAllowedInProduction(record.scope)) return null;
+  return record;
+}
