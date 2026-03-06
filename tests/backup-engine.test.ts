@@ -3,7 +3,7 @@
  * Uses Node's built-in test runner with --experimental-strip-types.
  */
 
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
