@@ -43,7 +43,7 @@ const SEED_MERCHANTS: Record<string, MerchantData> = {
   "arxmint-store": {
     id: "arxmint-store",
     businessName: "ArxMint Store",
-    logoUrl: "/images/logo.png",
+    logoUrl: "/images/nav-logo-b.svg",
     location: null,
     checkout_enabled: true,
     default_amount_sats: null,

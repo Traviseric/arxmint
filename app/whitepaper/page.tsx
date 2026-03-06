@@ -5,7 +5,7 @@ import { FileText, Github, ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
 export const metadata = {
-  title: "ArxMint — Whitepaper",
+  title: "ArxMint — Sovereign Payment Network Whitepaper",
   description:
     "A Unified Framework for Human and AI Agent Commerce in Sovereign Bitcoin Circular Economies.",
 };

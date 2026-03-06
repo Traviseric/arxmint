@@ -116,11 +116,10 @@ function EarlyAdoptersSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
-                className={`bg-bg-elevated border rounded-xl p-5 ${
-                  pledge.featured
+                className={`bg-bg-elevated border rounded-xl p-5 ${pledge.featured
                     ? "border-accent/40 ring-1 ring-accent/10"
                     : "border-border-default"
-                }`}
+                  }`}
               >
                 {pledge.featured && (
                   <div className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider mb-3">
@@ -255,7 +254,7 @@ export default function HomePage() {
                   No middleman. No chargebacks. Instant settlement.
                 </p>
                 <p className="text-text-secondary max-w-lg mt-4 leading-relaxed font-mono text-sm drop-shadow">
-                  Self-hosted Bitcoin payment infrastructure. Near-zero transaction fees, instant settlement, no chargebacks. The open-source Stripe alternative.
+                  The sovereign payment network. Self-hosted Bitcoin infrastructure. Near-zero transaction fees, instant settlement, no chargebacks. The open-source Stripe alternative.
                 </p>
               </motion.div>
 

@@ -43,11 +43,9 @@ export function NavBar() {
     <nav className="fixed top-0 w-full z-50 border-b border-border-default glass-heavy">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          <Image
-            src="/images/logo.png"
+          <img
+            src="/images/nav-logo-b.svg"
             alt="ArxMint Logo"
-            width={32}
-            height={32}
             className="w-8 h-8 rounded-lg overflow-hidden"
           />
           <span className="text-lg font-bold text-text-primary">

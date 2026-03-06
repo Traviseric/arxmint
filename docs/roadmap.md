@@ -617,6 +617,7 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 9. Onboard first 5 merchants (soft launch — directory already live)
 10. Monitor for 7 days — check alerts, backups, payment success rate
 11. Open to full community (30 merchant target)
+12. **BTCMap.org integration** — List live ArxMint merchants on BTCMap.org (free global Bitcoin merchant discovery). Add "Find us on BTCMap" link to `/merchants` page. At 20+ live merchants, embed BTCMap widget filtered to ArxMint network. Only build custom map component (react-leaflet + geocoded lat/lng) if merchant density justifies it.
 
 **KPIs (from Doc 7 template):**
 - 30 merchants onboarded by month 6

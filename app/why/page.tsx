@@ -16,7 +16,7 @@ import {
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
 
 export const metadata = {
-  title: "Why ArxMint — Accept Bitcoin. Zero Fees. No Middleman.",
+  title: "Why ArxMint — The Sovereign Payment Network",
   description:
     "There's no good way for a small business to accept Bitcoin. Easy options are custodial. Sovereign options are hard. ArxMint is the middle ground that didn't exist.",
 };

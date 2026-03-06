@@ -16,9 +16,9 @@ import Image from "next/image";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/scroll-reveal";
 
 export const metadata = {
-  title: "AI Agent Commerce — ArxMint",
+  title: "AI Agent Commerce — Sovereign Payment Network",
   description:
-    "AI agents buy, sell, and transact in sats — no identity, no accounts, no permission. L402 paywalls, MCP integration, and ecash rails for machine-to-machine commerce.",
+    "The sovereign payment network. AI agents buy, sell, and transact in sats — no identity, no accounts, no permission. L402 paywalls, MCP integration, and ecash rails for machine-to-machine commerce.",
 };
 
 export default function AgentsPage() {

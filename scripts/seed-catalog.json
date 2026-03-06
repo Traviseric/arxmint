@@ -178,5 +178,88 @@
             }
         ],
         "images": []
+    },
+    {
+        "title": "Lightning Accepted Here Merchant Window Decal",
+        "description": "Premium glassmorphism window decal designed for physical storefronts. Features a glowing Bitcoin Orange Lightning bolt and clear 'Accepted Here' text. Elegant, modern, perfect for high-end coffee shop and retail windows indicating Lightning Network payments are supported.",
+        "price": 800,
+        "currency": "usd",
+        "category": "Merchant Gear",
+        "fulfillment": "pod",
+        "active": true,
+        "images": []
+    },
+    {
+        "title": "Bold Lightning Window Decal",
+        "description": "A striking, bold, minimalist merchant sticker featuring an oversized, tech-wear style Lightning bolt in bright Bitcoin Orange. Direct 'Pay with Lightning' text. High contrast, modern developer aesthetic for loud and clear signaling.",
+        "price": 800,
+        "currency": "usd",
+        "category": "Merchant Gear",
+        "fulfillment": "pod",
+        "active": true,
+        "images": []
+    },
+    {
+        "title": "Unicolor B Vault Sticker",
+        "description": "A geometric, minimalist icon representing a secure vault protecting a Bitcoin 'B'. The entire design uses thick, sharp, brutalist lines. Exclusively uses glowing Bitcoin Orange. Clean, high contrast, perfect for a stark merchant sticker.",
+        "price": 500,
+        "currency": "usd",
+        "category": "Accessories",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "3x3",
+                    "4x4",
+                    "5x5"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    },
+    {
+        "title": "Solid Dark B + Lightning Decal",
+        "description": "A highly stylized, minimalist 'B' (for Bitcoin) cut diagonally by a sharp lightning bolt. The graphic uses a solid, single-color glowing Bitcoin Orange. The background is a flat, unicolor deep dark charcoal grey. Highly legible, premium tech branding.",
+        "price": 600,
+        "currency": "usd",
+        "category": "Accessories",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "3x3",
+                    "4x4",
+                    "5x5"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
+    },
+    {
+        "title": "Unicolor Network Node Decal",
+        "description": "A sleek, minimalist logo representing decentralized nodes and lightning network channels. Designed with solid, clean geometric lines completely filled with deep Pitch Black. The background is a flat, solid, unicolor glowing Bitcoin Orange.",
+        "price": 600,
+        "currency": "usd",
+        "category": "Accessories",
+        "fulfillment": "pod",
+        "active": true,
+        "variants": [
+            {
+                "name": "Size",
+                "options": [
+                    "3x3",
+                    "4x4",
+                    "5x5"
+                ],
+                "sync_variant_ids": []
+            }
+        ],
+        "images": []
     }
 ]
