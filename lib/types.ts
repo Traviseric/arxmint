@@ -250,6 +250,47 @@ export interface MerchantListing {
   active: boolean;
 }
 
+/** Bazaar product category */
+export type BazaarCategory =
+  | "AI & Consciousness"
+  | "Science & Reality"
+  | "Future Paradigms"
+  | "Hidden Patterns";
+
+/** Bazaar product sold through the merchant marketplace prototype */
+export interface BazaarProduct {
+  id: string;
+  merchantId: string;
+  title: string;
+  author?: string;
+  description: string;
+  longDescription?: string;
+  priceSats: number;
+  priceUsd?: number;
+  originalPriceUsd?: number;
+  category: BazaarCategory;
+  coverImage: string;
+  format: string[];
+  pages?: number;
+  rating?: number;
+  badge?: string;
+}
+
+/** Bazaar product bundle/collection */
+export interface BazaarCollection {
+  id: string;
+  merchantId: string;
+  name: string;
+  title: string;
+  description: string;
+  productIds: string[];
+  priceSats: number;
+  priceUsd?: number;
+  originalPriceUsd?: number;
+  savings?: number;
+  badge?: string;
+}
+
 /** Parsed user prompt result */
 export interface ParsedPrompt {
   communityName: string;

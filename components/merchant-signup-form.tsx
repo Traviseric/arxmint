@@ -7,6 +7,7 @@
 // ============================================================
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
 import {
   Store,
   MapPin,
@@ -312,10 +313,13 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
       <div>
         {logoPreview ? (
           <div className="flex items-center gap-4 p-3 border border-border-default rounded-lg bg-bg-elevated">
-            <img
+            <Image
               src={logoPreview}
               alt="Logo preview"
+              width={48}
+              height={48}
               className="w-12 h-12 rounded object-contain bg-white/5"
+              unoptimized
             />
             <span className="text-sm text-text-secondary flex-1 truncate">Logo uploaded</span>
             <button

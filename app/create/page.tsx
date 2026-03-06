@@ -1,5 +1,4 @@
 import { MerchantSetupWizard } from "@/components/merchant-setup-wizard";
-import { Zap } from "lucide-react";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
 export default function CreatePage() {

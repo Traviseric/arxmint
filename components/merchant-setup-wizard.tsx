@@ -15,6 +15,7 @@ import {
   Store,
   ArrowRight,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 import { generateApertureConfig } from "@/lib/community-generator";
 import type { DeploymentConfig } from "@/lib/types";
@@ -363,8 +364,30 @@ export function MerchantSetupWizard() {
               <span className="text-xs font-mono text-accent uppercase tracking-wider">Beta — Coming Soon</span>
             </div>
             <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
-              One-click node deployment is in development. We&apos;re building the hosted infrastructure so you won&apos;t need to run Docker yourself.
+              One-click node deployment is in development. Until that ships, you can still generate the reference stack and setup instructions below.
             </p>
+            {generateError && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                {generateError}
+              </div>
+            )}
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="antigravity-btn !py-3 !px-8 inline-flex items-center gap-2 text-base"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Generate Reference Stack
+                </>
+              )}
+            </button>
             <p className="text-sm text-text-primary font-medium">
               Want to be first in line when it&apos;s ready?
             </p>

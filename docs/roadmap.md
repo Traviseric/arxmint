@@ -68,7 +68,7 @@ Status key:
 | 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
 | 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, deployment docs in `docs/`; merchant directory live at arxmint.com/merchants with Glacier + Teneo, 13 pipeline merchants, Nostr admin auth, public signup, and TE NUC testnet deployment running |
-| 5.x merchant platform (Bazaar) | Prototype | Early merchant-facing surfaces are live: `/pay/[merchant-id]` checkout prototype, `/bazaar` storefront prototype, `/badge` merchant kit, `/create` merchant setup wizard beta, and `/merchants` public directory. Self-hosted merchant node architecture, merchant-local APIs, SDK, webhooks, dashboard, and provisioning are not complete yet |
+| 5.x merchant platform (Bazaar) | Prototype | Early merchant-facing surfaces are live: `/pay/[merchant-id]` checkout prototype, `/badge` merchant kit, `/create` merchant setup wizard beta, and `/merchants` public directory. Self-hosted merchant node architecture, merchant-local APIs, SDK, webhooks, dashboard, and provisioning are not complete yet |
 
 ---
 
@@ -598,7 +598,6 @@ Grant applications can begin before the pilot is live — prototype + roadmap + 
 - 13 ecosystem merchants in pipeline (admin-only visibility, AI logos generated)
 - Nostr NIP-98 admin auth live — admin sees pipeline merchants when logged in
 - Checkout pages live at `/pay/[merchant-id]` with Lightning QR codes
-- Bazaar storefront prototype live at `/bazaar` (seeded from Teneo catalog)
 - Merchant badge + artwork kit live at `/badge`
 - `/create` now uses a merchant setup wizard beta instead of the old freeform community prompt
 - Public signup form accepting new merchant pledges → Supabase
@@ -1013,7 +1012,6 @@ Phase 5 SDK and API must be compatible with the existing Teneo Marketplace integ
 | 5.13 Mobile merchant remote control | Planned (Future) | 5.7 PWA as bridge; native app Phase 6+ |
 
 **Live Phase 5-adjacent prototype surfaces (March 2026):**
-- `/bazaar` is live as a seeded storefront prototype routing purchases into the Teneo merchant checkout path
 - `/badge` is live as a merchant acquisition + branding kit (embed badge, referral link, printable assets)
 - `/create` is live as a merchant-first beta wizard, but still stops short of actual one-command deploy
 
