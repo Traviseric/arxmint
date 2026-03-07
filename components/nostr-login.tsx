@@ -170,8 +170,10 @@ export function NostrLogin() {
           ) : (
             <Zap className="w-3 h-3 text-accent" />
           )}
-          <span className="text-text-primary font-mono truncate max-w-[60px] sm:max-w-[80px]">
-            {nostrUser.displayName}
+          <span className="text-text-primary font-mono">
+            {nostrUser.displayName.length > 8
+              ? `${nostrUser.displayName.slice(0, 4)}...`
+              : nostrUser.displayName}
           </span>
         </button>
 
