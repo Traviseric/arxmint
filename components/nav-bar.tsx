@@ -64,7 +64,7 @@ export function NavBar() {
           />
         </Link>
 
-        <div className="flex items-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-3 lg:gap-6">
           <Link
             href="/why"
             className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block font-medium"
@@ -116,7 +116,7 @@ export function NavBar() {
           </div>
 
           {/* Action Group */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
             <a
               href="https://github.com/Traviseric/arxmint"
               target="_blank"
@@ -138,7 +138,7 @@ export function NavBar() {
 
             <Link
               href="/create"
-              className="antigravity-btn !px-3 !py-1.5 lg:!px-4 lg:!py-2 text-[10px] lg:!text-sm shrink-0 whitespace-nowrap"
+              className="antigravity-btn !px-2 !py-1 sm:!px-3 sm:!py-1.5 lg:!px-4 lg:!py-2 text-[9px] sm:text-[10px] lg:!text-sm shrink-0 whitespace-nowrap"
             >
               Get Started
             </Link>

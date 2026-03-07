@@ -156,21 +156,21 @@ export function NostrLogin() {
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-haspopup="true"
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-xs sm:text-sm"
+          className="flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-[10px] sm:text-xs"
         >
           {nostrUser.picture ? (
             <Image
               src={nostrUser.picture}
               alt={nostrUser.displayName}
-              width={16}
-              height={16}
+              width={14}
+              height={14}
               unoptimized
-              className="w-4 h-4 rounded-full object-cover"
+              className="w-3.5 h-3.5 rounded-full object-cover"
             />
           ) : (
-            <Zap className="w-3.5 h-3.5 text-accent" />
+            <Zap className="w-3 h-3 text-accent" />
           )}
-          <span className="text-text-primary font-mono truncate max-w-[120px]">
+          <span className="text-text-primary font-mono truncate max-w-[60px] sm:max-w-[80px]">
             {nostrUser.displayName}
           </span>
         </button>
