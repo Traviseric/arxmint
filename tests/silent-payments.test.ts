@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+// @ts-ignore
+import { bech32m } from "@scure/base";
 
 // @ts-ignore -- Node test runner loads .ts directly with --experimental-strip-types
 import {
@@ -18,13 +20,24 @@ import {
 } from "../lib/silent-payments.ts";
 
 // ---------------------------------------------------------------------------
-// Test fixtures
+// Test fixtures — real Bech32m-valid SP addresses
 // ---------------------------------------------------------------------------
 
-// Synthetic mainnet SP address: "sp1q" prefix + 80 data chars (minimum valid length)
-const VALID_SP_MAINNET = "sp1q" + "a".repeat(80);
-// Synthetic testnet SP address: "tsp1q" prefix + 80 data chars
-const VALID_SP_TESTNET = "tsp1q" + "b".repeat(80);
+// Build a synthetic but structurally valid BIP-352 payload:
+// version (1 byte) + scan key (33 bytes) + spend key (33 bytes) = 67 bytes
+const SP_PAYLOAD = new Uint8Array(67);
+SP_PAYLOAD[0] = 0;    // version
+SP_PAYLOAD[1] = 0x02; // compressed pubkey prefix for scan key
+// bytes 2-33: scan key body (all zeros for test)
+SP_PAYLOAD[34] = 0x03; // compressed pubkey prefix for spend key
+// bytes 35-66: spend key body (all zeros for test)
+
+const REAL_SP_MAINNET = bech32m.encode("sp", bech32m.toWords(SP_PAYLOAD), 128);
+const REAL_SP_TESTNET = bech32m.encode("tsp", bech32m.toWords(SP_PAYLOAD), 128);
+
+// Legacy synthetic (non-Bech32m) fixtures kept for invalid-address tests
+const INVALID_SP_LIKE_MAINNET = "sp1q" + "a".repeat(80);
+const INVALID_SP_LIKE_TESTNET = "tsp1q" + "b".repeat(80);
 
 const DEFAULT_SCANNER_CONFIG = {
   indexerUrl: "http://localhost:8100",
@@ -36,18 +49,20 @@ const DEFAULT_SCANNER_CONFIG = {
 // parseSPAddress() — valid addresses
 // ---------------------------------------------------------------------------
 
-test("parseSPAddress() throws NotImplementedError for a valid mainnet SP address (Bech32m not yet implemented)", () => {
-  assert.throws(
-    () => parseSPAddress(VALID_SP_MAINNET),
-    /NotImplementedError/
-  );
+test("parseSPAddress() parses a valid mainnet SP address and returns network=bitcoin", () => {
+  const result = parseSPAddress(REAL_SP_MAINNET);
+  assert.equal(result.network, "bitcoin");
+  assert.equal(result.address, REAL_SP_MAINNET);
+  assert.equal(result.scanPubKey.length, 66, "scan key should be 33 bytes hex (66 chars)");
+  assert.equal(result.spendPubKey.length, 66, "spend key should be 33 bytes hex (66 chars)");
 });
 
-test("parseSPAddress() throws NotImplementedError for a valid testnet SP address (Bech32m not yet implemented)", () => {
-  assert.throws(
-    () => parseSPAddress(VALID_SP_TESTNET),
-    /NotImplementedError/
-  );
+test("parseSPAddress() parses a valid testnet SP address and returns network=testnet", () => {
+  const result = parseSPAddress(REAL_SP_TESTNET);
+  assert.equal(result.network, "testnet");
+  assert.equal(result.address, REAL_SP_TESTNET);
+  assert.equal(result.scanPubKey.length, 66, "scan key should be 33 bytes hex (66 chars)");
+  assert.equal(result.spendPubKey.length, 66, "spend key should be 33 bytes hex (66 chars)");
 });
 
 // ---------------------------------------------------------------------------
@@ -75,11 +90,11 @@ test("parseSPAddress() throws for a non-address string", () => {
   );
 });
 
-test("parseSPAddress() throws for an SP address that is too short (< 80 data chars)", () => {
-  // "sp1q" prefix + only 10 data chars — less than the required 80
+test("parseSPAddress() throws for an SP address with invalid Bech32m encoding", () => {
+  // "sp1q" prefix followed by garbage — not valid Bech32m
   assert.throws(
     () => parseSPAddress("sp1q" + "a".repeat(10)),
-    /too short/
+    /Bech32m decode failed|too short|Invalid/
   );
 });
 
@@ -94,14 +109,12 @@ test("parseSPAddress() throws for a Lightning invoice (lnbc prefix)", () => {
 // isSPAddress() — type guard
 // ---------------------------------------------------------------------------
 
-test("isSPAddress() returns false for a valid-format mainnet SP address (parseSPAddress not yet implemented)", () => {
-  // parseSPAddress() throws NotImplementedError for all SP addresses until BIP-352 Bech32m
-  // decoding is complete. isSPAddress() catches that and returns false.
-  assert.equal(isSPAddress(VALID_SP_MAINNET), false);
+test("isSPAddress() returns true for a valid real mainnet SP address", () => {
+  assert.equal(isSPAddress(REAL_SP_MAINNET), true);
 });
 
-test("isSPAddress() returns false for a valid-format testnet SP address (parseSPAddress not yet implemented)", () => {
-  assert.equal(isSPAddress(VALID_SP_TESTNET), false);
+test("isSPAddress() returns true for a valid real testnet SP address", () => {
+  assert.equal(isSPAddress(REAL_SP_TESTNET), true);
 });
 
 test("isSPAddress() returns false for a regular bech32 address (bc1q)", () => {
@@ -116,7 +129,7 @@ test("isSPAddress() returns false for a Lightning invoice", () => {
   assert.equal(isSPAddress("lnbc100n1psytest..."), false);
 });
 
-test("isSPAddress() returns false for a too-short sp1q address", () => {
+test("isSPAddress() returns false for an sp1q address with invalid Bech32m encoding", () => {
   assert.equal(isSPAddress("sp1q" + "a".repeat(10)), false);
 });
 
@@ -310,12 +323,12 @@ test("getAllHWWalletSPSupport() returns a copy (mutation does not affect interna
 // buildSPPSBTFields()
 // ---------------------------------------------------------------------------
 
-test("buildSPPSBTFields() throws NotImplementedError for a valid SP address (Bech32m not yet implemented)", () => {
+test("buildSPPSBTFields() returns PSBT fields for a valid real SP address", () => {
   const outpoints = [{ txid: "deadbeef01020304", vout: 0 }];
-  assert.throws(
-    () => buildSPPSBTFields(VALID_SP_MAINNET, outpoints, "02scanpubkey"),
-    /NotImplementedError/
-  );
+  const result = buildSPPSBTFields(REAL_SP_MAINNET, outpoints, "02scanpubkey");
+  assert.deepEqual(result.scanData.outpoints, outpoints);
+  assert.ok(result.scanData.scanPubKey.length > 0, "scanPubKey should be non-empty");
+  assert.equal(result.outputInfo.recipientAddress, REAL_SP_MAINNET);
 });
 
 test("buildSPPSBTFields() throws when address is invalid", () => {
@@ -332,23 +345,20 @@ test("buildSPPSBTFields() throws when address is invalid", () => {
 // validateSPPSBT() tests construct SPPSBTField directly (buildSPPSBTFields throws
 // NotImplementedError until BIP-352 Bech32m decoding is complete).
 
-test("validateSPPSBT() returns valid=true for well-formed PSBT fields (constructed manually)", () => {
+test("validateSPPSBT() returns valid=true for well-formed PSBT fields with a real SP address", () => {
   const fields = {
     scanData: { outpoints: [{ txid: "deadbeef", vout: 1 }], scanPubKey: "02scankey" },
-    outputInfo: { recipientAddress: VALID_SP_MAINNET, outputPubKey: "02outpubkey", tweak: "0".repeat(64) },
+    outputInfo: { recipientAddress: REAL_SP_MAINNET, outputPubKey: "02outpubkey", tweak: "0".repeat(64) },
   };
-  // isSPAddress() returns false for all SP addresses while Bech32m is unimplemented,
-  // so validateSPPSBT() reports a "not a valid SP address" error regardless.
-  // This test confirms validateSPPSBT() runs without throwing and produces structured output.
   const result = validateSPPSBT(fields);
-  assert.equal(typeof result.valid, "boolean");
-  assert.ok(Array.isArray(result.errors));
+  assert.equal(result.valid, true);
+  assert.deepEqual(result.errors, []);
 });
 
 test("validateSPPSBT() returns valid=false when outpoints array is empty", () => {
   const fields = {
     scanData: { outpoints: [], scanPubKey: "02scankey" },
-    outputInfo: { recipientAddress: VALID_SP_MAINNET, outputPubKey: "02outpubkey", tweak: "0".repeat(64) },
+    outputInfo: { recipientAddress: REAL_SP_MAINNET, outputPubKey: "02outpubkey", tweak: "0".repeat(64) },
   };
   const result = validateSPPSBT(fields);
   assert.equal(result.valid, false);

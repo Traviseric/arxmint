@@ -33,6 +33,7 @@
     "test:load:webhooks": "artillery run tests/load/webhook-delivery.yml"
   },
   "dependencies": {
+    "@scure/base": "^2.0.0",
     "@cashu/cashu-ts": "^3.5.0",
     "@fedimint/core": "^0.1.0",
     "@fedimint/transport-web": "^0.1.2",

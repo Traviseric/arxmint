@@ -1,5 +1,7 @@
 "use client";
 
+import { bech32m } from "@scure/base";
+
 // ============================================================
 // ArxMint — Silent Payments Infrastructure
 // BIP-352 Silent Payments for non-interactive address reuse
@@ -83,12 +85,12 @@ export interface SPKeyPair {
 
 // ---- SP Address Parsing ----
 
-/** SP address prefixes by network */
+/** SP address HRP (human-readable part) by network, used for Bech32m decode/encode */
 const SP_PREFIX: Record<string, string> = {
-  bitcoin: "sp1q",
-  testnet: "tsp1q",
-  signet: "tsp1q",
-  regtest: "tsp1q",
+  bitcoin: "sp",
+  testnet: "tsp",
+  signet: "tsp",
+  regtest: "tsp",
 };
 
 /**
@@ -109,24 +111,36 @@ export function parseSPAddress(address: string): SPAddress {
     );
   }
 
-  // SP addresses are Bech32m encoded with two 33-byte pubkeys
-  // Total data: ~66 bytes = scan key (33) + spend key (33)
-  const prefix = SP_PREFIX[network];
-  const data = address.slice(prefix.length);
-
-  // Minimum length check (66 bytes hex-encoded would be 132 chars, but Bech32m encodes differently)
-  if (data.length < 80) {
-    throw new Error("Silent Payment address too short — missing key data");
+  // BIP-352 Bech32m decoding (BIP-350/352)
+  const hrp = SP_PREFIX[network];
+  let decoded: { prefix: string; words: Uint8Array };
+  try {
+    decoded = bech32m.decode(address, 128); // 128-char limit covers SP address max length
+  } catch (err) {
+    throw new Error(`Invalid Silent Payment address — Bech32m decode failed: ${err}`);
+  }
+  if (decoded.prefix !== hrp) {
+    throw new Error(`Address prefix mismatch: expected '${hrp}', got '${decoded.prefix}'`);
   }
 
-  // BIP-352 Bech32m decoding not yet implemented.
-  // Full implementation requires @scure/base Bech32m decode + BIP-352 payload split.
-  // Throwing explicitly so callers surface this as an error rather than silently
-  // receiving cryptographically invalid pubkeys.
-  throw new Error(
-    'NotImplementedError: parseSPAddress() requires real Bech32m decoding (BIP-350/352). ' +
-    'Silent Payments address parsing is not yet implemented.'
-  );
+  const data = bech32m.fromWords(decoded.words);
+  // BIP-352: version (1 byte) + scan key (33 bytes) + spend key (33 bytes) = 67 bytes minimum
+  if (data.length < 67) {
+    throw new Error(`Silent Payment address data too short: ${data.length} bytes (expected ≥67)`);
+  }
+  const version = data[0];
+  if (version !== 0) {
+    throw new Error(`Unsupported Silent Payment address version: ${version}`);
+  }
+  const scanPubKey = Array.from(data.slice(1, 34)).map(b => b.toString(16).padStart(2, "0")).join("");
+  const spendPubKey = Array.from(data.slice(34, 67)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+  return {
+    address,
+    network,
+    scanPubKey,
+    spendPubKey,
+  };
 }
 
 /**
