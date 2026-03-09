@@ -265,6 +265,30 @@ Phase 5 turns ArxMint into a full Stripe alternative. Informed by 11 self-hostin
 | 5.12 | Home node packaging | Umbrel + StartOS app store packages for sovereignty-first node runners |
 | 5.13 | Mobile remote control | React Native POS + remote dashboard (PWA bridge via 5.7 first) |
 
+## Deploy Your Own Bitcoin Circular Economy
+
+ArxMint is designed to be replicated. The [Replication Playbook](docs/replication-playbook/README.md) documents everything needed to launch a Bitcoin circular economy in your own community, based on the Longmont, CO pilot.
+
+**Five steps to your own pilot:**
+
+```
+1. Provision a VPS (~$20/month — Hetzner, DigitalOcean)
+2. Run the Community Generator → describe your community → download docker-compose.yml
+3. docker compose up -d → Lightning node + Cashu mint + monitoring live
+4. Fund Lightning channels (min 1M sats inbound, 3+ channels)
+5. Onboard founding merchants with QR codes and/or Numo NFC cards
+```
+
+**Playbook documents:**
+- [Infrastructure Setup](docs/replication-playbook/infrastructure-setup.md) — Docker, LND, Cashu/Fedimint, TLS
+- [Guardian Recruitment](docs/replication-playbook/guardian-recruitment.md) — DKG ceremony, governance (Fedimint only)
+- [Merchant Onboarding Kit](docs/replication-playbook/merchant-onboarding-kit.md) — Scripts, QR codes, follow-up schedule
+- [Monitoring Runbook](docs/replication-playbook/monitoring-runbook.md) — Prometheus, Grafana, incident response
+
+Admin API: `GET /api/admin/playbook?format=markdown` downloads the full playbook as a markdown file (requires Nostr admin auth).
+
+---
+
 ## Built On
 
 [Fedimint](https://fedimint.org) &middot; [Cashu](https://cashu.space) &middot; [Lightning Labs](https://lightning.engineering) &middot; [Ark](https://ark-protocol.org) &middot; [Docker](https://docker.com)

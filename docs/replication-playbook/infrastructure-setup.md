@@ -1,0 +1,279 @@
+# Infrastructure Setup
+
+Deploy the ArxMint stack on your own server in four steps.
+
+---
+
+## Step 1: Server Provisioning
+
+### Minimum specs
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| RAM | 2 GB | 4 GB |
+| Disk | 20 GB SSD | 50 GB SSD |
+| CPU | 1 vCPU | 2 vCPU |
+| OS | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
+| Network | 1 Gbps | 1 Gbps |
+
+### Recommended VPS providers
+
+- **Hetzner** (EU/US) — best price/performance, ~€5/month for CX21
+- **DigitalOcean** — easy setup, $6/month Basic Droplet
+- **Vultr** — good global coverage, $6/month
+
+### Firewall rules
+
+Open these ports before deploying:
+
+```bash
+# LND peer-to-peer
+ufw allow 9735/tcp
+
+# LND gRPC (internal only — do NOT expose publicly)
+# ufw allow 10009/tcp  ← KEEP CLOSED, Docker handles this internally
+
+# Cashu mint (internal only via Caddy proxy)
+# ufw allow 3338/tcp  ← KEEP CLOSED
+
+# Prometheus (restrict to your IP if possible)
+ufw allow 9090/tcp
+
+# Grafana (restrict to your IP if possible)
+ufw allow 3001/tcp
+
+# HTTP/HTTPS (public)
+ufw allow 80/tcp
+ufw allow 443/tcp
+```
+
+### Install Docker
+
+```bash
+# Ubuntu 22.04
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Verify
+docker --version        # Docker Engine 24+
+docker compose version  # Docker Compose v2+
+```
+
+---
+
+## Step 2: Generate Your Deployment Config
+
+Use ArxMint's Community Generator to produce a `docker-compose.yml` tailored to your community:
+
+```
+1. Go to https://arxmint.com/create (or your local dev instance)
+2. Describe your community:
+   "Create a Bitcoin circular economy for 50 local businesses in [city].
+    Cashu mint, privacy defaults on, agent commerce disabled."
+3. ArxMint generates:
+   - docker-compose.yml (LND + CDK mint + Prometheus + Grafana + Caddy)
+   - .env.example with all required variables
+   - Grafana dashboard configs
+4. Download and copy to your server
+```
+
+### Environment variables
+
+Fill in `.env` before starting:
+
+```bash
+# .env — copy from .env.example and fill in all values
+
+# Domain (required)
+DOMAIN=pay.yourcommunity.com
+
+# Auth (generate with: openssl rand -hex 32)
+NEXTAUTH_SECRET=your_64_char_hex_secret
+
+# Supabase (optional — for hosted DB)
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=xxx
+
+# Grant budget tracking (optional)
+GRANT_BUDGET_USD=100000
+GRANT_SPENT_USD=0
+```
+
+---
+
+## Step 3: Start the Stack
+
+```bash
+# Copy files to server
+scp docker-compose.yml .env user@your-server:/opt/arxmint/
+
+# SSH into server
+ssh user@your-server
+cd /opt/arxmint
+
+# Start all services
+docker compose up -d
+
+# Check logs
+docker compose logs -f
+```
+
+### Service startup order
+
+Services start in dependency order:
+
+1. **lnd** — Bitcoin Lightning node (neutrino light client, ~5 min to sync)
+2. **cdk-mint** — Cashu CDK mint (waits for LND ready)
+3. **prometheus** — Metrics collection (starts immediately)
+4. **grafana** — Dashboard UI (starts immediately)
+5. **caddy** — Reverse proxy + TLS (starts immediately)
+
+---
+
+## Step 4: Lightning Channel Setup
+
+LND must be funded before it can receive payments.
+
+### 4a. Wait for LND to sync
+
+```bash
+# Check sync status (repeat until synced_to_chain = true)
+docker exec lnd lncli --network=mainnet getinfo | grep synced
+# → "synced_to_chain": true
+```
+
+Neutrino sync takes approximately 5–15 minutes on first boot.
+
+### 4b. Get a deposit address
+
+```bash
+docker exec lnd lncli --network=mainnet newaddress p2tr
+# → "address": "bc1p..."
+```
+
+Fund this address with at least 500K sats (ideally 2M+ for reliable routing).
+
+### 4c. Open Lightning channels
+
+Open channels to well-connected routing nodes:
+
+```bash
+# ACINQ (reliable, well-connected)
+docker exec lnd lncli --network=mainnet connect \
+  03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f@34.239.230.56:9735
+
+docker exec lnd lncli --network=mainnet openchannel \
+  --node_key 03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f \
+  --local_amt 500000
+
+# Bitrefill (good inbound, merchant-focused)
+docker exec lnd lncli --network=mainnet connect \
+  030c3f19d742ca294a55c00376b3b355c3c90d61c6b6b39554dbc7ac19b141c14f@52.50.244.44:9735
+
+docker exec lnd lncli --network=mainnet openchannel \
+  --node_key 030c3f19d742ca294a55c00376b3b355c3c90d61c6b6b39554dbc7ac19b141c14f \
+  --local_amt 500000
+```
+
+**Target:** minimum 1M sats inbound liquidity across 3+ channels.
+
+### 4d. Request inbound liquidity
+
+If you need inbound liquidity immediately (to receive payments before channels balance):
+
+- **Amboss Magma** — https://amboss.space/magma (buy inbound channels)
+- **Lightning Lab's LSP** — available via LNC
+- **Swap services** — Loop Out (submarine swap) on Lightning Labs
+
+---
+
+## Step 5: SSL/TLS Setup
+
+Caddy handles TLS automatically if configured correctly.
+
+### Caddy auto-HTTPS (recommended)
+
+Your `Caddyfile` (generated by ArxMint) should contain:
+
+```
+pay.yourcommunity.com {
+    reverse_proxy arxmint:3000
+    tls your@email.com
+}
+```
+
+Caddy automatically obtains a Let's Encrypt certificate on first request. No manual cert management needed.
+
+### DNS setup
+
+Point your domain to your server IP:
+
+```
+Type  Name    Value
+A     pay     YOUR_SERVER_IP
+```
+
+Allow 5–30 minutes for DNS propagation.
+
+---
+
+## Step 6: Verify Deployment
+
+Run these checks before onboarding merchants:
+
+```bash
+# LND synced
+docker exec lnd lncli getinfo | grep synced_to_chain
+# → "synced_to_chain": true
+
+# Cashu mint responding
+curl http://localhost:3338/v1/info
+# → {"name":"...","pubkey":"...","version":"CDK Mint ..."}
+
+# Prometheus scraping
+curl http://localhost:9090/api/v1/targets | python3 -m json.tool | grep health
+# → "health": "up" for each target
+
+# ArxMint app
+curl https://pay.yourcommunity.com/api/health
+# → {"status":"ok"}
+
+# Grafana accessible
+# Open https://your-server-ip:3001 in browser
+# Login: admin / (password from GRAFANA_PASSWORD env var)
+```
+
+---
+
+## Cashu vs Fedimint
+
+| Factor | Cashu (CDK) | Fedimint |
+|--------|-------------|----------|
+| Setup complexity | Low (single server) | High (3+ guardians) |
+| Trust model | Single operator | Multi-party federation |
+| Best for | Communities < 50 members, solo operators | Communities > 50, trust-minimized |
+| Privacy | Chaumian ecash (good) | Chaumian ecash + guardian distribution (better) |
+| Uptime requirement | Your server only | 2/3 guardians must be online |
+
+For **Fedimint**, see [Guardian Recruitment](./guardian-recruitment.md) for the multi-guardian setup.
+
+---
+
+## Backup Strategy
+
+Set up automated backups before going live:
+
+```bash
+# LND channel backups (critical — run daily)
+docker exec lnd lncli exportchanbackup --all > /opt/arxmint/backups/lnd-backup-$(date +%Y%m%d).bin
+
+# Cashu mint database
+docker exec cdk-mint \
+  cp /data/mint.db /opt/arxmint/backups/cdk-mint-$(date +%Y%m%d).db
+
+# Upload to S3 or similar
+aws s3 cp /opt/arxmint/backups/ s3://your-bucket/arxmint-backups/ --recursive
+```
+
+See [docs/DEPLOY.md](../DEPLOY.md) and [docs/RESTORE.md](../RESTORE.md) for full backup/restore procedures.
