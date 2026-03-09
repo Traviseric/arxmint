@@ -42,7 +42,7 @@ async function resolveMerchantKey(req: NextRequest): Promise<ResolvedKey | null>
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const resolved = await resolveMerchantKey(req);
   if (!resolved) {
@@ -52,7 +52,7 @@ export async function DELETE(
     );
   }
 
-  const { id } = params;
+  const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "Webhook ID is required" }, { status: 400 });
   }

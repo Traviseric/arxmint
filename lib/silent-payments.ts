@@ -113,9 +113,9 @@ export function parseSPAddress(address: string): SPAddress {
 
   // BIP-352 Bech32m decoding (BIP-350/352)
   const hrp = SP_PREFIX[network];
-  let decoded: { prefix: string; words: Uint8Array };
+  let decoded: { prefix: string; words: number[] };
   try {
-    decoded = bech32m.decode(address, 128); // 128-char limit covers SP address max length
+    decoded = bech32m.decode(address as `${string}1${string}`, 128); // 128-char limit covers SP address max length
   } catch (err) {
     throw new Error(`Invalid Silent Payment address — Bech32m decode failed: ${err}`);
   }
