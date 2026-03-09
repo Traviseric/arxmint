@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
 import Link from "next/link";
+import { trackCheckoutEvent } from "@/lib/analytics";
 import {
   Zap,
   Copy,
@@ -25,6 +26,20 @@ import {
 } from "lucide-react";
 
 type CheckoutState = "amount" | "shipping" | "invoice" | "paid" | "expired" | "error";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  PAYMENT_FAILED: "Payment didn't go through. Please try again or use a different wallet.",
+  INVOICE_EXPIRED: "This invoice expired. The merchant will generate a new one — please refresh.",
+  INSUFFICIENT_FUNDS: "Your wallet doesn't have enough balance. Try a smaller amount or top up.",
+  NETWORK_ERROR: "Connection issue. Check your internet and try again.",
+  DEFAULT: "Something went wrong. Please refresh the page or contact the merchant.",
+};
+
+function friendlyError(raw: string): string {
+  if (!raw) return ERROR_MESSAGES.DEFAULT;
+  const key = raw.toUpperCase().replace(/\s+/g, "_");
+  return ERROR_MESSAGES[key] ?? raw;
+}
 
 interface ShippingAddress {
   email: string;
@@ -93,17 +108,21 @@ export function CheckoutFlow({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Failed to create invoice");
+        const msg = friendlyError(data.error || "DEFAULT");
+        setError(msg);
         setState("error");
+        trackCheckoutEvent("payment_failed", { merchant_id: merchantId, reason: data.error });
         return;
       }
       setInvoice(data.invoice);
       setSessionId(data.sessionId);
       setDemoMode(data.demoMode);
       setState("invoice");
+      trackCheckoutEvent("checkout_started", { merchant_id: merchantId, amount_sats: sats });
     } catch {
-      setError("Network error. Please try again.");
+      setError(ERROR_MESSAGES.NETWORK_ERROR);
       setState("error");
+      trackCheckoutEvent("payment_failed", { merchant_id: merchantId, reason: "network_error" });
     } finally {
       setLoading(false);
     }
@@ -129,8 +148,10 @@ export function CheckoutFlow({
         if (data.status === "paid") {
           setPaidAt(data.paidAt);
           setState("paid");
+          trackCheckoutEvent("payment_confirmed", { merchant_id: merchantId });
         } else if (data.status === "expired") {
           setState("expired");
+          trackCheckoutEvent("invoice_expired", { merchant_id: merchantId });
         }
       } catch {
         // Ignore poll errors
@@ -195,8 +216,25 @@ export function CheckoutFlow({
   const parsedAmount = parseInt(amount, 10);
   const displayAmount = isNaN(parsedAmount) ? 0 : parsedAmount;
 
+  // Track abandoned checkouts
+  useEffect(() => {
+    if (state !== "invoice") return;
+    const handleUnload = () => {
+      trackCheckoutEvent("checkout_abandoned", { merchant_id: merchantId });
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [state, merchantId]);
+
   return (
     <div className="w-full max-w-md mx-auto">
+      {/* Accessible live region for payment status announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {state === "paid" && "Payment confirmed. Thank you!"}
+        {state === "expired" && "Invoice expired. Please generate a new one."}
+        {state === "error" && (error ? error : "An error occurred.")}
+      </div>
+
       {/* Merchant Header */}
       <div className="text-center mb-8">
         {merchantLogo && (
@@ -424,6 +462,7 @@ export function CheckoutFlow({
           <div className="flex justify-center mb-5">
             <a
               href={`lightning:${invoice}`}
+              aria-label={`Pay ${displayAmount.toLocaleString()} sats to ${merchantName} — opens Lightning wallet`}
               className="block bg-white rounded-xl p-4 shadow-sm"
             >
               <QRCodeSVG
@@ -433,6 +472,8 @@ export function CheckoutFlow({
                 includeMargin={false}
                 bgColor="#ffffff"
                 fgColor="#000000"
+                aria-label="Lightning invoice QR code"
+                role="img"
               />
             </a>
           </div>
@@ -462,6 +503,7 @@ export function CheckoutFlow({
 
             <a
               href={`lightning:${invoice}`}
+              aria-label={`Pay ${displayAmount.toLocaleString()} sats to ${merchantName} — open in Lightning wallet`}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-sm text-text-secondary hover:text-text-primary"
             >
               <Zap className="w-4 h-4" />
