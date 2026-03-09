@@ -1,0 +1,31 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Smoke test"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Health check"
+    flow:
+      - get:
+          url: "/api/health"
+          expect:
+            - statusCode: 200
+
+  - name: "Checkout smoke"
+    flow:
+      - post:
+          url: "/api/checkout"
+          json:
+            merchantId: "test-merchant"
+            amount: 1000
+            currency: "sats"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 402

@@ -1,0 +1,48 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Ramp up"
+    - duration: 120
+      arrivalRate: 100
+      name: "Sustained load"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  # Throughput target: 100 concurrent sessions, 1000 tx/day
+  # Full test requires regtest stack: npm run setup:regtest
+
+scenarios:
+  - name: "Checkout flow"
+    weight: 70
+    flow:
+      - post:
+          url: "/api/checkout"
+          json:
+            merchantId: "test-merchant"
+            amount: 1000
+            currency: "sats"
+          capture:
+            - json: "$.invoiceId"
+              as: "invoiceId"
+      - think: 2
+      - get:
+          url: "/api/checkout/status/{{ invoiceId }}"
+          ifTrue: "invoiceId"
+
+  - name: "Merchant listing"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/pledge"
+          expect:
+            - statusCode: 200
+
+  - name: "Health probe"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/health"
+          expect:
+            - statusCode: 200

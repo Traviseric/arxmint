@@ -1,0 +1,54 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Ramp up"
+    - duration: 60
+      arrivalRate: 10
+      name: "Sustained — 10 webhooks/sec target"
+    - duration: 30
+      arrivalRate: 5
+      name: "Cool down"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  # Throughput target: 10 webhooks/second sustained
+  # Full test requires regtest stack: npm run setup:regtest
+
+scenarios:
+  - name: "Checkout webhook"
+    weight: 60
+    flow:
+      - post:
+          url: "/api/checkout/webhook"
+          json:
+            event: "payment.completed"
+            merchantId: "test-merchant"
+            orderId: "order-{{ $randomString() }}"
+            amount: 1000
+            currency: "sats"
+            timestamp: "{{ $timestamp() }}"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 401
+
+  - name: "L402 payment webhook"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/checkout/webhook"
+          json:
+            event: "l402.settled"
+            preimage: "0000000000000000000000000000000000000000000000000000000000000001"
+            macaroon: "test-macaroon"
+            timestamp: "{{ $timestamp() }}"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 401

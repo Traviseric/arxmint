@@ -223,6 +223,41 @@ jobs:
         env:
           TEST_SERVER_URL: http://localhost:3000
 
+  load-smoke:
+    name: Load Smoke Test
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    # Non-blocking until baselines are established
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: Start dev server
+        run: npm run dev &
+        env:
+          DATABASE_URL: ""
+          NEXTAUTH_SECRET: ci-load-test-secret
+      - name: Wait for server
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "Server ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Server did not start in time"
+          exit 1
+      - name: Run smoke load test
+        run: npm run test:load:smoke
+
   container-build:
     name: Container Build
     runs-on: ubuntu-latest
