@@ -1,0 +1,26 @@
+{
+  "name": "arxmint-zapier",
+  "version": "0.1.0",
+  "description": "ArxMint Zapier integration — connect Lightning payments to 5000+ apps",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "validate": "zapier validate",
+    "push": "zapier push",
+    "deploy": "zapier push"
+  },
+  "dependencies": {
+    "zapier-platform-core": "^15.5.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "keywords": ["zapier", "bitcoin", "lightning", "arxmint", "payments"],
+  "zapier": {
+    "appId": "YOUR_ZAPIER_APP_ID"
+  }
+}
