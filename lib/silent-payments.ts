@@ -591,8 +591,8 @@ export function buildSPPSBTFields(
   outpoints: Array<{ txid: string; vout: number }>,
   _scanPubKey: string
 ): SPPSBTField {
-  // In production, compute ECDH shared secret and derive output key
-  // parseSPAddress() throws NotImplementedError until BIP-352 Bech32m decoding is done.
+  // In production, compute ECDH shared secret and derive output key.
+  // parseSPAddress() decodes BIP-352 Bech32m addresses via @scure/base.
   let parsed: SPAddress;
   try {
     parsed = parseSPAddress(recipientAddress);
