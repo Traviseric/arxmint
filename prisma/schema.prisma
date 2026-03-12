@@ -69,10 +69,11 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
 
-  accounts    Account[]
-  sessions    Session[]
-  communities Community[]
-  merchants   Merchant[]
+  accounts        Account[]
+  sessions        Session[]
+  communities     Community[]
+  merchants       Merchant[]
+  identityAliases IdentityAlias[]
 
   @@map("users")
 }
@@ -129,6 +130,22 @@ model PaymentChallenge {
   notes     String?   // JSON: full challenge details (no secrets — invoice and macaroon are public)
 
   @@map("payment_challenges")
+}
+
+model IdentityAlias {
+  id         String   @id @default(cuid())
+  rootId     String   // ArxMint User.id — the resolved root identity
+  root       User     @relation(fields: [rootId], references: [id], onDelete: Cascade)
+  namespace  String   // caller-defined (lowercase alphanumeric, hyphens, underscores)
+  externalId String   // the foreign ID (e.g. "aos_vis-456", "us-west-2:cognito-uuid")
+  linkedBy   String   // which system created the link (e.g. "teneo-production", "analyticsos")
+  metadata   Json?    // optional context (e.g. { siteId, linkedDuring: "signup" })
+  linkedAt   DateTime @default(now())
+
+  @@unique([namespace, externalId]) // one external ID can only resolve to one root
+  @@index([rootId])                 // fast lookup: "give me all aliases for this user"
+  @@index([externalId])             // fast lookup: "resolve any ID without knowing namespace"
+  @@map("identity_aliases")
 }
 
 model MerchantPledge {
