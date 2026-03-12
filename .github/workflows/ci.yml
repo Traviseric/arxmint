@@ -14,7 +14,7 @@ jobs:
       ARXMINT_SECURITY_GATE_MODE: ${{ vars.SECURITY_GATE_MODE }}
       ARXMINT_SECURITY_CANARY_BRANCHES: ${{ vars.SECURITY_CANARY_BRANCHES }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [security]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [security]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -142,7 +142,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/arxmint_ci?schema=public
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [security, migration-verify]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -186,7 +186,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-and-test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -230,7 +230,7 @@ jobs:
     # Non-blocking until baselines are established
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -266,7 +266,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
