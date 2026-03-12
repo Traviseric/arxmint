@@ -35,6 +35,9 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Merchant onboarding | `components/merchant-onboard.tsx` | `NuMo NFC` |
 | Merchants page | `app/merchants/page.tsx`, `components/merchant-signup-form.tsx`, `app/api/pledge/route.ts` | `MerchantPledge MerchantSignupForm` |
 | Merchant redirects | `app/merchant/page.tsx`, `app/network/page.tsx` | `redirect /merchants` |
+| Identity graph | `lib/identity.ts` | `linkIdentity resolveIdentity getAllAliases` |
+| Identity API | `app/api/identity/link/`, `app/api/identity/resolve/`, `app/api/identity/create-root/` | `identity link resolve create-root` |
+| Identity schema | `prisma/schema.prisma` (IdentityAlias model) | `identity_aliases namespace externalId` |
 | Supabase client | `lib/supabase.ts` | `createClient supabase` |
 | Merchant seed data | `app/api/pledge/route.ts` (SEED_MERCHANTS const) | `Glacier seed-glacier` |
 | Auth (Nostr NIP-98) | `lib/auth-middleware.ts`, `app/api/auth/route.ts`, `docs/auth.md` | `NIP-98 session HMAC pubkey ADMIN_PUBKEYS` |
@@ -48,6 +51,21 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Spec + cross-ref | `docs/spec.md`, `docs/research-crossref.md` | — |
 | Ecosystem merchant pipeline | `.claude/MERCHANT_MONETIZATION.md`, `<project>/docs/MERCHANT_PLAN.md` | `merchant checkout Lightning ArxMint` |
 | Agent commerce kit | `packages/agent-commerce/` | `@te-code/agent-commerce checkout l402 withL402 createInvoice` |
+| AI Infra Stack | `.claude/guides/AI-INFRASTRUCTURE-STACK.md` | Layer 5, agent commerce, dynamic pricing, reputation |
+
+## AI Infrastructure Stack (Layer 5: Agent Commerce)
+
+ArxMint is the payment backbone for the AI Infrastructure Stack. See full spec: `.claude/guides/AI-INFRASTRUCTURE-STACK.md`
+
+| Component | What | Status |
+|-----------|------|--------|
+| **L402 paywalls** | Agents pay per-request for services | ✅ Code complete |
+| **Cashu ecash** | Privacy-preserving agent transactions | ✅ Code complete |
+| **Ephemeral agent wallets** | Disposable wallets for agent sessions | ✅ Code complete |
+| **agent-commerce SDK** | `packages/agent-commerce/` — portable SDK for all projects | 🟡 Scaffold only |
+| **Dynamic pricing integration** | Reputation scores → price adjustment on L402 invoices | 🔴 NOT STARTED (depends on aibridge/reputation) |
+
+**Next:** Implement `packages/agent-commerce/` SDK so projects import `@te-code/agent-commerce` instead of copy-pasting checkout code. Then wire reputation-based pricing from aibridge.
 | Hardware appliance | `te-btc/internal/arxmint-internal/HARDWARE_PRODUCT.md` | `ArxMint Box Station Citadel NUC Starlink appliance` |
 | Roadmap (phases) | `docs/roadmap.md` | `Phase Fortify Keystone Spire Aether Citadel Bazaar Enterprise` |
 | Brand guide | `docs/brand.md` | `tagline voice palette audience` |
