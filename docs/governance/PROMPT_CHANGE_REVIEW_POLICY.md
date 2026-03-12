@@ -9,9 +9,8 @@ This policy makes those changes reviewable and auditable.
 
 This policy applies to prompt-like assets, including:
 
-- `docs/RESEARCH_PROMPTS.md`
 - `docs/research/RESEARCH_PROMPTS.md`
-- `OVERNIGHT_TASKS.md`
+- `AGENT_TASKS.md`
 - Agent/service prompt strings in `app/` and `lib/`
 
 ## Requirements

@@ -1,4 +1,4 @@
-﻿# Production Engineering Audit: arxmint
+# Production Engineering Audit: arxmint
 
 **Date:** 2026-03-02
 **Auditor:** Codex (automated)
@@ -62,7 +62,7 @@ Stack tags: spa, container, api
 | Secrets in managed store | Fail | Env-file driven setup (`.env.example` lines 7-159); no Secrets Manager/Vault/SSM integration found |
 | 90-day rotation | Fail | Secret generation exists (`scripts/generate-secrets.sh` lines 53-104) but no scheduled rotation cadence/proof |
 | Per-service credentials | Partial | Shared cross-service secret model in `lib/auth-middleware.ts` lines 48-50 (`AUTH_SHARED_SECRET` fallback chain) |
-| Immediate revocation on leak | Fail | Incident runbook has no secret leak revoke/rotate workflow (`docs/INCIDENT_RESPONSE.md`) |
+| Immediate revocation on leak | Fail | Incident runbook has no secret leak revoke/rotate workflow (`docs/operations/incident-response.md`) |
 | Secret scanning in CI | Fail | `.github/workflows/ci.yml` has no `gitleaks`/`trufflehog`/`detect-secrets` step |
 
 **Failures:**
@@ -129,7 +129,7 @@ Stack tags: spa, container, api
 
 | Principle | Result | Evidence |
 |-----------|--------|----------|
-| Test pyramid defined | Partial | `docs/E2E_TESTING.md` defines layers and flow (`docs/E2E_TESTING.md` lines 13-31) but references missing suites |
+| Test pyramid defined | Partial | `docs/testing/e2e-testing.md` defines layers and flow (`docs/testing/e2e-testing.md` lines 13-31) but references missing suites |
 | Behavior-focused tests | Pass | Many tests assert observable responses/outcomes (e.g., `tests/l402-integration.test.ts`) |
 | Fast execution | Pass | `npm test` completed in ~5.2s (321 tests, 61 skipped) |
 | Security test matrix | Partial | Auth/security tests exist, but many are skip-conditional (`tests/e2e/auth-nostr.test.ts` lines 31-34, 90-93) |
@@ -196,11 +196,11 @@ Stack tags: spa, container, api
 
 | Principle | Result | Evidence |
 |-----------|--------|----------|
-| Staging before production | Fail | Deploy docs describe direct production VPS rollout; no staging promotion gate (`docs/DEPLOY.md`, `docs/VPS_SETUP.md`) |
-| Post-deploy verification | Pass | Health verification steps documented (`docs/VPS_SETUP.md` lines 285-292, 322) |
-| Last-known-good tracking | Fail | Rollback is manual tag edit without automated healthy-version registry (`docs/INCIDENT_RESPONSE.md` lines 291-312) |
+| Staging before production | Fail | Deploy docs describe direct production VPS rollout; no staging promotion gate (`docs/deployment/deploy.md`, `docs/deployment/vps-setup.md`) |
+| Post-deploy verification | Pass | Health verification steps documented (`docs/deployment/vps-setup.md` lines 285-292, 322) |
+| Last-known-good tracking | Fail | Rollback is manual tag edit without automated healthy-version registry (`docs/operations/incident-response.md` lines 291-312) |
 | Env var validation | Fail | Validation function exists (`lib/env-check.ts`) but is only invoked in `/api/health` (`app/api/health/route.ts` line 76), not at startup |
-| Migration safety | Partial | Migration/rollback process documented (`docs/MIGRATION_PLAN.md` lines 508-517, 575) |
+| Migration safety | Partial | Migration/rollback process documented (`docs/deployment/migration-docs/reference/archives/root/plan.md` lines 508-517, 575) |
 | Canary or traffic shifting | Fail | No canary/traffic-shift deployment controls found |
 | Fail-fast config | Fail | Misconfig does not universally fail process at startup; many checks occur per-request only |
 
@@ -222,11 +222,11 @@ Stack tags: spa, container, api
 | Shared logging utility | Partial | Logger utility adopted in several routes, not universal |
 | No secrets in logs | Pass | Logger explicitly defines sanitized fields (`lib/logger.ts` lines 47-64); no direct token/preimage logging found |
 | Request tracing | Fail | `requestId` field exists in logger type (`lib/logger.ts:14`) but no propagation across handlers/services |
-| SLOs/SLIs defined | Partial | KPI docs exist (`docs/PILOT_KPIS.md`) but no explicit error-budget/SLO operational policy |
-| Alerting on anomalies | Partial | Manual Grafana alert routing documented (`docs/INCIDENT_RESPONSE.md` lines 271-287) but no codified alert rules in infra |
+| SLOs/SLIs defined | Partial | KPI docs exist (`docs/operations/pilot-kpis.md`) but no explicit error-budget/SLO operational policy |
+| Alerting on anomalies | Partial | Manual Grafana alert routing documented (`docs/operations/incident-response.md` lines 271-287) but no codified alert rules in infra |
 | RED metrics | Fail | No endpoint-level rate/error/duration emission found in app code |
 | Deep health checks | Pass | `/api/health` checks DB, mint, and LND dependencies (`app/api/health/route.ts` lines 78-105) |
-| Docs match reality | Fail | Testing doc references non-existent files (`docs/E2E_TESTING.md` lines 185, 510, 530, 548; missing under `tests/e2e/`) |
+| Docs match reality | Fail | Testing doc references non-existent files (`docs/testing/e2e-testing.md` lines 185, 510, 530, 548; missing under `tests/e2e/`) |
 
 **Failures:**
 - **Structured logging consistency:** Mixed logging patterns reduce observability quality.
@@ -246,9 +246,9 @@ Stack tags: spa, container, api
 |-----------|--------|----------|
 | Point-in-time recovery | Fail | No PITR configuration/evidence for Postgres in deployment config |
 | Storage versioning | N-A | No object storage (S3/GCS) resources in repo |
-| Disaster recovery plan | Pass | DR and incident runbooks exist (`docs/DR_DRILL.md`, `docs/INCIDENT_RESPONSE.md`) |
-| Backup verification | Fail | DR drill log template present but unfilled (`docs/DR_DRILL.md` lines 353-361) |
-| Safe migrations | Partial | Migration rollback criteria documented (`docs/MIGRATION_PLAN.md` lines 508-517) |
+| Disaster recovery plan | Pass | DR and incident runbooks exist (`docs/operations/dr-drill.md`, `docs/operations/incident-response.md`) |
+| Backup verification | Fail | DR drill log template present but unfilled (`docs/operations/dr-drill.md` lines 353-361) |
+| Safe migrations | Partial | Migration rollback criteria documented (`docs/deployment/migration-docs/reference/archives/root/plan.md` lines 508-517) |
 | Connection pool limits | Fail | No explicit Prisma/DB pool caps in `lib/db.ts` or env config |
 | Query and lock timeouts | Fail | No DB statement/lock timeout policy in app DB layer |
 
@@ -270,7 +270,7 @@ Stack tags: spa, container, api
 | Root directory clean | Fail | Large operational artifacts are tracked (e.g., `.overnight/popup_logs/*.png`, `.overnight/*.json`) |
 | Shared code centralized | Pass | Shared modules are centralized under `lib/` and imported by API routes |
 | Dev packages separated | Fail | `prisma` in runtime dependencies (`package.json` line 33) |
-| Pre-commit hooks | Partial | Hook file exists (`.githooks/pre-commit`) but no install/enforcement documentation in `README.md`/`CONTRIBUTING.md` |
+| Pre-commit hooks | Partial | Hook file exists (`.githooks/pre-commit`) but no install/enforcement documentation in `README.md`/`docs/development/contributing.md` |
 
 **Failures:**
 - **Root hygiene:** Operational screenshots/log artifacts are versioned in the main repository.
@@ -351,7 +351,7 @@ Stack tags: spa, container, api
 | PE-002 | Security | Community-scoped mutations trust caller-provided `communityId` without ownership checks | Add ownership/RBAC guard middleware for write endpoints | P0 | M |
 | PE-003 | CI/CD | E2E gate is non-blocking (`continue-on-error: true`), creating false CI confidence | Make critical E2E required; split optional suites explicitly | P0 | S |
 | PE-004 | Deployment/Data | Initial migration file includes non-SQL trailing banner text | Clean migration SQL and validate `prisma migrate deploy` on fresh DB in CI | P0 | S |
-| PE-005 | Data Protection | No evidence of completed restore drill; drill log is empty | Execute full restore drill and record results in `docs/DR_DRILL.md` | P0 | M |
+| PE-005 | Data Protection | No evidence of completed restore drill; drill log is empty | Execute full restore drill and record results in `docs/operations/dr-drill.md` | P0 | M |
 | PE-006 | Data Protection | No PITR-grade protection for production data | Implement PITR-capable backup strategy and documented restore process | P0 | L |
 
 ### Phase 1 --- High (Target: 2026-04-13)
@@ -388,7 +388,7 @@ Stack tags: spa, container, api
 
 ## Implementation Update (2026-03-02)
 
-- **PE-005 (Restore drill evidence):** Attempted in this agent environment on **2026-03-02** but blocked because Docker and WSL were unavailable. Evidence and follow-up date are logged in `docs/DR_DRILL.md` under "Latest Attempt Evidence (2026-03-02)".
+- **PE-005 (Restore drill evidence):** Attempted in this agent environment on **2026-03-02** but blocked because Docker and WSL were unavailable. Evidence and follow-up date are logged in `docs/operations/dr-drill.md` under "Latest Attempt Evidence (2026-03-02)".
 - **PE-013 (CSP hardening):** Decision recorded in ADR `docs/governance/adr/ADR-20260302-csp-unsafe-inline-transition.md`.
   - Enforced CSP remains compatibility mode for now.
   - Strict CSP is enabled in `Content-Security-Policy-Report-Only`.

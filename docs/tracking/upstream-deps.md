@@ -1,7 +1,7 @@
 # Upstream Dependency Tracking
 
 **Last reviewed:** 2026-02-28
-**Maintained by:** ArxMint team — update this file when upstream signals change.
+**Maintained by:** ArxMint team â€” update this file when upstream signals change.
 
 These five items are blocked on external events (protocol adoption, npm releases, Bitcoin consensus changes). Check the monitor links periodically. When a "Ready when" criterion is met, act on the associated "Impact" item.
 
@@ -15,7 +15,7 @@ These five items are blocked on external events (protocol adoption, npm releases
 | 2 | Programmable eCash (NUT-XX) | Protocol WIP | Unknown | Time-lock / escrow conditions |
 | 3 | ZK Reissuance (Cashu) | Research phase | Unknown | Privacy token reissuance |
 | 4 | CTV+CSFS soft-fork | Not activated | Unknown (years) | Ark non-interactive receive |
-| 5 | CDK Maturity (cdk-mintd) | ALPHA | 2026 H1–H2 | Migrate Nutshell → CDK |
+| 5 | CDK Maturity (cdk-mintd) | ALPHA | 2026 H1â€“H2 | Migrate Nutshell â†’ CDK |
 
 ---
 
@@ -66,7 +66,7 @@ npm install @arkade-os/sdk
 - Enable real escrow / time-lock / proof-of-service conditions for merchant payments
 - Unlock atomic L402 + eCash settlement flows
 
-**Estimated timeline:** Unknown — protocol-level design discussions are early-stage as of Feb 2026.
+**Estimated timeline:** Unknown â€” protocol-level design discussions are early-stage as of Feb 2026.
 
 **Action when ready:**
 ```
@@ -97,7 +97,7 @@ npm install @cashu/cashu-ts@<version>
 - Strengthens privacy story for `lib/privacy-defaults.ts` scoring (currently ZK reissuance score is 0)
 - Upgrade `lib/cashu-sdk.ts` ZK stub to real implementation
 
-**Estimated timeline:** Unknown — ZK proof support for Cashu is research-phase as of Feb 2026.
+**Estimated timeline:** Unknown â€” ZK proof support for Cashu is research-phase as of Feb 2026.
 
 ---
 
@@ -120,7 +120,7 @@ npm install @cashu/cashu-ts@<version>
 - Improves Ark VTXO liquidity and usability for ArxMint users
 - Reduces round-trip for Ark boarding transactions
 
-**Estimated timeline:** Unknown — Bitcoin soft-fork activation requires broad consensus. CTV has been proposed since 2020. No activation timeline is predictable.
+**Estimated timeline:** Unknown â€” Bitcoin soft-fork activation requires broad consensus. CTV has been proposed since 2020. No activation timeline is predictable.
 
 **Note:** This item requires no code changes until after activation. Monitor only.
 
@@ -131,8 +131,8 @@ npm install @cashu/cashu-ts@<version>
 **Current status:** The CDK (Cashu Development Kit) README contains an "ALPHA" warning. ArxMint's pilot deployment uses Nutshell as the production Cashu mint. CDK is preferred long-term for its active development and LDK Lightning backend.
 
 **Monitor:**
-- CDK GitHub README: https://github.com/cashubtc/cdk — watch for removal of "ALPHA" / "NOT PRODUCTION READY" warning
-- CDK GitHub releases: https://github.com/cashubtc/cdk/releases — watch for a `v1.0.0` or "stable" tag
+- CDK GitHub README: https://github.com/cashubtc/cdk â€” watch for removal of "ALPHA" / "NOT PRODUCTION READY" warning
+- CDK GitHub releases: https://github.com/cashubtc/cdk/releases â€” watch for a `v1.0.0` or "stable" tag
 - CDK changelog for breaking changes that would affect migration
 
 **Ready when:**
@@ -140,16 +140,16 @@ npm install @cashu/cashu-ts@<version>
 - A stable release is tagged (e.g., `v1.0.0`)
 
 **Impact on ArxMint:**
-- Migrate from Nutshell → CDK as the production Cashu mint
-- Follow the migration procedure documented in **`docs/MIGRATION_PLAN.md`** (two-mint Lightning swap procedure)
+- Migrate from Nutshell â†’ CDK as the production Cashu mint
+- Follow the migration procedure documented in **`docs/deployment/migration-docs/reference/archives/root/plan.md`** (two-mint Lightning swap procedure)
 - CDK provides better Lightning backends (LDK), more active maintenance, and a roadmap toward spending conditions
 
-**Estimated timeline:** 2026 H1–H2 based on CDK development cadence as of Feb 2026.
+**Estimated timeline:** 2026 H1â€“H2 based on CDK development cadence as of Feb 2026.
 
 **Action when ready:**
-1. Read `docs/MIGRATION_PLAN.md` fully before starting
+1. Read `docs/deployment/migration-docs/reference/archives/root/plan.md` fully before starting
 2. Run migration on testnet first
-3. Follow the two-mint Lightning swap procedure (drain Nutshell → fund CDK)
+3. Follow the two-mint Lightning swap procedure (drain Nutshell â†’ fund CDK)
 4. Update `docker-compose.yml` to replace `nutshell` service with `cdk-mintd`
 5. Update mint URL in ArxMint community configs
 

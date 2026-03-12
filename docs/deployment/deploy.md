@@ -1,4 +1,4 @@
-# ArxMint — Deployment Guide
+# ArxMint â€” Deployment Guide
 
 Deploy ArxMint to a VPS: from a fresh Ubuntu server to a running Bitcoin circular economy in under an hour.
 
@@ -45,7 +45,7 @@ Deploy ArxMint to a VPS: from a fresh Ubuntu server to a running Bitcoin circula
 | 443 | HTTPS (reverse proxy) |
 | 9735 | LND P2P |
 
-All other service ports (3000, 3338, 8080, etc.) should be kept private — traffic flows through the reverse proxy.
+All other service ports (3000, 3338, 8080, etc.) should be kept private â€” traffic flows through the reverse proxy.
 
 ---
 
@@ -103,19 +103,19 @@ nano .env
 **Required values to set:**
 
 ```bash
-# PostgreSQL — see Section 5 for setup
+# PostgreSQL â€” see Section 5 for setup
 DATABASE_URL="postgresql://arxmint:yourpassword@localhost:5432/arxmint"
 
 # Bitcoin network: bitcoin | testnet | signet | regtest
 BITCOIN_NETWORK=testnet
 
-# Cashu mint — matches the Docker service
+# Cashu mint â€” matches the Docker service
 CASHU_MINT_URL=http://localhost:3338
 
-# Aperture L402 proxy — matches the Docker service
+# Aperture L402 proxy â€” matches the Docker service
 APERTURE_URL=http://localhost:8081
 
-# Cashu mint private key — CHANGE THIS for production (64 hex chars)
+# Cashu mint private key â€” CHANGE THIS for production (64 hex chars)
 # The default in docker-compose is a placeholder; override it here:
 CASHU_PRIVATE_KEY=your64hexcharsprivatekey
 
@@ -149,7 +149,7 @@ FEDIMINT_INVITE_CODE=fed11...
 GLASSNODE_API_KEY=
 ```
 
-> **Security note:** Never commit `.env` to version control. Keep `SKIP_PAYMENT_VERIFY` empty in production — setting it to `true` disables the paywall entirely.
+> **Security note:** Never commit `.env` to version control. Keep `SKIP_PAYMENT_VERIFY` empty in production â€” setting it to `true` disables the paywall entirely.
 >
 > **CSP note:** `CSP_REPORT_ONLY=true` enables strict CSP telemetry at `/api/csp-report` without breaking runtime behavior. Keep this enabled unless you are performing an emergency rollback.
 
@@ -224,7 +224,7 @@ npm run setup:full
 
 ### Option B: Cashu-only (lighter weight, no Fedimint)
 
-Starts just LND + Cashu mint — faster setup for development or communities that don't need Fedimint:
+Starts just LND + Cashu mint â€” faster setup for development or communities that don't need Fedimint:
 
 ```bash
 npm run setup:cashu
@@ -276,7 +276,7 @@ docker exec -it sf-lnd lncli --network=testnet create
 Follow the prompts:
 1. Enter a wallet password (you'll need this to unlock LND on each restart)
 2. Choose **n** when asked if you have an existing seed
-3. **SAVE THE 24-WORD SEED PHRASE SECURELY** — write it down and store it offline
+3. **SAVE THE 24-WORD SEED PHRASE SECURELY** â€” write it down and store it offline
 
 For the Cashu-only stack (`sf-lnd-lite`):
 ```bash
@@ -293,7 +293,7 @@ CONTAINER=sf-lnd-lite  # or sf-lnd for full stack
 # 1. Generate seed
 docker exec $CONTAINER sh -c \
   "curl -s --cacert /root/.lnd/tls.cert https://localhost:8080/v1/genseed"
-# → Save the cipher_seed_mnemonic array (24 words)
+# â†’ Save the cipher_seed_mnemonic array (24 words)
 
 # 2. Init wallet (use Python on the host to avoid shell quoting issues)
 python3 -c "
@@ -308,7 +308,7 @@ mnemonic = seed['cipher_seed_mnemonic']
 for i, w in enumerate(mnemonic):
     print(f'  {i+1:2d}. {w}')
 
-# Base64-encode your wallet password (e.g. 'mypassword' → 'bXlwYXNzd29yZA==')
+# Base64-encode your wallet password (e.g. 'mypassword' â†’ 'bXlwYXNzd29yZA==')
 import base64
 password_b64 = base64.b64encode(b'mypassword').decode()
 
@@ -331,8 +331,8 @@ print('Result:', result.decode())
 
 When deploying to a NUC or mini PC (Beelink, Intel NUC, Orange Pi):
 
-- LND neutrino sync takes **2–4 hours** on first start (downloading testnet headers)
-- Cashu mint will restart-loop until LND is fully synced — this is expected behavior
+- LND neutrino sync takes **2â€“4 hours** on first start (downloading testnet headers)
+- Cashu mint will restart-loop until LND is fully synced â€” this is expected behavior
 - Check sync progress: `docker exec sf-lnd-lite lncli --network=testnet getinfo | grep synced`
 - Once `synced_to_chain: true`, Cashu connects automatically
 - For Starlink/CGNAT: use Cloudflare Tunnel (outbound-only, no port forwarding needed)
@@ -341,7 +341,7 @@ When deploying to a NUC or mini PC (Beelink, Intel NUC, Orange Pi):
 
 ## 8. Domain and SSL
 
-Use [Caddy](https://caddyserver.com/) as a reverse proxy — it handles TLS automatically via Let's Encrypt.
+Use [Caddy](https://caddyserver.com/) as a reverse proxy â€” it handles TLS automatically via Let's Encrypt.
 
 ### Install Caddy
 
@@ -384,7 +384,7 @@ Caddy automatically provisions and renews TLS certificates. Your site will be li
 
 ### Testnet (default)
 
-No configuration needed — the default `docker-compose.yml` runs LND on testnet with neutrino.
+No configuration needed â€” the default `docker-compose.yml` runs LND on testnet with neutrino.
 
 Set in `.env`:
 ```bash
@@ -433,13 +433,13 @@ command: >
 Also update in `.env`:
 ```bash
 BITCOIN_NETWORK=bitcoin
-SKIP_PAYMENT_VERIFY=   # empty — never skip on mainnet
+SKIP_PAYMENT_VERIFY=   # empty â€” never skip on mainnet
 CASHU_PRIVATE_KEY=<strong-random-64-hex-chars>
 ```
 
 > **Warning:** On mainnet, the `CASHU_PRIVATE_KEY` controls all mint keys. Use a cryptographically random value and back it up securely. Loss of this key means loss of the ability to redeem proofs.
 
-The Cashu mint's `testnet` vs mainnet macaroon path also changes — update `MINT_LND_REST_MACAROON` in the `cashu-mint` service:
+The Cashu mint's `testnet` vs mainnet macaroon path also changes â€” update `MINT_LND_REST_MACAROON` in the `cashu-mint` service:
 ```yaml
 # testnet:
 - MINT_LND_REST_MACAROON=/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon
@@ -459,7 +459,7 @@ Prometheus and Grafana are included in the full stack.
 http://localhost:3001   (or https://grafana.yourdomain.com if configured)
 ```
 
-Log in with `admin` and the `GRAFANA_PASSWORD` you set in `.env` (required — there is no default).
+Log in with `admin` and the `GRAFANA_PASSWORD` you set in `.env` (required â€” there is no default).
 
 The ArxMint dashboard is pre-provisioned at `docker/grafana/dashboards/arxmint.yaml`.
 
@@ -534,7 +534,7 @@ npm run test:e2e:required
 
 ### LND won't start / stays unhealthy
 
-LND takes 60–120 seconds to sync neutrino headers on first start. Check logs:
+LND takes 60â€“120 seconds to sync neutrino headers on first start. Check logs:
 
 ```bash
 docker compose logs -f lnd
@@ -562,7 +562,7 @@ docker compose restart cashu-mint
 # Check the database is reachable
 npx prisma db pull
 
-# Reset and re-run migrations (destructive — dev only)
+# Reset and re-run migrations (destructive â€” dev only)
 npx prisma migrate reset
 
 # Production: deploy only
@@ -650,11 +650,11 @@ PITR_WAL_RETENTION_DAYS=7 \
   ./scripts/prune_postgres_wal_archive.sh /var/lib/docker/volumes/arxmint_postgres-wal-archive/_data
 ```
 
-For full procedure and validation steps, see `docs/PITR_RUNBOOK.md`.
+For full procedure and validation steps, see `docs/operations/pitr-runbook.md`.
 
 ### LND channel.backup watcher (continuous)
 
-The `channel.backup` file must be copied every time LND channels change — losing it means losing all Lightning channels.
+The `channel.backup` file must be copied every time LND channels change â€” losing it means losing all Lightning channels.
 
 ```bash
 # Make executable
@@ -674,14 +674,14 @@ Uses `inotifywait` (inotify-tools) when available for efficient event-driven wat
 
 ## 13. Umbrel + Start9 (StartOS) Deployment
 
-ArxMint ships packaging manifests for both [Umbrel](https://umbrel.com) and [Start9 (StartOS)](https://start9.com) — the two dominant self-hosted Bitcoin node platforms.
+ArxMint ships packaging manifests for both [Umbrel](https://umbrel.com) and [Start9 (StartOS)](https://start9.com) â€” the two dominant self-hosted Bitcoin node platforms.
 
 ### Umbrel
 
 **Prerequisites:** Umbrel OS with the LND app installed and synced.
 
 1. Add the ArxMint community app store URL to Umbrel:
-   - In the Umbrel dashboard → App Store → Community App Stores
+   - In the Umbrel dashboard â†’ App Store â†’ Community App Stores
    - Enter: `https://github.com/Traviseric/arxmint-umbrel-app`
 2. Find ArxMint in the app store and click **Install**.
 3. Umbrel will pull `umbrel/docker-compose.yml` and start the services.
@@ -708,7 +708,7 @@ The Umbrel compose file uses the `umbrel_main_network` shared network so ArxMint
    make build          # builds docker.io/arxmint/arxmint:0.5.0
    make push           # pushes to Docker Hub (set REGISTRY env var for custom registry)
    ```
-2. Install via the Start9 dashboard → Marketplace → Sideload:
+2. Install via the Start9 dashboard â†’ Marketplace â†’ Sideload:
    - Upload `start9/manifest.toml`
    - Start9 will pull the image defined in `[containers.main]`
 3. Configure environment variables in the Start9 UI (LND macaroon path, Cashu private key).

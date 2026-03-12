@@ -1,4 +1,4 @@
-# ArxMint — Pilot Trust Statement
+# ArxMint â€” Pilot Trust Statement
 
 **Version:** 1.0
 **Applies to:** Longmont, CO pilot deployment
@@ -8,11 +8,11 @@
 
 ## 1. What This Is
 
-The Longmont pilot is an engineering proof-of-concept. Its purpose is to demonstrate that a Bitcoin circular economy — merchants accepting ecash payments, users transacting privately, and AI agents accessing commerce rails via L402 — works end-to-end in a real community.
+The Longmont pilot is an engineering proof-of-concept. Its purpose is to demonstrate that a Bitcoin circular economy â€” merchants accepting ecash payments, users transacting privately, and AI agents accessing commerce rails via L402 â€” works end-to-end in a real community.
 
 To keep operations simple during this phase, all three Fedimint guardians run on a single VPS. This was a deliberate choice: get the circular economy working first, then distribute the trust before accepting real savings.
 
-The pilot runs for six months, targeting 30 merchants and 300 monthly active spenders. Full KPI targets are documented in [`docs/PILOT_KPIS.md`](./PILOT_KPIS.md).
+The pilot runs for six months, targeting 30 merchants and 300 monthly active spenders. Full KPI targets are documented in [`docs/operations/pilot-kpis.md`](./pilot-kpis.md).
 
 ---
 
@@ -20,7 +20,7 @@ The pilot runs for six months, targeting 30 merchants and 300 monthly active spe
 
 **Three guardians on one machine is not a trust-distributed federation.**
 
-Fedimint's security model requires that guardian keys are held by independent operators in separate locations. That's not what the pilot does. All three guardian private keys live on the same server. A single server compromise — OS exploit, supply chain attack, malicious host — could expose all three keys simultaneously.
+Fedimint's security model requires that guardian keys are held by independent operators in separate locations. That's not what the pilot does. All three guardian private keys live on the same server. A single server compromise â€” OS exploit, supply chain attack, malicious host â€” could expose all three keys simultaneously.
 
 In plain terms: **the pilot is effectively custodial at the infrastructure level.** It is not meaningfully different from a single-operator mint for the purpose of trust. ArxMint is the operator. You are trusting ArxMint to not lose, steal, or have compromised the server.
 
@@ -74,36 +74,36 @@ When you're ready for higher-value custody, use a fully-distributed Fedimint fed
 
 The transition from custodial pilot to a real trust-distributed federation happens in a defined sequence tied to KPI milestones. We do not accept mainnet funds until this is done.
 
-### Stage 1 — Pilot Phase (months 1–6)
+### Stage 1 â€” Pilot Phase (months 1â€“6)
 
 All three guardians run on the ArxMint-operated VPS. Value caps enforced. This document in effect.
 
-**Exit criteria:** All Longmont pilot KPIs met as defined in [`docs/PILOT_KPIS.md`](./PILOT_KPIS.md):
+**Exit criteria:** All Longmont pilot KPIs met as defined in [`docs/operations/pilot-kpis.md`](./pilot-kpis.md):
 - 30 merchants onboarded
 - 300 monthly active spenders
 - 98%+ payment success rate
 - 99.5%+ federation uptime
 - 2+ spend events per user per month
 
-### Stage 2 — Guardian Recruitment (month 6–7)
+### Stage 2 â€” Guardian Recruitment (month 6â€“7)
 
 Once KPI targets are met, recruit three independent guardian operators:
 - Distinct individuals or organizations (not ArxMint employees)
 - Geographically separated (different cities or regions)
-- Each operator runs their own hardware — no shared VPS
+- Each operator runs their own hardware â€” no shared VPS
 - Each operator signs the guardian governance document and commits to the quorum rules
 
-### Stage 3 — Key Ceremony (month 7–8)
+### Stage 3 â€” Key Ceremony (month 7â€“8)
 
 A distributed key generation (DKG) ceremony is performed with all three independent operators present (in person or via verifiable remote protocol). The new guardian keys are generated and held by the independent operators. ArxMint does not retain copies.
 
 After the key ceremony:
 - The pilot federation is decommissioned
 - The new distributed federation is stood up
-- Funds are migrated via Lightning (melt from pilot → mint into new federation)
+- Funds are migrated via Lightning (melt from pilot â†’ mint into new federation)
 - This trust statement is updated to reflect the new guardian setup
 
-### Stage 4 — Mainnet Acceptance
+### Stage 4 â€” Mainnet Acceptance
 
 After the key ceremony and successful federation stand-up, value caps are evaluated for removal. Only at this point is the system appropriate for meaningful savings or business treasury.
 
@@ -113,7 +113,7 @@ After the key ceremony and successful federation stand-up, value caps are evalua
 
 ## 7. Responsible Disclosure
 
-If you find a security issue in the ArxMint pilot — a bug in the mint, a vulnerability in the L402 rails, a problem with the federation config, or anything else that could affect user funds — report it directly.
+If you find a security issue in the ArxMint pilot â€” a bug in the mint, a vulnerability in the L402 rails, a problem with the federation config, or anything else that could affect user funds â€” report it directly.
 
 **Security contact:** Open an issue on the ArxMint GitHub repository marked `[SECURITY]`, or contact the ArxMint team directly via the community support channel. Do not post vulnerability details publicly until we've had a chance to patch and communicate to users.
 
@@ -122,8 +122,8 @@ We commit to:
 - Keeping you updated on remediation progress
 - Crediting you in the disclosure if you want credit
 
-If a security incident does occur during the pilot that affects user funds, we will communicate it publicly to all affected users within 24 hours of confirmation, including what happened, what was affected, and what we're doing about it. See [`docs/INCIDENT_RESPONSE.md`](./INCIDENT_RESPONSE.md) for our full incident response runbook.
+If a security incident does occur during the pilot that affects user funds, we will communicate it publicly to all affected users within 24 hours of confirmation, including what happened, what was affected, and what we're doing about it. See [`docs/operations/incident-response.md`](./incident-response.md) for our full incident response runbook.
 
 ---
 
-*This document is part of ArxMint's commitment to honest disclosure. The pilot is valuable precisely because it's honest about what it is. We're building the infrastructure to earn trust — not claiming trust we haven't earned yet.*
+*This document is part of ArxMint's commitment to honest disclosure. The pilot is valuable precisely because it's honest about what it is. We're building the infrastructure to earn trust â€” not claiming trust we haven't earned yet.*

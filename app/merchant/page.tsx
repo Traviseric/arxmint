@@ -319,7 +319,7 @@ function DisasterRecoveryCard() {
           {checking ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldAlert className="w-3 h-3" />}
           Run restore check
         </button>
-        <a href="/docs/RESTORE.md" target="_blank" rel="noreferrer" className="text-xs text-btc-orange hover:underline">
+        <a href="/docs/deployment/restore.md" target="_blank" rel="noreferrer" className="text-xs text-btc-orange hover:underline">
           Recovery guide
         </a>
       </div>

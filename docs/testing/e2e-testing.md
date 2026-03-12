@@ -1,10 +1,10 @@
 # ArxMint — End-to-End Testing Strategy
 
 **Version:** 1.0 — February 28, 2026
-**Status:** Strategy document. Overnight agents implement the test files.
+**Status:** Strategy document. Agents implement the test files from the active task queue.
 **Test runner:** Node.js built-in `node:test` with `--experimental-strip-types` (same as existing tests)
 **Docker stacks:** `docker compose up -d` (full stack), `npm run setup:cashu` (cashu-only)
-**Depends on:** `OVERNIGHT_TASKS.md` P0 tasks (database, vault, auth) landing first
+**Depends on:** `AGENT_TASKS.md` critical and P1 foundation/security work landing first
 
 ---
 

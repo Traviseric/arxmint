@@ -1,6 +1,6 @@
 # ArxMint — Deep Research Prompts
 
-Research prompts to lock in deployment and infrastructure decisions before overnight agents start building. Run these through Claude deep research or similar — each should produce a concrete recommendation with tradeoffs.
+Research prompts to lock in deployment and infrastructure decisions before implementation agents start building. Run these through Claude deep research or similar — each should produce a concrete recommendation with tradeoffs.
 
 ---
 
@@ -282,6 +282,6 @@ Deliver: A prioritized list of 3-5 grants to apply to, with recommended timing (
 Each prompt is designed for Claude deep research mode or similar long-context research tools. They should produce:
 - A concrete recommendation (not "it depends")
 - Tradeoffs acknowledged but a clear winner identified
-- Actionable next steps that can become overnight tasks
+- Actionable next steps that can become agent tasks
 
-After running, update `human_tasks.md` with the decisions and add any new implementation tasks to `OVERNIGHT_TASKS.md`.
+After running, update the appropriate human decision log and add any new implementation tasks to `AGENT_TASKS.md`.

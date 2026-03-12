@@ -6,12 +6,12 @@
 
 1. Every externally sourced claim that drives roadmap priority must include at least one direct source URL.
 2. Inference must be labeled explicitly as inference, not fact.
-3. Placeholder citation tokens (for example `cite...`) are not acceptable in canonical planning docs.
+3. Placeholder citation tokens (for example `îˆ€cite...`) are not acceptable in canonical planning docs.
 4. If a source is time-sensitive (release status, protocol change), include an explicit date.
 
 ## Quality Gate
 
-A research finding should not be marked `P0` or `P1` in `docs/research-crossref.md` unless:
+A research finding should not be marked `P0` or `P1` in `docs/research/research-crossref.md` unless:
 
 - The claim is traceable to a URL in the originating research document, and
 - The source can be opened independently by another reviewer.

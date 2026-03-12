@@ -2,7 +2,7 @@
 
 **Version:** 0.1  
 **Date:** March 6, 2026  
-**Purpose:** Define how `docs/roadmap.md` should be upgraded from a mostly sequential roadmap into a canonical execution system for a parallel agent team.
+**Purpose:** Define how `docs/core/roadmap.md` should be upgraded from a mostly sequential roadmap into a canonical execution system for a parallel agent team.
 
 ---
 
@@ -21,7 +21,7 @@ This document is the planning/spec for that upgrade.
 
 ---
 
-## 2. Why Upgrade `docs/roadmap.md`
+## 2. Why Upgrade `docs/core/roadmap.md`
 
 The current roadmap is strong as a product and architecture narrative, but it is still optimized for human reading more than coordinated execution.
 
@@ -50,7 +50,7 @@ The upgrade should solve those gaps without losing the clarity of the current ph
 
 ### 3.1 Canonical, Not Conversational
 
-`docs/roadmap.md` should be the authoritative reference for what ArxMint is building, what is in progress, and what counts as done. It should not read like brainstorming notes.
+`docs/core/roadmap.md` should be the authoritative reference for what ArxMint is building, what is in progress, and what counts as done. It should not read like brainstorming notes.
 
 ### 3.2 Parallel by Default
 
@@ -100,7 +100,7 @@ Release engineering, trust docs, support, audit prep, docs, and observability ar
 
 ### 3.10 Public and Internal Views Must Reconcile
 
-The website roadmap, `docs/roadmap.md`, and any internal epic docs must use the same IDs, names, and status meanings.
+The website roadmap, `docs/core/roadmap.md`, and any internal epic docs must use the same IDs, names, and status meanings.
 
 ---
 
@@ -150,7 +150,7 @@ This is the auditability layer:
 
 ---
 
-## 5. Recommended Structure for the New `docs/roadmap.md`
+## 5. Recommended Structure for the New `docs/core/roadmap.md`
 
 Rewrite the roadmap into this general structure:
 
@@ -604,13 +604,13 @@ If an item has no defined gate, no dependency information, and no clear reason t
 
 ---
 
-## 14. How to Upgrade `docs/roadmap.md`
+## 14. How to Upgrade `docs/core/roadmap.md`
 
 Use this order of operations.
 
 ### Step 1: Freeze the Roadmap Role
 
-Decide that `docs/roadmap.md` is the canonical execution registry.
+Decide that `docs/core/roadmap.md` is the canonical execution registry.
 
 Decide that detailed tasking lives elsewhere.
 
@@ -667,7 +667,7 @@ The app page should reflect the same IDs, names, and statuses, but with compress
 
 To make this system usable by an agent team, create:
 
-- `docs/roadmap.md`
+- `docs/core/roadmap.md`
   - canonical roadmap registry
 - `docs/roadmap/README.md`
   - how to use the roadmap system
@@ -734,7 +734,7 @@ If the rewritten roadmap does not answer those six questions, it is not yet read
 
 The next concrete work should be:
 
-1. Rewrite `docs/roadmap.md` using this spec.
+1. Rewrite `docs/core/roadmap.md` using this spec.
 2. Create `docs/roadmap/` support docs for gates and status semantics.
 3. Create the first batch of epic docs for the new enterprise-polish work.
 4. Sync `app/roadmap/page.tsx` to the new status model and epic set.

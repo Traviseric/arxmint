@@ -1,7 +1,7 @@
-# ArxMint — Incident Response Runbook
+# ArxMint â€” Incident Response Runbook
 
 **Version:** 1.0 | **Environment:** Production (Longmont pilot)
-**Docker stack:** `docker-compose.yml` — services: `lnd`, `cashu-mint`, `fedimintd-{0,1,2}`, `postgres`, `web`, `caddy`
+**Docker stack:** `docker-compose.yml` â€” services: `lnd`, `cashu-mint`, `fedimintd-{0,1,2}`, `postgres`, `web`, `caddy`
 
 ---
 
@@ -9,14 +9,14 @@
 
 | Symptom | Scenario | Jump to |
 |---------|----------|---------|
-| Payments failing, no LND logs | LND down | [§1](#1-lnd-goes-down) |
-| Mint 502 / ecash not minting | Mint down | [§2](#2-mint-stops-responding) |
-| Fedimint wallet disconnected | Federation quorum | [§3](#3-federation-loses-quorum) |
-| Backup emails stopped | Backup failure | [§4](#4-backup-fails) |
-| Container logs stop / OOM | Disk/memory full | [§5](#5-disk-fills-up) |
-| Payment success rate drops | Payment routing | [§6](#6-payment-success-rate-drops) |
-| Suspected exploit / mint compromise | Emergency freeze | [§7](#7-emergency-freeze-the-mint) |
-| Secret or credential exposed | Secret compromise | [§12](#12-secret-compromise-credential-rotation) |
+| Payments failing, no LND logs | LND down | [Â§1](#1-lnd-goes-down) |
+| Mint 502 / ecash not minting | Mint down | [Â§2](#2-mint-stops-responding) |
+| Fedimint wallet disconnected | Federation quorum | [Â§3](#3-federation-loses-quorum) |
+| Backup emails stopped | Backup failure | [Â§4](#4-backup-fails) |
+| Container logs stop / OOM | Disk/memory full | [Â§5](#5-disk-fills-up) |
+| Payment success rate drops | Payment routing | [Â§6](#6-payment-success-rate-drops) |
+| Suspected exploit / mint compromise | Emergency freeze | [Â§7](#7-emergency-freeze-the-mint) |
+| Secret or credential exposed | Secret compromise | [Â§12](#12-secret-compromise-credential-rotation) |
 
 ---
 
@@ -80,7 +80,7 @@ docker compose restart cashu-mint
 # 4. Check Postgres connection from mint container
 docker exec sf-cashu wget -qO- http://localhost:3338/v1/info
 
-# 5. If Postgres is the issue, check DB first (see §DB below)
+# 5. If Postgres is the issue, check DB first (see Â§DB below)
 docker compose ps postgres
 docker compose logs --tail=50 postgres
 ```
@@ -91,7 +91,7 @@ curl -s http://localhost:3338/v1/info | jq '.name'
 # Should return mint name string, not connection error
 ```
 
-**Existing proofs remain valid** even when the mint is down — users' ecash tokens are still verifiable via `/v1/checkstate` once the mint is back up.
+**Existing proofs remain valid** even when the mint is down â€” users' ecash tokens are still verifiable via `/v1/checkstate` once the mint is back up.
 
 ---
 
@@ -117,9 +117,9 @@ docker compose logs -f fedimintd-0
 # Look for: "consensus started" or "Connected to guardian"
 ```
 
-**Multi-host federation:** Requires coordination with all guardian operators. Quorum = 3/4 guardians online. Contact all operators before attempting recovery. Out of scope for single-host pilot — escalate to primary operator immediately.
+**Multi-host federation:** Requires coordination with all guardian operators. Quorum = 3/4 guardians online. Contact all operators before attempting recovery. Out of scope for single-host pilot â€” escalate to primary operator immediately.
 
-**Note:** Guardian data is in named Docker volumes (`guardian-{0,1,2}-data`). Never delete these volumes — federation state is unrecoverable.
+**Note:** Guardian data is in named Docker volumes (`guardian-{0,1,2}-data`). Never delete these volumes â€” federation state is unrecoverable.
 
 ---
 
@@ -170,7 +170,7 @@ gunzip -c /backups/backup_TIMESTAMP.sql.gz \
   "2026-03-02 18:30:00+00"
 ```
 
-See `docs/PITR_RUNBOOK.md` for full procedure and validation.
+See `docs/operations/pitr-runbook.md` for full procedure and validation.
 
 ---
 
@@ -183,13 +183,13 @@ See `docs/PITR_RUNBOOK.md` for full procedure and validation.
 df -h
 docker system df
 
-# 2. Clean unused Docker images (safe — only removes untagged/unreferenced)
+# 2. Clean unused Docker images (safe â€” only removes untagged/unreferenced)
 docker image prune -a
 
 # 3. Clean stopped containers
 docker container prune
 
-# 4. Remove old backups (keep last 7 days — matches backup script policy)
+# 4. Remove old backups (keep last 7 days â€” matches backup script policy)
 find /backups -name "*.sql.gz" -mtime +7 -delete
 
 # 5. Check for large log files
@@ -228,7 +228,7 @@ docker exec sf-lnd lncli --network=testnet listchannels \
 # 4. Check if rate limiter is blocking legitimate traffic
 docker compose logs --tail=100 web | grep "rate limit"
 
-# 5. If LND routing issue — adjust channel policy
+# 5. If LND routing issue â€” adjust channel policy
 docker exec sf-lnd lncli --network=testnet updatechanpolicy \
   --base_fee_msat 1000 --fee_rate 0.000001 --time_lock_delta 40
 
@@ -252,7 +252,7 @@ curl -s http://localhost:3000/api/health | jq .
 # STEP 1: Stop accepting new deposits immediately
 docker compose stop cashu-mint
 
-# STEP 2: Preserve evidence — snapshot DB before any changes
+# STEP 2: Preserve evidence â€” snapshot DB before any changes
 docker exec sf-postgres pg_dump -U arxmint arxmint \
   | gzip > /backups/incident_$(date +%s).sql.gz
 
@@ -264,14 +264,14 @@ docker exec sf-postgres psql -U arxmint -d arxmint \
   -c "SELECT COUNT(*) FROM \"Transaction\" WHERE type='receive';"
 
 # STEP 5: Notify users
-# Post to pilot communication channel / contact list (see §10)
+# Post to pilot communication channel / contact list (see Â§10)
 
 # STEP 6: Investigate logs before restarting
 docker compose logs cashu-mint > /tmp/mint_incident_$(date +%s).log
 docker compose logs web > /tmp/web_incident_$(date +%s).log
 ```
 
-**Note:** Existing ecash proofs in users' wallets remain cryptographically valid. When the mint restarts, users can verify proof states via `/v1/checkstate`. Do NOT delete the Postgres volume — proof state is in the database.
+**Note:** Existing ecash proofs in users' wallets remain cryptographically valid. When the mint restarts, users can verify proof states via `/v1/checkstate`. Do NOT delete the Postgres volume â€” proof state is in the database.
 
 **Restart procedure after investigation:**
 ```bash
@@ -288,18 +288,18 @@ curl -s http://localhost:3000/api/health | jq .
 **Configure Grafana notification channel before pilot launch:**
 
 1. Open Grafana at `https://grafana.YOUR_DOMAIN`
-2. Navigate to **Alerting → Contact points → New contact point**
-3. Select **Email** — add pilot operator email addresses
-4. Navigate to **Alerting → Notification policies** — set default contact point
+2. Navigate to **Alerting â†’ Contact points â†’ New contact point**
+3. Select **Email** â€” add pilot operator email addresses
+4. Navigate to **Alerting â†’ Notification policies** â€” set default contact point
 
 **Pre-configured alerts to enable:**
 | Alert | Threshold | Action |
 |-------|-----------|--------|
-| Disk usage | > 70% | Check §5 |
+| Disk usage | > 70% | Check Â§5 |
 | Container restart | > 3 in 5 min | Check service logs |
-| LND sync | `synced_to_chain: false` > 5 min | Check §1 |
-| Web health | `/api/health` returns unhealthy | Check §2 or §6 |
-| Memory usage | > 85% | Check §5 |
+| LND sync | `synced_to_chain: false` > 5 min | Check Â§1 |
+| Web health | `/api/health` returns unhealthy | Check Â§2 or Â§6 |
+| Memory usage | > 85% | Check Â§5 |
 
 **Alert rules as code:** `docker/prometheus-alerts.yml`
 - Validate changes with `promtool check rules docker/prometheus-alerts.yml`
@@ -340,7 +340,7 @@ gunzip -c /backups/backup_PRE_MIGRATION.sql.gz \
 **Testnet vs mainnet differences:**
 - Testnet: `--bitcoin.testnet`, macaroon at `/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon`
 - Mainnet: `--bitcoin.mainnet`, macaroon at `/root/.lnd/data/chain/bitcoin/mainnet/admin.macaroon`
-- Mainnet requires real funds in LND wallet — do NOT restart carelessly
+- Mainnet requires real funds in LND wallet â€” do NOT restart carelessly
 
 ---
 
@@ -427,4 +427,4 @@ curl -s http://localhost:3000/api/health | jq .
 
 ---
 
-*Last updated: 2026-03-02 | Source: OVERNIGHT_TASKS.md ID 35*
+*Last updated: 2026-03-02 | Source: AGENT_TASKS.md hardening and operations follow-through*

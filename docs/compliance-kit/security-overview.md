@@ -15,32 +15,32 @@ ArxMint is a **self-hosted, split-plane payment infrastructure**. The merchant o
 
 ```
 Customer Browser
-      │
-      │ HTTPS (TLS 1.3)
-      ▼
-┌─────────────────────────────────────────────────┐
-│              Merchant Server (self-hosted)       │
-│                                                  │
-│  ┌──────────┐    ┌──────────┐   ┌────────────┐  │
-│  │  Caddy   │    │ ArxMint  │   │    LND     │  │
-│  │ (TLS     │───▶│ (Next.js │──▶│ (Lightning │  │
-│  │ termina- │    │  app)    │   │  node)     │  │
-│  │ tion)    │    └──────────┘   └─────┬──────┘  │
-│  └──────────┘          │             │          │
-│                        ▼             │          │
-│                  ┌──────────┐        │          │
-│                  │ Cashu /  │        │          │
-│                  │Fedimint  │◀───────┘          │
-│                  │  Mint    │                   │
-│                  └──────────┘                   │
-│                                                  │
-│  ┌──────────┐    ┌──────────┐                   │
-│  │Prometheus│    │ Grafana  │ (admin only)       │
-│  └──────────┘    └──────────┘                   │
-└─────────────────────────────────────────────────┘
-      │
-      │ Lightning P2P (port 9735)
-      ▼
+      â”‚
+      â”‚ HTTPS (TLS 1.3)
+      â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚              Merchant Server (self-hosted)       â”‚
+â”‚                                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
+â”‚  â”‚  Caddy   â”‚    â”‚ ArxMint  â”‚   â”‚    LND     â”‚  â”‚
+â”‚  â”‚ (TLS     â”‚â”€â”€â”€â–¶â”‚ (Next.js â”‚â”€â”€â–¶â”‚ (Lightning â”‚  â”‚
+â”‚  â”‚ termina- â”‚    â”‚  app)    â”‚   â”‚  node)     â”‚  â”‚
+â”‚  â”‚ tion)    â”‚    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜  â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜          â”‚             â”‚          â”‚
+â”‚                        â–¼             â”‚          â”‚
+â”‚                  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”        â”‚          â”‚
+â”‚                  â”‚ Cashu /  â”‚        â”‚          â”‚
+â”‚                  â”‚Fedimint  â”‚â—€â”€â”€â”€â”€â”€â”€â”€â”˜          â”‚
+â”‚                  â”‚  Mint    â”‚                   â”‚
+â”‚                  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                   â”‚
+â”‚                                                  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                   â”‚
+â”‚  â”‚Prometheusâ”‚    â”‚ Grafana  â”‚ (admin only)       â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+      â”‚
+      â”‚ Lightning P2P (port 9735)
+      â–¼
 Bitcoin Lightning Network
 ```
 
@@ -90,7 +90,7 @@ Docker Compose uses an internal bridge network. Only Caddy binds to public ports
 
 ### Merchant Authentication: Nostr NIP-98
 
-ArxMint uses **Nostr NIP-98** for admin authentication — cryptographic key-based auth with no passwords.
+ArxMint uses **Nostr NIP-98** for admin authentication â€” cryptographic key-based auth with no passwords.
 
 **Token format:** HMAC-SHA256 signed session token
 ```
@@ -98,11 +98,11 @@ pubkey_hex.expiry_unix.hmac_sha256_sig
 ```
 
 **Properties:**
-- Self-verifying — no database lookup required
-- Stateless — no server-side session storage
+- Self-verifying â€” no database lookup required
+- Stateless â€” no server-side session storage
 - 7-day TTL with timing-safe comparison
 - Signed with `NEXTAUTH_SECRET` (operator-configured)
-- HttpOnly cookie — not accessible to JavaScript
+- HttpOnly cookie â€” not accessible to JavaScript
 
 ### API Key Authentication
 
@@ -114,7 +114,7 @@ Merchant API keys use prefixed formats for easy identification:
 | `arx_pub_` | Invoice creation only | Safe for client-side |
 | `arx_test_` | Testnet sandbox | Development only |
 
-Keys are stored as HMAC-SHA256 hashes — the plaintext key is shown only at creation time.
+Keys are stored as HMAC-SHA256 hashes â€” the plaintext key is shown only at creation time.
 
 ### Agent Authentication: L402 Macaroons
 
@@ -136,23 +136,23 @@ Macaroon caveats enforce capability bounds at the cryptographic level.
 ### Customer Payment Flow
 
 ```
-1. Customer opens checkout page → Caddy → ArxMint app
+1. Customer opens checkout page â†’ Caddy â†’ ArxMint app
    Data: No customer data at this point
 
-2. Customer chooses amount → ArxMint creates Lightning invoice
+2. Customer chooses amount â†’ ArxMint creates Lightning invoice
    Data: Amount in sats (no customer identity)
 
 3. LND generates invoice (BOLT11 string)
-   Data: Payment hash, amount, expiry — no customer PII
+   Data: Payment hash, amount, expiry â€” no customer PII
 
-4. Customer scans QR → pays with their Lightning wallet
+4. Customer scans QR â†’ pays with their Lightning wallet
    Data: Payment traverses Lightning Network (pseudonymous)
 
-5. LND detects payment → ArxMint marks session paid
+5. LND detects payment â†’ ArxMint marks session paid
    Data: Payment preimage stored locally (proves settlement)
 
 6. Webhook fires to merchant's fulfillment system
-   Data: sessionId, amountSats, paidAt — no customer PII
+   Data: sessionId, amountSats, paidAt â€” no customer PII
 ```
 
 **PII collected:** None by default. Optional email/shipping address collected only if merchant enables it, stored only on merchant's own server.
@@ -197,7 +197,7 @@ Self-hosted PostgreSQL (via Docker Compose) keeps all data on the merchant's own
 | Client-side ecash proofs | AES-256-GCM (browser IndexedDB vault) | User's browser |
 | PBKDF2 iterations | 600,000 (OWASP recommended) | Client-side |
 
-LND wallet encryption key is the **wallet unlock password** — set by the merchant operator and never transmitted to ArxMint.
+LND wallet encryption key is the **wallet unlock password** â€” set by the merchant operator and never transmitted to ArxMint.
 
 ### Data in Transit
 
@@ -213,17 +213,17 @@ LND wallet encryption key is the **wallet unlock password** — set by the merch
 
 | Component | Backup method | Criticality |
 |-----------|--------------|------------|
-| LND static channel backup (SCB) | Automated daily export | **Critical** — losing this risks channel funds |
-| LND wallet seed | Written down at setup (24 words) | **Critical** — recovery of on-chain funds |
-| Cashu mint database | Docker volume backup | High — losing this breaks ecash redemptions |
-| Fedimint guardian state | Per-guardian backup | High — needed for DKG participation |
+| LND static channel backup (SCB) | Automated daily export | **Critical** â€” losing this risks channel funds |
+| LND wallet seed | Written down at setup (24 words) | **Critical** â€” recovery of on-chain funds |
+| Cashu mint database | Docker volume backup | High â€” losing this breaks ecash redemptions |
+| Fedimint guardian state | Per-guardian backup | High â€” needed for DKG participation |
 | ArxMint database | Supabase point-in-time recovery or pg_dump | Medium |
 
 ### Recovery Procedures
 
-See [docs/RESTORE.md](../RESTORE.md) for step-by-step recovery procedures.
+See [docs/deployment/restore.md](../deployment/restore.md) for step-by-step recovery procedures.
 
-**RTO (Recovery Time Objective):** 2–4 hours for full stack recovery from backup
+**RTO (Recovery Time Objective):** 2â€“4 hours for full stack recovery from backup
 **RPO (Recovery Point Objective):** 24 hours (daily backup cadence)
 
 ### Encrypted Backup Engine

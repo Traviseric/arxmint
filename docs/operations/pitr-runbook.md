@@ -83,4 +83,4 @@ docker exec sf-postgres psql -U arxmint -d arxmint -c "SELECT COUNT(*) FROM \"Me
 
 - PITR depends on retained WAL files; do not prune WAL more aggressively than your RPO.
 - Keep base backups and WAL archives on encrypted off-host storage for production.
-- Use this runbook alongside `docs/DR_DRILL.md` for full-stack disaster recovery exercises.
+- Use this runbook alongside `docs/operations/dr-drill.md` for full-stack disaster recovery exercises.

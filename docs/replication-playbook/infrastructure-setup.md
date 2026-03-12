@@ -18,9 +18,9 @@ Deploy the ArxMint stack on your own server in four steps.
 
 ### Recommended VPS providers
 
-- **Hetzner** (EU/US) — best price/performance, ~€5/month for CX21
-- **DigitalOcean** — easy setup, $6/month Basic Droplet
-- **Vultr** — good global coverage, $6/month
+- **Hetzner** (EU/US) â€” best price/performance, ~â‚¬5/month for CX21
+- **DigitalOcean** â€” easy setup, $6/month Basic Droplet
+- **Vultr** â€” good global coverage, $6/month
 
 ### Firewall rules
 
@@ -30,11 +30,11 @@ Open these ports before deploying:
 # LND peer-to-peer
 ufw allow 9735/tcp
 
-# LND gRPC (internal only — do NOT expose publicly)
-# ufw allow 10009/tcp  ← KEEP CLOSED, Docker handles this internally
+# LND gRPC (internal only â€” do NOT expose publicly)
+# ufw allow 10009/tcp  â† KEEP CLOSED, Docker handles this internally
 
 # Cashu mint (internal only via Caddy proxy)
-# ufw allow 3338/tcp  ← KEEP CLOSED
+# ufw allow 3338/tcp  â† KEEP CLOSED
 
 # Prometheus (restrict to your IP if possible)
 ufw allow 9090/tcp
@@ -83,7 +83,7 @@ Use ArxMint's Community Generator to produce a `docker-compose.yml` tailored to 
 Fill in `.env` before starting:
 
 ```bash
-# .env — copy from .env.example and fill in all values
+# .env â€” copy from .env.example and fill in all values
 
 # Domain (required)
 DOMAIN=pay.yourcommunity.com
@@ -91,7 +91,7 @@ DOMAIN=pay.yourcommunity.com
 # Auth (generate with: openssl rand -hex 32)
 NEXTAUTH_SECRET=your_64_char_hex_secret
 
-# Supabase (optional — for hosted DB)
+# Supabase (optional â€” for hosted DB)
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=xxx
 
@@ -123,11 +123,11 @@ docker compose logs -f
 
 Services start in dependency order:
 
-1. **lnd** — Bitcoin Lightning node (neutrino light client, ~5 min to sync)
-2. **cdk-mint** — Cashu CDK mint (waits for LND ready)
-3. **prometheus** — Metrics collection (starts immediately)
-4. **grafana** — Dashboard UI (starts immediately)
-5. **caddy** — Reverse proxy + TLS (starts immediately)
+1. **lnd** â€” Bitcoin Lightning node (neutrino light client, ~5 min to sync)
+2. **cdk-mint** â€” Cashu CDK mint (waits for LND ready)
+3. **prometheus** â€” Metrics collection (starts immediately)
+4. **grafana** â€” Dashboard UI (starts immediately)
+5. **caddy** â€” Reverse proxy + TLS (starts immediately)
 
 ---
 
@@ -140,16 +140,16 @@ LND must be funded before it can receive payments.
 ```bash
 # Check sync status (repeat until synced_to_chain = true)
 docker exec lnd lncli --network=mainnet getinfo | grep synced
-# → "synced_to_chain": true
+# â†’ "synced_to_chain": true
 ```
 
-Neutrino sync takes approximately 5–15 minutes on first boot.
+Neutrino sync takes approximately 5â€“15 minutes on first boot.
 
 ### 4b. Get a deposit address
 
 ```bash
 docker exec lnd lncli --network=mainnet newaddress p2tr
-# → "address": "bc1p..."
+# â†’ "address": "bc1p..."
 ```
 
 Fund this address with at least 500K sats (ideally 2M+ for reliable routing).
@@ -182,9 +182,9 @@ docker exec lnd lncli --network=mainnet openchannel \
 
 If you need inbound liquidity immediately (to receive payments before channels balance):
 
-- **Amboss Magma** — https://amboss.space/magma (buy inbound channels)
-- **Lightning Lab's LSP** — available via LNC
-- **Swap services** — Loop Out (submarine swap) on Lightning Labs
+- **Amboss Magma** â€” https://amboss.space/magma (buy inbound channels)
+- **Lightning Lab's LSP** â€” available via LNC
+- **Swap services** â€” Loop Out (submarine swap) on Lightning Labs
 
 ---
 
@@ -214,7 +214,7 @@ Type  Name    Value
 A     pay     YOUR_SERVER_IP
 ```
 
-Allow 5–30 minutes for DNS propagation.
+Allow 5â€“30 minutes for DNS propagation.
 
 ---
 
@@ -225,19 +225,19 @@ Run these checks before onboarding merchants:
 ```bash
 # LND synced
 docker exec lnd lncli getinfo | grep synced_to_chain
-# → "synced_to_chain": true
+# â†’ "synced_to_chain": true
 
 # Cashu mint responding
 curl http://localhost:3338/v1/info
-# → {"name":"...","pubkey":"...","version":"CDK Mint ..."}
+# â†’ {"name":"...","pubkey":"...","version":"CDK Mint ..."}
 
 # Prometheus scraping
 curl http://localhost:9090/api/v1/targets | python3 -m json.tool | grep health
-# → "health": "up" for each target
+# â†’ "health": "up" for each target
 
 # ArxMint app
 curl https://pay.yourcommunity.com/api/health
-# → {"status":"ok"}
+# â†’ {"status":"ok"}
 
 # Grafana accessible
 # Open https://your-server-ip:3001 in browser
@@ -265,7 +265,7 @@ For **Fedimint**, see [Guardian Recruitment](./guardian-recruitment.md) for the 
 Set up automated backups before going live:
 
 ```bash
-# LND channel backups (critical — run daily)
+# LND channel backups (critical â€” run daily)
 docker exec lnd lncli exportchanbackup --all > /opt/arxmint/backups/lnd-backup-$(date +%Y%m%d).bin
 
 # Cashu mint database
@@ -276,4 +276,4 @@ docker exec cdk-mint \
 aws s3 cp /opt/arxmint/backups/ s3://your-bucket/arxmint-backups/ --recursive
 ```
 
-See [docs/DEPLOY.md](../DEPLOY.md) and [docs/RESTORE.md](../RESTORE.md) for full backup/restore procedures.
+See [docs/deployment/deploy.md](../deployment/deploy.md) and [docs/deployment/restore.md](../deployment/restore.md) for full backup/restore procedures.

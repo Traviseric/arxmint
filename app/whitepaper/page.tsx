@@ -56,7 +56,7 @@ export default function WhitepaperPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href="https://github.com/Traviseric/arxmint/blob/master/docs/whitepaper.md"
+                href="https://github.com/Traviseric/arxmint/blob/master/docs/reference/whitepaper.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="antigravity-btn !px-6 !py-3 !text-sm w-full sm:w-auto"

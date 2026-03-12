@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ArxMint One-Click Restore
 # Restores a full ArxMint stack from: LND seed phrase + backup files.
-# Idempotent — safe to run multiple times without data corruption.
+# Idempotent â€” safe to run multiple times without data corruption.
 #
 # Usage: ./scripts/restore.sh [--backup-dir /path/to/backup] [--compose-file path]
 #
@@ -34,7 +34,7 @@ log "Backup dir: $BACKUP_DIR"
 log "Compose file: $COMPOSE_FILE"
 echo ""
 
-# ── Step 1: Environment check ─────────────────────────────────────────────────
+# â”€â”€ Step 1: Environment check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 log "Step 1: Environment check"
 
 if ! command -v docker &>/dev/null; then
@@ -48,10 +48,10 @@ if ! docker info &>/dev/null; then
 fi
 
 if [ ! -f ".env.local" ] && [ -f ".env.example" ]; then
-  warn ".env.local not found — copying from .env.example"
+  warn ".env.local not found â€” copying from .env.example"
   cp .env.example .env.local
   echo ""
-  echo "  ⚠️  Edit .env.local and fill in your secrets before continuing."
+  echo "  âš ï¸  Edit .env.local and fill in your secrets before continuing."
   echo "  Then re-run this script."
   echo ""
   exit 1
@@ -64,7 +64,7 @@ fi
 
 log "Environment check passed."
 
-# ── Step 2: Start the stack (needed before wallet restore) ────────────────────
+# â”€â”€ Step 2: Start the stack (needed before wallet restore) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 log "Step 2: Starting Docker stack..."
 docker compose -f "$COMPOSE_FILE" up -d
 
@@ -78,7 +78,7 @@ for i in $(seq 1 30); do
   sleep 1
 done
 
-# ── Step 3: LND wallet restore ────────────────────────────────────────────────
+# â”€â”€ Step 3: LND wallet restore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 log "Step 3: LND wallet restore"
 log "You will need your 24-word aezeed seed phrase."
 log ""
@@ -95,7 +95,7 @@ if [[ "$RESTORE_WALLET" =~ ^[Yy]$ ]]; then
   log "Waiting for LND to sync and recover channels (this can take minutes)..."
 fi
 
-# ── Step 4: Cashu proof restore ───────────────────────────────────────────────
+# â”€â”€ Step 4: Cashu proof restore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 log "Step 4: Cashu proof restore"
 CASHU_BACKUP=$(ls -t "$BACKUP_DIR"/cashu-proofs-*.json 2>/dev/null | head -1 || true)
 
@@ -110,10 +110,10 @@ if [ -n "$CASHU_BACKUP" ]; then
     log "Cashu proofs imported."
   fi
 else
-  warn "No Cashu backup found in $BACKUP_DIR — skipping."
+  warn "No Cashu backup found in $BACKUP_DIR â€” skipping."
 fi
 
-# ── Step 5: Database restore ──────────────────────────────────────────────────
+# â”€â”€ Step 5: Database restore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 log "Step 5: Postgres database restore"
 PG_BACKUP=$(ls -t "$BACKUP_DIR"/postgres-*.sql.gz 2>/dev/null | head -1 || true)
 
@@ -129,10 +129,10 @@ if [ -n "$PG_BACKUP" ]; then
     log "Postgres restored."
   fi
 else
-  warn "No Postgres backup found in $BACKUP_DIR — skipping."
+  warn "No Postgres backup found in $BACKUP_DIR â€” skipping."
 fi
 
-# ── Step 6: Health verify ─────────────────────────────────────────────────────
+# â”€â”€ Step 6: Health verify â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 log "Step 6: Verifying stack health..."
 MAX_RETRIES=12
 RETRY=0
@@ -155,4 +155,4 @@ log "  1. Verify your Lightning balance: docker exec $LND_CONTAINER lncli wallet
 log "  2. Test a payment via the ArxMint web UI"
 log "  3. Check channel status: docker exec $LND_CONTAINER lncli listchannels"
 log ""
-log "See docs/RESTORE.md for manual steps if anything looks wrong."
+log "See docs/deployment/restore.md for manual steps if anything looks wrong."

@@ -1,4 +1,4 @@
-# Compliance FAQ — Merchant Procurement
+# Compliance FAQ â€” Merchant Procurement
 
 **Frequently asked questions from merchant legal, IT, and finance teams.**
 
@@ -10,7 +10,7 @@
 
 **Q1: Is accepting Bitcoin legal?**
 
-Yes, in the vast majority of jurisdictions. Bitcoin is legal to accept as payment in the United States, European Union, United Kingdom, Canada, Australia, Japan, and most other developed economies. In the US, the IRS treats Bitcoin as property (IRS Notice 2014-21). Accepting it as payment is treated similarly to barter — legal and subject to standard income tax rules.
+Yes, in the vast majority of jurisdictions. Bitcoin is legal to accept as payment in the United States, European Union, United Kingdom, Canada, Australia, Japan, and most other developed economies. In the US, the IRS treats Bitcoin as property (IRS Notice 2014-21). Accepting it as payment is treated similarly to barter â€” legal and subject to standard income tax rules.
 
 A small number of jurisdictions have restrictions or bans (e.g., China, some Central Asian countries). Verify local law with qualified counsel.
 
@@ -18,7 +18,7 @@ A small number of jurisdictions have restrictions or bans (e.g., China, some Cen
 
 **Q2: Do we need a money transmitter license (MTL) to accept Bitcoin?**
 
-No. A **merchant accepting Bitcoin as payment for goods or services** is not a money transmitter under US FinCEN guidance (FIN-2013-G001). The same principle applies in most other jurisdictions — EU MiCA explicitly excludes merchant payment acceptance from CASP (crypto-asset service provider) licensing requirements.
+No. A **merchant accepting Bitcoin as payment for goods or services** is not a money transmitter under US FinCEN guidance (FIN-2013-G001). The same principle applies in most other jurisdictions â€” EU MiCA explicitly excludes merchant payment acceptance from CASP (crypto-asset service provider) licensing requirements.
 
 Money transmitter/MSB rules apply to businesses that **transmit funds between third parties** (exchanges, remittance services, custodial wallets). Accepting payment from a customer for a product you sell is not money transmission.
 
@@ -28,7 +28,7 @@ Money transmitter/MSB rules apply to businesses that **transmit funds between th
 
 Generally no, for standard merchant payment acceptance. In the US, you do not need to register with FinCEN, SEC, CFTC, or any other financial regulator solely because you accept Bitcoin payments.
 
-If your business also operates a Cashu mint or Fedimint federation (holds Bitcoin on behalf of customers), that is a different legal question — consult counsel.
+If your business also operates a Cashu mint or Fedimint federation (holds Bitcoin on behalf of customers), that is a different legal question â€” consult counsel.
 
 ---
 
@@ -38,7 +38,7 @@ Bitcoin Lightning payments are **final and irreversible**. There are no chargeba
 
 This is a significant operational difference from card payments:
 - **For merchants:** Eliminates chargeback fraud and chargeback fees
-- **For dispute resolution:** Handle as you would a cash refund — at your discretion (store credit, manual refund in cash/card, or no refund per your policy)
+- **For dispute resolution:** Handle as you would a cash refund â€” at your discretion (store credit, manual refund in cash/card, or no refund per your policy)
 - **Consumer protection:** Customers should verify merchant legitimacy before paying, same as with cash
 
 ---
@@ -47,7 +47,7 @@ This is a significant operational difference from card payments:
 
 Standard **merchant AML/KYC requirements do not change** by accepting Bitcoin. If your business is not a money services business (MSB) before accepting Bitcoin, it remains not an MSB afterward.
 
-If your business is in a regulated AML sector (banking, financial services, law, real estate in some jurisdictions), consult your compliance team — those sector-specific AML rules may have crypto-specific guidance.
+If your business is in a regulated AML sector (banking, financial services, law, real estate in some jurisdictions), consult your compliance team â€” those sector-specific AML rules may have crypto-specific guidance.
 
 ArxMint does not perform AML/KYC on customers because no PII is collected in the payment flow.
 
@@ -55,14 +55,14 @@ ArxMint does not perform AML/KYC on customers because no PII is collected in the
 
 **Q6: What are our obligations under GDPR (EU)?**
 
-Minimal, by design. ArxMint's default payment flow collects **no personal data** from customers — only cryptographic payment hashes, which are pseudonymous identifiers.
+Minimal, by design. ArxMint's default payment flow collects **no personal data** from customers â€” only cryptographic payment hashes, which are pseudonymous identifiers.
 
 If you optionally collect email addresses or shipping information through the checkout, those are personal data under GDPR. You will need:
-- A lawful basis (typically "contract performance" — Article 6(1)(b))
+- A lawful basis (typically "contract performance" â€” Article 6(1)(b))
 - A privacy policy informing customers of the data you collect
 - Data retention limits appropriate to your purpose
 
-ArxMint the software company is not your data processor — you self-host the software and own the data collected.
+ArxMint the software company is not your data processor â€” you self-host the software and own the data collected.
 
 ---
 
@@ -91,11 +91,11 @@ Most accounting software (QuickBooks, Xero) has plugins for Bitcoin income track
 
 **Q9: What is our liability if the Lightning node goes down during a payment?**
 
-If your node is offline, customers will receive an error when attempting to pay. The invoice won't be presentable. This is analogous to your card terminal going offline — the customer cannot pay until the system is restored.
+If your node is offline, customers will receive an error when attempting to pay. The invoice won't be presentable. This is analogous to your card terminal going offline â€” the customer cannot pay until the system is restored.
 
 Best practice: provide a cash or card backup payment option. Monitor node uptime via the Grafana dashboard included in ArxMint.
 
-There is no financial liability to customers for a node being offline — no funds are held in escrow during an unpaid invoice.
+There is no financial liability to customers for a node being offline â€” no funds are held in escrow during an unpaid invoice.
 
 ---
 
@@ -103,7 +103,7 @@ There is no financial liability to customers for a node being offline — no fun
 
 Bitcoin custody insurance exists for large custodians. For self-hosted merchant nodes with typical payment volumes, standard business insurance (general liability, business interruption) applies to business operations. Losses from Lightning node failures or security incidents may be covered under cyber liability insurance depending on your policy.
 
-Check with your business insurance provider — coverage for digital assets is evolving rapidly.
+Check with your business insurance provider â€” coverage for digital assets is evolving rapidly.
 
 ---
 
@@ -111,7 +111,7 @@ Check with your business insurance provider — coverage for digital assets is e
 
 **Q11: Is customer financial data stored on ArxMint servers?**
 
-**No customer financial data** passes through ArxMint's servers. ArxMint is self-hosted software — your node is on your own server. The only thing ArxMint (the company) provides is the open-source software and optional cloud services (Supabase database for your own data).
+**No customer financial data** passes through ArxMint's servers. ArxMint is self-hosted software â€” your node is on your own server. The only thing ArxMint (the company) provides is the open-source software and optional cloud services (Supabase database for your own data).
 
 No card numbers, bank accounts, or personally identifiable payment information is ever stored. Lightning payment hashes (pseudonymous) are stored locally on your server only.
 
@@ -146,7 +146,7 @@ See the [Security Overview](./security-overview.md) for full cryptographic stand
 
 **Q14: What happens to our funds if ArxMint (the company) shuts down?**
 
-Nothing changes. Your funds are on your self-hosted Lightning node, in your custody, under your control. ArxMint is open-source software — it continues to function without any connection to ArxMint the company.
+Nothing changes. Your funds are on your self-hosted Lightning node, in your custody, under your control. ArxMint is open-source software â€” it continues to function without any connection to ArxMint the company.
 
 This is a core design principle: **the merchant data plane is fully independent of the ArxMint control plane**. You own your keys. You own your funds. No escrow, no counterparty risk.
 
@@ -156,7 +156,7 @@ This is a core design principle: **the merchant data plane is fully independent 
 
 Lightning payments are **pseudonymous** by design. A payment hash identifies a specific transaction but does not inherently reveal the sender's identity. Without additional information (IP address logs, graph analysis of the Lightning Network), sender identity cannot be reliably determined from the payment record alone.
 
-Ecash (Cashu/Fedimint) payments offer stronger privacy — the mint cannot link specific token issuance to specific redemptions (Chaumian blinding). This makes even off-chain payment graph analysis infeasible.
+Ecash (Cashu/Fedimint) payments offer stronger privacy â€” the mint cannot link specific token issuance to specific redemptions (Chaumian blinding). This makes even off-chain payment graph analysis infeasible.
 
 ArxMint does not collect IP addresses of payment senders or perform any customer identification.
 
@@ -170,12 +170,12 @@ Not currently. SOC 2 certification is planned for the enterprise phase (after th
 
 **Q17: What is the disaster recovery plan?**
 
-See [docs/DR_DRILL.md](../DR_DRILL.md) and [docs/RESTORE.md](../RESTORE.md) for detailed recovery procedures.
+See [docs/operations/dr-drill.md](../operations/dr-drill.md) and [docs/deployment/restore.md](../deployment/restore.md) for detailed recovery procedures.
 
 Summary:
-- **RTO:** 2–4 hours for full stack recovery from backup
+- **RTO:** 2â€“4 hours for full stack recovery from backup
 - **RPO:** 24 hours (daily automated backup cadence)
-- **LND SCB (Static Channel Backup):** Daily automated export — allows channel force-close and fund recovery if the node is lost entirely
+- **LND SCB (Static Channel Backup):** Daily automated export â€” allows channel force-close and fund recovery if the node is lost entirely
 - **On-chain recovery:** 24-word wallet seed (held by merchant) allows full on-chain fund recovery from any LND installation
 
 ---
@@ -184,7 +184,7 @@ Summary:
 
 **Q18: How do we handle refunds?**
 
-Bitcoin Lightning payments are final — there is no built-in refund mechanism (same as cash). Handle refunds through your existing refund policy:
+Bitcoin Lightning payments are final â€” there is no built-in refund mechanism (same as cash). Handle refunds through your existing refund policy:
 - Cash refund
 - Store credit
 - Refund via a separate Lightning payment (you initiate a new payment to the customer's wallet)
@@ -200,15 +200,15 @@ Best practice: update your refund policy to specify how Bitcoin purchases are ha
 - **Compliance review call:** Email to schedule a technical/compliance review call with the team
 - **Documentation:** docs.arxmint.com (developer documentation)
 
-Enterprise support SLAs are available — contact us to discuss.
+Enterprise support SLAs are available â€” contact us to discuss.
 
 ---
 
 **Q20: How do we get started?**
 
-1. **Apply** at [arxmint.com/merchants](https://arxmint.com/merchants) — takes 5 minutes
-2. **Approval** — typically within 48 business hours
-3. **Go live** — your hosted checkout page is active immediately upon approval, no technical setup required
-4. **Optional self-hosting** — deploy your own node with the [quickstart guide](../quickstart.md) for full sovereignty
+1. **Apply** at [arxmint.com/merchants](https://arxmint.com/merchants) â€” takes 5 minutes
+2. **Approval** â€” typically within 48 business hours
+3. **Go live** â€” your hosted checkout page is active immediately upon approval, no technical setup required
+4. **Optional self-hosting** â€” deploy your own node with the [quickstart guide](../quickstart.md) for full sovereignty
 
 Have more questions? Email [travis@arxmint.com](mailto:travis@arxmint.com) or request a compliance review call.
