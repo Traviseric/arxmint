@@ -12,7 +12,7 @@ default `C:/code/production-audit`. If it exists:
 
 ```bash
 cd $PRODUCTION_AUDIT_PATH
-python -m boxes.ai_features --project "C:/code/arxmint" --mode deep --output "C:/code/arxmint/.overnight/feature_audit_raw.json"
+python -m boxes.ai_features --project "C:/code/te-btc/arxmint" --mode deep --output "C:/code/te-btc/arxmint/.overnight/feature_audit_raw.json"
 ```
 
 If that fails (not installed, import error, missing deps), **do the audit yourself**:
@@ -28,7 +28,7 @@ Read the raw output JSON from Step 1 (or your own analysis).
 
 ## Step 3: Write orchestrator-format output
 
-Write this JSON to `C:/code/arxmint/.overnight/feature_audit_output.json`:
+Write this JSON to `C:/code/te-btc/arxmint/.overnight/feature_audit_output.json`:
 
 ```json
 {
@@ -65,5 +65,17 @@ Severity mapping:
 - **low**: Feature works but has no tests
 
 PROJECT: arxmint
-PATH: C:\code\arxmint
-RELAY DIR: C:\code\arxmint\.overnight
+PATH: C:\code\te-btc\arxmint
+RELAY DIR: C:\code\te-btc\arxmint\.overnight
+
+## Previous Feature Audit Results (from earlier this session)
+
+The following findings were already identified:
+- [MEDIUM] ?
+- [LOW] ?
+
+**Instructions:**
+1. Do NOT re-report these exact same findings — they are already tracked.
+2. Check if any of these were FIXED since the last audit (verify in the code).
+3. Focus your effort on finding NEW issues not listed above.
+4. If you find no new issues beyond what's listed, report findings_count: 0.

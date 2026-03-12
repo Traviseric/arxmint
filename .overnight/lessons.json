@@ -621,6 +621,28 @@
       "rejected_at": "2026-03-06T23:59:00Z"
     }
   ],
+  "newly_accepted_2026_03_09_round25": [
+    {
+      "source": "worker_001_suggestion_task_197",
+      "finding": "Zapier /api/webhooks subscription endpoint missing — packages/zapier/triggers/payment_received.js POSTs to /api/webhooks but no Next.js route handler exists",
+      "action": "ACCEPTED → task 199-P2 (create app/api/webhooks/route.ts with POST/DELETE/GET, merchant API key auth, Supabase-backed)",
+      "accepted_at": "2026-03-09T00:00:00Z"
+    }
+  ],
+  "git_deduped_2026_03_09_round27": [
+    {"task": "AGENT_TASKS.md checkbox update for 7 P1/P2 completed items", "action": "ACCEPTED → task 200-P3 (pure documentation, mark [x])"},
+    {"task": "P0 first real testnet payment on NUC", "reason": "HUMAN TASK — physical hardware access. Skipped."},
+    {"task": "P2 external security audit", "reason": "HUMAN TASK — vendor engagement + budget. Skipped."}
+  ],
+  "git_deduped_2026_03_09_round25": [
+    {"task": "Developer portal & social proof", "reason": "commit cb4b22c feat(192): developer portal & social proof", "deduped_at": "2026-03-09T00:00:00Z"},
+    {"task": "Grant reporting dashboard", "reason": "commit b1a5cf8: grant reporting API + checkout WCAG + analytics", "deduped_at": "2026-03-09T00:00:00Z"},
+    {"task": "Scale & load testing — k6/Artillery", "reason": "commit b3f3806 feat(194): load testing harness", "deduped_at": "2026-03-09T00:00:00Z"},
+    {"task": "UX polish & conversion optimization", "reason": "commit b1a5cf8: checkout WCAG + analytics", "deduped_at": "2026-03-09T00:00:00Z"},
+    {"task": "E-commerce platform plugins — WooCommerce, Zapier", "reason": "commit 1088569 feat(197): e-commerce platform plugins", "deduped_at": "2026-03-09T00:00:00Z"},
+    {"task": "Compliance documentation kit", "reason": "commit 8e4f19f feat(198): compliance documentation kit", "deduped_at": "2026-03-09T00:00:00Z"},
+    {"task": "Replication playbook", "reason": "commit 4ff5cf9 feat(196): replication playbook", "deduped_at": "2026-03-09T00:00:00Z"}
+  ],
   "round_24_exhaustion_confirmed_2026_03_06": {
     "source": "task_synthesizer_round_24",
     "finding": "SYNTHESIS_EXHAUSTED — Verified both AGENT_TASKS.md Round 24 unchecked items are actually done (tasks 179 and 180). Feature audit had stale cached results. 119 total tasks complete (073-191). 0 new automatable tasks remain. Recommend SWITCH_PROJECT.",
@@ -641,6 +663,63 @@
       "accepted_at": "2026-03-06T20:00:00Z"
     }
   ],
+  "newly_accepted_2026_03_09_round28": [
+    {
+      "source": "digest_incomplete_features",
+      "finding": "parseSPAddress() in lib/silent-payments.ts throws NotImplementedError — real Bech32m decode using @scure/base not yet implemented",
+      "action": "ACCEPTED → task 201-P1 (implement real Bech32m decode + unit test)",
+      "accepted_at": "2026-03-09T00:00:00Z"
+    }
+  ],
+  "newly_rejected_2026_03_09_round28": [
+    {
+      "source": "digest_incomplete_features (stale)",
+      "finding": "@arxmint/react test coverage — zero test files in packages/react/",
+      "reason": "Task 180 CONFIRMED COMPLETE. Commit 5cfe30f adds packages/react/tests/usePayment.test.ts. Digest was cached from pre-task-180 state. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-09T00:00:00Z"
+    }
+  ],
+  "newly_confirmed_complete_2026_03_09_round29": [
+    {
+      "source": "worker_001_output.json",
+      "finding": "task 201: parseSPAddress() real Bech32m decode via @scure/base",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "Commit 4929ad0. All 47 silent-payments tests pass. Auto-reject on re-encounter."
+    },
+    {
+      "source": "git_log",
+      "finding": "task 200: AGENT_TASKS.md checkbox update for 7 P1/P2 completed items",
+      "status": "CONFIRMED_COMPLETE",
+      "note": "Commit 373f2b5."
+    }
+  ],
+  "newly_rejected_2026_03_09_round29": [
+    {
+      "source": "digest_output (stale)",
+      "finding": "parseSPAddress() uses placeholder Bech32m decoding (string-slicing) — cryptographically wrong",
+      "reason": "Task 201 CONFIRMED COMPLETE via commit 4929ad0. Digest was stale. Auto-reject on re-encounter.",
+      "rejected_at": "2026-03-09T06:00:00Z"
+    },
+    {
+      "source": "direct_inspection",
+      "finding": "Zapier package (packages/zapier/) has no test files",
+      "reason": "Scaffold commit (1088569). Not production code. Tests deferred pending Zapier integration maturity.",
+      "rejected_at": "2026-03-09T06:00:00Z"
+    },
+    {
+      "source": "direct_inspection",
+      "finding": "app/api/webhooks/route.ts (task 199) no dedicated API-level tests",
+      "reason": "Thin HTTP adapter over tested webhook-engine.ts. P3 nice-to-have, not blocking.",
+      "rejected_at": "2026-03-09T06:00:00Z"
+    }
+  ],
+  "round_29_exhaustion_confirmed_2026_03_09": {
+    "source": "task_synthesizer_round_29",
+    "finding": "SYNTHESIS_EXHAUSTED — Round 29. Task 201 (BIP-352 Bech32m decode) confirmed complete. Task 200 (checkboxes) confirmed complete. Active/ directory empty. No new audit output files. All AGENT_TASKS.md unchecked items are HUMAN/DEFERRED/BLOCKED. 0 new automatable tasks remain.",
+    "action": "Returned 0 tasks. Recommend SWITCH_PROJECT.",
+    "confirmed_at": "2026-03-09T06:00:00Z",
+    "total_tasks_completed_all_rounds": 123
+  },
   "deferred_findings": [
     {
       "source": "code_quality_audit",
@@ -761,6 +840,42 @@
       "finding": "next.config.ts:26 — ESLint/TypeScript errors suppressed during production builds",
       "reason": "Fixing requires resolving all underlying type errors across many files — cascading high-effort work. Deferred to a dedicated type-safety pass.",
       "deferred_at": "2026-02-27T08:00:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P1: Post-launch monitoring & ops cadence — Stand up Discord/Matrix, daily Grafana checks, weekly KPI reviews",
+      "reason": "Human task — Discord/Matrix setup requires account creation and admin action. Business operations cadence cannot be automated by code agent.",
+      "rejected_at": "2026-03-09T12:10:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P2: Guardian governance framework — Roadmap 3.1",
+      "reason": "Labeled DEFERRED in AGENT_TASKS.md itself. High effort protocol work, not agent-doable as single task.",
+      "rejected_at": "2026-03-09T12:10:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P2: Advanced Cashu features — NUT-28 P2BK, background proof state verification, multi-mint atomic swaps",
+      "reason": "Protocol work depending on Cashu spec adoption. Not agent-doable without upstream protocol finalization.",
+      "rejected_at": "2026-03-09T12:10:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P2: Multi-city federation + inter-federation commerce — Roadmap 4.5",
+      "reason": "Labeled DEFERRED in AGENT_TASKS.md. Requires multiple running federations — future phase.",
+      "rejected_at": "2026-03-09T12:10:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P2: Phase 5 Production Readiness Gate",
+      "reason": "Requires running merchant node on testnet with real traffic — human/infrastructure dependency.",
+      "rejected_at": "2026-03-09T12:10:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P2: External security audit — engage Least Authority / Trail of Bits / NCC Group",
+      "reason": "Human task — requires vendor engagement and budget allocation ($10K-$50K from grants).",
+      "rejected_at": "2026-03-09T12:10:00Z"
     }
   ]
 }

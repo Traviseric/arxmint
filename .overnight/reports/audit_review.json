@@ -1,503 +1,86 @@
 {
-  "run_at": "2026-02-28T14:00:00Z",
-  "session": "task_synthesizer_round_10_docs_synthesis",
-  "sources_synthesized": ["human_tasks_md"],
-  "conductor_instructions": "All 67 previous tasks completed. Create P2 tasks for 4 agent-automatable documentation items from human_tasks.md only.",
-  "total_findings_this_round": 22,
-  "accepted_this_round": 4,
-  "deferred_this_round": 18,
-  "rejected_this_round": 0,
-  "merged_this_round": 0,
-  "tasks_created_this_round": 4,
-  "task_id_range_this_round": "141-144",
-  "new_tasks": ["141-P2","142-P2","143-P2","144-P2"],
-  "accepted_items": [
-    {
-      "id": "141",
-      "finding": "Prepare shared grant dossier (human_tasks.md)",
-      "reason": "Agent can populate all 6 sections from lib/grant-templates.ts, lib/pilot-deployment.ts, docs/spec.md, docs/roadmap.md, docs/brand.md"
-    },
-    {
-      "id": "142",
-      "finding": "Single-host federation trust statement (human_tasks.md)",
-      "reason": "Agent can write disclosure from lib/value-caps.ts defaults and lib/pilot-deployment.ts PilotKPITargets"
-    },
-    {
-      "id": "143",
-      "finding": "Define Longmont pilot KPIs (human_tasks.md)",
-      "reason": "KPI data in lib/pilot-deployment.ts and lib/bce-metrics.ts; agent can format into strategic document"
-    },
-    {
-      "id": "144",
-      "finding": "Mainnet migration plan (human_tasks.md)",
-      "reason": "Migration procedures derivable from docker/ configs, lib/replication-playbook.ts, Research #3 notes"
-    }
+  "run_at": "2026-03-09T12:10:00Z",
+  "session": "task_synthesizer_round_32",
+  "sources_synthesized": [
+    "conductor_output.json",
+    "roadmap_sync_output.json",
+    "AGENT_TASKS.md"
   ],
-  "deferred_human_items": [
-    "Provision Vultr VPS — requires external infrastructure access",
-    "Register domain + DNS — requires human external service access",
-    "LND wallet creation — requires physical VPS + offline seed phrase",
-    "Generate NEXTAUTH_SECRET — security-sensitive, must be human offline",
-    "Generate MACAROON_ROOT_KEY — security-sensitive, must be human offline",
-    "Generate CASHU_PRIVATE_KEY — security-sensitive, must be human offline",
-    "Set GRAFANA_PASSWORD — security-sensitive",
-    "Configure off-host backup destination — external storage credentials required",
-    "Submit OpenSats General Grant — requires human submission + real pilot data",
-    "Submit HRF Bitcoin Development Fund — requires human submission",
-    "Submit Spiral email proposal — requires human submission",
-    "Longmont Bitcoin meetup outreach — human relationship building",
-    "FBCE Round 3 monitoring — external tracking",
-    "Disaster recovery drill on testnet — requires live VPS",
-    "Ark SDK release — upstream @arkade-os/sdk not on npm",
-    "Programmable eCash (NUT-XX) — Cashu protocol upstream",
-    "ZK reissuance — Cashu protocol upstream",
-    "CTV+CSFS for Ark — requires Bitcoin soft-fork"
+  "total_findings": 6,
+  "accepted": 3,
+  "rejected": 0,
+  "deferred": 3,
+  "split": 0,
+  "merged": 0,
+  "rejections": [],
+  "deferrals": [
+    {
+      "finding": "P0: Complete first real testnet payment E2E on NUC (AGENT_TASKS.md)",
+      "reason": "HUMAN TASK — requires physical NUC hardware access and live testnet LND node. Already logged as HT-006."
+    },
+    {
+      "finding": "P1: Post-launch monitoring & ops cadence — Discord/Matrix + daily Grafana + weekly KPI",
+      "reason": "Mostly HUMAN TASK — Discord/Matrix setup requires account creation and admin action. No code to write. Logged as HT-007."
+    },
+    {
+      "finding": "P2: Guardian governance, Advanced Cashu NUT-28, Numo NFC, Multi-city federation, Phase 5 production readiness gate, External security audit",
+      "reason": "Already DEFERRED in AGENT_TASKS.md — high effort protocol work, requires hardware, blocked on upstream, or requires vendor engagement with budget."
+    }
   ],
   "project_declared": {
-    "total": 22,
-    "accepted": 4,
+    "total": 9,
+    "accepted": 3,
     "merged": 0,
     "rejected": 0,
-    "deferred": 18
-  },
-  "previous_sessions_summary": {
-    "round_9_ux_focus": {
-      "run_at": "2026-02-28T12:00:00Z",
-      "tasks_created": 21,
-      "task_id_range": "120-140",
-      "source": "ux_audit"
-    },
-    "round_8_feature_focus": {
-      "run_at": "2026-02-28T10:00:00Z",
-      "tasks_created": 4,
-      "task_id_range": "116-119",
-      "source": "feature_audit + review_audit"
-    }
-  },
-  "round_11_targeted_sweep": {
-    "run_at": "2026-02-28T16:00:00Z",
-    "session": "task_synthesizer_round_11_switch_blocked_sweep",
-    "sources_synthesized": ["human_tasks_switch_blocked"],
-    "conductor_instructions": "Targeted sweep of switch_blocked.json items only. Check if generate-secrets.sh, DR_DRILL.md, VPS_SETUP.md exist before creating tasks.",
-    "verified_missing": [
-      "scripts/generate-secrets.sh — does not exist",
-      "docs/DR_DRILL.md — does not exist",
-      "docs/VPS_SETUP.md — does not exist"
+    "deferred": 6,
+    "deferred_items": [
+      "P0: Complete first real testnet payment E2E on NUC — HUMAN TASK",
+      "P1: Post-launch monitoring & ops cadence — HUMAN TASK (Discord setup, business ops)",
+      "P2: Guardian governance framework — DEFERRED (high effort protocol work)",
+      "P2: Advanced Cashu features NUT-28 P2BK — DEFERRED (protocol work)",
+      "P2: Numo NFC merchant integration — DEFERRED (requires hardware)",
+      "P2: External security audit — HUMAN TASK (vendor engagement + budget)",
+      "P2: Phase 5 Production Readiness Gate — DEFERRED (requires live testnet node)",
+      "P2: Multi-city federation — DEFERRED (future phase)",
+      "BLOCKED: Ark SDK, Programmable eCash, ZK reissuance, HW wallet BIP392, CDK migration"
     ],
-    "tasks_created": 3,
-    "task_id_range": "145-147",
-    "new_tasks": ["145-P1","146-P1","147-P1"],
     "accepted_items": [
-      {
-        "id": "145",
-        "finding": "scripts/generate-secrets.sh missing — agent can create bash script for one-command secret generation",
-        "reason": "openssl rand script for NEXTAUTH_SECRET, MACAROON_ROOT_KEY, CASHU_PRIVATE_KEY, GRAFANA_PASSWORD — fully automatable"
-      },
-      {
-        "id": "146",
-        "finding": "docs/DR_DRILL.md missing — agent can write DR drill checklist (separate from INCIDENT_RESPONSE.md)",
-        "reason": "Step-by-step testnet restore drill checklist is documentation an agent can write from existing backup scripts and architecture"
-      },
-      {
-        "id": "147",
-        "finding": "docs/VPS_SETUP.md missing — agent can write provisioning checklist operationalizing Research #2 decisions",
-        "reason": "Vultr/UFW/Docker/Caddy setup checklist from locked architectural decisions in Research #2 — fully documentable by agent"
-      }
-    ],
-    "human_only_confirmed_15_items": [
-      "3 grant submissions (human accounts required)",
-      "4 credential inputs (actual .env population on live VPS, LND seed — NOT covered by generate-secrets.sh which is a prep helper)",
-      "1 off-host backup destination setup",
-      "5 upstream dependencies",
-      "2 community coordination items",
-      "1 VPS provisioning (actual Vultr UI click-through)",
-      "1 DR drill execution (human must run the drill, agent only writes the checklist)"
+      "P1: Wire LND invoice settlement check into checkout status API — real gap verified in code",
+      "P2: Wire /create wizard merchant data to backend provisioning call — wizard collects data but doesn't use it",
+      "P2: Update Phase 5 Implementation Snapshot table in roadmap.md — stale 'Planned' status verified at line 1065-1088"
     ]
   },
-  "summary": "Round 10 (documentation synthesis): 22 items in human_tasks.md reviewed. 4 tasks created (141-144). Round 11 (switch_blocked targeted sweep): 3 additional prep artifact tasks created (145-147): generate-secrets.sh script, DR drill checklist, VPS setup checklist. Remaining 15 blocked items verified human-only. Total tasks created across all rounds: 75 (tasks 073-147).",
-  "round_12_root_human_tasks": {
-    "run_at": "2026-02-28T18:00:00Z",
-    "session": "task_synthesizer_round_12_root_human_tasks",
-    "sources_synthesized": ["root-human-tasks"],
-    "conductor_instructions": "Process root human_tasks.md. Create grant drafts (Spiral email), update checkboxes, create upstream tracking docs, draft FBCE outreach. Tasks 145/146/147 confirmed COMPLETE by workers.",
-    "prior_work_confirmed": [
-      "scripts/generate-secrets.sh — EXISTS (task 145 complete, commit 2893ac3)",
-      "docs/DR_DRILL.md — EXISTS (task 146 complete, commit 8c98d1b)",
-      "docs/VPS_SETUP.md — EXISTS (task 147 complete, commit ebb47a1)",
-      "docs/grants/opensats-application.md — EXISTS (previous session)",
-      "docs/grants/hrf-application.md — EXISTS (previous session)",
-      "docs/grants/common-app-application.md — EXISTS, covers Spiral via common app"
-    ],
-    "tasks_created": 4,
-    "task_id_range": "148-151",
-    "new_tasks": ["148-P2", "149-P3", "150-P3", "151-P2"],
-    "accepted_items": [
-      {
-        "id": "148",
-        "finding": "Submit Spiral email proposal — no direct email draft exists",
-        "reason": "Spiral accepts direct email pitches. common-app covers form route. Agent can write email template (docs/grants/spiral-email.md) with developer-tooling/UX angle."
-      },
-      {
-        "id": "149",
-        "finding": "Upstream deps (Ark SDK, NUT-XX, ZK, CTV+CSFS, CDK maturity) lack tracking doc",
-        "reason": "Agent can create docs/tracking/upstream-deps.md with GitHub monitor links, ready-when criteria, ArxMint impact per dep."
-      },
-      {
-        "id": "150",
-        "finding": "FBCE Round 3 monitoring — outreach email + Geyser.fund profile not drafted",
-        "reason": "Agent can draft email to admin@fbce.io and Geyser.fund profile text (docs/grants/fbce-outreach.md)."
-      },
-      {
-        "id": "151",
-        "finding": "human_tasks.md unchecked items lack notes about available scripts/docs",
-        "reason": "Agent can annotate items with generate-secrets.sh, backup scripts, DR_DRILL.md, VPS_SETUP.md references."
-      }
-    ],
-    "deferred_human_items": [
-      "Submit OpenSats, HRF, Spiral — drafts exist, human submits",
-      "Provision Vultr VPS — VPS_SETUP.md checklist ready, human clicks Vultr UI",
-      "Register domain + DNS — requires external service access",
-      "LND wallet creation — agents never touch seed phrases",
-      "4 secret generation items — scripts/generate-secrets.sh ready, human runs on VPS",
-      "Configure off-host backup destination — scripts ready, human configures destination",
-      "Disaster recovery drill — DR_DRILL.md checklist ready, human runs drill",
-      "Longmont meetup outreach — human relationship building",
-      "Ark SDK / NUT-XX / ZK / CTV+CSFS — external upstreams, cannot be forced"
-    ],
-    "total_tasks_all_rounds": 79
-  },
-  "round_13_final_gap_analysis": {
-    "run_at": "2026-02-28T23:00:00Z",
-    "session": "task_synthesizer_round_13_overnight_tasks_gap",
-    "sources_synthesized": ["conductor_gap_analysis", "review_audit_output", "worker_outputs"],
-    "conductor_instructions": "All 79 active task files status:completed. OVERNIGHT_TASKS.md Summary table stale (39 pending / 0 completed). Verify IDs 9,27,30,33,34. Generate task to update checkboxes. DO NOT generate tasks for external-credential items or duplicates.",
-    "verification_results": {
-      "ID_9_prometheus_grafana": "CONFIRMED DONE — docker/prometheus.yml + docker/grafana/datasources/prometheus.yml exist",
-      "ID_27_health_check": "CONFIRMED DONE — app/api/health/route.ts exists (Glob verified)",
-      "ID_30_security_headers": "CONFIRMED DONE — next.config.ts lines 23-41 have X-Frame-Options:DENY, nosniff, CSP (Grep verified)",
-      "ID_33_production_dockerfile": "CONFIRMED DONE — Dockerfile is multi-stage, node:22.14-alpine, non-root nextjs user (Read verified)",
-      "ID_34_ci_cd": "CONFIRMED DONE — .github/workflows/ci.yml has lint+build+test+e2e steps (Grep verified)"
+  "git_deduped": [
+    {
+      "task": "Replace prototype checkout internals / remove demo bypass",
+      "reason": "Partially done — commit ead6151 gated demo bypass to dev only. But r_hash is still null and LND settlement polling is missing. Accepted as new task 204 targeting the remaining gap.",
+      "matching_commits": ["ead6151 fix: remove demo bypass paths from checkout — gate to dev only"]
+    }
+  ],
+  "findings_detail": [
+    {
+      "id": 204,
+      "title": "Wire LND invoice settlement verification into checkout status API",
+      "status": "ACCEPTED",
+      "priority": "P1",
+      "reason": "Verified: app/api/checkout/route.ts line 91 stores rHash=null; status route never polls LND. Real invoices can never settle in production.",
+      "task_file": ".overnight/active/204-P1-wire-lnd-invoice-settlement-checkout-status.md"
     },
-    "tasks_created": 1,
-    "task_id_range": "152",
-    "new_tasks": ["152-P2"],
-    "accepted_items": [
-      {
-        "id": "152",
-        "finding": "OVERNIGHT_TASKS.md Summary table stale — 39 pending / 0 completed, but all 39 items are implemented",
-        "reason": "All 39 items verified implemented. Worker can update all checkboxes from [ ] to [x] and fix Summary table. Pure documentation update, no code change needed."
-      }
-    ],
-    "total_tasks_all_rounds": 80
-  },
-  "round_15_feature_coverage_push": {
-    "run_at": "2026-02-28T25:00:00Z",
-    "session": "task_synthesizer_round_15_feature_coverage",
-    "sources_synthesized": ["feature_audit"],
-    "conductor_instructions": "Fresh feature_audit (round 70) ran AFTER round 64 TASK_SYNTHESIZER — 12 findings not yet synthesized. Generate only low-effort disclaimer/label/gating tasks. Skip anything requiring real backend implementation.",
-    "findings_reviewed": 12,
-    "new_tasks_accepted": 3,
-    "new_tasks_rejected": 6,
-    "new_tasks_deferred": 2,
-    "new_tasks_merged": 1,
-    "tasks_created": 3,
-    "task_id_range": "153-155",
-    "new_tasks": ["153-P0", "154-P1", "155-P3"],
-    "accepted_items": [
-      {
-        "id": "153",
-        "finding": "CoinJoin/PayJoin supportedBy:'on-chain-only' status:'live' — no implementation exists but dashboard won't show 'coming soon' badge. Privacy score adds 15+10 points unconditionally.",
-        "action": "Change supportedBy to 'not-yet-implemented', status to 'experimental', gate score additions with isLayerAvailable()"
-      },
-      {
-        "id": "154",
-        "finding": "Agent compute (500 sats, fake 'Compute task executed successfully') and data (100 sats, hardcoded 2-dataset catalog) return static stubs while accepting real sats via L402 paywall (MERGED)",
-        "action": "Add demo:true + disclaimer field to both responses. Mark both as demo in service capability list."
-      },
-      {
-        "id": "155",
-        "finding": "Merchant NFC (NumoNFCSetup): no browser detection for Web NFC API. Silently fails/renders unusable UI on 95%+ of devices (iOS, desktop, Firefox, Safari).",
-        "action": "Add typeof navigator.nfc check, render unsupported browser message, surface QR code as primary path when NFC unavailable."
-      }
-    ],
-    "rejections": [
-      {
-        "finding": "Agent privacy-audit returns hardcoded score 78",
-        "reason": "Task 116 already completed — code now calls computePrivacyScore(privacyConfig). Verified."
-      },
-      {
-        "finding": "Ark VTXO off-chain spending appears as active option",
-        "reason": "Already properly gated: arkSpends.supportedBy='not-yet-implemented' → dashboard shows 'coming soon'. spend-router.ts line 123 explicitly comments 'availability.ark is always false'. Audit was wrong about this."
-      },
-      {
-        "finding": "L402 challenge persistence — in-memory Map not persisted to DB",
-        "reason": "Task 117 already completed. app/api/l402/route.ts verified: uses db.paymentChallenge.create() on challenge creation and DB fallback on cache miss."
-      },
-      {
-        "finding": "Cycle MVRV/NUPL signals not disclaimed as approximate",
-        "reason": "Already fixed: cycle-alerts.tsx has '(approx.)' labels, tooltips, and footer disclaimer '* MVRV and NUPL are price-based approximations (SMA ratios). On-chain UTXO data requires Glassnode API.'"
-      },
-      {
-        "finding": "Landing page fake live metrics (setInterval Math.random())",
-        "reason": "Task 118 already completed."
-      },
-      {
-        "finding": "E2E test automation / CI pipeline missing",
-        "reason": "Task 104 already completed. .github/workflows/ci.yml confirmed."
-      }
-    ],
-    "deferrals": [
-      {
-        "finding": "Silent Payments hardware wallet delegation (medium, feature-stub)",
-        "reason": "High effort. Requires server-side Fedimint module (not upstream). Previously deferred."
-      },
-      {
-        "finding": "Guardian governance enforcement (medium, feature-partial)",
-        "reason": "High effort. Runtime enforcement requires protocol-level changes. Previously deferred."
-      }
-    ],
-    "total_tasks_all_rounds": 83
-  },
-  "round_16_phase5_synthesis": {
-    "run_at": "2026-03-06T00:00:00Z",
-    "session": "task_synthesizer_round_16_phase5_bazaar",
-    "sources_synthesized": ["security_audit_output", "feature_audit_output", "code_quality_audit_output", "ux_audit_output", "review_audit_output", "AGENT_TASKS.md", "conductor_output"],
-    "conductor_instructions": "All 57 task files status:completed (tasks 073-155, workers 001-003 confirmed 153/154/155 already done). ROADMAP_SYNC synced AGENT_TASKS.md with Phase 5 Bazaar items (T03, T08-T18) that have no task files. Generate new worker task files. Skip BLOCKED items (Ark SDK upstream, hardware items). Prioritize: T03, T09, T14, T08.",
-    "findings_reviewed": 38,
-    "new_tasks_accepted": 12,
-    "new_tasks_rejected": 17,
-    "new_tasks_deferred": 7,
-    "tasks_created": 12,
-    "task_id_range": "156-167",
-    "new_tasks": ["156-P1", "157-P1", "158-P1", "159-P1", "160-P1", "161-P1", "162-P1", "163-P1", "164-P1", "165-P1", "166-P1", "167-P2"],
-    "accepted_items": [
-      {"id": "156", "source": "feature_audit+AGENT_TASKS T03", "finding": "Ark VTXO shows as active option despite in-memory stub", "action": "Gate with 'coming soon' badge, remove from active spend paths"},
-      {"id": "157", "source": "AGENT_TASKS T08", "finding": "No scoped merchant macaroon system", "action": "Create lib/merchant-auth.ts with arx_live_/arx_pub_/arx_test_ key scopes"},
-      {"id": "158", "source": "AGENT_TASKS T09", "finding": "No webhook delivery system for payment events", "action": "Create lib/webhook-engine.ts + app/api/v1/webhooks/route.ts"},
-      {"id": "159", "source": "AGENT_TASKS T14", "finding": "No LNURL-pay / Lightning Address endpoints", "action": "Create app/.well-known/lnurlp/[username]/route.ts"},
-      {"id": "160", "source": "AGENT_TASKS T15", "finding": "No merchant operational dashboard", "action": "Replace redirect at app/merchant/page.tsx with tabbed dashboard"},
-      {"id": "161", "source": "AGENT_TASKS T10", "finding": "Checkout has demo fallback paths that bypass real payment verification", "action": "Remove demo bypasses, add DEMO MODE banner, wire real payment-sdk.ts"},
-      {"id": "162", "source": "AGENT_TASKS T11", "finding": "No deterministic payment state machine or SSE stream", "action": "Define PaymentStatus type, add SSE stream, add paginated /api/v1/payments"},
-      {"id": "163", "source": "AGENT_TASKS T12", "finding": "No @arxmint/js client SDK for merchant integration", "action": "Create packages/js/ with ArxMintClient class + verifyWebhookSignature"},
-      {"id": "164", "source": "AGENT_TASKS T13", "finding": "No @arxmint/react components for merchant storefronts", "action": "Create packages/react/ with PayButton, CheckoutForm, QRPayment, usePayment"},
-      {"id": "165", "source": "AGENT_TASKS T16", "finding": "No one-command merchant deploy script", "action": "Create scripts/merchant-init.sh + update merchant-setup-wizard.tsx"},
-      {"id": "166", "source": "AGENT_TASKS Phase 4.1 item 12", "finding": "No BTCMap.org integration on /merchants page", "action": "Add BTCMap link, badge, and submission instructions to app/merchants/page.tsx"},
-      {"id": "167", "source": "security_audit CWE-284", "finding": "GET /api/settlement/:id returns full internal data (Fedimint invites, invoices) without auth", "action": "Strip sensitive fields from unauthenticated settlement GET responses"}
-    ],
-    "rejections": [
-      {"finding": "security_audit: L402 auth bypass", "reason": "review_audit VERIFIED task 107 complete"},
-      {"finding": "security_audit: POST /api/settlement no auth", "reason": "review_audit VERIFIED task 108 complete"},
-      {"finding": "security_audit: Hardcoded session secret", "reason": "review_audit VERIFIED task 109 complete"},
-      {"finding": "security_audit: MACAROON_ROOT_KEY absent", "reason": "review_audit VERIFIED task 110 complete"},
-      {"finding": "security_audit: Payment challenges in-process Map", "reason": "review_audit VERIFIED task 113 complete"},
-      {"finding": "security_audit: deleteSession no-op", "reason": "In lessons.json as rejected — intentional HMAC expiry"},
-      {"finding": "security_audit: Wildcard CORS", "reason": "In lessons.json as deferred — intentional for L402 agent commerce"},
-      {"finding": "security_audit: CSP unsafe-eval", "reason": "In lessons.json as deferred — WASM required"},
-      {"finding": "security_audit: In-memory rate limiter", "reason": "In lessons.json as deferred — single-instance acceptable"},
-      {"finding": "security_audit: XSS denylist", "reason": "In lessons.json as deferred — JSON API context"},
-      {"finding": "security_audit: TS errors ignored", "reason": "In lessons.json as deferred — cascading type work"},
-      {"finding": "feature_audit: CoinJoin/PayJoin not implemented", "reason": "worker_001 CONFIRMED task 153 already done"},
-      {"finding": "feature_audit: Agent privacy-audit hardcoded", "reason": "worker_002 CONFIRMED task 154 already done"},
-      {"finding": "feature_audit: Agent compute stub", "reason": "In lessons.json as deferred — high effort, real backend needed"},
-      {"finding": "feature_audit: L402 persistence not in DB", "reason": "review_audit VERIFIED task 113 complete"},
-      {"finding": "feature_audit: Landing page fake metrics", "reason": "Task 118 confirmed complete in prior session"},
-      {"finding": "feature_audit: E2E test automation missing", "reason": "Task 104 confirmed complete — CI workflow exists"}
-    ],
-    "deferrals": [
-      {"finding": "feature_audit: Agent compute — real job queue", "reason": "Requires job queue + DB + LND. Product decision needed."},
-      {"finding": "feature_audit: Agent data — live API feeds", "reason": "External API credentials required. Post-pilot."},
-      {"finding": "feature_audit: Silent Payments HW wallet", "reason": "Upstream Fedimint module not available."},
-      {"finding": "feature_audit: Guardian governance enforcement", "reason": "Protocol-level work, not blocking P1."},
-      {"finding": "AGENT_TASKS: T17 LSP liquidity bootstrap", "reason": "Requires running LND + LSP partner. Infrastructure decision."},
-      {"finding": "AGENT_TASKS: T18 Managed DNS + Cloudflare Tunnel", "reason": "Requires Cloudflare account. Human decision."},
-      {"finding": "AGENT_TASKS: Replace checkout with real LND (Phase 4.1 item 3)", "reason": "Requires running LND hardware (testnet NUC)."}
-    ],
-    "project_declared": {
-      "total": 79,
-      "accepted": 12,
-      "merged": 0,
-      "rejected": 17,
-      "deferred": 7
+    {
+      "id": 205,
+      "title": "Wire /create wizard merchant data to backend provisioning call",
+      "status": "ACCEPTED",
+      "priority": "P2",
+      "reason": "Verified: wizard collects storeName/domain/network/payments but Step 3 shows static curl command ignoring wizard input. Parameterization and backend save are missing.",
+      "task_file": ".overnight/active/205-P2-wire-create-wizard-config-to-merchant-provisioning.md"
     },
-    "total_tasks_all_rounds": 95
-  },
-  "round_17_agent_tasks_reconciliation": {
-    "run_at": "2026-03-06T12:30:00Z",
-    "session": "task_synthesizer_round_17_agent_tasks_reconcile",
-    "sources_synthesized": ["AGENT_TASKS.md", "security_audit_output", "review_audit_output"],
-    "conductor_instructions": "All 67 active/ task files status:completed. AGENT_TASKS.md has many stale unchecked items. Cross-reference every unchecked item against active/ status. Mark [x] completed. Create tasks only for truly pending work. Focus on P0 first.",
-    "findings_reviewed": 16,
-    "new_tasks_accepted": 3,
-    "new_tasks_rejected": 10,
-    "new_tasks_deferred": 3,
-    "agent_tasks_unchecked_before": 62,
-    "agent_tasks_marked_completed": 59,
-    "agent_tasks_remaining_unchecked": 3,
-    "human_tasks_logged": 1,
-    "tasks_created": 3,
-    "task_id_range": "168-170",
-    "new_tasks": ["168-P3", "169-P1", "170-P1"],
-    "accepted_items": [
-      {
-        "id": "168",
-        "source": "review_audit minor_issues",
-        "finding": "PATH_INCONSISTENCY: scripts/merchant-init.sh:6 comment says /install.sh, wizard says /scripts/merchant-init.sh",
-        "action": "Fix comment to match wizard path. One-line change."
-      },
-      {
-        "id": "169",
-        "source": "AGENT_TASKS.md T17 — genuinely pending, no active/ file",
-        "finding": "LSP liquidity bootstrap (JIT channel opening) not implemented. New merchants have zero inbound liquidity.",
-        "action": "Create lib/lsp-bootstrap.ts, app/api/lsp/route.ts, update merchant-init.sh and wizard"
-      },
-      {
-        "id": "170",
-        "source": "AGENT_TASKS.md T18 — genuinely pending, no active/ file",
-        "finding": "Managed DNS + Cloudflare Tunnel not implemented. Merchants can't get public URLs.",
-        "action": "Create lib/managed-dns.ts, app/api/dns/route.ts, add cloudflared service to docker-compose template"
-      }
-    ],
-    "rejections": [
-      {"finding": "L402 agent auth bypass (CWE-287)", "reason": "lessons.json: task 107 verified complete"},
-      {"finding": "POST /api/settlement no auth (CWE-306)", "reason": "lessons.json: task 108 verified complete"},
-      {"finding": "Hardcoded session secret (CWE-321)", "reason": "lessons.json: task 109 verified complete"},
-      {"finding": "MACAROON_ROOT_KEY absent → unsigned macaroons (CWE-347)", "reason": "lessons.json: task 110 verified complete"},
-      {"finding": "Payment challenges in-process Map (CWE-400)", "reason": "lessons.json: task 113 verified complete"},
-      {"finding": "deleteSession() no-op (CWE-613)", "reason": "lessons.json: intentional HMAC expiry design"},
-      {"finding": "GET community/merchants/transactions no auth (CWE-284)", "reason": "task 111 active/ status:completed"},
-      {"finding": "GET settlement sensitive fields (CWE-284)", "reason": "task 167 active/ status:completed, review_audit VERIFIED"},
-      {"finding": "SKIP_PAYMENT_VERIFY no production guard (CWE-489)", "reason": "task 112 active/ status:completed"},
-      {"finding": "GET /api/payment/status/:id no auth (CWE-284)", "reason": "task 115 active/ status:completed"}
-    ],
-    "deferrals": [
-      {"finding": "Wildcard CORS on agent routes (CWE-942)", "reason": "lessons.json: intentional for L402 agent commerce"},
-      {"finding": "CSP unsafe-eval + unsafe-inline (CWE-116)", "reason": "lessons.json: required for WASM"},
-      {"finding": "In-memory rate limiter (CWE-770)", "reason": "lessons.json: acceptable single-instance pilot"}
-    ],
-    "human_tasks": [
-      {"item": "Complete first real testnet payment E2E on NUC (P0, Roadmap 4.1 item 2)", "reason": "Requires physical NUC access, live testnet LND. Agent cannot provision hardware."}
-    ],
-    "total_tasks_all_rounds": 98
-  },
-  "round_18_phase5_delta_synthesis": {
-    "run_at": "2026-03-06T14:00:00Z",
-    "session": "task_synthesizer_round_18_feature_delta",
-    "sources_synthesized": ["security_audit_output", "feature_audit_output", "code_quality_audit_output", "ux_audit_output", "review_audit_output", "last_mile_test_output", "roadmap_sync_output", "AGENT_TASKS.md"],
-    "conductor_instructions": "Round 18: Post-Phase-5 delta audit. Tasks 168-170 just completed (LSP bootstrap, managed DNS, path comment fix). Fresh feature_audit found 5 new issues in Phase 5 merchant dashboard + LNURL layer. Security/UX audits are stale re-runs — cross-reference against lessons.json and active/ status before creating any tasks.",
-    "findings_reviewed": 48,
-    "new_tasks_accepted": 5,
-    "new_tasks_rejected": 33,
-    "new_tasks_deferred": 10,
-    "tasks_created": 5,
-    "task_id_range": "171-175",
-    "new_tasks": ["171-P2", "172-P2", "173-P2", "174-P3", "175-P3"],
-    "accepted_items": [
-      {"id": "171", "source": "feature_audit", "finding": "Merchant dashboard API key revocation calls alert()", "action": "Replace alert() with inline confirm UI + DELETE API call"},
-      {"id": "172", "source": "feature_audit", "finding": "LNURL-pay Lightning Address registry hardcoded to 2 merchants", "action": "Replace hardcoded array with Supabase query by slug"},
-      {"id": "173", "source": "feature_audit", "finding": "README claims 'arxmint keys rotate' CLI that doesn't exist", "action": "Add scripts/arxmint.sh thin bash CLI wrapper or update README"},
-      {"id": "174", "source": "feature_audit", "finding": "Merchant dashboard always shows nodeStatus: 'connected'", "action": "Wire to GET /api/health, poll every 60s"},
-      {"id": "175", "source": "feature_audit + code_quality_audit", "finding": "Zero test coverage for Phase 5 modules", "action": "Create test files for LSP, webhooks, DNS, LNURL, community-generator, silent-payments"}
-    ],
-    "stale_rejections": [
-      "All 16 security_audit findings: 12 already have completed tasks (107-115, 167), 4 in lessons.json as deferred (CORS/CSP/rate-limiter/XSS)",
-      "All 30 ux_audit findings: 24 have completed tasks (120-140), 6 in lessons.json as deferred",
-      "All 7 code_quality_catch-any findings: tasks 097 + 119 completed",
-      "3 code_quality god-module findings: in lessons.json as rejected/deferred"
-    ],
-    "total_tasks_all_rounds": 103
-  },
-  "round_19_feature_r94_synthesis": {
-    "run_at": "2026-03-06T00:00:00Z",
-    "session": "task_synthesizer_round_19_feature_r94",
-    "sources_synthesized": ["security_audit_output", "feature_audit_output", "code_quality_audit_output", "review_audit_output", "AGENT_TASKS.md"],
-    "findings_reviewed": 40,
-    "new_tasks_accepted": 3,
-    "new_tasks_rejected": 32,
-    "new_tasks_deferred": 5,
-    "tasks_created": 3,
-    "task_id_range": "176-178",
-    "new_tasks": ["176-P2", "177-P3", "178-P3"],
-    "total_tasks_all_rounds": 106
-  },
-  "round_20_feature_r102_synthesis": {
-    "run_at": "2026-03-06T00:00:00Z",
-    "session": "task_synthesizer_round_20_feature_r102",
-    "sources_synthesized": ["feature_audit_output", "review_audit_output", "AGENT_TASKS.md"],
-    "findings_reviewed": 2,
-    "new_tasks_accepted": 2,
-    "new_tasks_rejected": 0,
-    "new_tasks_deferred": 0,
-    "tasks_created": 2,
-    "task_id_range": "179-180",
-    "new_tasks": ["179-P1", "180-P3"],
-    "total_tasks_all_rounds": 108
-  },
-  "round_21_p2_roadmap_synthesis": {
-    "run_at": "2026-03-06T18:00:00Z",
-    "session": "task_synthesizer_round_21_p2_roadmap",
-    "findings_reviewed": 12,
-    "new_tasks_accepted": 8,
-    "new_tasks_rejected": 1,
-    "new_tasks_deferred": 3,
-    "tasks_created": 8,
-    "task_id_range": "181-188",
-    "total_tasks_all_rounds": 116
-  },
-  "round_22_review_audit_partial_fixes": {
-    "run_at": "2026-03-06T20:00:00Z",
-    "session": "task_synthesizer_round_22_review_audit_partials",
-    "findings_reviewed": 2,
-    "new_tasks_accepted": 2,
-    "tasks_created": 2,
-    "task_id_range": "189-190",
-    "total_tasks_all_rounds": 118
-  },
-  "round_23_verify_checksum_fix": {
-    "run_at": "2026-03-06T22:00:00Z",
-    "session": "task_synthesizer_round_23_review_audit_117",
-    "findings_reviewed": 3,
-    "new_tasks_accepted": 1,
-    "new_tasks_rejected": 2,
-    "tasks_created": 1,
-    "task_id_range": "191",
-    "total_tasks_all_rounds": 119
-  },
-  "round_14_exhaustion": {
-    "run_at": "2026-02-28T23:59:00Z",
-    "session": "task_synthesizer_round_14_exhaustion",
-    "tasks_created": 0,
-    "total_tasks_all_rounds": 80
-  },
-  "round_24_synthesis_exhaustion_confirmed": {
-    "run_at": "2026-03-06T23:59:00Z",
-    "session": "task_synthesizer_round_24_final_verification",
-    "sources_synthesized": ["feature_audit_output", "review_audit_output", "digest_output", "last_mile_test_output", "conductor_output", "AGENT_TASKS.md"],
-    "conductor_instructions": "AGENT_TASKS.md Round 24 has 2 unchecked items: P1 parseSPAddress() Bech32m bug and P3 @arxmint/react tests. All 3 active task files (153, 154, 155) status:completed. Route TASK_SYNTHESIZER to generate task files for Round 24 items before SWITCH_PROJECT.",
-    "findings_reviewed": 2,
-    "new_tasks_accepted": 0,
-    "new_tasks_rejected": 2,
-    "new_tasks_deferred": 0,
-    "tasks_created": 0,
-    "task_id_range": "none",
-    "rejections": [
-      {
-        "finding": "parseSPAddress() uses string-slicing placeholder producing cryptographically invalid pubkeys (lib/silent-payments.ts:122-125)",
-        "reason": "Task 179 VERIFIED COMPLETE by direct code inspection. Grep for 'placeholder|padEnd|For now, derive' returns NO MATCHES in lib/silent-payments.ts. parseSPAddress() now throws NotImplementedError at lines 122-129. Feature audit was stale/cached — issue fixed in prior session."
-      },
-      {
-        "finding": "@arxmint/react has no test directory (packages/react/tests/ does not exist)",
-        "reason": "Task 180 VERIFIED COMPLETE by direct file inspection. packages/react/tests/usePayment.test.ts EXISTS (confirmed via glob). Feature audit was stale/cached — tests added in prior session."
-      }
-    ],
-    "verification_method": "Direct code inspection (Grep + Glob) against current codebase state, not stale audit cache",
-    "signal": "SYNTHESIS_EXHAUSTED — 0 new automatable tasks remain. All 119 tasks (073-191) complete or properly deferred. Both AGENT_TASKS.md Round 24 unchecked items are actually done. Recommend update AGENT_TASKS.md checkboxes to [x] then proceed to SWITCH_PROJECT.",
-    "project_declared": {
-      "total": 2,
-      "accepted": 0,
-      "merged": 0,
-      "rejected": 2,
-      "deferred": 0
-    },
-    "total_tasks_all_rounds": 119
-  }
+    {
+      "id": 206,
+      "title": "Update Phase 5 Implementation Snapshot table in roadmap.md",
+      "status": "ACCEPTED",
+      "priority": "P2",
+      "reason": "Verified: roadmap.md line 1065-1088 shows 5.1-5.14 as Planned/Prototype but all have commits. AGENT_TASKS.md completed section confirms all done.",
+      "task_file": ".overnight/active/206-P2-update-phase5-roadmap-snapshot-table.md"
+    }
+  ]
 }

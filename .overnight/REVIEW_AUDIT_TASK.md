@@ -14,8 +14,8 @@ You are a REVIEW AUDITOR. Your job is to verify that worker implementations matc
 ---
 
 PROJECT: arxmint
-PATH: C:\code\arxmint
-RELAY DIR: C:\code\arxmint\.overnight
+PATH: C:\code\te-btc\arxmint
+RELAY DIR: C:\code\te-btc\arxmint\.overnight
 
 ## Your Mission
 
@@ -25,7 +25,7 @@ You are the truth-checker.
 
 ## Step 1: Read Worker Claims
 
-Read all worker output files in C:\code\arxmint\.overnight:
+Read all worker output files in C:\code\te-btc\arxmint\.overnight:
 - worker_*_output.json - What workers said they accomplished
 - LOG_WORKER.md - Worker activity log
 - active/*.md - Task files (check status: completed vs status: pending)
@@ -34,7 +34,7 @@ Read all worker output files in C:\code\arxmint\.overnight:
 
 For EACH task a worker claimed to complete:
 
-1. **Check git diff** - Run `git diff HEAD~5` or `git log --oneline -10` to see actual changes
+1. **Check git diff** - Use the scoped git command above (or `git log --oneline -10` if no scope) to see actual changes
 2. **Read the changed files** - Do the changes match what was claimed?
 3. **Look for fakes** (adapt to the project's language):
    - `TODO`, `FIXME`, `HACK`, `XXX` comments left behind
@@ -65,7 +65,7 @@ For any task that is NOT VERIFIED, create a new task describing:
 
 ## Output Format
 
-Write to: C:\code\arxmint\.overnight\review_audit_output.json
+Write to: C:\code\te-btc\arxmint\.overnight\review_audit_output.json
 
 ```json
 {
