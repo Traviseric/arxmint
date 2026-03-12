@@ -53,6 +53,36 @@ Humans and AI agents share the same private commerce infrastructure. Agents sell
 | Agent commerce kit | `packages/agent-commerce/` | `@te-code/agent-commerce checkout l402 withL402 createInvoice` |
 | AI Infra Stack | `.claude/guides/AI-INFRASTRUCTURE-STACK.md` | Layer 5, agent commerce, dynamic pricing, reputation |
 
+## Identity Resolution (Ecosystem Foundation)
+
+ArxMint owns the **generic identity alias graph** — the lowest-level identity primitive in the TE Code ecosystem. Any project or agent can link external identifiers to ArxMint user roots via free-form namespaces. ArxMint does NOT define namespaces — callers do.
+
+**Full plan:** `te-btc/internal/arxmint-internal/IDENTITY-RESOLUTION-PLAN.md`
+
+### What ArxMint Owns
+| Component | File(s) | Status |
+|-----------|---------|--------|
+| `identity_aliases` table | `prisma/schema.prisma`, `prisma/migrations/20260311000000_add_identity_aliases/` | ✅ Deployed |
+| `lib/identity.ts` — link, resolve, unlink, getAllAliases | `lib/identity.ts` | ✅ Complete |
+| `POST /api/identity/link` | `app/api/identity/link/route.ts` | ✅ Complete |
+| `GET /api/identity/resolve` | `app/api/identity/resolve/route.ts` | ✅ Complete |
+| `POST /api/identity/create-root` | `app/api/identity/create-root/route.ts` | ✅ Complete |
+
+### What ArxMint Does NOT Own
+- **Namespace definitions** — teneo-auth defines ecosystem namespaces (aos, cognito, conversos, email, etc.)
+- **Ecosystem resolver logic** — teneo-auth's `ecosystem-identity.ts` orchestrates multi-link operations
+- **Profile merging** — ProfileEngine consumes resolved identities
+- **Link event emission** — teneo-production (signup), Conversos (chat), etc. emit link events through teneo-auth
+
+### How Other Projects Call ArxMint
+teneo-auth calls ArxMint's identity API via HTTP using `ARXMINT_API_URL` + `MARKETPLACE_SHARED_SECRET` (X-Marketplace-Secret header). teneo-auth handles Nostr signing internally — external callers never need to sign on ArxMint's behalf.
+
+### What ArxMint Still Needs to Build
+1. **Auto-link on checkout** — When a user pays via L402/Cashu while also carrying a teneo-auth JWT (cross-auth), auto-link `nostr_{pubkey}` ↔ `teneo-auth_{userId}` natively (both identities present in same request)
+2. **OpenAPI x-agent-scope declarations** — Add `x-agent-scope`, `x-agent-safe`, `x-auth-method` extensions to identity endpoints for agentic CLI consumption
+3. **Identity count in /health** — Expose alias count in health check for observability
+4. **Unlink API route** — `DELETE /api/identity/unlink` (lib function exists, no route yet)
+
 ## AI Infrastructure Stack (Layer 5: Agent Commerce)
 
 ArxMint is the payment backbone for the AI Infrastructure Stack. See full spec: `.claude/guides/AI-INFRASTRUCTURE-STACK.md`

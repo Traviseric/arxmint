@@ -72,6 +72,10 @@ Status key:
 | 5.x merchant platform (Bazaar) | Prototype | Early merchant-facing surfaces are live: `/pay/[merchant-id]` checkout prototype, `/badge` merchant kit, `/create` merchant setup wizard beta, and `/merchants` public directory. Self-hosted merchant node architecture, merchant-local APIs, SDK, webhooks, dashboard, and provisioning are not complete yet |
 | 4.6 developer portal & social proof | Planned | Docs site, case studies, content pipeline, SEO landing pages |
 | 6.x enterprise polish | Planned | External security audit (6.1), e-commerce plugins (6.2), compliance documentation kit (6.3) |
+| **Identity alias graph** | Complete | `lib/identity.ts` (link, resolve, unlink, getAllAliases), 3 API routes, `identity_aliases` table migrated. Generic primitives — namespaces defined by callers, not ArxMint. |
+| **Identity: auto-link on checkout** | Planned | When user pays via L402/Cashu with cross-auth JWT, auto-link `nostr_{pubkey}` ↔ `teneo-auth_{userId}` |
+| **Identity: OpenAPI agent scopes** | Planned | Add `x-agent-scope`, `x-agent-safe`, `x-auth-method` to identity endpoints for agentic CLI |
+| **Identity: unlink route** | Planned | `DELETE /api/identity/unlink` — lib function exists (`unlinkIdentity`), route not wired |
 
 ---
 
