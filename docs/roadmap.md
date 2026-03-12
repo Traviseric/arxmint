@@ -69,17 +69,39 @@ Status key:
 | 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
 | 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\docs\arxmint\grants\`, KPI framework at `docs/PILOT_KPIS.md`, deployment docs in `docs/`; merchant directory live at arxmint.com/merchants with Glacier + Teneo, 13 pipeline merchants, Nostr admin auth, public signup, and TE NUC testnet deployment running |
-| 5.x merchant platform (Bazaar) | Prototype | Early merchant-facing surfaces are live: `/pay/[merchant-id]` checkout prototype, `/badge` merchant kit, `/create` merchant setup wizard beta, and `/merchants` public directory. Self-hosted merchant node architecture, merchant-local APIs, SDK, webhooks, dashboard, and provisioning are not complete yet |
-| 4.6 developer portal & social proof | Planned | Docs site, case studies, content pipeline, SEO landing pages |
-| 6.x enterprise polish | Planned | External security audit (6.1), e-commerce plugins (6.2), compliance documentation kit (6.3) |
-| **Identity alias graph** | Complete | `lib/identity.ts` (link, resolve, unlink, getAllAliases), 3 API routes, `identity_aliases` table migrated. Generic primitives — namespaces defined by callers, not ArxMint. |
-| **Identity: auto-link on checkout** | Planned | When user pays via L402/Cashu with cross-auth JWT, auto-link `nostr_{pubkey}` ↔ `teneo-auth_{userId}` |
+| 5.x merchant platform (Bazaar) | Partial | Repo now contains merchant API keys, webhook engines, checkout/status flows, dashboard shell, wizard/config generation, LNURL, load tests, packaging folders, and update/backup primitives. Remaining work is contract alignment, env wiring, and end-to-end merchant-node verification |
+| 4.6 developer portal & social proof | Partial | Docs site, quickstart, case-study/social-proof assets, and SEO pages are landed; content expansion and tighter integration remain |
+| 6.x enterprise polish | Partial | WooCommerce + Zapier scaffolds, compliance kit docs, and webhook subscription APIs are shipped in repo; external audit and platform publishing/distribution remain |
+| **Identity alias graph** | Complete | `lib/identity.ts` (link, resolve, unlink, getAllAliases), 3 API routes, `identity_aliases` table migrated. Generic primitives - namespaces defined by callers, not ArxMint. |
+| **Identity: auto-link on checkout** | Planned | When user pays via L402/Cashu with cross-auth JWT, auto-link `nostr_{pubkey}` <-> `teneo-auth_{userId}` |
 | **Identity: OpenAPI agent scopes** | Planned | Add `x-agent-scope`, `x-agent-safe`, `x-auth-method` to identity endpoints for agentic CLI |
-| **Identity: unlink route** | Planned | `DELETE /api/identity/unlink` — lib function exists (`unlinkIdentity`), route not wired |
+| **Identity: unlink route** | Planned | `DELETE /api/identity/unlink` - lib function exists (`unlinkIdentity`), route not wired |
 
 ---
 
-## Known Gaps (Code Written ≠ Verified Working)
+## Execution Update (March 12, 2026)
+
+ArxMint is farther ahead in code than this roadmap previously implied.
+
+The correct execution stance now is:
+
+- Do not rebuild Phase 5 surfaces from scratch.
+- Treat most Bazaar work as code-landed but not yet fully consolidated or verified.
+- Focus next on alignment, promotion, and verification:
+  - unify checkout/status/package contracts
+  - finish the real merchant init/export/provision path
+  - replace remaining merchant stubs or explicitly defer them
+  - run end-to-end testnet verification on the existing merchant-node flow
+
+Agents should read the Phase 5 snapshot below as:
+
+- `Complete` = shipped and directly reusable
+- `Partial` = shipped in repo, but still needs route alignment, env wiring, or end-to-end verification
+- `Prototype` = genuine scaffolding or upstream-blocked work
+
+---
+
+## Known Gaps (Code Written != Verified Working)
 
 Every roadmap item above has code in the repo. But **code written is not code verified**.
 To honestly mark something "done" requires real-world verification:
@@ -1070,32 +1092,55 @@ Phase 5 SDK and API must be compatible with the existing Teneo Marketplace integ
 
 | Item | Status | Builds On |
 |---|---|---|
-| 5.1 Local auth tokens | Planned | Phase A auth + L402 macaroon bakery (1.5) |
-| 5.2 Webhook engine (local) | Planned | Phase B payment SDK + LND gRPC |
-| 5.3 Self-hosted checkout | Prototype | Public checkout exists today at `/pay/[merchant-id]` backed by `/api/checkout`; still centralized, Lightning-only, and uses polling/demo fallback instead of merchant-local self-hosted flow |
-| 5.4 Payment status API | Prototype | `/api/checkout/status/[id]` exists for polling current prototype sessions; not yet the merchant-local `/api/v1/payments` + SSE design |
-| 5.5 Client-side SDK | Planned | 5.1 + 5.3 + 5.4 |
-| 5.6 LNURL-pay / Lightning Address | Planned | Phase B L402 + LND wiring |
-| 5.7 Merchant dashboard (self-hosted) | Planned | 5.1 + 5.4 + Phase A DB + Self-Hosting-UX health vocabulary |
-| 5.8a Provisioning service (control plane) | Planned | Phase C Docker stack + Caddy + cloud provider APIs |
-| 5.8b Managed DNS + connectivity | Planned | 5.8a + Cloudflare Tunnel API + DNS zone management |
-| 5.8c LSP liquidity bootstrap | Planned | 5.8a + lsp-spec API integration |
-| 5.8d Merchant stack composition | Prototype | `/create` now presents a merchant setup wizard beta that builds intent and UX around merchant node setup, but it does not yet provision infrastructure or emit the final merchant stack path |
+| 5.1 Local auth tokens | Complete | Scoped merchant key generation, persistence, listing, revocation, and scope enforcement in `lib/merchant-auth.ts` and `app/api/merchant-keys/route.ts` |
+| 5.2 Webhook engine (local) | Complete | Local webhook registration, signing, retry delivery, and CRUD routes in `lib/webhook-engine.ts`, `app/api/v1/webhooks/route.ts`, `app/api/webhooks/route.ts`, and `tests/webhook-engine.test.ts` |
+| 5.3 Self-hosted checkout | Partial | Public checkout exists today at `/pay/[merchant-id]` backed by `/api/checkout`; route works, but the app still mixes centralized app assumptions, Lightning-first behavior, and dev demo fallback instead of a fully stabilized merchant-node contract |
+| 5.4 Payment status API | Partial | Checkout status poll + SSE exist under `/api/checkout/status/[id]` and `/stream`; merchant payment listing exists at `/api/v1/payments`; remaining work is consolidating these into one stable merchant-node API contract |
+| 5.5 Client-side SDK | Partial | `packages/js` and `packages/react` exist with usable package code, but they currently target unfinished `v1` checkout/status routes and need contract alignment before being treated as stable |
+| 5.6 LNURL-pay / Lightning Address | Complete | LNURL and merchant registry surfaces are implemented in `app/api/lnurlp/[username]/invoice`, `lib/lnurl-merchant-registry.ts`, and tests |
+| 5.7 Merchant dashboard (self-hosted) | Partial | `app/merchant/page.tsx` ships overview, payments, webhooks, API keys, and node status; analytics/settings still contain stubbed sections |
+| 5.8a Provisioning service (control plane) | Partial | Merchant setup wizard and community/deployment generation exist, but full cloud provisioning is not yet the default path |
+| 5.8b Managed DNS + connectivity | Partial | `lib/managed-dns.ts` and tests implement Cloudflare Tunnel + DNS provisioning logic; rollout/integration still needs real deployment verification |
+| 5.8c LSP liquidity bootstrap | Partial | `lib/lsp-bootstrap.ts` and tests implement JIT channel bootstrap logic; real merchant-node validation is still required |
+| 5.8d Merchant stack composition | Partial | `/create` and merchant setup wizard generate deployment intent/config and merchant-first UX, but do not yet complete the final export/provision appliance flow |
 | 5.9 Public directory | Partial | `/merchants` is live with public signup, two live merchants, admin-only pipeline merchants, checkout links, and merchant badge CTA; search, merchant self-service activation, and CLI registration remain |
-| 5.10 Idempotency + hardening | Planned | 5.1 + 5.2 + Phase E hardening |
-| 5.10b Scale & load testing | Planned | 5.8d + 5.10 + regtest stack |
-| 5.11a Appliance update engine | Planned | 5.8a + signed manifest infrastructure |
-| 5.11b Zero-knowledge encrypted backups | Planned | 5.8a + seed-derived encryption + cloud storage |
-| 5.11c One-click restore | Planned | 5.11b + provisioning service |
-| 5.12 Home node packaging (Umbrel/StartOS) | Planned | 5.8d stable + Umbrel packaging format |
-| 5.13 Mobile merchant remote control | Planned (Future) | 5.7 PWA as bridge; native app future |
-| 5.14 UX polish & conversion optimization | Planned | 5.3 (conversion tracking) + 5.7 (design audit) |
+| 5.10 Idempotency + hardening | Partial | Idempotency, validation, rate limit, health, logging, and related hardening surfaces are in repo; remaining work is operational verification and rollout discipline |
+| 5.10b Scale & load testing | Complete | Artillery smoke/full/webhook suites and CI load-test coverage are in repo |
+| 5.11a Appliance update engine | Partial | Signed-manifest update engine and `/api/update/check` are in repo; production rollout/rollback discipline still needs verification |
+| 5.11b Zero-knowledge encrypted backups | Partial | Backup engine, scripts, and encrypted backup primitives are implemented; restore-drill validation still remains |
+| 5.11c One-click restore | Partial | Restore docs, validators, and UI building blocks exist; full fresh-host recovery verification is still pending |
+| 5.12 Home node packaging (Umbrel/StartOS) | Partial | `umbrel/` and `start9/` packaging assets are in repo; packaging/distribution and real install verification remain |
+| 5.13 Mobile merchant remote control | Partial | PWA/mobile-control direction is represented in the app shell and supporting client surfaces, but it is not yet fully productized |
+| 5.14 UX polish & conversion optimization | Partial | Large amounts of landing, checkout, nav, and accessibility polish are shipped; remaining work is conversion instrumentation and verification against the merchant flow |
 
 **Live Phase 5-adjacent prototype surfaces (March 2026):**
 - `/badge` is live as a merchant acquisition + branding kit (embed badge, referral link, printable assets)
 - `/create` is live as a merchant-first beta wizard, but still stops short of actual one-command deploy
 
 ### Phase 5 Priority Order
+
+Current execution order from the repo state:
+
+1. **Contract alignment first**
+   - Unify `/api/checkout`, checkout status, merchant `v1` routes, and package SDK expectations.
+   - Agents should extend the existing surfaces, not create parallel ones.
+2. **Promote `/create` from beta generator to real merchant init/export path**
+   - Keep the existing wizard.
+   - Add the missing export/provision behavior instead of replacing the flow.
+3. **Finish the merchant dashboard with real data or explicit deferrals**
+   - Replace stub analytics/settings or remove them from the active surface until real.
+4. **Run the Phase 5 verification gate on the code already in repo**
+   - testnet payment
+   - webhook delivery
+   - DNS/tunnel bootstrap
+   - LSP bootstrap
+   - backup and restore drill
+5. **Then move to audit/distribution work**
+   - external audit
+   - plugin publishing
+   - compliance packaging refinement
+
+Historical dependency order remains below for reference. Do not treat it as "start from zero."
 
 Build in this order — deployment must come first in the self-hosted model:
 
