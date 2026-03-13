@@ -4,7 +4,7 @@ import type { PaymentStatus } from "@arxmint/js";
 import type { UsePaymentOptions, UsePaymentResult } from "./types.js";
 
 export function usePayment(options: UsePaymentOptions): UsePaymentResult {
-  const { apiKey, baseUrl, metadata, pollInterval = 2000 } = options;
+  const { apiKey, merchantId, baseUrl, metadata, pollInterval = 2000 } = options;
 
   const [status, setStatus] = useState<PaymentStatus | "idle">("idle");
   const [invoice, setInvoice] = useState<string | null>(null);
@@ -22,10 +22,10 @@ export function usePayment(options: UsePaymentOptions): UsePaymentResult {
   }, []);
 
   const createPayment = useCallback(
-    async (amount?: number) => {
-      const sats = amount ?? options.amount;
+    async (amountSats?: number) => {
+      const sats = amountSats ?? options.amountSats;
       if (!sats || sats <= 0) {
-        setError(new Error("amount must be a positive integer (sats)"));
+        setError(new Error("amountSats must be a positive integer (sats)"));
         return;
       }
 
@@ -35,7 +35,7 @@ export function usePayment(options: UsePaymentOptions): UsePaymentResult {
 
       try {
         const client = new ArxMintClient({ apiKey, baseUrl });
-        const checkout = await client.createCheckout({ amount: sats, metadata });
+        const checkout = await client.createCheckout({ merchantId, amountSats: sats, metadata });
 
         setInvoice(checkout.invoice);
         setPaymentId(checkout.id);
@@ -61,7 +61,7 @@ export function usePayment(options: UsePaymentOptions): UsePaymentResult {
         stopPolling();
       }
     },
-    [apiKey, baseUrl, options.amount, metadata, pollInterval, stopPolling]
+    [apiKey, merchantId, baseUrl, options.amountSats, metadata, pollInterval, stopPolling]
   );
 
   const reset = useCallback(() => {

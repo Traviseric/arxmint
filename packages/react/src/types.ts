@@ -4,8 +4,9 @@ export type { PaymentStatus };
 
 export interface PayButtonProps {
   apiKey: string;
-  amount: number;
-  merchantId?: string;
+  /** Payment amount in satoshis. */
+  amountSats: number;
+  merchantId: string;
   baseUrl?: string;
   onSuccess?: (payment: { id: string; paidAt: number }) => void;
   onError?: (error: Error) => void;
@@ -16,11 +17,12 @@ export interface PayButtonProps {
 
 export interface CheckoutFormProps {
   apiKey: string;
-  amount?: number;
+  merchantId: string;
+  /** Pre-set amount in satoshis. If omitted, an input field is shown. */
+  amountSats?: number;
   baseUrl?: string;
   metadata?: Record<string, unknown>;
   redirectUrl?: string;
-  webhookUrl?: string;
   onSuccess?: (payment: { id: string; paidAt: number }) => void;
   onError?: (error: Error) => void;
   className?: string;
@@ -39,7 +41,9 @@ export interface QRPaymentProps {
 
 export interface UsePaymentOptions {
   apiKey: string;
-  amount?: number;
+  merchantId: string;
+  /** Default amount in satoshis (can be overridden per call). */
+  amountSats?: number;
   baseUrl?: string;
   metadata?: Record<string, unknown>;
   pollInterval?: number;
@@ -51,6 +55,6 @@ export interface UsePaymentResult {
   paymentId: string | null;
   expiresAt: number | null;
   error: Error | null;
-  createPayment: (amount?: number) => Promise<void>;
+  createPayment: (amountSats?: number) => Promise<void>;
   reset: () => void;
 }

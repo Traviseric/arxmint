@@ -11,13 +11,17 @@ export async function createCheckout(
   apiKey: string,
   options: CreateCheckoutOptions
 ): Promise<CheckoutResult> {
-  const res = await fetch(`${baseUrl}/api/v1/checkout`, {
+  const res = await fetch(`${baseUrl}/api/checkout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(options),
+    body: JSON.stringify({
+      merchantId: options.merchantId,
+      amountSats: options.amountSats,
+      ...(options.memo && { memo: options.memo }),
+    }),
   });
 
   if (!res.ok) {
@@ -25,7 +29,25 @@ export async function createCheckout(
     throw new Error(`ArxMint API error ${res.status}: ${text}`);
   }
 
-  return res.json() as Promise<CheckoutResult>;
+  // Server returns: { sessionId, invoice, expiresAt: ISO string, demoMode, merchantName, amountSats }
+  const data = await res.json() as {
+    sessionId: string;
+    invoice: string;
+    expiresAt: string;
+    demoMode?: boolean;
+    merchantName?: string;
+    amountSats: number;
+  };
+
+  return {
+    id: data.sessionId,
+    invoice: data.invoice,
+    expiresAt: new Date(data.expiresAt).getTime(),
+    checkoutUrl: `${baseUrl}/pay/${options.merchantId}`,
+    merchantName: data.merchantName,
+    amountSats: data.amountSats,
+    demoMode: data.demoMode,
+  };
 }
 
 export async function pollStatus(
@@ -33,7 +55,7 @@ export async function pollStatus(
   apiKey: string,
   paymentId: string
 ): Promise<PaymentStatusResult> {
-  const res = await fetch(`${baseUrl}/api/v1/payments/${paymentId}/status`, {
+  const res = await fetch(`${baseUrl}/api/checkout/status/${paymentId}`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
 
@@ -42,27 +64,34 @@ export async function pollStatus(
     throw new Error(`ArxMint API error ${res.status}: ${text}`);
   }
 
-  return res.json() as Promise<PaymentStatusResult>;
+  // Server returns: { id, status, amountSats, createdAt: ISO, expiresAt: ISO, paidAt?: ISO, demoMode? }
+  const data = await res.json() as {
+    id: string;
+    status: string;
+    amountSats: number;
+    createdAt: string;
+    expiresAt: string;
+    paidAt?: string;
+    demoMode?: boolean;
+  };
+
+  return {
+    status: data.status as PaymentStatusResult["status"],
+    ...(data.paidAt && { paidAt: new Date(data.paidAt).getTime() }),
+    amountSats: data.amountSats,
+    createdAt: data.createdAt,
+    expiresAt: data.expiresAt,
+  };
 }
 
+// NOTE: The ArxMint server does not currently expose a list-payments endpoint.
+// This function is reserved for a future server-side payments API.
 export async function listPayments(
-  baseUrl: string,
-  apiKey: string,
-  options: ListPaymentsOptions = {}
+  _baseUrl: string,
+  _apiKey: string,
+  _options: ListPaymentsOptions = {}
 ): Promise<Payment[]> {
-  const params = new URLSearchParams();
-  if (options.status) params.set("status", options.status);
-  if (options.limit !== undefined) params.set("limit", String(options.limit));
-
-  const query = params.toString() ? `?${params.toString()}` : "";
-  const res = await fetch(`${baseUrl}/api/v1/payments${query}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`ArxMint API error ${res.status}: ${text}`);
-  }
-
-  return res.json() as Promise<Payment[]>;
+  throw new Error(
+    "listPayments is not yet available. The server-side payments list endpoint has not been implemented."
+  );
 }

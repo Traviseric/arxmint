@@ -5,21 +5,21 @@ import type { CheckoutFormProps } from "./types.js";
 
 export function CheckoutForm({
   apiKey,
-  amount: initialAmount,
+  merchantId,
+  amountSats: initialAmountSats,
   baseUrl,
   metadata,
   redirectUrl,
-  webhookUrl,
   onSuccess,
   onError,
   className = "",
 }: CheckoutFormProps) {
   const [amountInput, setAmountInput] = useState(
-    initialAmount ? String(initialAmount) : ""
+    initialAmountSats ? String(initialAmountSats) : ""
   );
 
   const { status, invoice, paymentId, expiresAt, error, createPayment, reset } =
-    usePayment({ apiKey, baseUrl, metadata });
+    usePayment({ apiKey, merchantId, baseUrl, metadata });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +64,7 @@ export function CheckoutForm({
       onSubmit={handleSubmit}
       className={`arxmint-checkout-form ${className}`}
     >
-      {!initialAmount && (
+      {!initialAmountSats && (
         <div>
           <label htmlFor="arxmint-amount">Amount (sats)</label>
           <input

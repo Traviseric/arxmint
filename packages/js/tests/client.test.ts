@@ -66,19 +66,30 @@ test("listPayments() throws on public key", async () => {
 
 // ---- createCheckout amount validation ----
 
-test("createCheckout() rejects zero amount", async () => {
+test("createCheckout() rejects zero amountSats", async () => {
   const client = new ArxMintClient({ apiKey: "arx_live_abc" });
   await assert.rejects(
-    () => client.createCheckout({ amount: 0 }),
+    // @ts-ignore — intentionally passing zero for test
+    () => client.createCheckout({ merchantId: "test-merchant", amountSats: 0 }),
     /positive integer/
   );
 });
 
-test("createCheckout() rejects negative amount", async () => {
+test("createCheckout() rejects negative amountSats", async () => {
   const client = new ArxMintClient({ apiKey: "arx_live_abc" });
   await assert.rejects(
-    () => client.createCheckout({ amount: -100 }),
+    // @ts-ignore — intentionally passing negative for test
+    () => client.createCheckout({ merchantId: "test-merchant", amountSats: -100 }),
     /positive integer/
+  );
+});
+
+test("createCheckout() rejects missing merchantId", async () => {
+  const client = new ArxMintClient({ apiKey: "arx_live_abc" });
+  await assert.rejects(
+    // @ts-ignore — intentionally omitting merchantId for test
+    () => client.createCheckout({ amountSats: 1000 }),
+    /merchantId/
   );
 });
 

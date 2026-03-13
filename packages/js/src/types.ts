@@ -6,27 +6,43 @@ export interface ArxMintConfig {
 }
 
 export interface CreateCheckoutOptions {
-  amount: number;
+  /** Which merchant to pay (e.g. "seed-glacier", "arxmint-store", or a DB merchant ID). */
+  merchantId: string;
+  /** Payment amount in satoshis. */
+  amountSats: number;
+  /** Optional payment description (max 200 chars). */
+  memo?: string;
+  /** Optional metadata forwarded to the merchant webhook. */
   metadata?: Record<string, unknown>;
-  redirectUrl?: string;
-  webhookUrl?: string;
 }
 
 export interface CheckoutResult {
+  /** Checkout session ID (mapped from server `sessionId`). */
   id: string;
   invoice: string;
+  /** Expiry as Unix milliseconds (converted from server ISO string). */
   expiresAt: number;
+  /** Constructed checkout URL: `${baseUrl}/pay/${merchantId}`. */
   checkoutUrl: string;
+  merchantName?: string;
+  amountSats: number;
+  demoMode?: boolean;
 }
 
 export interface PaymentStatusResult {
   status: PaymentStatus;
+  /** Paid timestamp as Unix milliseconds (converted from server ISO string), if paid. */
   paidAt?: number;
+  amountSats?: number;
+  /** ISO string — session creation timestamp. */
+  createdAt?: string;
+  /** ISO string — session expiry timestamp. */
+  expiresAt?: string;
 }
 
 export interface Payment {
   id: string;
-  amount: number;
+  amountSats: number;
   status: PaymentStatus;
   createdAt: number;
   paidAt?: number;

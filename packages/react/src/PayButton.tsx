@@ -4,7 +4,7 @@ import type { PayButtonProps } from "./types.js";
 
 export function PayButton({
   apiKey,
-  amount,
+  amountSats,
   merchantId,
   baseUrl,
   onSuccess,
@@ -22,8 +22,8 @@ export function PayButton({
     try {
       const client = new ArxMintClient({ apiKey, baseUrl });
       const checkout = await client.createCheckout({
-        amount,
-        metadata: merchantId ? { merchantId } : undefined,
+        merchantId,
+        amountSats,
       });
 
       setCheckoutUrl(checkout.checkoutUrl);

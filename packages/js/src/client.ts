@@ -27,8 +27,11 @@ export class ArxMintClient {
    * Returns an invoice and checkout URL for the payer.
    */
   async createCheckout(options: CreateCheckoutOptions): Promise<CheckoutResult> {
-    if (!options.amount || options.amount <= 0) {
-      throw new Error("createCheckout: amount must be a positive integer (sats)");
+    if (!options.amountSats || options.amountSats <= 0) {
+      throw new Error("createCheckout: amountSats must be a positive integer (sats)");
+    }
+    if (!options.merchantId) {
+      throw new Error("createCheckout: merchantId is required");
     }
     return createCheckout(this.baseUrl, this.apiKey, options);
   }
