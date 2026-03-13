@@ -19,7 +19,7 @@ import {
   Link,
   Radio,
 } from "lucide-react";
-import { generateApertureConfig } from "@/lib/community-generator";
+import { generateApertureConfig, generateEnvTemplate } from "@/lib/community-generator";
 import type { DeploymentConfig } from "@/lib/types";
 import { useSovereignStore } from "@/lib/store";
 
@@ -545,6 +545,24 @@ export function MerchantSetupWizard() {
             </p>
           </div>
 
+          {/* Download bundle — docker-compose.yml + .env.template */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => downloadFile(deployment.dockerCompose, "docker-compose.yml")}
+              className="antigravity-btn-outline flex-1 !py-2.5 inline-flex items-center justify-center gap-2 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              docker-compose.yml
+            </button>
+            <button
+              onClick={() => downloadFile(generateEnvTemplate(deployment.community), ".env.template")}
+              className="antigravity-btn-outline flex-1 !py-2.5 inline-flex items-center justify-center gap-2 text-sm"
+            >
+              <Download className="w-4 h-4" />
+              .env.template
+            </button>
+          </div>
+
           {/* Docker Compose */}
           <CollapsibleSection
             title="Docker Compose"
@@ -569,6 +587,38 @@ export function MerchantSetupWizard() {
                 <button
                   aria-label="Download docker-compose.yml"
                   onClick={() => downloadFile(deployment.dockerCompose, "docker-compose.yml")}
+                  className="p-2 rounded-lg bg-sovereign-dark hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
+                >
+                  <Download className="w-4 h-4 text-sovereign-muted" />
+                </button>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          {/* Env Template */}
+          <CollapsibleSection
+            title=".env Template"
+            icon={<Shield className="w-4 h-4" />}
+            id="env"
+            expanded={expandedSection}
+            onToggle={setExpandedSection}
+          >
+            <div className="relative">
+              <pre className="bg-sovereign-panel/50 rounded-lg p-4 text-xs text-text-secondary overflow-x-auto max-h-[400px]">
+                {generateEnvTemplate(deployment.community)}
+              </pre>
+              <div className="absolute top-2 right-2 flex gap-2">
+                <span aria-live="polite" className="sr-only">{copied === "env" ? "Copied" : ""}</span>
+                <button
+                  aria-label="Copy .env template"
+                  onClick={() => copyToClipboard(generateEnvTemplate(deployment.community), "env")}
+                  className="p-2 rounded-lg bg-sovereign-dark hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
+                >
+                  {copied === "env" ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-sovereign-muted" />}
+                </button>
+                <button
+                  aria-label="Download .env.template"
+                  onClick={() => downloadFile(generateEnvTemplate(deployment.community), ".env.template")}
                   className="p-2 rounded-lg bg-sovereign-dark hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px]"
                 >
                   <Download className="w-4 h-4 text-sovereign-muted" />
