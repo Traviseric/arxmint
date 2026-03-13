@@ -9,6 +9,7 @@ import { validateAmount } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { withIdempotency } from "@/lib/idempotency";
 import { apiError } from "@/lib/api-error";
+import { getAuthPubkey } from "@/lib/auth-middleware";
 
 const INVOICE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 // Demo mode: only in development or when DEMO_MODE=true explicitly set.
@@ -115,6 +116,24 @@ export async function POST(request: NextRequest) {
         });
       } catch {
         // If DB insert fails, session still works in-memory for demo
+      }
+
+      // Best-effort cross-auth identity linking.
+      // When a request carries both a Nostr session (cookie or Bearer) AND a
+      // X-Teneo-Auth JWT, both identities are present — link them automatically.
+      // This call is fire-and-forget wrapped in try/catch — checkout never fails here.
+      try {
+        const nostrPubkey = getAuthPubkey(request);
+        const teneoAuthHeader = request.headers.get("X-Teneo-Auth");
+        if (nostrPubkey && teneoAuthHeader) {
+          const { parseTeneoAuthUserId, autoLinkCheckoutIdentity } = await import("@/lib/identity");
+          const teneoUserId = parseTeneoAuthUserId(teneoAuthHeader);
+          if (teneoUserId) {
+            await autoLinkCheckoutIdentity(nostrPubkey, teneoUserId);
+          }
+        }
+      } catch {
+        // Silent — identity linking must never affect checkout outcome
       }
 
       return NextResponse.json({

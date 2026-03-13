@@ -10,6 +10,7 @@
 // ============================================================
 
 import { logger } from "@/lib/logger";
+import { parseTeneoAuthUserId as _parseTeneoAuthUserId } from "./teneo-jwt";
 
 export interface IdentityAlias {
   id: string;
@@ -257,6 +258,71 @@ export async function unlinkIdentity(
     return true;
   } catch {
     return false;
+  }
+}
+
+// ---- Cross-auth auto-linking ----
+
+/**
+ * Parse a teneo-auth JWT from the `X-Teneo-Auth` header and extract the userId.
+ * Implemented in lib/teneo-jwt.ts (no external deps, testable standalone).
+ */
+export const parseTeneoAuthUserId = _parseTeneoAuthUserId;
+
+/**
+ * Best-effort: link a teneo-auth userId to the ArxMint rootId of a Nostr user.
+ *
+ * Resolves the rootId for the Nostr pubkey from the identity graph, then
+ * links the teneo-auth identity to that root. Silent on failure — never throws.
+ *
+ * Call this after a successful checkout when both identities are detected.
+ */
+export async function autoLinkCheckoutIdentity(
+  nostrPubkey: string,
+  teneoUserId: string
+): Promise<void> {
+  try {
+    // Resolve the ArxMint rootId for this Nostr pubkey
+    const resolved = await resolveIdentity(nostrPubkey, "nostr");
+    if (!resolved) {
+      // User doesn't have an ArxMint root identity yet — skip silently
+      logger.warn("identity_auto_link_no_root", {
+        action: "checkout_auto_link",
+        message: "Nostr pubkey has no ArxMint root identity — skipping teneo-auth link",
+        nostrPubkey: truncateId(nostrPubkey),
+      });
+      return;
+    }
+
+    const result = await linkIdentity(resolved.rootId, {
+      namespace: "teneo-auth",
+      externalId: teneoUserId,
+      linkedBy: "checkout-auto-link",
+      metadata: { source: "checkout", nostrPubkey: truncateId(nostrPubkey) },
+    });
+
+    if ("error" in result) {
+      // Conflict (already linked) or other non-fatal error — log and continue
+      logger.warn("identity_auto_link_skipped", {
+        action: "checkout_auto_link",
+        reason: result.error,
+        status: result.status,
+      });
+    } else {
+      logger.info("identity_auto_linked", {
+        action: "checkout_auto_link",
+        rootId: truncateId(resolved.rootId),
+        teneoUserId: truncateId(teneoUserId),
+        nostrPubkey: truncateId(nostrPubkey),
+        created: result.created,
+      });
+    }
+  } catch (err) {
+    // Always silent — checkout must never fail due to identity linking
+    logger.warn("identity_auto_link_exception", {
+      action: "checkout_auto_link",
+      message: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
