@@ -72,13 +72,27 @@ async function checkLnd(): Promise<ServiceStatus> {
   }
 }
 
+async function getIdentityAliasCount(): Promise<number | null> {
+  try {
+    const { supabase } = await import("@/lib/supabase");
+    const { count, error } = await supabase
+      .from("identity_aliases")
+      .select("*", { count: "exact", head: true });
+    if (error) return null;
+    return count ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   const { valid: envValid, missing, warnings } = validateRequiredEnv();
 
-  const [dbStatus, mintStatus, lndStatus] = await Promise.all([
+  const [dbStatus, mintStatus, lndStatus, identityAliasCount] = await Promise.all([
     checkDatabase(),
     checkCashuMint(),
     checkLnd(),
+    getIdentityAliasCount(),
   ]);
 
   const uptimeSeconds = Math.floor((Date.now() - START_TIME) / 1000);
@@ -93,6 +107,7 @@ export async function GET() {
     status,
     uptime: uptimeSeconds,
     timestamp: new Date().toISOString(),
+    identity_aliases: identityAliasCount,
     env: {
       valid: envValid,
       missing: missing.length > 0 ? missing : undefined,
