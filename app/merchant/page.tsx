@@ -168,9 +168,10 @@ function OverviewTab({ merchantId }: { merchantId: string }) {
       try {
         const res = await fetch("/api/health");
         if (!res.ok) { setNodeStatus("disconnected"); setCashuStatus("unreachable"); return; }
+        // /api/health returns { status, services: { lnd: { ok }, mint: { ok } } }
         const data = await res.json();
-        const lndOk = data.checks?.lnd?.status === "ok" || data.status === "ok";
-        const cashuOk = data.checks?.cashu?.status === "ok" || data.status === "ok";
+        const lndOk = data.services?.lnd?.ok === true;
+        const cashuOk = data.services?.mint?.ok === true;
         setNodeStatus(lndOk ? "connected" : "disconnected");
         setCashuStatus(cashuOk ? "reachable" : "unreachable");
       } catch {
@@ -764,52 +765,105 @@ function ApiKeysTab({ merchantId }: { merchantId: string }) {
   );
 }
 
-// ---- Analytics Tab (stub with mock chart) ----
+// ---- Analytics Tab ----
 
-function AnalyticsTab() {
-  const bars = [40, 65, 30, 80, 55, 90, 70];
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const maxVal = Math.max(...bars);
+interface DailyVolume {
+  label: string; // "Mon", "Tue", etc.
+  sats: number;
+}
+
+function AnalyticsTab({ merchantId }: { merchantId: string }) {
+  const [dailyVolume, setDailyVolume] = useState<DailyVolume[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Build 7-day buckets (today = index 6, 6 days ago = index 0)
+    const now = new Date();
+    const buckets: { date: string; label: string; sats: number }[] = Array.from(
+      { length: 7 },
+      (_, i) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() - (6 - i));
+        return {
+          date: d.toISOString().slice(0, 10), // "YYYY-MM-DD"
+          label: d.toLocaleDateString(undefined, { weekday: "short" }),
+          sats: 0,
+        };
+      }
+    );
+
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 7);
+
+    fetch(
+      `/api/v1/payments?merchant_id=${encodeURIComponent(merchantId)}&status=paid&limit=100`
+    )
+      .then((r) => (r.ok ? r.json() : { payments: [] }))
+      .then((data) => {
+        const payments: Payment[] = data.payments ?? [];
+        for (const p of payments) {
+          if (!p.paidAt) continue;
+          const day = new Date(p.paidAt).toISOString().slice(0, 10);
+          const bucket = buckets.find((b) => b.date === day);
+          if (bucket) bucket.sats += p.amountSats;
+        }
+        setDailyVolume(buckets.map(({ label, sats }) => ({ label, sats })));
+      })
+      .catch(() => {
+        setDailyVolume(
+          buckets.map(({ label }) => ({ label, sats: 0 }))
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [merchantId]);
+
+  const maxSats = Math.max(...dailyVolume.map((d) => d.sats), 1);
 
   return (
     <div className="space-y-6">
+      {/* 7-Day Volume — real data from /api/v1/payments */}
       <div className="sovereign-card p-5">
         <h3 className="text-sm font-semibold text-sovereign-muted mb-4 uppercase tracking-wide">
-          7-Day Volume (demo data)
+          7-Day Volume (paid)
         </h3>
-        <div className="flex items-end gap-2 h-32">
-          {bars.map((val, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                className="w-full bg-btc-orange/60 rounded-t"
-                style={{ height: `${(val / maxVal) * 100}%` }}
-              />
-              <span className="text-xs text-sovereign-muted">{days[i]}</span>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-sovereign-muted" />
+          </div>
+        ) : (
+          <>
+            <div className="flex items-end gap-2 h-32">
+              {dailyVolume.map((d, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${satsFmt(d.sats)}`}>
+                  <div
+                    className="w-full bg-btc-orange/60 rounded-t transition-all"
+                    style={{ height: `${(d.sats / maxSats) * 100}%`, minHeight: d.sats > 0 ? "4px" : "0" }}
+                  />
+                  <span className="text-xs text-sovereign-muted">{d.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+            {dailyVolume.every((d) => d.sats === 0) && (
+              <p className="text-xs text-sovereign-muted text-center mt-2">No paid transactions in the last 7 days.</p>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Payment Methods — deferred until payment type tracking is added */}
       <div className="sovereign-card p-5">
-        <h3 className="text-sm font-semibold text-sovereign-muted mb-4 uppercase tracking-wide">
-          Payment Methods
-        </h3>
-        <div className="space-y-3">
-          {[
-            { label: "Lightning (L402)", pct: 62 },
-            { label: "Cashu (NUT-24)", pct: 38 },
-          ].map(({ label, pct }) => (
-            <div key={label}>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-sovereign-text">{label}</span>
-                <span className="text-sovereign-muted">{pct}%</span>
-              </div>
-              <div className="h-2 bg-sovereign-dark rounded-full overflow-hidden">
-                <div className="h-full bg-btc-orange rounded-full" style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center gap-2 mb-3">
+          <BarChart2 className="w-4 h-4 text-sovereign-muted" />
+          <h3 className="text-sm font-semibold text-sovereign-muted uppercase tracking-wide">
+            Payment Methods
+          </h3>
+          <span className="ml-auto text-xs bg-sovereign-dark text-sovereign-muted px-2 py-0.5 rounded-full border border-white/10">
+            Coming Soon
+          </span>
         </div>
-        <p className="text-xs text-sovereign-muted mt-4">Live analytics available once production payments are flowing.</p>
+        <p className="text-sm text-sovereign-muted">
+          Lightning vs. Cashu breakdown will be available once per-session payment method tracking is wired to the checkout flow.
+        </p>
       </div>
     </div>
   );
@@ -956,7 +1010,7 @@ export default function MerchantDashboardPage() {
         {activeTab === "payments" && <PaymentsTab merchantId={merchantId} />}
         {activeTab === "webhooks" && <WebhooksTab merchantId={merchantId} />}
         {activeTab === "apikeys" && <ApiKeysTab merchantId={merchantId} />}
-        {activeTab === "analytics" && <AnalyticsTab />}
+        {activeTab === "analytics" && <AnalyticsTab merchantId={merchantId} />}
         {activeTab === "settings" && <SettingsTab merchantId={merchantId} />}
       </div>
     </div>
