@@ -8,7 +8,8 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { randomBytes } from "crypto";
+import { signMacaroon, verifyMacaroon, verifyPreimage } from "@te-btc/cashu-l402";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";
@@ -62,71 +63,6 @@ function pruneExpired(): void {
   const now = Date.now();
   for (const [k, v] of pendingL402) {
     if (v.expiresAt < now) pendingL402.delete(k);
-  }
-}
-
-/**
- * Verify a payment preimage against a stored rHash.
- * SHA256(preimage) must equal rHash (constant-time compare).
- *
- * @param preimage - hex-encoded 32-byte payment preimage
- * @param rHashBase64 - base64-encoded 32-byte payment hash from LND
- */
-function verifyPreimage(preimage: string, rHashBase64: string): boolean {
-  try {
-    const preimageBytes = Buffer.from(preimage, "hex");
-    if (preimageBytes.length !== 32) return false;
-    const derived = createHash("sha256").update(preimageBytes).digest();
-    const expected = Buffer.from(rHashBase64, "base64");
-    if (derived.length !== expected.length) return false;
-    return timingSafeEqual(derived, expected);
-  } catch (error: unknown) {
-    logger.warn("l402_preimage_verify_error", {
-      error: error instanceof Error ? error.message : String(error),
-      action: "l402_preimage_verify_error",
-    });
-    return false;
-  }
-}
-
-/**
- * Sign a macaroon payload with HMAC-SHA256.
- * Returns a base64-encoded JSON string containing the payload plus a `sig` field.
- * Throws if MACAROON_ROOT_KEY is not configured.
- */
-function signMacaroon(payload: object): string {
-  if (!MACAROON_ROOT_KEY) {
-    throw new Error("MACAROON_ROOT_KEY is not set — cannot sign macaroon");
-  }
-  const payloadJson = JSON.stringify(payload);
-  const sig = createHmac("sha256", MACAROON_ROOT_KEY)
-    .update(payloadJson)
-    .digest("hex");
-  return Buffer.from(JSON.stringify({ ...payload, sig })).toString("base64");
-}
-
-/**
- * Verify an HMAC-signed macaroon.
- * Returns the decoded payload (without `sig`) if the HMAC is valid, null otherwise.
- * Returns null immediately if MACAROON_ROOT_KEY is not set.
- */
-function verifyMacaroon(token: string): { identifier: string } | null {
-  if (!MACAROON_ROOT_KEY) return null;
-  try {
-    const decoded = JSON.parse(Buffer.from(token, "base64").toString("utf8"));
-    const { sig, ...payload } = decoded;
-    if (!sig) return null;
-    const expectedSig = createHmac("sha256", MACAROON_ROOT_KEY)
-      .update(JSON.stringify(payload))
-      .digest("hex");
-    if (sig !== expectedSig) return null;
-    return payload as { identifier: string };
-  } catch (error: unknown) {
-    logger.warn("l402_macaroon_parse_error", {
-      error: error instanceof Error ? error.message : String(error),
-      action: "l402_macaroon_parse_error",
-    });
-    return null;
   }
 }
 
@@ -276,7 +212,7 @@ export async function GET(request: NextRequest) {
 
       // HMAC verification — reject forged/tampered macaroons before any Map lookup
       if (MACAROON_ROOT_KEY) {
-        const macPayload = verifyMacaroon(macaroon);
+        const macPayload = verifyMacaroon(macaroon, MACAROON_ROOT_KEY);
         if (!macPayload) {
           return NextResponse.json(
             { error: "Invalid L402 token — macaroon signature verification failed" },
@@ -411,7 +347,7 @@ export async function GET(request: NextRequest) {
   // in dev, fall back to an unsigned macaroon with an explicit logger warning.
   let macaroon: string;
   try {
-    macaroon = signMacaroon(macaroonPayload);
+    macaroon = signMacaroon(macaroonPayload, MACAROON_ROOT_KEY!);
   } catch (error: unknown) {
     // MACAROON_ROOT_KEY not set — only reachable in development (production blocked above)
     logger.warn("DEV: issuing unsigned macaroon", {
