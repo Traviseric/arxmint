@@ -3,6 +3,14 @@
 // GET /api/identity/resolve — Resolve any external ID to a root identity + all aliases
 //
 // Auth: ArxMint session cookie, Bearer cross-auth, or X-Marketplace-Secret
+//
+// @openapi
+// /api/identity/resolve:
+//   get:
+//     summary: Resolve an external ID to a root identity and all aliases
+//     x-agent-scope: identity:read
+//     x-agent-safe: true
+//     x-auth-method: NIP-98 | X-Marketplace-Secret
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";

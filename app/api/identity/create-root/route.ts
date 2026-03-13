@@ -7,6 +7,14 @@
 // identities before any ArxMint-native user exists.
 //
 // Auth: X-Marketplace-Secret only (server-to-server).
+//
+// @openapi
+// /api/identity/create-root:
+//   post:
+//     summary: Create a minimal ArxMint identity root for ecosystem services
+//     x-agent-scope: identity:write
+//     x-agent-safe: false
+//     x-auth-method: X-Marketplace-Secret
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";

@@ -3,6 +3,14 @@
 // POST /api/identity/link — Link an external identity to an ArxMint user
 //
 // Auth: ArxMint session cookie, Bearer cross-auth, or X-Marketplace-Secret
+//
+// @openapi
+// /api/identity/link:
+//   post:
+//     summary: Link an external identity to an ArxMint user
+//     x-agent-scope: identity:write
+//     x-agent-safe: false
+//     x-auth-method: NIP-98 | X-Marketplace-Secret
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
