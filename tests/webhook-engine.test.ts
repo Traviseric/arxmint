@@ -25,12 +25,12 @@ type WebhookEvent = "payment.completed" | "payment.expired" | "payment.failed";
 /** A minimal WebhookPayload for testing */
 function makePayload(overrides: Partial<{
   id: string;
-  event: string;
+  event: WebhookEvent;
   created: number;
 }> = {}) {
   return {
     id: overrides.id ?? "wdlv_test001",
-    event: overrides.event ?? "payment.completed",
+    event: (overrides.event ?? "payment.completed") as WebhookEvent,
     created: overrides.created ?? Math.floor(Date.now() / 1000),
     data: {
       paymentId: "pay-abc",

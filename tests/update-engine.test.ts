@@ -49,7 +49,7 @@ describe("verifyChecksum", () => {
 
 const VALID_MANIFEST = {
   version: "0.5.0",
-  channel: "stable",
+  channel: "stable" as const,
   changelog: "Phase 5",
   minNodeVersion: "22.0.0",
   // SHA-256 of empty string — a valid 64-char hex digest
@@ -67,7 +67,7 @@ describe("verifyManifest", () => {
   });
 
   it("rejects unknown channel value", () => {
-    assert.equal(verifyManifest({ ...VALID_MANIFEST, channel: "nightly" }, ""), false);
+    assert.equal(verifyManifest({ ...VALID_MANIFEST, channel: "nightly" as any }, ""), false);
   });
 
   it("rejects missing version", () => {
