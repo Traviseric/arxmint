@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { signMacaroon, verifyMacaroon, verifyPreimage } from "@te-btc/cashu-l402";
+import { signMacaroon, verifyMacaroon, verifyPreimage } from "@/lib/payment-sdk";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { checkSingleTxCap, ValueCapError } from "@/lib/value-caps";
 import { logger } from "@/lib/logger";

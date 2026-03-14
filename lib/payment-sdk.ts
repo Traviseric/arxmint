@@ -93,13 +93,13 @@ async function createLNDInvoice(
   }
 }
 
-function signMacaroon(payload: object, rootKey: string): string {
+export function signMacaroon(payload: object, rootKey: string): string {
   const payloadJson = JSON.stringify(payload);
   const sig = createHmac("sha256", rootKey).update(payloadJson).digest("hex");
   return Buffer.from(JSON.stringify({ ...payload, sig })).toString("base64");
 }
 
-function verifyMacaroon(token: string, rootKey: string): { identifier: string } | null {
+export function verifyMacaroon(token: string, rootKey: string): { identifier: string } | null {
   try {
     const decoded = JSON.parse(Buffer.from(token, "base64").toString("utf8"));
     const { sig, ...payload } = decoded;
@@ -115,7 +115,7 @@ function verifyMacaroon(token: string, rootKey: string): { identifier: string } 
   }
 }
 
-function verifyPreimage(preimage: string, rHashBase64: string): boolean {
+export function verifyPreimage(preimage: string, rHashBase64: string): boolean {
   try {
     const preimageBytes = Buffer.from(preimage, "hex");
     if (preimageBytes.length !== 32) return false;
