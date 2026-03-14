@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default function WhitepaperPage() {
-  const filePath = path.join(process.cwd(), "docs", "whitepaper.md");
+  const filePath = path.join(process.cwd(), "docs", "reference", "whitepaper.md");
   let content = "";
   try {
     content = fs.readFileSync(filePath, "utf-8");

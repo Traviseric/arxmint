@@ -16,6 +16,8 @@ const {
   deliverWebhook,
 } = await import("../lib/webhook-engine.ts");
 
+type WebhookEvent = "payment.completed" | "payment.expired" | "payment.failed";
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -41,7 +43,7 @@ function makePayload(overrides: Partial<{
 /** An active WebhookEndpoint subscribed to payment.completed */
 function makeEndpoint(overrides: Partial<{
   active: boolean;
-  events: string[];
+  events: WebhookEvent[];
   url: string;
   secret: string;
 }> = {}) {
@@ -50,7 +52,7 @@ function makeEndpoint(overrides: Partial<{
     merchantId: "merchant-xyz",
     url: overrides.url ?? "https://merchant.example.com/webhook",
     secret: overrides.secret ?? "whsec_testsecret1234567890",
-    events: overrides.events ?? ["payment.completed"],
+    events: overrides.events ?? ["payment.completed"] as WebhookEvent[],
     active: overrides.active ?? true,
     createdAt: Date.now(),
   };
