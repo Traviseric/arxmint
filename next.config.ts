@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   transpilePackages: ["nostr-tools"],
   webpack(config) {
     // Enable WASM for Fedimint SDK
