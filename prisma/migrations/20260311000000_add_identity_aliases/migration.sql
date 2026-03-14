@@ -1,26 +1,29 @@
 -- ArxMint Identity Graph: identity_aliases table
 -- Maps external identity namespaces to ArxMint User root identities
 
-CREATE TABLE "identity_aliases" (
+CREATE TABLE IF NOT EXISTS "identity_aliases" (
     "id" TEXT NOT NULL,
-    "root_id" TEXT NOT NULL,
+    "rootId" TEXT NOT NULL,
     "namespace" TEXT NOT NULL,
-    "external_id" TEXT NOT NULL,
-    "linked_by" TEXT NOT NULL,
+    "externalId" TEXT NOT NULL,
+    "linkedBy" TEXT NOT NULL,
     "metadata" JSONB,
-    "linked_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "linkedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "identity_aliases_pkey" PRIMARY KEY ("id")
 );
 
 -- One external ID can only resolve to one root (prevents conflicts)
-CREATE UNIQUE INDEX "identity_aliases_namespace_external_id_key" ON "identity_aliases"("namespace", "external_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "identity_aliases_namespace_externalId_key" ON "identity_aliases"("namespace", "externalId");
 
 -- Fast lookup: all aliases for a given root user
-CREATE INDEX "identity_aliases_root_id_idx" ON "identity_aliases"("root_id");
+CREATE INDEX IF NOT EXISTS "identity_aliases_rootId_idx" ON "identity_aliases"("rootId");
 
 -- Fast lookup: resolve any ID without knowing its namespace
-CREATE INDEX "identity_aliases_external_id_idx" ON "identity_aliases"("external_id");
+CREATE INDEX IF NOT EXISTS "identity_aliases_externalId_idx" ON "identity_aliases"("externalId");
 
 -- Foreign key to users table
-ALTER TABLE "identity_aliases" ADD CONSTRAINT "identity_aliases_root_id_fkey" FOREIGN KEY ("root_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "identity_aliases" ADD CONSTRAINT "identity_aliases_rootId_fkey" FOREIGN KEY ("rootId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

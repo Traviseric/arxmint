@@ -101,9 +101,9 @@ test("requestJITChannel() clamps amountSats to minChannelSats when too low", asy
       amountSats: 1, // way below minChannelSats (100_000)
       lspConfig: { url: "https://mock-lsp.test" },
     });
-    assert.ok(capturedBody !== null, "fetch should have been called");
+    if (capturedBody === null) throw new Error("fetch should have been called");
     assert.ok(
-      (capturedBody as Record<string, unknown>).local_balance >= 100_000,
+      capturedBody.local_balance >= 100_000,
       "local_balance should be clamped to at least minChannelSats"
     );
   } finally {
@@ -125,9 +125,9 @@ test("requestJITChannel() clamps amountSats to maxChannelSats when too high", as
       amountSats: 999_999_999, // way above maxChannelSats (10_000_000)
       lspConfig: { url: "https://mock-lsp.test" },
     });
-    assert.ok(capturedBody !== null, "fetch should have been called");
+    if (capturedBody === null) throw new Error("fetch should have been called");
     assert.ok(
-      (capturedBody as Record<string, unknown>).local_balance <= 10_000_000,
+      capturedBody.local_balance <= 10_000_000,
       "local_balance should be clamped to at most maxChannelSats"
     );
   } finally {
