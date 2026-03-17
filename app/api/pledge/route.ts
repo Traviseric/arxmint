@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
     const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt, checkout_enabled, default_amount_sats")
+      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt")
       .eq("approved", true)
       .order("featured", { ascending: false })
       .order("createdAt", { ascending: true });
@@ -166,8 +166,8 @@ export async function GET(request: NextRequest) {
         reason: r.reason,
         featured: r.featured,
         createdAt: r.createdAt,
-        checkoutEnabled: r.checkout_enabled ?? false,
-        defaultAmountSats: r.default_amount_sats ?? null,
+        checkoutEnabled: false,
+        defaultAmountSats: null,
       }));
     }
   } catch {
@@ -205,30 +205,17 @@ export async function POST(request: NextRequest) {
     const { supabase } = await import("@/lib/supabase");
     const { data: pledge, error } = await supabase
       .from("merchant_pledges")
-      .insert({
-        ...pledgeData,
-        referred_by: referredBy ?? null,
-        registration_status: "pending_review",
-      })
+      .insert(pledgeData)
       .select("id, businessName")
       .single();
 
     if (error) {
-      console.error("Pledge insert error:", error.message);
+      console.error("[pledge] insert failed:", { message: error.message, code: error.code, details: error.details, hint: error.hint });
       return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
     }
 
     // Email notification stub — replace with Resend/SendGrid when ready
     console.log(`[arxmint] New self-registration: ${data.businessName} <${data.email}> → notify travis@arxmint.com`);
-
-    // Increment referral count for the referring merchant (best-effort)
-    if (referredBy) {
-      try {
-        await supabase.rpc("increment_referral_count", { p_referral_code: referredBy });
-      } catch (e) {
-        console.warn("Referral count increment skipped:", e);
-      }
-    }
 
     // Fire-and-forget Telegram notification
     notifyTelegram(pledge, data);
