@@ -150,22 +150,22 @@ export async function GET(request: NextRequest) {
     const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName, location, category, website, logoUrl, reason, featured, createdAt")
+      .select("id, business_name, location, category, website, logo_url, reason, featured, created_at")
       .eq("approved", true)
       .order("featured", { ascending: false })
-      .order("createdAt", { ascending: true });
+      .order("created_at", { ascending: true });
 
     if (!error && data) {
       dbPledges = data.map((r) => ({
         id: r.id,
-        businessName: r.businessName,
+        businessName: r.business_name,
         location: r.location,
         category: r.category,
         website: r.website,
-        logoUrl: r.logoUrl,
+        logoUrl: r.logo_url,
         reason: r.reason,
         featured: r.featured,
-        createdAt: r.createdAt,
+        createdAt: r.created_at,
         checkoutEnabled: false,
         defaultAmountSats: 0,
       }));
@@ -205,8 +205,18 @@ export async function POST(request: NextRequest) {
     const { supabase } = await import("@/lib/supabase");
     const { data: pledge, error } = await supabase
       .from("merchant_pledges")
-      .insert(pledgeData)
-      .select("id, businessName")
+      .insert({
+        business_name: pledgeData.businessName,
+        contact_name: pledgeData.contactName,
+        email: pledgeData.email,
+        location: pledgeData.location,
+        category: pledgeData.category,
+        website: pledgeData.website,
+        logo_url: pledgeData.logoUrl,
+        reason: pledgeData.reason,
+        email_opt_in: pledgeData.emailOptIn,
+      })
+      .select("id, business_name")
       .single();
 
     if (error) {
@@ -218,9 +228,9 @@ export async function POST(request: NextRequest) {
     console.log(`[arxmint] New self-registration: ${data.businessName} <${data.email}> → notify travis@arxmint.com`);
 
     // Fire-and-forget Telegram notification
-    notifyTelegram(pledge, data);
+    notifyTelegram({ id: pledge.id, businessName: pledge.business_name }, data);
 
-    return NextResponse.json({ pledge }, { status: 201 });
+    return NextResponse.json({ pledge: { id: pledge.id, businessName: pledge.business_name } }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Something went wrong";
     return NextResponse.json({ error: message }, { status: 400 });
