@@ -5,7 +5,12 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { getAuthPubkey } from "@/lib/auth-middleware";
+
+function cuid(): string {
+  return "c" + randomBytes(12).toString("hex");
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -206,6 +211,7 @@ export async function POST(request: NextRequest) {
     const { data: pledge, error } = await supabase
       .from("merchant_pledges")
       .insert({
+        id: cuid(),
         business_name: pledgeData.businessName,
         contact_name: pledgeData.contactName,
         email: pledgeData.email,
