@@ -176,16 +176,13 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           <CheckCircle className="w-8 h-8 text-accent" />
         </div>
         <h3 className="text-2xl font-semibold text-text-primary mb-3">
-          Application Submitted.
+          You&apos;re on the list.
         </h3>
         <p className="text-text-secondary max-w-md mx-auto">
-          <span className="text-text-primary font-medium">{businessName}</span> is
-          under review. You&apos;ll hear back within 48 hours at{" "}
-          <span className="text-text-primary font-medium">{email}</span>.
-        </p>
-        <p className="text-xs text-text-muted mt-4">
-          Once approved, your checkout page will be live at{" "}
-          <span className="font-mono text-accent">arxmint.com/pay/your-id</span>
+          <span className="text-text-primary font-medium">{businessName}</span> has
+          been added to the ArxMint merchant network. We&apos;ll reach out to{" "}
+          <span className="text-text-primary font-medium">{email}</span> when
+          Bitcoin checkout goes live.
         </p>
       </div>
     );
