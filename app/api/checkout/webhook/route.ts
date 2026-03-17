@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { db } from "@/lib/db";
+import { emitInvoiceStateChanged } from "@/lib/invoice-events";
 import { logger } from "@/lib/logger";
 import { triggerPaymentWebhooks } from "@/lib/webhook-engine";
 
@@ -109,6 +111,37 @@ export async function POST(request: NextRequest) {
                 "payment.completed",
                 { memo: session.memo }
             );
+        }
+
+        const invoice = await db.invoice.findUnique({
+            where: { paymentSessionId: sessionId },
+            include: {
+                lineItems: {
+                    orderBy: { sortOrder: "asc" },
+                },
+            },
+        });
+
+        if (invoice && invoice.status !== "paid" && invoice.status !== "void") {
+            const previousStatus = invoice.status;
+            const updatedInvoice = await db.invoice.update({
+                where: { id: invoice.id },
+                data: {
+                    status: "paid",
+                    paidAt: new Date(),
+                },
+                include: {
+                    lineItems: {
+                        orderBy: { sortOrder: "asc" },
+                    },
+                },
+            });
+
+            await emitInvoiceStateChanged({
+                invoice: updatedInvoice,
+                previousStatus,
+                lineItems: updatedInvoice.lineItems,
+            });
         }
 
         return NextResponse.json({ success: true });

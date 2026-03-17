@@ -78,6 +78,7 @@ ArxMint flips this: ecash payments cost fractions of a penny. Settlement is inst
 - **L402 paywalls** â€” HTTP 402 challenge â†’ Lightning invoice â†’ preimage â†’ access. HMAC-signed macaroons with timing-safe verification
 - **Cashu NUT-24 paywalls** â€” Ecash token â†’ access. Double-spend rejection via NUT-07 proof state checks
 - **Spend router** â€” Auto-selects ecash â†’ Lightning â†’ Ark â†’ on-chain based on amount and privacy score
+- **Invoice primitive** â€” Org-to-org invoices with line items, due dates, state transitions, and invoice-linked checkout/webhook settlement
 - **Merchant onboarding** â€” 4-step flow with QR codes, NFC (Numo) support, and payment method selection
 - **Settlement** â€” Referral fee settlement with idempotency, Cashu ecash minting, federation deposit paths
 
@@ -170,6 +171,7 @@ arxmint/
 â”‚       â”œâ”€â”€ auth/                # Nostr NIP-98 + session auth
 â”‚       â”œâ”€â”€ payment/             # Payment challenge + verification
 â”‚       â”œâ”€â”€ settlement/          # Referral fee settlement
+â”‚       â”œâ”€â”€ invoices/            # Org-to-org invoice primitive
 â”‚       â”œâ”€â”€ transactions/        # Transaction ledger
 â”‚       â”œâ”€â”€ merchants/           # Merchant CRUD
 â”‚       â”œâ”€â”€ l402/                # L402 gated endpoint demo
@@ -187,6 +189,8 @@ arxmint/
 â”‚   â”œâ”€â”€ auth-middleware.ts       # Nostr session cookies + cross-app session verification
 â”‚   â”œâ”€â”€ cashu-vault.ts           # Encrypted client-side proof vault
 â”‚   â”œâ”€â”€ db.ts                    # Prisma DB client + resilient queries
+â”‚   â”œâ”€â”€ invoices.ts              # Invoice state machine + totals + payment links
+â”‚   â”œâ”€â”€ invoice-events.ts        # Invoice state-change event payload + webhook emission
 â”‚   â”œâ”€â”€ ark-sdk.ts               # Ark VTXO client (stub â€” waiting on upstream SDK)
 â”‚   â”œâ”€â”€ silent-payments.ts       # BIP-352 SP scanner + key delegation
 â”‚   â”œâ”€â”€ bce-metrics.ts           # BCE community health + grant export

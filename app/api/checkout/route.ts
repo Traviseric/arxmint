@@ -10,6 +10,9 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { withIdempotency } from "@/lib/idempotency";
 import { apiError } from "@/lib/api-error";
 import { getAuthPubkey } from "@/lib/auth-middleware";
+import { db } from "@/lib/db";
+import { emitInvoiceStateChanged } from "@/lib/invoice-events";
+import { buildInvoicePaymentLink } from "@/lib/invoices";
 
 const INVOICE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 // Demo mode: only in development or when DEMO_MODE=true explicitly set.
@@ -30,14 +33,76 @@ export async function POST(request: NextRequest) {
   return withIdempotency(request, async () => {
     try {
       const body = await request.json();
-      const { merchantId, memo, shipping } = body;
+      const { merchantId: rawMerchantId, memo, shipping, invoiceId } = body;
+      let merchantId =
+        typeof rawMerchantId === "string" && rawMerchantId.trim().length > 0
+          ? rawMerchantId.trim()
+          : undefined;
+      let invoiceRecord:
+        | {
+            id: string;
+            invoiceNumber: string;
+            merchantId: string | null;
+            currency: "BTC" | "USD";
+            status: "draft" | "sent" | "paid" | "overdue" | "void";
+            totalMinor: number;
+            paymentRail: "lightning" | "cashu" | "stripe";
+          }
+        | null = null;
 
-      if (!merchantId || typeof merchantId !== "string") {
+      if (invoiceId !== undefined) {
+        if (typeof invoiceId !== "string" || invoiceId.trim().length === 0) {
+          return apiError(400, "MISSING_FIELD", "invoiceId must be a non-empty string");
+        }
+
+        invoiceRecord = await db.invoice.findUnique({
+          where: { id: invoiceId.trim() },
+          select: {
+            id: true,
+            invoiceNumber: true,
+            merchantId: true,
+            currency: true,
+            status: true,
+            totalMinor: true,
+            paymentRail: true,
+          },
+        });
+
+        if (!invoiceRecord) {
+          return apiError(404, "INVOICE_NOT_FOUND", "Invoice not found");
+        }
+
+        if (invoiceRecord.currency !== "BTC") {
+          return apiError(
+            409,
+            "INVOICE_CURRENCY_UNSUPPORTED",
+            "Only BTC invoices can be settled through ArxMint checkout"
+          );
+        }
+
+        if (invoiceRecord.status === "paid") {
+          return apiError(409, "INVOICE_ALREADY_PAID", "Invoice is already paid");
+        }
+
+        if (invoiceRecord.status === "void") {
+          return apiError(409, "INVOICE_VOID", "Void invoices cannot be paid");
+        }
+
+        merchantId = merchantId ?? invoiceRecord.merchantId ?? undefined;
+      }
+
+      if (!merchantId) {
         return apiError(400, "MISSING_FIELD", "merchantId is required");
       }
 
-      const amountSats = validateAmount(body.amountSats);
-      const sanitizedMemo = memo ? String(memo).trim().slice(0, 200) : undefined;
+      const amountSats = invoiceRecord
+        ? invoiceRecord.totalMinor
+        : validateAmount(body.amountSats);
+      const sanitizedMemo = memo
+        ? String(memo).trim().slice(0, 200)
+        : invoiceRecord
+          ? `Invoice ${invoiceRecord.invoiceNumber}`
+          : undefined;
 
       // Look up merchant
       let merchant: { id: string; businessName: string; checkout_enabled: boolean } | null = null;
@@ -118,6 +183,41 @@ export async function POST(request: NextRequest) {
         // If DB insert fails, session still works in-memory for demo
       }
 
+      if (invoiceRecord) {
+        const invoicePaymentLink = buildInvoicePaymentLink(
+          {
+            id: invoiceRecord.id,
+            merchantId,
+            paymentRail: invoiceRecord.paymentRail,
+          },
+          new URL(request.url).origin
+        );
+
+        const updatedInvoice = await db.invoice.update({
+          where: { id: invoiceRecord.id },
+          data: {
+            paymentSessionId: sessionId,
+            paymentLink: invoicePaymentLink,
+            ...(invoiceRecord.status === "draft"
+              ? { status: "sent", sentAt: new Date() }
+              : {}),
+          },
+          include: {
+            lineItems: {
+              orderBy: { sortOrder: "asc" },
+            },
+          },
+        });
+
+        if (invoiceRecord.status === "draft") {
+          await emitInvoiceStateChanged({
+            invoice: updatedInvoice,
+            previousStatus: "draft",
+            lineItems: updatedInvoice.lineItems,
+          });
+        }
+      }
+
       // Best-effort cross-auth identity linking.
       // When a request carries both a Nostr session (cookie or Bearer) AND a
       // X-Teneo-Auth JWT, both identities are present — link them automatically.
@@ -143,6 +243,12 @@ export async function POST(request: NextRequest) {
         demoMode,
         merchantName: merchant.businessName,
         amountSats,
+        ...(invoiceRecord
+          ? {
+              invoiceId: invoiceRecord.id,
+              invoiceNumber: invoiceRecord.invoiceNumber,
+            }
+          : {}),
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Something went wrong";

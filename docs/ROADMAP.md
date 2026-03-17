@@ -1,6 +1,6 @@
 # ArxMint — Roadmap
 
-**Last Updated:** 2026-03-15
+**Last Updated:** 2026-03-17
 **Purpose:** Canonical roadmap for ArxMint sovereign commerce infrastructure.
 **Related:** [SOVEREIGN_STACK_ROADMAP.md](../../../.claude/guides/reference/SOVEREIGN_STACK_ROADMAP.md)
 
@@ -42,18 +42,24 @@ ArxMint is the payment and sovereign commerce layer of the TE Code ecosystem. Al
 
 ### SPINE-ARX-01: Invoice Primitive [P1]
 
-**Status:** planned
+**Status:** phase 1 shipped
 **Depends on:** SPINE-AUTH-01 (org entity in teneo-auth — invoices are org-to-org)
 **Unlocks:** FinForensics auto-bookkeeping, OpenBazaar B2B, WorkforceOS payroll
 
 First-class invoice object:
-- [ ] Prisma models: `invoices`, `invoice_line_items`
-- [ ] Invoice fields: from_org, to_org, line_items[], due_date, currency (BTC/USD), status
-- [ ] Invoice states: `draft` → `sent` → `paid` → `overdue` → `void`
-- [ ] Payment links: Lightning invoice, Cashu token request, or Stripe checkout URL
-- [ ] Webhook on state change (→ FinForensics auto-bookkeeping, → WorkforceOS payroll)
+- [x] Prisma models: `invoices`, `invoice_line_items`
+- [x] Invoice fields: from_org, to_org, line_items[], due_date, currency (BTC/USD), status
+- [x] Invoice states: `draft` → `sent` → `paid` → `overdue` → `void`
+- [~] Payment links: invoice-linked BTC checkout path is wired through existing ArxMint checkout; multi-rail settlement UX still needs expansion
+- [x] Webhook/event payload on state change (→ FinForensics auto-bookkeeping, → WorkforceOS payroll)
 - [ ] PDF generation for traditional business use
-- [ ] API routes: `/api/invoices/*`
+- [x] API routes: `/api/invoices/*`
+
+Phase 1 implementation notes:
+- `POST /api/invoices` creates org-to-org invoices with line items, due date, currency, and payment rail
+- `GET/PATCH /api/invoices/:id` support draft edits plus `send`, `mark_paid`, `mark_overdue`, and `void`
+- checkout session creation now accepts `invoiceId` and binds `paymentSessionId` back onto the invoice
+- checkout webhook completion marks linked invoices paid and emits `invoice.state_changed`
 
 **Why:** B2B commerce, merchant operations, and bookkeeping all need invoices. WorkforceOS payroll needs invoices. OpenBazaar orders need invoices. FinForensics needs invoice events for automatic journal entries. This is a core value-movement primitive.
 

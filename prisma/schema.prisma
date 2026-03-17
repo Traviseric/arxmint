@@ -12,6 +12,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+  void
+}
+
+enum InvoiceCurrency {
+  BTC
+  USD
+}
+
+enum InvoicePaymentRail {
+  lightning
+  cashu
+  stripe
+}
+
 model Community {
   id        String   @id @default(cuid())
   userId    String?
@@ -164,4 +183,56 @@ model MerchantPledge {
   createdAt    DateTime @default(now())
 
   @@map("merchant_pledges")
+}
+
+model Invoice {
+  id                   String             @id @default(cuid())
+  invoiceNumber        String             @unique
+  fromOrgId            String
+  fromOrgName          String?
+  toOrgId              String
+  toOrgName            String?
+  merchantId           String?
+  status               InvoiceStatus      @default(draft)
+  currency             InvoiceCurrency
+  paymentRail          InvoicePaymentRail @default(lightning)
+  subtotalMinor        Int
+  totalMinor           Int
+  dueDate              DateTime?
+  sentAt               DateTime?
+  paidAt               DateTime?
+  voidedAt             DateTime?
+  paymentSessionId     String?            @unique
+  paymentLink          String?
+  notes                String?
+  metadata             Json?
+  createdByUserId      String?
+  createdByNostrPubkey String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  lineItems InvoiceLineItem[]
+
+  @@index([fromOrgId, status])
+  @@index([toOrgId, status])
+  @@index([merchantId, status])
+  @@index([dueDate, status])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id               String          @id @default(cuid())
+  invoiceId        String
+  description      String
+  quantity         Int             @default(1)
+  unitAmountMinor  Int
+  totalAmountMinor Int
+  currency         InvoiceCurrency
+  sortOrder        Int             @default(0)
+  metadata         Json?
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, sortOrder])
+  @@map("invoice_line_items")
 }
