@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
         featured: r.featured,
         createdAt: r.createdAt,
         checkoutEnabled: false,
-        defaultAmountSats: null,
+        defaultAmountSats: 0,
       }));
     }
   } catch {
