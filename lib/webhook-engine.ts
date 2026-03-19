@@ -20,7 +20,9 @@ import { logger } from "@/lib/logger";
 export type WebhookEvent =
   | "payment.completed"
   | "payment.expired"
-  | "payment.failed";
+  | "payment.failed"
+  | "payout.completed"
+  | "payout.failed";
 
 export interface WebhookEndpoint {
   id: string;
@@ -287,6 +289,39 @@ export function triggerPaymentWebhooks(
         action: "webhook_trigger_error",
         merchantId,
         paymentId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+}
+
+/**
+ * Fire-and-forget: deliver a payout.completed or payout.failed webhook to all
+ * active endpoints subscribed to that event for the given merchant.
+ */
+export function triggerPayoutWebhooks(
+  merchantId: string,
+  payoutId: string,
+  amountSats: number,
+  outcome: "completed" | "failed"
+): void {
+  const event: WebhookEvent = outcome === "completed" ? "payout.completed" : "payout.failed";
+  const payload: WebhookPayload = {
+    id: `wdlv_${randomBytes(10).toString("hex")}`,
+    event,
+    created: Math.floor(Date.now() / 1000),
+    data: { paymentId: payoutId, amount: amountSats, merchantId },
+  };
+
+  listWebhooks(merchantId)
+    .then((endpoints) => {
+      const active = endpoints.filter((e) => e.active && e.events.includes(event));
+      return Promise.allSettled(active.map((ep) => deliverWebhook(ep, payload)));
+    })
+    .catch((err) => {
+      logger.warn("payout_webhook_trigger_error", {
+        action: "payout_webhook_trigger_error",
+        merchantId,
+        payoutId,
         error: err instanceof Error ? err.message : String(err),
       });
     });

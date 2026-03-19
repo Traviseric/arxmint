@@ -31,11 +31,13 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
+  ArrowDownToLine,
+  Send,
 } from "lucide-react";
 
 // ---- Types ----
 
-type Tab = "overview" | "payments" | "webhooks" | "apikeys" | "analytics" | "settings";
+type Tab = "overview" | "payments" | "webhooks" | "apikeys" | "analytics" | "payouts" | "settings";
 type PaymentStatus = "pending" | "paid" | "expired" | "failed" | "refunded";
 
 interface Payment {
@@ -869,6 +871,384 @@ function AnalyticsTab({ merchantId }: { merchantId: string }) {
   );
 }
 
+// ---- Payouts Tab ----
+
+type PayoutStatus = "pending" | "processing" | "completed" | "failed";
+type PayoutSchedule = "daily" | "weekly" | "on_threshold";
+type PayoutRail = "lightning" | "ecash" | "onchain";
+
+interface PayoutRecord {
+  id: string;
+  merchantId: string;
+  amountSats: string;
+  rail: PayoutRail;
+  destination: string;
+  status: PayoutStatus;
+  txRef: string | null;
+  createdAt: string;
+}
+
+interface PayoutConfig {
+  merchantId: string;
+  schedule: PayoutSchedule;
+  thresholdSats: string | null;
+  rail: PayoutRail;
+  destination: string;
+  enabled: boolean;
+}
+
+function PayoutStatusBadge({ status }: { status: PayoutStatus }) {
+  const cfg: Record<PayoutStatus, { label: string; cls: string; icon: React.ReactNode }> = {
+    completed: { label: "Completed", cls: "text-green-400 bg-green-400/10", icon: <CheckCircle className="w-3 h-3" /> },
+    processing: { label: "Processing", cls: "text-yellow-400 bg-yellow-400/10", icon: <Clock className="w-3 h-3" /> },
+    pending: { label: "Pending", cls: "text-sovereign-muted bg-sovereign-muted/10", icon: <Clock className="w-3 h-3" /> },
+    failed: { label: "Failed", cls: "text-red-400 bg-red-400/10", icon: <XCircle className="w-3 h-3" /> },
+  };
+  const { label, cls, icon } = cfg[status] ?? cfg.pending;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+      {icon}{label}
+    </span>
+  );
+}
+
+function PayoutsTab({ merchantId }: { merchantId: string }) {
+  const [config, setConfig] = useState<PayoutConfig | null>(null);
+  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [prevCursors, setPrevCursors] = useState<string[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [loadingPayouts, setLoadingPayouts] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [triggering, setTriggering] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
+
+  // Form state
+  const [schedule, setSchedule] = useState<PayoutSchedule>("daily");
+  const [rail, setRail] = useState<PayoutRail>("lightning");
+  const [destination, setDestination] = useState("");
+  const [thresholdSats, setThresholdSats] = useState("");
+  const [enabled, setEnabled] = useState(true);
+
+  const fetchConfig = useCallback(() => {
+    setLoadingConfig(true);
+    fetch(`/api/payouts/config?merchantId=${encodeURIComponent(merchantId)}`)
+      .then((r) => (r.ok ? r.json() : { config: null }))
+      .then((data) => {
+        if (data.config) {
+          const c: PayoutConfig = data.config;
+          setConfig(c);
+          setSchedule(c.schedule);
+          setRail(c.rail);
+          setDestination(c.destination);
+          setThresholdSats(c.thresholdSats ?? "");
+          setEnabled(c.enabled);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingConfig(false));
+  }, [merchantId]);
+
+  const fetchPayouts = useCallback(
+    (cursorParam: string | null) => {
+      setLoadingPayouts(true);
+      const params = new URLSearchParams({ merchantId, limit: "15" });
+      if (cursorParam) params.set("cursor", cursorParam);
+      fetch(`/api/payouts?${params}`)
+        .then((r) => (r.ok ? r.json() : { payouts: [], nextCursor: null }))
+        .then((data) => {
+          setPayouts(data.payouts ?? []);
+          setNextCursor(data.nextCursor ?? null);
+        })
+        .catch(() => {})
+        .finally(() => setLoadingPayouts(false));
+    },
+    [merchantId]
+  );
+
+  useEffect(() => {
+    fetchConfig();
+    fetchPayouts(null);
+  }, [fetchConfig, fetchPayouts]);
+
+  const handleSaveConfig = async () => {
+    setSavingConfig(true);
+    setConfigError(null);
+    try {
+      const res = await fetch("/api/payouts/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          merchantId,
+          schedule,
+          rail,
+          destination,
+          thresholdSats: thresholdSats ? parseInt(thresholdSats, 10) : null,
+          enabled,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setConfigError(data.error ?? "Failed to save"); return; }
+      setConfig(data.config);
+    } catch {
+      setConfigError("Network error");
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const handleTrigger = async () => {
+    setTriggering(true);
+    setTriggerMsg(null);
+    try {
+      const res = await fetch("/api/payouts/trigger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ merchantId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setTriggerMsg(`Failed: ${data.error ?? "Unknown error"}`);
+      } else {
+        setTriggerMsg(`Payout triggered — ${data.payout?.amountSats ?? "?"} sats`);
+        fetchPayouts(null);
+      }
+    } catch {
+      setTriggerMsg("Network error");
+    } finally {
+      setTriggering(false);
+    }
+  };
+
+  const goNext = () => {
+    if (!nextCursor) return;
+    setPrevCursors((p) => [...p, cursor ?? ""]);
+    setCursor(nextCursor);
+    fetchPayouts(nextCursor);
+  };
+
+  const goPrev = () => {
+    const prev = prevCursors[prevCursors.length - 1] ?? null;
+    setPrevCursors((p) => p.slice(0, -1));
+    setCursor(prev);
+    fetchPayouts(prev || null);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Config form */}
+      <div className="sovereign-card p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <ArrowDownToLine className="w-4 h-4 text-btc-orange" />
+          <h3 className="text-sm font-semibold text-sovereign-muted uppercase tracking-wide">
+            Payout Configuration
+          </h3>
+        </div>
+
+        {loadingConfig ? (
+          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-sovereign-muted" /></div>
+        ) : (
+          <div className="space-y-4">
+            {/* Schedule */}
+            <div>
+              <label className="text-xs text-sovereign-muted block mb-2">Schedule</label>
+              <div className="flex flex-wrap gap-2">
+                {(["daily", "weekly", "on_threshold"] as PayoutSchedule[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSchedule(s)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      schedule === s
+                        ? "bg-btc-orange text-black"
+                        : "bg-sovereign-panel text-sovereign-muted hover:text-sovereign-text"
+                    }`}
+                  >
+                    {s === "on_threshold" ? "On Threshold" : s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {schedule === "on_threshold" && (
+              <div>
+                <label className="text-xs text-sovereign-muted block mb-1">Threshold (sats)</label>
+                <input
+                  className="sovereign-input w-full text-sm"
+                  type="number"
+                  placeholder="e.g. 50000"
+                  value={thresholdSats}
+                  onChange={(e) => setThresholdSats(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Rail */}
+            <div>
+              <label className="text-xs text-sovereign-muted block mb-2">Payment Rail</label>
+              <div className="flex flex-wrap gap-2">
+                {(["lightning", "ecash", "onchain"] as PayoutRail[]).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRail(r)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      rail === r
+                        ? "bg-btc-orange text-black"
+                        : "bg-sovereign-panel text-sovereign-muted hover:text-sovereign-text"
+                    }`}
+                  >
+                    {r === "lightning" ? "Lightning" : r === "ecash" ? "Ecash" : "On-chain"}
+                    {(r === "ecash" || r === "onchain") && (
+                      <span className="ml-1 text-[10px] opacity-60">(soon)</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Destination */}
+            <div>
+              <label className="text-xs text-sovereign-muted block mb-1">
+                Destination{" "}
+                <span className="text-sovereign-muted/60">
+                  {rail === "lightning" ? "(Lightning Address, e.g. you@getalby.com)" : rail === "ecash" ? "(ecash pubkey)" : "(Bitcoin address)"}
+                </span>
+              </label>
+              <input
+                className="sovereign-input w-full text-sm font-mono"
+                placeholder={rail === "lightning" ? "you@getalby.com" : rail === "ecash" ? "ecash pubkey" : "bc1q..."}
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+              />
+            </div>
+
+            {/* Enable toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setEnabled((v) => !v)}
+                className={`relative w-10 h-5 rounded-full transition-colors ${enabled ? "bg-btc-orange" : "bg-sovereign-panel"}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${enabled ? "translate-x-5" : ""}`} />
+              </button>
+              <span className="text-sm text-sovereign-text">{enabled ? "Payouts enabled" : "Payouts paused"}</span>
+            </div>
+
+            {configError && <div className="text-xs text-red-400">{configError}</div>}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveConfig}
+                disabled={savingConfig || !destination}
+                className="sovereign-btn text-sm flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {savingConfig ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Config"}
+              </button>
+              {config && (
+                <button
+                  onClick={handleTrigger}
+                  disabled={triggering}
+                  className="sovereign-btn-outline text-sm flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {triggering ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-3.5 h-3.5" /> Trigger Now</>}
+                </button>
+              )}
+            </div>
+
+            {triggerMsg && (
+              <div className={`text-xs ${triggerMsg.startsWith("Failed") ? "text-red-400" : "text-green-400"}`}>
+                {triggerMsg}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Payout history */}
+      <div className="sovereign-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-sovereign-muted uppercase tracking-wide">
+            Payout History
+          </h3>
+          <button
+            onClick={() => { setCursor(null); setPrevCursors([]); fetchPayouts(null); }}
+            className="text-sovereign-muted hover:text-sovereign-text transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {loadingPayouts ? (
+          <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-sovereign-muted" /></div>
+        ) : payouts.length === 0 ? (
+          <div className="py-12 text-center text-sovereign-muted text-sm">
+            No payouts yet. Configure a schedule above to get started.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/5 text-xs text-sovereign-muted">
+                  <th className="text-left px-4 py-3 font-medium">ID</th>
+                  <th className="text-left px-4 py-3 font-medium">Amount</th>
+                  <th className="text-left px-4 py-3 font-medium">Rail</th>
+                  <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payouts.map((p, i) => (
+                  <tr
+                    key={p.id}
+                    className={`border-b border-white/5 hover:bg-white/2 transition-colors ${i === payouts.length - 1 ? "border-b-0" : ""}`}
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-sovereign-muted">
+                      <span className="flex items-center gap-1">
+                        {p.id.slice(0, 8)}…
+                        <CopyButton text={p.id} />
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium text-sovereign-text">
+                      {parseInt(p.amountSats, 10).toLocaleString()} sats
+                    </td>
+                    <td className="px-4 py-3 text-sovereign-muted text-xs capitalize">{p.rail}</td>
+                    <td className="px-4 py-3">
+                      <PayoutStatusBadge status={p.status} />
+                    </td>
+                    <td className="px-4 py-3 text-sovereign-muted hidden md:table-cell whitespace-nowrap">
+                      {dateFmt(p.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {(prevCursors.length > 0 || nextCursor) && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-white/5 text-xs text-sovereign-muted">
+            <button
+              onClick={goPrev}
+              disabled={prevCursors.length === 0}
+              className="flex items-center gap-1 disabled:opacity-30 hover:text-sovereign-text transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+            <button
+              onClick={goNext}
+              disabled={!nextCursor}
+              className="flex items-center gap-1 disabled:opacity-30 hover:text-sovereign-text transition-colors"
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ---- Settings Tab (stub) ----
 
 function SettingsTab({ merchantId }: { merchantId: string }) {
@@ -914,6 +1294,7 @@ function SettingsTab({ merchantId }: { merchantId: string }) {
 const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
   { id: "overview", label: "Overview", icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: "payments", label: "Payments", icon: <CreditCard className="w-4 h-4" /> },
+  { id: "payouts", label: "Payouts", icon: <ArrowDownToLine className="w-4 h-4" /> },
   { id: "webhooks", label: "Webhooks", icon: <Webhook className="w-4 h-4" /> },
   { id: "apikeys", label: "API Keys", icon: <Key className="w-4 h-4" /> },
   { id: "analytics", label: "Analytics", icon: <BarChart2 className="w-4 h-4" /> },
@@ -1008,6 +1389,7 @@ export default function MerchantDashboardPage() {
         {/* Tab content */}
         {activeTab === "overview" && <OverviewTab merchantId={merchantId} />}
         {activeTab === "payments" && <PaymentsTab merchantId={merchantId} />}
+        {activeTab === "payouts" && <PayoutsTab merchantId={merchantId} />}
         {activeTab === "webhooks" && <WebhooksTab merchantId={merchantId} />}
         {activeTab === "apikeys" && <ApiKeysTab merchantId={merchantId} />}
         {activeTab === "analytics" && <AnalyticsTab merchantId={merchantId} />}

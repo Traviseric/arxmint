@@ -236,3 +236,71 @@ model InvoiceLineItem {
   @@index([invoiceId, sortOrder])
   @@map("invoice_line_items")
 }
+
+model PayoutConfig {
+  id            String   @id @default(cuid())
+  merchantId    String   @unique
+  schedule      String   @default("daily") // "daily" | "weekly" | "on_threshold"
+  thresholdSats BigInt?  // only when schedule="on_threshold"
+  rail          String   @default("lightning") // "ecash" | "lightning" | "onchain"
+  destination   String   // Lightning address, on-chain address, or ecash pubkey
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("payout_configs")
+}
+
+model Payout {
+  id          String   @id @default(cuid())
+  merchantId  String
+  amountSats  BigInt
+  rail        String
+  destination String
+  status      String   @default("pending") // pending|processing|completed|failed
+  txRef       String?  // Lightning payment hash, on-chain txid, or ecash token
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([merchantId, status])
+  @@index([merchantId, createdAt])
+  @@map("payouts")
+}
+
+model Escrow {
+  id               String       @id @default(cuid())
+  payerId          String
+  payeeId          String
+  amountSats       BigInt
+  currency         String       @default("BTC")
+  releaseCondition String       // manual | time_based | delivery_confirmed | dispute_resolved
+  releasesAt       DateTime?
+  status           String       @default("pending_funding") // pending_funding|funded|released|disputed|resolved|voided
+  invoiceId        String?
+  paymentSessionId String?
+  metadata         Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  events EscrowEvent[]
+
+  @@index([payerId, status])
+  @@index([payeeId, status])
+  @@index([status, releasesAt])
+  @@map("escrows")
+}
+
+model EscrowEvent {
+  id        String   @id @default(cuid())
+  escrowId  String
+  type      String   // funded|released|disputed|resolved|voided
+  actor     String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  escrow Escrow @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+
+  @@index([escrowId])
+  @@map("escrow_events")
+}
