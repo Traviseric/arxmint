@@ -197,6 +197,11 @@ export function shouldMarkInvoiceOverdue(
   return new Date(dueDate).getTime() < now.getTime();
 }
 
+export function buildInvoicePdfUrl(invoiceId: string, origin: string): string {
+  const baseOrigin = origin.replace(/\/$/, "");
+  return `${baseOrigin}/api/invoices/${invoiceId}/pdf`;
+}
+
 export function buildInvoicePaymentLink(
   invoice: Pick<InvoiceRecordLike, "id" | "merchantId" | "paymentRail">,
   origin: string

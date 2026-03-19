@@ -5,6 +5,7 @@ import { getCallerFromRequest } from "@/lib/auth-middleware";
 import { emitInvoiceStateChanged } from "@/lib/invoice-events";
 import {
   buildInvoicePaymentLink,
+  buildInvoicePdfUrl,
   calculateInvoiceSummary,
   isInvoicePaymentRail,
   resolveInvoiceTransition,
@@ -90,6 +91,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const origin = getOrigin(request);
+
   if (shouldMarkInvoiceOverdue(invoice.status, invoice.dueDate)) {
     const updated = await db.invoice.update({
       where: { id },
@@ -107,10 +110,10 @@ export async function GET(request: NextRequest, { params }: Params) {
       lineItems: updated.lineItems,
     });
 
-    return NextResponse.json({ invoice: updated });
+    return NextResponse.json({ invoice: updated, pdfUrl: buildInvoicePdfUrl(id, origin) });
   }
 
-  return NextResponse.json({ invoice });
+  return NextResponse.json({ invoice, pdfUrl: buildInvoicePdfUrl(id, origin) });
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
