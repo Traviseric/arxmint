@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       // Fetch the pledge to check if it needs a description
       const { data: pledge } = await supabase
         .from("merchant_pledges")
-        .select("businessName, location, category, website, reason")
+        .select("business_name, location, category, website, reason, logo_url")
         .eq("id", pledgeId)
         .single();
 
@@ -71,7 +71,12 @@ export async function POST(request: NextRequest) {
       // Auto-generate description if missing or too short
       let reason = pledge.reason;
       if (!reason || reason.length < 30) {
-        reason = generateDescription(pledge);
+        reason = generateDescription({
+          businessName: pledge.business_name,
+          location: pledge.location,
+          category: pledge.category,
+          website: pledge.website,
+        });
       }
 
       await supabase
@@ -87,13 +92,13 @@ export async function POST(request: NextRequest) {
       });
       await tgApi("answerCallbackQuery", {
         callback_query_id: callback.id,
-        text: `✅ ${pledge.businessName} approved and live on /merchants`,
+        text: `✅ ${pledge.business_name} approved and live on /merchants`,
         show_alert: true,
       });
       // Send confirmation with the description that was set
       await tgApi("sendMessage", {
         chat_id: callback.message?.chat?.id,
-        text: `✅ *Approved:* ${pledge.businessName}\n\n📝 _${reason?.replace(/[_*`[\]]/g, "") || "No description"}_`,
+        text: `✅ *Approved:* ${pledge.business_name}\n\n📝 _${reason?.replace(/[_*`[\]]/g, "") || "No description"}_`,
         parse_mode: "Markdown",
       });
 

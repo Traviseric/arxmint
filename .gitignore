@@ -49,3 +49,4 @@ round_[0-9]*_*.bat
 round_[0-9]*_*.sh
 _wezterm_spawn_*.bat
 .vercel
+.env*.local

@@ -25,19 +25,59 @@ const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || "";
 async function notifyTelegram(pledge: { id: string; businessName: string }, data: Record<string, unknown>) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_ADMIN_CHAT_ID) return;
   try {
+    const esc = (s: string) => s.replace(/[*_`[\]]/g, "");
     const lines = [
       `🏪 *New Merchant Signup*`,
       ``,
-      `*${String(data.businessName).replace(/[*_`[\]]/g, "")}*`,
+      `*${esc(String(data.businessName))}*`,
       data.location ? `📍 ${data.location}` : "",
       data.category ? `🏷 ${data.category}` : "",
       data.website ? `🌐 ${data.website}` : "",
       data.contactName ? `👤 ${data.contactName}` : "",
       data.email ? `✉️ ${data.email}` : "",
-      data.reason ? `\n💬 _${String(data.reason).replace(/[_*`[\]]/g, "")}_` : "\n⚠️ _No description provided_",
-      data.logoUrl ? (String(data.logoUrl).startsWith("data:") ? "\n🖼 Logo uploaded" : `\n🖼 ${data.logoUrl}`) : "\n📷 No logo",
+      data.reason ? `\n💬 _${esc(String(data.reason))}_` : "\n⚠️ _No description provided_",
+      data.logoUrl ? "\n🖼 Logo attached below" : "\n📷 No logo provided",
     ].filter(Boolean).join("\n");
 
+    const inlineKeyboard = {
+      inline_keyboard: [[
+        { text: "✅ Approve", callback_data: `approve:${pledge.id}` },
+        { text: "❌ Reject", callback_data: `reject:${pledge.id}` },
+      ]],
+    };
+
+    // If logo is a data URI, send it as a photo first so admin can see it
+    const logoUrl = data.logoUrl ? String(data.logoUrl) : "";
+    if (logoUrl.startsWith("data:image/")) {
+      try {
+        const [header, b64] = logoUrl.split(",");
+        const mimeMatch = header.match(/data:(image\/\w+)/);
+        const mime = mimeMatch ? mimeMatch[1] : "image/png";
+        const ext = mime.split("/")[1] || "png";
+        const buf = Buffer.from(b64, "base64");
+
+        const boundary = "----ArxMintLogo" + Date.now();
+        const parts = [
+          `--${boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n${TELEGRAM_ADMIN_CHAT_ID}`,
+          `--${boundary}\r\nContent-Disposition: form-data; name="caption"\r\n\r\n🖼 Logo for ${esc(String(data.businessName))}`,
+          `--${boundary}\r\nContent-Disposition: form-data; name="photo"; filename="logo.${ext}"\r\nContent-Type: ${mime}\r\n\r\n`,
+        ];
+
+        const preBuf = Buffer.from(parts.join("\r\n") + "\r\n");
+        const postBuf = Buffer.from(`\r\n--${boundary}--\r\n`);
+        const body = Buffer.concat([preBuf, buf, postBuf]);
+
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+          method: "POST",
+          headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+          body,
+        });
+      } catch (e) {
+        console.error("Telegram logo upload failed:", e);
+      }
+    }
+
+    // Send the text message with approve/reject buttons
     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -45,12 +85,7 @@ async function notifyTelegram(pledge: { id: string; businessName: string }, data
         chat_id: TELEGRAM_ADMIN_CHAT_ID,
         text: lines,
         parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [[
-            { text: "✅ Approve", callback_data: `approve:${pledge.id}` },
-            { text: "❌ Reject", callback_data: `reject:${pledge.id}` },
-          ]],
-        },
+        reply_markup: inlineKeyboard,
       }),
     });
   } catch (e) {
@@ -73,6 +108,20 @@ const SEED_MERCHANTS = [
     createdAt: new Date("2025-01-15").toISOString(),
     checkoutEnabled: true,
     defaultAmountSats: 500,
+  },
+  {
+    id: "seed-black-bear",
+    businessName: "Black Bear Window Cleaning",
+    location: "Boulder, Colorado",
+    category: "services",
+    website: "https://www.blackbearwindowcleaning.com",
+    logoUrl: "/images/merchants/black-bear.png",
+    reason:
+      "Professional window cleaning serving Boulder and the Front Range. Black Bear Window Cleaning is joining the ArxMint network to accept Bitcoin payments — zero processing fees, instant settlement, full sovereignty over every transaction.",
+    featured: false,
+    createdAt: new Date("2026-03-20").toISOString(),
+    checkoutEnabled: false,
+    defaultAmountSats: 0,
   },
   {
     id: "seed-teneo",
@@ -221,6 +270,7 @@ export async function POST(request: NextRequest) {
         logo_url: pledgeData.logoUrl,
         reason: pledgeData.reason,
         email_opt_in: pledgeData.emailOptIn,
+        approved: true,
       })
       .select("id, business_name")
       .single();
