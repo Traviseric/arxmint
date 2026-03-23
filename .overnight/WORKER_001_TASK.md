@@ -60,20 +60,11 @@ If `C:\code\te-btc\arxmint\.overnight/progress.json` contains a `features` array
 ## Previous Worker Context
 
 **Recent commits (last 5):**
-  - 4929ad0 feat(201): implement real Bech32m decode in parseSPAddress() (BIP-352)
-  - 373f2b5 docs(200): mark 7 completed P1/P2 tasks [x] in AGENT_TASKS.md
-  - 9465223 feat(199): add /api/webhooks subscription endpoint for Zapier REST hooks
-  - 1088569 feat(197): e-commerce platform plugins — WooCommerce gateway + Zapier integration scaffold
-  - b3f3806 feat(194): load testing harness — Artillery smoke/full/webhook tests + CI job
-
-**Previous worker handoffs:**
-**worker_001_output:**
-  Commits: 4929ad0 - feat(201): implement real Bech32m decode in parseSPAddress() (BIP-352)
-  Files modified: lib/silent-payments.ts, tests/silent-payments.test.ts, package.json
-  Approach: Added @scure/base as direct dep; updated SP_PREFIX to store HRP-only ('sp'/'tsp'); replaced NotImplementedError stub with bech32m.decode() + fromWords() + version/length validation; updated test fixtures to use bech32m.encode() for real valid addresses.
-  What worked: bech32m.decode(address, 128) with a 128-char limit handles SP address length; bech32m.encode(hrp, words, 128) needed same limit for test fixture generation. All 47 tests pass.
-  What didn't: Default encode/decode limit of 90 chars is too small for SP addresses (117 chars) — must explicitly pass 128.
-  Recommended next step: No more pending tasks in active/. CONDUCTOR should check if TASK_SYNTHESIZER has further work or route to SWITCH_PROJECT/DIGEST.
+  - cb93f2e fix: update merchant signup success message — no false promises
+  - da87a13 fix: generate id server-side for merchant_pledges insert
+  - 039fa6d fix: remap merchant_pledges to snake_case columns matching Supabase
+  - 4738b4f fix: defaultAmountSats type — null not assignable to number
+  - 0af7b1a feat: add org invoice primitive
 
 ## Context Pressure
 

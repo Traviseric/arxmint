@@ -63,17 +63,42 @@ the task was likely already done. **SKIP it** and log the reason.
 from, into, task, issue, error, make, update, remove, change, ensure, handle, support (too generic).
 
 Recent commits:
-  e6c4f88 fix(202): fix Next.js 15 params Promise type in webhooks DELETE route + silent-payments bech32m cast
-  56ef554 chore(203): remove stale NotImplementedError comment in silent-payments.ts
-  4929ad0 feat(201): implement real Bech32m decode in parseSPAddress() (BIP-352)
-  373f2b5 docs(200): mark 7 completed P1/P2 tasks [x] in AGENT_TASKS.md
-  9465223 feat(199): add /api/webhooks subscription endpoint for Zapier REST hooks
-  1088569 feat(197): e-commerce platform plugins â€” WooCommerce gateway + Zapier integration scaffold
-  b3f3806 feat(194): load testing harness â€” Artillery smoke/full/webhook tests + CI job
-  8e4f19f feat(198): compliance documentation kit â€” legal paper, security overview, FAQ, /compliance page
-  4ff5cf9 feat(196): replication playbook â€” committed docs + admin API endpoint
-  cb4b22c feat(192): developer portal & social proof â€” docs, case study, SEO
-  b1a5cf8 feat: grant reporting API + checkout WCAG + analytics
+  cb93f2e fix: update merchant signup success message â€” no false promises
+  da87a13 fix: generate id server-side for merchant_pledges insert
+  039fa6d fix: remap merchant_pledges to snake_case columns matching Supabase
+  4738b4f fix: defaultAmountSats type â€” null not assignable to number
+  0af7b1a feat: add org invoice primitive
+  4e3f03a fix: remove phantom columns from merchant pledge insert/select
+  eb2f38e docs: add ROADMAP.md with sovereign stack SPINE items (ARX-01 through ARX-03)
+  c126b65 fix: add standalone output for Docker builds + fix lsp-bootstrap TS2365
+  2e4b9d0 fix: resolve all remaining TS type errors in test files
+  53fe99f fix: align migrations to camelCase columns + fix TS2571/TS2345 test errors
+  10e6525 fix: remove @te-btc/cashu-l402 file dependency that breaks Vercel builds
+  f174e80 fix: resolve deployment errors â€” idempotent init migration, whitepaper path, webhook test types
+  8778be2 feat(health): expose identity alias count in /health endpoint
+  22ce437 feat: swap @te-btc/cashu-l402 into arxmint (replace inline cashu-paywall + l402 crypto)
+  5baf07e feat(identity): add DELETE /api/identity/unlink route + OpenAPI agent scope annotations
+  3288620 feat: auto-link nostr â†” teneo-auth identity on checkout (cross-auth)
+  585de66 fix: replace AnalyticsTab fake data with real payments and defer stubs explicitly
+  d40c48c feat: align packages/js and packages/react SDK contracts with live server routes
+  f4fe156 feat(create): add .env.template export to merchant setup wizard
+  adc7360 docs: reorganize into topic dirs + add te-btc ecosystem dependencies to roadmap
+  251ff1b docs: align roadmap and agent task execution
+  bfc1047 docs: document ArxMint identity resolution responsibilities and roadmap
+  3f3f621 docs: add identity graph to CLAUDE.md lookup table
+  1bb9855 chore: update overnight state and lockfile
+  094de51 fix(202): fix Next.js 15 params Promise type in webhooks DELETE route + silent-payments bech32m cast
+  ab8237a chore(203): remove stale NotImplementedError comment in silent-payments.ts
+  59f35f3 feat(201): implement real Bech32m decode in parseSPAddress() (BIP-352)
+  e64a459 docs(200): mark 7 completed P1/P2 tasks [x] in AGENT_TASKS.md
+  9656413 feat(199): add /api/webhooks subscription endpoint for Zapier REST hooks
+  c84e6a5 feat(197): e-commerce platform plugins â€” WooCommerce gateway + Zapier integration scaffold
+  00de6b9 feat(194): load testing harness â€” Artillery smoke/full/webhook tests + CI job
+  bb90c18 feat(198): compliance documentation kit â€” legal paper, security overview, FAQ, /compliance page
+  7b680e9 feat(196): replication playbook â€” committed docs + admin API endpoint
+  30fa77b feat(192): developer portal & social proof â€” docs, case study, SEO
+  90906f7 feat: grant reporting API + checkout WCAG + analytics
+  53121b3 feat: add generic identity alias graph with link, resolve, and create-root APIs
   31d5d1b fix: move Why into Learn dropdown to reduce nav items
   8dfa6a7 fix: truncate nostr display name to first 4 chars in nav
   7090699 fix: tighten nav spacing for medium screens
@@ -88,31 +113,6 @@ Recent commits:
   080d086 feat: add Umbrel + Start9 (StartOS) packaging manifests
   353f609 feat: implement stack update engine, one-click restore, and LND SCB backup engine
   f2caa7a feat: graduate merchant directory (search/filter/referral) + deploy wizard
-  cafe3ac feat: add Idempotency-Key header support and standardize API error shape
-  eebb705 fix: parseSPAddress() throws NotImplementedError instead of returning invalid keys
-  5cfe30f test: add unit tests for @arxmint/react usePayment hook state machine
-  ebb57b7 test: fix spend-router ERR_MODULE_NOT_FOUND and add @arxmint/js SDK tests
-  819a402 feat: add merchant init subcommand to arxmint.sh CLI
-  4a29664 test: add unit tests for Phase 5 modules and community-generator
-  7217c70 feat: wire LNURL-pay registry to Supabase with hardcoded fallback
-  4b29941 fix: replace alert() revoke with inline confirm UI; wire nodeStatus to /api/health
-  02f6734 docs+feat: add scripts/arxmint.sh CLI and fix README key rotation claim
-  8e5e467 feat: implement LSP liquidity bootstrap and managed DNS tunnel (T17+T18)
-  1b95e79 fix: correct merchant-init.sh header comment URL path
-  2f67cbb security: strip sensitive fields from unauthenticated settlement GET responses
-  3c97301 feat: add BTCMap integration to /merchants page
-  92233aa feat: gate Ark VTXO as experimental with coming soon badge
-  df207da feat: implement merchant deploy wizard and merchant-init.sh script (T16)
-  b8a688f feat: implement LNURL-pay + Lightning Address endpoints (T14)
-  59016a6 feat: implement merchant dashboard with 6-tab UI (T15)
-  0565fda feat: implement payment status API â€” state machine, SSE stream, paginated list
-  41fa583 feat: implement webhook engine with HMAC signing and retry (T09)
-  20fe76f feat: add @arxmint/react components (PayButton, CheckoutForm, QRPayment)
-  01fedc1 feat: implement scoped merchant API key system (arx_live/pub/test)
-  ead6151 fix: remove demo bypass paths from checkout â€” gate to dev only
-  0e771c9 feat: add @arxmint/js client SDK (ESM+CJS, <15KB)
-  3fa65cb feat: replace OG/Twitter images with nanobanana fortress gate variant
-  2609c0c UI: Overhaul Navbar logo to Cypherpunk wordmark and fix light/dark visibility swaps
 
 **When skipping a git-deduped task**, log it in your review report under a `"git_deduped"` array:
 ```json

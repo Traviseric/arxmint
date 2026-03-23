@@ -1,86 +1,91 @@
 {
-  "run_at": "2026-03-09T12:10:00Z",
-  "session": "task_synthesizer_round_32",
+  "run_at": "2026-03-18T00:00:00Z",
+  "session": "task_synthesizer_round_34",
   "sources_synthesized": [
-    "conductor_output.json",
-    "roadmap_sync_output.json",
+    "feature_audit_raw.json (PRAS AI_FEATURES — stale, from 2026-02-27)",
+    "docs/ROADMAP.md (SPINE items ARX-01, ARX-02, ARX-03 — added 2026-03-16)",
     "AGENT_TASKS.md"
   ],
-  "total_findings": 6,
+  "total_findings": 35,
   "accepted": 3,
-  "rejected": 0,
-  "deferred": 3,
+  "rejected": 32,
+  "deferred": 5,
   "split": 0,
   "merged": 0,
-  "rejections": [],
+  "rejections": [
+    {
+      "finding": "feature_audit_raw.json — 32x 'feature-unverified' warnings (Prompt, Fedimint, Cashu, Lightning, Privacy, Spend router, Cycle monitoring, Merchant directory, Agent marketplace, BCE health metrics, Deployment generation, and 21 docs section titles)",
+      "reason": "Already bulk-rejected in lessons.json (2026-03-13). All are type='feature-unverified' severity='warning' — PRAS AI_FEATURES box failed to auto-verify features; verifications=[]. All features confirmed present per CLAUDE.md and git history. Auto-reject on re-encounter."
+    }
+  ],
   "deferrals": [
     {
-      "finding": "P0: Complete first real testnet payment E2E on NUC (AGENT_TASKS.md)",
-      "reason": "HUMAN TASK — requires physical NUC hardware access and live testnet LND node. Already logged as HT-006."
+      "finding": "P0: Complete first real testnet payment E2E on NUC",
+      "reason": "HUMAN TASK — requires physical NUC hardware access."
     },
     {
-      "finding": "P1: Post-launch monitoring & ops cadence — Discord/Matrix + daily Grafana + weekly KPI",
-      "reason": "Mostly HUMAN TASK — Discord/Matrix setup requires account creation and admin action. No code to write. Logged as HT-007."
+      "finding": "P1: Post-launch monitoring ops cadence (Discord, daily Grafana, weekly KPI)",
+      "reason": "HUMAN TASK — Discord/Matrix setup requires account admin action."
     },
     {
-      "finding": "P2: Guardian governance, Advanced Cashu NUT-28, Numo NFC, Multi-city federation, Phase 5 production readiness gate, External security audit",
-      "reason": "Already DEFERRED in AGENT_TASKS.md — high effort protocol work, requires hardware, blocked on upstream, or requires vendor engagement with budget."
+      "finding": "P2: Guardian governance framework (Roadmap 3.1)",
+      "reason": "DEFERRED in AGENT_TASKS.md — high effort protocol work."
+    },
+    {
+      "finding": "P2: Advanced Cashu features — NUT-28 P2BK, multi-mint atomic swaps",
+      "reason": "Blocked on Cashu protocol adoption."
+    },
+    {
+      "finding": "SPINE-ARX-01: Multi-rail settlement UX expansion",
+      "reason": "Vague spec — 'still needs expansion'. Not specific enough to be actionable in a single task."
     }
   ],
   "project_declared": {
-    "total": 9,
-    "accepted": 3,
+    "total": 6,
+    "accepted": 0,
     "merged": 0,
     "rejected": 0,
-    "deferred": 6,
-    "deferred_items": [
-      "P0: Complete first real testnet payment E2E on NUC — HUMAN TASK",
-      "P1: Post-launch monitoring & ops cadence — HUMAN TASK (Discord setup, business ops)",
-      "P2: Guardian governance framework — DEFERRED (high effort protocol work)",
-      "P2: Advanced Cashu features NUT-28 P2BK — DEFERRED (protocol work)",
-      "P2: Numo NFC merchant integration — DEFERRED (requires hardware)",
-      "P2: External security audit — HUMAN TASK (vendor engagement + budget)",
-      "P2: Phase 5 Production Readiness Gate — DEFERRED (requires live testnet node)",
-      "P2: Multi-city federation — DEFERRED (future phase)",
-      "BLOCKED: Ark SDK, Programmable eCash, ZK reissuance, HW wallet BIP392, CDK migration"
-    ],
-    "accepted_items": [
-      "P1: Wire LND invoice settlement check into checkout status API — real gap verified in code",
-      "P2: Wire /create wizard merchant data to backend provisioning call — wizard collects data but doesn't use it",
-      "P2: Update Phase 5 Implementation Snapshot table in roadmap.md — stale 'Planned' status verified at line 1065-1088"
-    ]
+    "deferred": 6
   },
   "git_deduped": [
     {
-      "task": "Replace prototype checkout internals / remove demo bypass",
-      "reason": "Partially done — commit ead6151 gated demo bypass to dev only. But r_hash is still null and LND settlement polling is missing. Accepted as new task 204 targeting the remaining gap.",
-      "matching_commits": ["ead6151 fix: remove demo bypass paths from checkout — gate to dev only"]
+      "task": "Phase 4: Auto-link identity on checkout",
+      "reason": "Completed by 3288620. Keywords 'auto-link', 'identity', 'checkout' match.",
+      "matching_commits": ["3288620 feat: auto-link nostr ↔ teneo-auth identity on checkout (cross-auth)"]
+    },
+    {
+      "task": "Phase 4: OpenAPI agent-scope declarations for identity endpoints",
+      "reason": "Completed by 5baf07e. Keywords 'OpenAPI', 'identity' match.",
+      "matching_commits": ["5baf07e feat(identity): add DELETE /api/identity/unlink route + OpenAPI agent scope annotations"]
+    },
+    {
+      "task": "Phase 4: Swap lib/cashu-paywall.ts to @te-btc/cashu-l402 package",
+      "reason": "Completed by 22ce437. Keywords 'cashu-l402' match.",
+      "matching_commits": ["22ce437 feat: swap @te-btc/cashu-l402 into arxmint (replace inline cashu-paywall + l402 crypto)"]
     }
   ],
-  "findings_detail": [
+  "new_tasks_created": [
     {
       "id": 204,
-      "title": "Wire LND invoice settlement verification into checkout status API",
-      "status": "ACCEPTED",
-      "priority": "P1",
-      "reason": "Verified: app/api/checkout/route.ts line 91 stores rHash=null; status route never polls LND. Real invoices can never settle in production.",
-      "task_file": ".overnight/active/204-P1-wire-lnd-invoice-settlement-checkout-status.md"
+      "file": "active/204-P1-implement-escrow-module.md",
+      "title": "Implement Escrow Module (SPINE-ARX-02 Phase 1)",
+      "source": "docs/ROADMAP.md SPINE-ARX-02",
+      "priority": "P1"
     },
     {
       "id": 205,
-      "title": "Wire /create wizard merchant data to backend provisioning call",
-      "status": "ACCEPTED",
-      "priority": "P2",
-      "reason": "Verified: wizard collects storeName/domain/network/payments but Step 3 shows static curl command ignoring wizard input. Parameterization and backend save are missing.",
-      "task_file": ".overnight/active/205-P2-wire-create-wizard-config-to-merchant-provisioning.md"
+      "file": "active/205-P2-implement-merchant-payout-automation.md",
+      "title": "Implement Merchant Payout Automation (SPINE-ARX-03)",
+      "source": "docs/ROADMAP.md SPINE-ARX-03",
+      "priority": "P2"
     },
     {
       "id": 206,
-      "title": "Update Phase 5 Implementation Snapshot table in roadmap.md",
-      "status": "ACCEPTED",
-      "priority": "P2",
-      "reason": "Verified: roadmap.md line 1065-1088 shows 5.1-5.14 as Planned/Prototype but all have commits. AGENT_TASKS.md completed section confirms all done.",
-      "task_file": ".overnight/active/206-P2-update-phase5-roadmap-snapshot-table.md"
+      "file": "active/206-P3-add-invoice-pdf-generation.md",
+      "title": "Add PDF Generation for Org Invoices (SPINE-ARX-01)",
+      "source": "docs/ROADMAP.md SPINE-ARX-01 remaining item",
+      "priority": "P3"
     }
-  ]
+  ],
+  "synthesis_verdict": "3 new tasks created from docs/ROADMAP.md SPINE items (ARX-01 PDF, ARX-02 Escrow, ARX-03 Payouts). These are new roadmap items added 2026-03-16 by eb2f38e, not seen in prior synthesis rounds. All 32 feature_audit_raw findings remain auto-rejected (stale PRAS output). AGENT_TASKS.md has no new agent-actionable items."
 }

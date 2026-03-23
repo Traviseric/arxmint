@@ -15,7 +15,7 @@ if "%CLAUDE_CODE_OAUTH_TOKEN%"=="" (
 )
 
 echo ========================================
-echo WORKER_003 BOX v2.1.0
+echo WORKER_003 BOX v2.0.0
 echo Using Pro subscription (OAuth)
 echo ========================================
 echo.

@@ -56,20 +56,11 @@ If `C:\code\te-btc\arxmint\.overnight/progress.json` contains a `features` array
 ## Previous Worker Context
 
 **Recent commits (last 5):**
-  - 4929ad0 feat(201): implement real Bech32m decode in parseSPAddress() (BIP-352)
-  - 373f2b5 docs(200): mark 7 completed P1/P2 tasks [x] in AGENT_TASKS.md
-  - 9465223 feat(199): add /api/webhooks subscription endpoint for Zapier REST hooks
-  - 1088569 feat(197): e-commerce platform plugins — WooCommerce gateway + Zapier integration scaffold
-  - b3f3806 feat(194): load testing harness — Artillery smoke/full/webhook tests + CI job
-
-**Previous worker handoffs:**
-**worker_001_output:**
-  Commits: 4929ad0 - feat(201): implement real Bech32m decode in parseSPAddress() (BIP-352)
-  Files modified: lib/silent-payments.ts, tests/silent-payments.test.ts, package.json
-  Approach: Added @scure/base as direct dep; updated SP_PREFIX to store HRP-only ('sp'/'tsp'); replaced NotImplementedError stub with bech32m.decode() + fromWords() + version/length validation; updated test fixtures to use bech32m.encode() for real valid addresses.
-  What worked: bech32m.decode(address, 128) with a 128-char limit handles SP address length; bech32m.encode(hrp, words, 128) needed same limit for test fixture generation. All 47 tests pass.
-  What didn't: Default encode/decode limit of 90 chars is too small for SP addresses (117 chars) — must explicitly pass 128.
-  Recommended next step: No more pending tasks in active/. CONDUCTOR should check if TASK_SYNTHESIZER has further work or route to SWITCH_PROJECT/DIGEST.
+  - 8778be2 feat(health): expose identity alias count in /health endpoint
+  - 22ce437 feat: swap @te-btc/cashu-l402 into arxmint (replace inline cashu-paywall + l402 crypto)
+  - 5baf07e feat(identity): add DELETE /api/identity/unlink route + OpenAPI agent scope annotations
+  - 3288620 feat: auto-link nostr ↔ teneo-auth identity on checkout (cross-auth)
+  - 585de66 fix: replace AnalyticsTab fake data with real payments and defer stubs explicitly
 
 ## Workflow
 

@@ -720,6 +720,26 @@
     "confirmed_at": "2026-03-09T06:00:00Z",
     "total_tasks_completed_all_rounds": 123
   },
+  "newly_accepted_2026_03_18_round34": [
+    {
+      "source": "docs/ROADMAP.md SPINE-ARX-02",
+      "finding": "Escrow Module — hold-and-release payment mechanism for trustless trade",
+      "action": "ACCEPTED → task 204-P1 (Phase 1: DB models + API routes + state machine)",
+      "accepted_at": "2026-03-18T00:00:00Z"
+    },
+    {
+      "source": "docs/ROADMAP.md SPINE-ARX-03",
+      "finding": "Merchant Payout Automation — configurable scheduled settlement to merchant wallets",
+      "action": "ACCEPTED → task 205-P2",
+      "accepted_at": "2026-03-18T00:00:00Z"
+    },
+    {
+      "source": "docs/ROADMAP.md SPINE-ARX-01",
+      "finding": "Invoice PDF generation — remaining item from Invoice Primitive shipped in 0af7b1a",
+      "action": "ACCEPTED → task 206-P3",
+      "accepted_at": "2026-03-18T00:00:00Z"
+    }
+  ],
   "deferred_findings": [
     {
       "source": "code_quality_audit",
@@ -876,6 +896,30 @@
       "finding": "P2: External security audit — engage Least Authority / Trail of Bits / NCC Group",
       "reason": "Human task — requires vendor engagement and budget allocation ($10K-$50K from grants).",
       "rejected_at": "2026-03-09T12:10:00Z"
+    },
+    {
+      "source": "feature_audit_raw (PRAS AI_FEATURES)",
+      "finding": "32x 'feature-unverified' warnings for: Prompt, Fedimint federation support, Cashu mint support, Lightning AI agent commerce, Privacy defaults on, Spend router, Cycle monitoring, Merchant directory, Agent marketplace, BCE health metrics, Deployment generation, and 21 doc section titles (Visual Theme, Cross-Reference, Integration Gaps, Phase B/E roadmap entries, Remote Signer, BCE Metrics Dashboard, G-Bot Integration, Ark SDK Integration, NUT-26 QR/NFC, Numo NFC, Grant Reporting Dashboard, Spec Governance, Contribution Log, How to Log Contributions, Integration Gap, System Pipeline, Payment Verification, MCP Integration, One-Command Deploy)",
+      "reason": "All are type='feature-unverified' severity='warning' from a PRAS AI_FEATURES box run on 2026-02-27. The box failed to auto-verify features because verifications=[] (tool produced no verification results). All features confirmed present in codebase per CLAUDE.md, git history, and direct code inspection. Not actionable.",
+      "rejected_at": "2026-03-13T10:15:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P1: Unify checkout/status/package contracts (AGENT_TASKS.md)",
+      "reason": "Git deduped by d40c48c (align packages SDK contracts), 585de66 (replace stubs), f4fe156 (create export). All sub-items addressed.",
+      "rejected_at": "2026-03-13T10:15:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P1: Finish /create as merchant init/export path (AGENT_TASKS.md)",
+      "reason": "Git deduped by f4fe156 (add .env.template export to merchant setup wizard).",
+      "rejected_at": "2026-03-13T10:15:00Z"
+    },
+    {
+      "source": "project_declared",
+      "finding": "P1: Replace remaining merchant dashboard stubs (AGENT_TASKS.md)",
+      "reason": "Git deduped by 585de66 (replace AnalyticsTab fake data with real payments and defer stubs explicitly).",
+      "rejected_at": "2026-03-13T10:15:00Z"
     }
   ]
 }
