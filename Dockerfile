@@ -6,7 +6,8 @@ FROM node:22.14-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts
+COPY prisma ./prisma
+RUN npm ci --ignore-scripts && npx prisma generate
 
 # Build
 FROM base AS builder
@@ -19,6 +20,7 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apk add --no-cache openssl
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public

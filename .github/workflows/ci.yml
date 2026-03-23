@@ -199,6 +199,15 @@ jobs:
           GRAFANA_PASSWORD: ci-regtest-only
           POSTGRES_PASSWORD: ci-regtest-only
           CASHU_PRIVATE_KEY: 0000000000000000000000000000000000000000000000000000000000000001
+          STACK_TIMEOUT: "180"
+      - name: Debug stack state (on failure)
+        if: failure()
+        run: |
+          docker compose -f docker-compose.yml -f docker/docker-compose.regtest.yml ps
+          echo "--- cashu-mint logs ---"
+          docker compose -f docker-compose.yml -f docker/docker-compose.regtest.yml logs cashu-mint --tail=50
+          echo "--- web logs ---"
+          docker compose -f docker-compose.yml -f docker/docker-compose.regtest.yml logs web --tail=50
       - name: Wait for app health
         run: |
           for i in {1..60}; do
@@ -246,12 +255,12 @@ jobs:
           NEXTAUTH_SECRET: ci-load-test-secret
       - name: Wait for server
         run: |
-          for i in {1..30}; do
+          for i in {1..60}; do
             if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
               echo "Server ready"
               exit 0
             fi
-            sleep 2
+            sleep 3
           done
           echo "Server did not start in time"
           exit 1

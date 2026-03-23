@@ -43,7 +43,7 @@ test("validateEscrowCreate accepts valid params", () => {
     validateEscrowCreate({
       payerId: "payer-1",
       payeeId: "payee-1",
-      amountSats: 10000n,
+      amountSats: BigInt(10000),
       releaseCondition: "manual",
     })
   );
@@ -55,7 +55,7 @@ test("validateEscrowCreate rejects missing payerId", () => {
       validateEscrowCreate({
         payerId: "",
         payeeId: "payee-1",
-        amountSats: 10000n,
+        amountSats: BigInt(10000),
         releaseCondition: "manual",
       }),
     /payerId is required/
@@ -68,7 +68,7 @@ test("validateEscrowCreate rejects same payer and payee", () => {
       validateEscrowCreate({
         payerId: "user-1",
         payeeId: "user-1",
-        amountSats: 10000n,
+        amountSats: BigInt(10000),
         releaseCondition: "manual",
       }),
     /must be different/
@@ -81,7 +81,7 @@ test("validateEscrowCreate rejects non-positive amountSats", () => {
       validateEscrowCreate({
         payerId: "payer-1",
         payeeId: "payee-1",
-        amountSats: 0n,
+        amountSats: BigInt(0),
         releaseCondition: "manual",
       }),
     /positive/
@@ -94,7 +94,7 @@ test("validateEscrowCreate requires releasesAt for time_based", () => {
       validateEscrowCreate({
         payerId: "payer-1",
         payeeId: "payee-1",
-        amountSats: 5000n,
+        amountSats: BigInt(5000),
         releaseCondition: "time_based",
       }),
     /releasesAt is required/
@@ -107,7 +107,7 @@ test("validateEscrowCreate accepts time_based with future releasesAt", () => {
     validateEscrowCreate({
       payerId: "payer-1",
       payeeId: "payee-1",
-      amountSats: 5000n,
+      amountSats: BigInt(5000),
       releaseCondition: "time_based",
       releasesAt: future,
     })
@@ -253,7 +253,7 @@ test("buildEscrowStateChangedPayload serialises BigInt amountSats as string", ()
     id: "escrow-1",
     payerId: "payer-1",
     payeeId: "payee-1",
-    amountSats: 21000000n,
+    amountSats: BigInt(21000000),
     currency: "BTC",
     releaseCondition: "manual" as const,
     releasesAt: null,
@@ -285,7 +285,7 @@ test("full create → fund → release flow (state machine only)", () => {
   validateEscrowCreate({
     payerId: "payer-1",
     payeeId: "payee-1",
-    amountSats: 50000n,
+    amountSats: BigInt(50000),
     releaseCondition: "manual",
   });
 
@@ -307,7 +307,7 @@ test("full create → fund → dispute → resolve flow (state machine only)", (
   validateEscrowCreate({
     payerId: "payer-1",
     payeeId: "payee-1",
-    amountSats: 50000n,
+    amountSats: BigInt(50000),
     releaseCondition: "manual",
   });
 
