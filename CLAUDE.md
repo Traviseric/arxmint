@@ -24,7 +24,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 | Bazaar storefront | `app/bazaar/page.tsx` | OpenBazaar catalog |
 | Agent API | `app/api/agent/route.ts` | privacy-audit cycle-signals |
 | L402 demo | `app/api/l402/route.ts` | WWW-Authenticate 402 |
-| Agent commerce SDK | `packages/agent-commerce/` | @te-code/agent-commerce |
+| Agent commerce SDK | `packages/agent-commerce/` *(planned, not yet scaffolded)* | @te-code/agent-commerce |
 | Docs index | `docs/README.md` | — |
 | Roadmap | `docs/core/roadmap.md` | Phase Fortify Keystone |
 | Brand guide | `docs/reference/brand.md` | tagline voice palette |
