@@ -234,7 +234,7 @@ See [docs/core/roadmap.md](docs/core/roadmap.md) for the full phased plan with r
 | A-E | **Foundation → Hardening** — DB, vault, auth, payments, infra, E2E tests, production hardening | Code complete |
 | — | **Production Readiness Gate** — testnet VPS deployment | Pending (human action) |
 | 4 | **Citadel** — Longmont pilot + grant applications (OpenSats, HRF, FBCE) | In progress |
-| 5 | **Bazaar** — Self-hosted merchant platform (split-plane deploy, managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, Umbrel/StartOS) | Planned |
+| 5 | **Bazaar** — Self-hosted merchant platform (split-plane deploy, managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, Umbrel/StartOS) | Early prototype |
 | 6 | **Enterprise Polish** — External security audit, e-commerce plugins (WooCommerce/Shopify/Zapier), compliance documentation kit, developer portal | Planned |
 
 **Feature path:**

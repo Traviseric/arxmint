@@ -24,7 +24,8 @@
 | docs/compliance-kit/faq.md | compliance, kit, faq | faq doc in docs/compliance-kit |
 | docs/compliance-kit/legal-position-paper.md | compliance, kit, legal, position, paper | legal position paper doc in docs/compliance-kit |
 | docs/compliance-kit/security-overview.md | compliance, kit, security, overview | security overview doc in docs/compliance-kit |
-| docs/core/roadmap.md | core, roadmap | roadmap doc in docs/core |
+| docs/core/roadmap.md | core, roadmap, phases, production, feature | Detailed phased roadmap with research traceability |
+| docs/ROADMAP.md | roadmap, spine, orchestrator, high-level | High-level roadmap with SPINE items and cross-references |
 | docs/core/roadmap-execution-spec.md | core, roadmap, execution, spec | roadmap execution spec doc in docs/core |
 | docs/core/spec.md | core, spec | spec doc in docs/core |
 | docs/core/why-arxmint.md | core, why | why arxmint doc in docs/core |
