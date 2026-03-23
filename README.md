@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Accept Bitcoin payments. Zero fees. No middleman.</strong><br/>
-  <em>Self-hosted payment infrastructure â€” the open-source Stripe alternative.</em>
+  <em>Self-hosted payment infrastructure — the open-source Stripe alternative.</em>
 </p>
 
 <p align="center">
@@ -22,13 +22,13 @@
   <a href="https://github.com/Traviseric/arxmint/issues"><img src="https://img.shields.io/github/issues/Traviseric/arxmint" alt="Issues" /></a>
 </p>
 
-> **Part of the open creator economy.** ArxMint is the payment network. [Teneo Marketplace](https://github.com/Traviseric/teneo-marketplace) is the storefront â€” courses, books, funnels, email marketing. Together: a complete creator platform that can't be shut down.
+> **Part of the open creator economy.** ArxMint is the payment network. [Teneo Marketplace](https://github.com/Traviseric/teneo-marketplace) is the storefront — courses, books, funnels, email marketing. Together: a complete creator platform that can't be shut down.
 
 ---
 
-ArxMint is self-hosted Bitcoin payment infrastructure â€” the open-source Stripe alternative. Accept ecash ([Cashu](https://cashu.space)), Lightning, and [Fedimint](https://fedimint.org) federation payments with near-zero fees, instant settlement, no chargebacks, and no customer KYC.
+ArxMint is self-hosted Bitcoin payment infrastructure — the open-source Stripe alternative. Accept ecash ([Cashu](https://cashu.space)), Lightning, and [Fedimint](https://fedimint.org) federation payments with near-zero fees, instant settlement, no chargebacks, and no customer KYC.
 
-Answer three questions and your merchant node is live in under 15 minutes â€” managed DNS, auto-HTTPS, Lightning liquidity included. Or spin up a full private circular economy from a natural language prompt. Humans and AI agents share the same sovereign infrastructure.
+Answer three questions and your merchant node is live in under 15 minutes — managed DNS, auto-HTTPS, Lightning liquidity included. Or spin up a full private circular economy from a natural language prompt. Humans and AI agents share the same sovereign infrastructure.
 
 **Three questions. One command. Live in 15 minutes.**
 
@@ -36,77 +36,77 @@ Answer three questions and your merchant node is live in under 15 minutes â€�
 
 Stripe charges 2.9% + $0.30 per transaction. A merchant doing $10K/month loses ~$320 to processing fees. Chargebacks add more. Customer payment data gets sold.
 
-ArxMint flips this: ecash payments cost fractions of a penny. Settlement is instant. Chargebacks are impossible (bearer ecash is final). No payment data leaves the system. And it's open source â€” you own the infrastructure.
+ArxMint flips this: ecash payments cost fractions of a penny. Settlement is instant. Chargebacks are impossible (bearer ecash is final). No payment data leaves the system. And it's open source — you own the infrastructure.
 
 | | Stripe | ArxMint |
 |---|---|---|
 | **Transaction fee** | 2.9% + $0.30 | 0% (ecash) or ~0.1% (Lightning routing) |
-| **Settlement** | T+2 days | Instant â€” customer pays your node directly |
-| **Customer KYC** | Card + billing address | None â€” ecash is anonymous |
-| **Chargebacks** | Yes (merchant liability) | Impossible â€” payments are final |
-| **Data sold** | Yes | Impossible â€” no central entity holds the data |
-| **Open source** | No | Yes â€” MIT license |
+| **Settlement** | T+2 days | Instant — customer pays your node directly |
+| **Customer KYC** | Card + billing address | None — ecash is anonymous |
+| **Chargebacks** | Yes (merchant liability) | Impossible — payments are final |
+| **Data sold** | Yes | Impossible — no central entity holds the data |
+| **Open source** | No | Yes — MIT license |
 | **Self-hosted** | No | Required by design (legally protected) |
-| **Censorship risk** | Platform can freeze funds | Impossible â€” you control your own node |
-| **Custody** | Stripe holds funds T+2 | Never â€” peer-to-peer, you hold your keys |
+| **Censorship risk** | Platform can freeze funds | Impossible — you control your own node |
+| **Custody** | Stripe holds funds T+2 | Never — peer-to-peer, you hold your keys |
 
 ## How It Works
 
 ### For Merchants (Self-Hosted, Non-Custodial)
 
 ```
-1. arxmint merchant init â†’ three-question wizard â†’ your payment node is live in < 15 minutes
-2. Managed subdomain (storename.arxmint.cloud) + auto-HTTPS â€” no DNS setup
-3. LSP opens your first Lightning channel â€” you're receiving payments immediately
+1. arxmint merchant init → three-question wizard → your payment node is live in < 15 minutes
+2. Managed subdomain (storename.arxmint.cloud) + auto-HTTPS — no DNS setup
+3. LSP opens your first Lightning channel — you're receiving payments immediately
 4. Customer pays via ecash QR, Lightning, or your self-hosted checkout page
-5. Webhook fires from YOUR node â†’ fulfill order
-6. Sats arrive directly in YOUR wallet â€” no middleman, no settlement delay
-7. Zero-knowledge encrypted backups â€” restore from seed phrase on any new host
+5. Webhook fires from YOUR node → fulfill order
+6. Sats arrive directly in YOUR wallet — no middleman, no settlement delay
+7. Zero-knowledge encrypted backups — restore from seed phrase on any new host
 ```
 
 ### For Communities (Prompt-Driven)
 
-1. **Describe your community** â€” _"Create a private Bitcoin community for 20 Longmont Bitcoiners with chat, private payments, and AI agents selling data."_
-2. **ArxMint generates everything** â€” Fedimint federation config, Lightning agent integration, privacy defaults, Docker deployment
-3. **One-command deploy** â€” `docker compose up` â†’ private ecash mint, Lightning node, L402 endpoints, cycle dashboard
-4. **Humans + agents join the same loop** â€” Community members transact in private ecash. AI agents sell services for sats via L402. Same rails.
+1. **Describe your community** — _"Create a private Bitcoin community for 20 Longmont Bitcoiners with chat, private payments, and AI agents selling data."_
+2. **ArxMint generates everything** — Fedimint federation config, Lightning agent integration, privacy defaults, Docker deployment
+3. **One-command deploy** — `docker compose up` → private ecash mint, Lightning node, L402 endpoints, cycle dashboard
+4. **Humans + agents join the same loop** — Community members transact in private ecash. AI agents sell services for sats via L402. Same rails.
 
 ## Features
 
 ### Merchant Payments
-- **Payment SDK** â€” `createL402Challenge()`, `verifyL402Token()`, `routePayment()` â€” server-side TypeScript SDK for any backend
-- **L402 paywalls** â€” HTTP 402 challenge â†’ Lightning invoice â†’ preimage â†’ access. HMAC-signed macaroons with timing-safe verification
-- **Cashu NUT-24 paywalls** â€” Ecash token â†’ access. Double-spend rejection via NUT-07 proof state checks
-- **Spend router** â€” Auto-selects ecash â†’ Lightning â†’ Ark â†’ on-chain based on amount and privacy score
-- **Invoice primitive** â€” Org-to-org invoices with line items, due dates, state transitions, and invoice-linked checkout/webhook settlement
-- **Merchant onboarding** â€” 4-step flow with QR codes, NFC (Numo) support, and payment method selection
-- **Settlement** â€” Referral fee settlement with idempotency, Cashu ecash minting, federation deposit paths
+- **Payment SDK** — `createL402Challenge()`, `verifyL402Token()`, `routePayment()` — server-side TypeScript SDK for any backend
+- **L402 paywalls** — HTTP 402 challenge → Lightning invoice → preimage → access. HMAC-signed macaroons with timing-safe verification
+- **Cashu NUT-24 paywalls** — Ecash token → access. Double-spend rejection via NUT-07 proof state checks
+- **Spend router** — Auto-selects ecash → Lightning → Ark → on-chain based on amount and privacy score
+- **Invoice primitive** — Org-to-org invoices with line items, due dates, state transitions, and invoice-linked checkout/webhook settlement
+- **Merchant onboarding** — 4-step flow with QR codes, NFC (Numo) support, and payment method selection
+- **Settlement** — Referral fee settlement with idempotency, Cashu ecash minting, federation deposit paths
 
 ### Merchant Node Security
-- **Split-plane trust boundary** â€” Data plane (merchant-owned: keys, funds, LND, mint) is fully isolated from control plane (ArxMint-managed: provisioning, DNS, updates). ArxMint never touches keys or funds.
-- **Network isolation** â€” Only Caddy binds to public ports (80/443). LND gRPC, Cashu mint admin, PostgreSQL are internal Docker network only.
-- **Macaroon lifecycle** â€” `arx_pub_` tokens safe for client-side (invoice-only). Rotation: `POST /api/merchant-keys` (or `scripts/arxmint.sh keys rotate --merchant-id <id>`). Instant revocation via dashboard or `scripts/arxmint.sh keys revoke --merchant-id <id> --key <key>`.
-- **Cloudflare Tunnel boundary** â€” Checkout page traffic visible to Cloudflare (acceptable â€” it's public during checkout anyway). LND gRPC, seed phrases, admin macaroons, mint keys never traverse the tunnel.
-- **API versioning** â€” `v1` is the stable API surface. Additive changes stay in `v1`. Breaking changes require `v2` with 6-month deprecation window. Client SDK (`@arxmint/js`) follows semver.
+- **Split-plane trust boundary** — Data plane (merchant-owned: keys, funds, LND, mint) is fully isolated from control plane (ArxMint-managed: provisioning, DNS, updates). ArxMint never touches keys or funds.
+- **Network isolation** — Only Caddy binds to public ports (80/443). LND gRPC, Cashu mint admin, PostgreSQL are internal Docker network only.
+- **Macaroon lifecycle** — `arx_pub_` tokens safe for client-side (invoice-only). Rotation: `POST /api/merchant-keys` (or `scripts/arxmint.sh keys rotate --merchant-id <id>`). Instant revocation via dashboard or `scripts/arxmint.sh keys revoke --merchant-id <id> --key <key>`.
+- **Cloudflare Tunnel boundary** — Checkout page traffic visible to Cloudflare (acceptable — it's public during checkout anyway). LND gRPC, seed phrases, admin macaroons, mint keys never traverse the tunnel.
+- **API versioning** — `v1` is the stable API surface. Additive changes stay in `v1`. Breaking changes require `v2` with 6-month deprecation window. Client SDK (`@arxmint/js`) follows semver.
 
 ### Privacy Infrastructure
-- **Fedimint federation support** â€” Multi-guardian federated ecash with blinded Chaumian e-cash notes backed by BTC
-- **Cashu mint support** â€” Lightweight Nutshell + CDK compose generation for production
-- **Privacy defaults on** â€” CoinJoin/PayJoin routing + honest per-backend support matrix; SP/Ark paths include experimental scaffolding
-- **Encrypted client-side vault** â€” AES-256-GCM + PBKDF2-SHA256 (600K iterations). Proofs never touch the server.
-- **Nostr identity** â€” NIP-98 login backed by custom HMAC-signed httpOnly cookie sessions. No email required. Same keypair works across ArxMint + Teneo Marketplace.
+- **Fedimint federation support** — Multi-guardian federated ecash with blinded Chaumian e-cash notes backed by BTC
+- **Cashu mint support** — Lightweight Nutshell + CDK compose generation for production
+- **Privacy defaults on** — CoinJoin/PayJoin routing + honest per-backend support matrix; SP/Ark paths include experimental scaffolding
+- **Encrypted client-side vault** — AES-256-GCM + PBKDF2-SHA256 (600K iterations). Proofs never touch the server.
+- **Nostr identity** — NIP-98 login backed by custom HMAC-signed httpOnly cookie sessions. No email required. Same keypair works across ArxMint + Teneo Marketplace.
 
 ### AI Agent Commerce
-- **Lightning AI agent commerce** â€” L402 + NUT-24 paywall flows, scoped security tiers, macaroon baking, remote signer config validation
-- **Agent marketplace** â€” AI agents sell data, compute, privacy audits, and cycle signals for sats
-- **Ephemeral agent wallets** â€” Scoped Cashu/Fedimint wallets for autonomous agent operations
+- **Lightning AI agent commerce** — L402 + NUT-24 paywall flows, scoped security tiers, macaroon baking, remote signer config validation
+- **Agent marketplace** — AI agents sell data, compute, privacy audits, and cycle signals for sats
+- **Ephemeral agent wallets** — Scoped Cashu/Fedimint wallets for autonomous agent operations
 
 ### Community Tools
-- **Prompt-driven economy creation** â€” Describe your community in natural language, get a full deployment config
-- **Cycle monitoring** â€” Real-time MVRV, NUPL, and supply-in-profit signals from on-chain data
-- **BCE health metrics** â€” Community health dashboard with grant-ready export (JSON/CSV)
-- **Merchant directory** â€” Onboarding flow, QR codes, NFC support, "Spend sats here" listings
-- **Deployment generation** â€” Compose generation for LND + Fedimint/Cashu + Aperture + optional Ark/SP/monitoring services
+- **Prompt-driven economy creation** — Describe your community in natural language, get a full deployment config
+- **Cycle monitoring** — Real-time MVRV, NUPL, and supply-in-profit signals from on-chain data
+- **BCE health metrics** — Community health dashboard with grant-ready export (JSON/CSV)
+- **Merchant directory** — Onboarding flow, QR codes, NFC support, "Spend sats here" listings
+- **Deployment generation** — Compose generation for LND + Fedimint/Cashu + Aperture + optional Ark/SP/monitoring services
 
 ## Quick Start
 
@@ -142,10 +142,10 @@ npm run setup:cashu
 | **Auto-selected by generator** | < 30 members + testnet | > 30 members or mainnet |
 
 ```bash
-# Default (Nutshell â€” development)
+# Default (Nutshell — development)
 npm run setup:full
 
-# Production (CDK mint â€” replaces Nutshell in the stack)
+# Production (CDK mint — replaces Nutshell in the stack)
 docker compose -f docker-compose.yml -f docker/docker-compose.cdk.yml up -d
 ```
 
@@ -159,53 +159,53 @@ npm test
 
 ```
 arxmint/
-â”œâ”€â”€ app/                         # Next.js 15 App Router
-â”‚   â”œâ”€â”€ page.tsx                 # Landing page
-â”‚   â”œâ”€â”€ create/                  # Prompt-driven community creation
-â”‚   â”œâ”€â”€ dashboard/               # Privacy, cycle, wallet, BCE metrics
-â”‚   â”œâ”€â”€ community/[id]/          # Agent marketplace, merchants, members
-â”‚   â”œâ”€â”€ why/                     # Thesis page
-â”‚   â”œâ”€â”€ agents/                  # L402 agent commerce explainer
-â”‚   â”œâ”€â”€ roadmap/                 # Development roadmap
-â”‚   â””â”€â”€ api/
-â”‚       â”œâ”€â”€ auth/                # Nostr NIP-98 + session auth
-â”‚       â”œâ”€â”€ payment/             # Payment challenge + verification
-â”‚       â”œâ”€â”€ settlement/          # Referral fee settlement
-â”‚       â”œâ”€â”€ invoices/            # Org-to-org invoice primitive
-â”‚       â”œâ”€â”€ transactions/        # Transaction ledger
-â”‚       â”œâ”€â”€ merchants/           # Merchant CRUD
-â”‚       â”œâ”€â”€ l402/                # L402 gated endpoint demo
-â”‚       â”œâ”€â”€ agent/               # AI agent commerce (NUT-24)
-â”‚       â”œâ”€â”€ community/           # Community management
-â”‚       â”œâ”€â”€ bce-metrics/         # BCE health export
-â”‚       â””â”€â”€ health/              # Service health checks
-â”œâ”€â”€ lib/
-â”‚   â”œâ”€â”€ payment-sdk.ts           # Payment SDK (L402 + Cashu + routing)
-â”‚   â”œâ”€â”€ cashu-paywall.ts         # NUT-24 ecash paywall middleware
-â”‚   â”œâ”€â”€ cashu-sdk.ts             # Cashu v3 + multi-mint + keyset validation
-â”‚   â”œâ”€â”€ fedimint-sdk.ts          # Fedimint WASM client + gateway bridge
-â”‚   â”œâ”€â”€ lightning-agent.ts       # LNC + L402 + macaroon bakery + security tiers
-â”‚   â”œâ”€â”€ spend-router.ts          # Privacy-aware spend routing
-â”‚   â”œâ”€â”€ auth-middleware.ts       # Nostr session cookies + cross-app session verification
-â”‚   â”œâ”€â”€ cashu-vault.ts           # Encrypted client-side proof vault
-â”‚   â”œâ”€â”€ db.ts                    # Prisma DB client + resilient queries
-â”‚   â”œâ”€â”€ invoices.ts              # Invoice state machine + totals + payment links
-â”‚   â”œâ”€â”€ invoice-events.ts        # Invoice state-change event payload + webhook emission
-â”‚   â”œâ”€â”€ ark-sdk.ts               # Ark VTXO client (stub â€” waiting on upstream SDK)
-â”‚   â”œâ”€â”€ silent-payments.ts       # BIP-352 SP scanner + key delegation
-â”‚   â”œâ”€â”€ bce-metrics.ts           # BCE community health + grant export
-â”‚   â”œâ”€â”€ community-generator.ts   # Prompt â†’ Docker Compose + G-Bot
-â”‚   â”œâ”€â”€ privacy-defaults.ts      # Privacy scoring + layer descriptions
-â”‚   â”œâ”€â”€ cycle-monitor.ts         # BTC cycle signals (CoinGecko)
-â”‚   â”œâ”€â”€ pilot-deployment.ts      # Pilot KPI targets + deployment timeline
-â”‚   â”œâ”€â”€ grant-templates.ts       # OpenSats/HRF/FBCE grant generators
-â”‚   â””â”€â”€ store.ts                 # Zustand global state
-â”œâ”€â”€ components/                  # React components
-â”œâ”€â”€ prisma/                      # Database schema + migrations
-â”œâ”€â”€ tests/                       # Unit + E2E test suites
-â”œâ”€â”€ docker/                      # Docker configs (Caddy, Grafana, Prometheus, CDK)
-â”œâ”€â”€ scripts/                     # Setup, backup, security scripts
-â””â”€â”€ docs/                        # Spec, roadmap, research, security, governance
+├── app/                         # Next.js 15 App Router
+│   ├── page.tsx                 # Landing page
+│   ├── create/                  # Prompt-driven community creation
+│   ├── dashboard/               # Privacy, cycle, wallet, BCE metrics
+│   ├── community/[id]/          # Agent marketplace, merchants, members
+│   ├── why/                     # Thesis page
+│   ├── agents/                  # L402 agent commerce explainer
+│   ├── roadmap/                 # Development roadmap
+│   └── api/
+│       ├── auth/                # Nostr NIP-98 + session auth
+│       ├── payment/             # Payment challenge + verification
+│       ├── settlement/          # Referral fee settlement
+│       ├── invoices/            # Org-to-org invoice primitive
+│       ├── transactions/        # Transaction ledger
+│       ├── merchants/           # Merchant CRUD
+│       ├── l402/                # L402 gated endpoint demo
+│       ├── agent/               # AI agent commerce (NUT-24)
+│       ├── community/           # Community management
+│       ├── bce-metrics/         # BCE health export
+│       └── health/              # Service health checks
+├── lib/
+│   ├── payment-sdk.ts           # Payment SDK (L402 + Cashu + routing)
+│   ├── cashu-paywall.ts         # NUT-24 ecash paywall middleware
+│   ├── cashu-sdk.ts             # Cashu v3 + multi-mint + keyset validation
+│   ├── fedimint-sdk.ts          # Fedimint WASM client + gateway bridge
+│   ├── lightning-agent.ts       # LNC + L402 + macaroon bakery + security tiers
+│   ├── spend-router.ts          # Privacy-aware spend routing
+│   ├── auth-middleware.ts       # Nostr session cookies + cross-app session verification
+│   ├── cashu-vault.ts           # Encrypted client-side proof vault
+│   ├── db.ts                    # Prisma DB client + resilient queries
+│   ├── invoices.ts              # Invoice state machine + totals + payment links
+│   ├── invoice-events.ts        # Invoice state-change event payload + webhook emission
+│   ├── ark-sdk.ts               # Ark VTXO client (stub — waiting on upstream SDK)
+│   ├── silent-payments.ts       # BIP-352 SP scanner + key delegation
+│   ├── bce-metrics.ts           # BCE community health + grant export
+│   ├── community-generator.ts   # Prompt → Docker Compose + G-Bot
+│   ├── privacy-defaults.ts      # Privacy scoring + layer descriptions
+│   ├── cycle-monitor.ts         # BTC cycle signals (CoinGecko)
+│   ├── pilot-deployment.ts      # Pilot KPI targets + deployment timeline
+│   ├── grant-templates.ts       # OpenSats/HRF/FBCE grant generators
+│   └── store.ts                 # Zustand global state
+├── components/                  # React components
+├── prisma/                      # Database schema + migrations
+├── tests/                       # Unit + E2E test suites
+├── docker/                      # Docker configs (Caddy, Grafana, Prometheus, CDK)
+├── scripts/                     # Setup, backup, security scripts
+└── docs/                        # Spec, roadmap, research, security, governance
 ```
 
 ## Tech Stack
@@ -231,38 +231,38 @@ See [docs/core/roadmap.md](docs/core/roadmap.md) for the full phased plan with r
 
 | Phase | Codename | Status |
 |-------|----------|--------|
-| A-E | **Foundation â†’ Hardening** â€” DB, vault, auth, payments, infra, E2E tests, production hardening | Code complete |
-| â€” | **Production Readiness Gate** â€” testnet VPS deployment | Pending (human action) |
-| 4 | **Citadel** â€” Longmont pilot + grant applications (OpenSats, HRF, FBCE) | In progress |
-| 5 | **Bazaar** â€” Self-hosted merchant platform (split-plane deploy, managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, Umbrel/StartOS) | Planned |
-| 6 | **Enterprise Polish** â€” External security audit, e-commerce plugins (WooCommerce/Shopify/Zapier), compliance documentation kit, developer portal | Planned |
+| A-E | **Foundation → Hardening** — DB, vault, auth, payments, infra, E2E tests, production hardening | Code complete |
+| — | **Production Readiness Gate** — testnet VPS deployment | Pending (human action) |
+| 4 | **Citadel** — Longmont pilot + grant applications (OpenSats, HRF, FBCE) | In progress |
+| 5 | **Bazaar** — Self-hosted merchant platform (split-plane deploy, managed DNS, LSP liquidity, zero-knowledge backups, appliance updates, checkout, webhooks, client SDK, Umbrel/StartOS) | Planned |
+| 6 | **Enterprise Polish** — External security audit, e-commerce plugins (WooCommerce/Shopify/Zapier), compliance documentation kit, developer portal | Planned |
 
 **Feature path:**
 
 | Phase | Codename | Status |
 |-------|----------|--------|
-| 0 | **Fortify** â€” Security hardening (keyset validation, security tiers, remote signer) | Complete |
-| 1 | **Keystone** â€” Core architecture (NUT-24, spend router, merchants, agents, macaroon bakery) | Complete |
-| 2 | **Spire** â€” Full privacy + commerce (Fedimint v0.10, Ark stub, CDK, multi-mint, NUT-26, monitoring) | Complete |
-| 3 | **Aether** â€” Advanced features (STARK eCash, ZK reissuance, governance, HW wallets) | Post-pilot |
+| 0 | **Fortify** — Security hardening (keyset validation, security tiers, remote signer) | Complete |
+| 1 | **Keystone** — Core architecture (NUT-24, spend router, merchants, agents, macaroon bakery) | Complete |
+| 2 | **Spire** — Full privacy + commerce (Fedimint v0.10, Ark stub, CDK, multi-mint, NUT-26, monitoring) | Complete |
+| 3 | **Aether** — Advanced features (STARK eCash, ZK reissuance, governance, HW wallets) | Post-pilot |
 
-### Phase 5: Bazaar â€” The Merchant Platform
+### Phase 5: Bazaar — The Merchant Platform
 
 Phase 5 turns ArxMint into a full Stripe alternative. Informed by 11 self-hosting UX research studies. 16 scoped deliverables:
 
 | # | Feature | What It Unlocks |
 |---|---------|-----------------|
-| 5.1 | Local auth tokens | L402 macaroons on your own node â€” programmatic access + sandbox mode |
+| 5.1 | Local auth tokens | L402 macaroons on your own node — programmatic access + sandbox mode |
 | 5.2 | Webhook engine (local) | `payment.completed` events from your own node for automated fulfillment |
-| 5.3 | Self-hosted checkout | Payment page on your domain â€” no code needed, no middleman |
+| 5.3 | Self-hosted checkout | Payment page on your domain — no code needed, no middleman |
 | 5.4 | Payment status API | `GET /payments/:id` + SSE real-time stream on your node |
-| 5.5 | Client SDK | `@arxmint/js` + `@arxmint/react` â€” connects to your endpoint |
-| 5.6 | LNURL-pay + Lightning Address | `name@pay.merchant.com` â€” scan-and-pay on your domain |
+| 5.5 | Client SDK | `@arxmint/js` + `@arxmint/react` — connects to your endpoint |
+| 5.6 | LNURL-pay + Lightning Address | `name@pay.merchant.com` — scan-and-pay on your domain |
 | 5.7 | Merchant dashboard | Self-hosted: payments, analytics, traffic-light health, push notifications |
-| 5.8a | Provisioning service | BYOC control plane â€” merchant creates cloud account, ArxMint provisions via OAuth |
-| 5.8b | Managed DNS + connectivity | `storename.arxmint.cloud` default + Cloudflare Tunnel â€” no DNS setup needed |
-| 5.8c | LSP liquidity bootstrap | JIT channel opening on first payment â€” receive sats immediately |
-| 5.8d | Merchant stack composition | LND Neutrino (no full chain sync) + Cashu mint â€” live in < 15 minutes |
+| 5.8a | Provisioning service | BYOC control plane — merchant creates cloud account, ArxMint provisions via OAuth |
+| 5.8b | Managed DNS + connectivity | `storename.arxmint.cloud` default + Cloudflare Tunnel — no DNS setup needed |
+| 5.8c | LSP liquidity bootstrap | JIT channel opening on first payment — receive sats immediately |
+| 5.8d | Merchant stack composition | LND Neutrino (no full chain sync) + Cashu mint — live in < 15 minutes |
 | 5.9 | Public merchant directory | Customer-facing discovery by category/location |
 | 5.10 | Idempotency + hardening | Duplicate request protection, auto-HTTPS, firewall rules |
 | 5.11 | Node lifecycle | Appliance updates (stack BOM + canary rings) + zero-knowledge encrypted backups + one-click restore from seed |
@@ -276,18 +276,18 @@ ArxMint is designed to be replicated. The [Replication Playbook](docs/replicatio
 **Five steps to your own pilot:**
 
 ```
-1. Provision a VPS (~$20/month â€” Hetzner, DigitalOcean)
-2. Run the Community Generator â†’ describe your community â†’ download docker-compose.yml
-3. docker compose up -d â†’ Lightning node + Cashu mint + monitoring live
+1. Provision a VPS (~$20/month — Hetzner, DigitalOcean)
+2. Run the Community Generator → describe your community → download docker-compose.yml
+3. docker compose up -d → Lightning node + Cashu mint + monitoring live
 4. Fund Lightning channels (min 1M sats inbound, 3+ channels)
 5. Onboard founding merchants with QR codes and/or Numo NFC cards
 ```
 
 **Playbook documents:**
-- [Infrastructure Setup](docs/replication-playbook/infrastructure-setup.md) â€” Docker, LND, Cashu/Fedimint, TLS
-- [Guardian Recruitment](docs/replication-playbook/guardian-recruitment.md) â€” DKG ceremony, governance (Fedimint only)
-- [Merchant Onboarding Kit](docs/replication-playbook/merchant-onboarding-kit.md) â€” Scripts, QR codes, follow-up schedule
-- [Monitoring Runbook](docs/replication-playbook/monitoring-runbook.md) â€” Prometheus, Grafana, incident response
+- [Infrastructure Setup](docs/replication-playbook/infrastructure-setup.md) — Docker, LND, Cashu/Fedimint, TLS
+- [Guardian Recruitment](docs/replication-playbook/guardian-recruitment.md) — DKG ceremony, governance (Fedimint only)
+- [Merchant Onboarding Kit](docs/replication-playbook/merchant-onboarding-kit.md) — Scripts, QR codes, follow-up schedule
+- [Monitoring Runbook](docs/replication-playbook/monitoring-runbook.md) — Prometheus, Grafana, incident response
 
 Admin API: `GET /api/admin/playbook?format=markdown` downloads the full playbook as a markdown file (requires Nostr admin auth).
 
