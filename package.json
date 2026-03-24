@@ -43,6 +43,8 @@
     "@prisma/client": "~5.22.0",
     "@scure/base": "^2.0.0",
     "@supabase/supabase-js": "^2.98.0",
+    "@te-btc/agent-wallet": "^0.1.0",
+    "@te-btc/cashu-l402": "^0.1.0",
     "clsx": "^2.1.0",
     "framer-motion": "^12.34.3",
     "gsap": "^3.14.2",

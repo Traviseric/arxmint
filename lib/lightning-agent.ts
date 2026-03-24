@@ -515,6 +515,8 @@ export class SovereignLightningClient {
 }
 
 // ---- L402 Client (pay-for-access to agent endpoints) ----
+// Kept inline because lightning-agent.ts is "use client" and
+// @te-btc/cashu-l402 uses node:crypto (server-only).
 
 /** Cache of L402 tokens by domain */
 const tokenCache = new Map<string, L402Token>();
@@ -540,11 +542,6 @@ function buildL402Header(token: L402Token): string {
 /**
  * Fetch a URL with automatic L402 payment.
  * If the server returns 402, pays the Lightning invoice and retries.
- *
- * @param url - The L402-gated URL
- * @param lnClient - Lightning client to pay invoices with
- * @param options - Standard fetch options
- * @param maxCostSats - Maximum sats to pay (safety limit)
  */
 export async function l402Fetch(
   url: string,
@@ -579,18 +576,11 @@ export async function l402Fetch(
   }
 
   const challenge = parseL402Challenge(wwwAuth);
-
-  // Pay the invoice
   const { preimage } = await lnClient.payInvoice(challenge.invoice, maxCostSats);
 
-  // Cache the token
-  const token: L402Token = {
-    macaroon: challenge.macaroon,
-    preimage,
-  };
+  const token: L402Token = { macaroon: challenge.macaroon, preimage };
   tokenCache.set(domain, token);
 
-  // Retry with L402 credentials
   return fetch(url, {
     ...options,
     headers: {
@@ -638,7 +628,7 @@ export const __lightningAgentTestUtils = {
   },
   resetSingleton(): void {
     _lnClient = null;
-    tokenCache.clear();
+    clearL402Cache();
   },
   /** Override the remote signer probe (pass null to restore the real probe) */
   setRemoteSignerProber(
