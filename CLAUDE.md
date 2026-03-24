@@ -14,7 +14,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 | Fedimint SDK (WASM) | `lib/fedimint-sdk.ts` | SovereignFedimintClient |
 | Cashu SDK (v3) | `lib/cashu-sdk.ts` | SovereignCashuClient |
 | Lightning / LNC | `lib/lightning-agent.ts` | SovereignLightningClient l402Fetch |
-| Cashu paywall (NUT-24) | `lib/cashu-paywall.ts` | NUT24 ecashPaywall |
+| Cashu paywall (NUT-24) | `lib/cashu-paywall.ts` (via `@te-btc/cashu-l402`) | NUT24 ecashPaywall |
 | Privacy scoring | `lib/privacy-defaults.ts` | computePrivacyScore PRIVACY_PRESETS |
 | Identity graph | `lib/identity.ts` | linkIdentity resolveIdentity |
 | Auth (Nostr NIP-98) | `lib/auth-middleware.ts` | NIP-98 session HMAC |
@@ -24,15 +24,19 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 | Bazaar storefront | `app/bazaar/page.tsx` | OpenBazaar catalog |
 | Agent API | `app/api/agent/route.ts` | privacy-audit cycle-signals |
 | L402 demo | `app/api/l402/route.ts` | WWW-Authenticate 402 |
+| Agent wallet (re-export) | `lib/agent-wallet.ts` (via `@te-btc/agent-wallet`) | AgentWallet BudgetPolicy VelocityLimiter |
 | Agent commerce SDK | `packages/agent-commerce/` *(planned, not yet scaffolded)* | @te-code/agent-commerce |
 | Docs index | `docs/README.md` | — |
 | Roadmap | `docs/core/roadmap.md` | Phase Fortify Keystone |
 | Brand guide | `docs/reference/brand.md` | tagline voice palette |
-| TE-BTC ecosystem | `C:\code\te-btc\` | cashu-mint agent-wallet |
+| TE-BTC ecosystem | `C:\code\te-btc\` | cashu-mint cashu-l402 agent-wallet |
+| @te-btc/cashu-l402 | `C:\code\te-btc\cashu-l402` | L402 server/client + NUT-24 paywall (278 tests, npm published) |
+| @te-btc/agent-wallet | `C:\code\te-btc\agent-wallet` | Agent Cashu wallet + budget enforcement (169 tests, npm published) |
+| @te-btc/cashu-mint | `C:\code\te-btc\cashu-mint` | TypeScript Cashu mint NUT-00..07 (48 tests, Phase 1 complete) |
 
 ## Tech Stack
 
-Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark, `#F7931A`), Zustand, Supabase, `@cashu/cashu-ts` 3.5.0, `@lightninglabs/lnc-web` 0.3.5-alpha, Docker Compose.
+Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark, `#F7931A`), Zustand, Supabase, `@cashu/cashu-ts` 3.5.0, `@te-btc/cashu-l402` 0.1.0 (L402 + NUT-24), `@te-btc/agent-wallet` 0.1.0 (agent wallets), `@lightninglabs/lnc-web` 0.3.5-alpha, Docker Compose.
 
 ## Key Architecture Rules
 

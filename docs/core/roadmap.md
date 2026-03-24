@@ -49,7 +49,7 @@ C:\code\te-btc\
 â”œâ”€â”€ arxmint/              â† YOU ARE HERE (Next.js app, payment rails, merchant platform)
 â”œâ”€â”€ cashu-l402/           â† Standalone L402 + NUT-24 library (PRODUCTION READY)
 â”œâ”€â”€ cashu-mint/           â† TypeScript Cashu mint, NUT-00 through NUT-07 (PHASE 1 COMPLETE)
-â”œâ”€â”€ agent-wallet/         â† Agent-native Cashu wallet (SPEC ONLY, no code yet)
+â”œâ”€â”€ agent-wallet/         â† Agent-native Cashu wallet (v0.1.0 PUBLISHED, 169 tests)
 â”œâ”€â”€ multi-mint-router/    â† Cross-mint payment router, MCP server (SPEC ONLY, deferred)
 â”œâ”€â”€ integrity-anchor/     â† OpenTimestamps anchoring library (SPEC ONLY, Track B)
 â””â”€â”€ internal/             â† Grant apps, strategies, research docs (not code)
@@ -59,9 +59,9 @@ C:\code\te-btc\
 
 | Project | Status | Tests | ArxMint Integration | When to Build |
 |---------|--------|-------|---------------------|---------------|
-| **cashu-l402** | **Production ready** | 265/265 âœ… | Replace `lib/cashu-paywall.ts` + L402 client code with `@te-btc/cashu-l402` import. Offline P2PK+DLEQ verification, settlement queue, spend router all extracted. | **NOW** â€” publish to npm, swap into ArxMint |
+| **cashu-l402** | **Published to npm (v0.1.0)** | 278/278 âœ… | Replace `lib/cashu-paywall.ts` + L402 client code with `@te-btc/cashu-l402` import. Offline P2PK+DLEQ verification, settlement queue, spend router all extracted. | **DONE** — published to npm, wired into ArxMint via `lib/cashu-paywall.ts` |
 | **cashu-mint** | Phase 1 complete (59% feature gate) | 33 unit âœ… + 22 skipped (need DB) | ArxMint currently uses Nutshell as its Cashu mint in Docker. `cashu-mint` replaces Nutshell when it hits 90% feature gate. ArxMint's `lib/cashu-sdk.ts` client code doesn't change â€” only the Docker service swaps. | **NOW** â€” finish P1 gaps (LND fee extraction, NUT-08, keyset rotation API, integration tests) |
-| **agent-wallet** | Spec complete, no code | â€” | ArxMint's `lib/cashu-sdk.ts` has ephemeral agent wallet code inline. `agent-wallet` extracts this into a proper package with budget enforcement, policy engine, NIP-60/61 backup, proof pool management. ArxMint imports `@te-btc/agent-wallet` once Phase 1 ships. | **NEXT** â€” unblocked, can start in parallel with cashu-mint |
+| **agent-wallet** | **Published to npm (v0.1.0)** | 169/169 ✅ â€” | ArxMint's `lib/cashu-sdk.ts` has ephemeral agent wallet code inline. `agent-wallet` extracts this into a proper package with budget enforcement, policy engine, NIP-60/61 backup, proof pool management. ArxMint imports `@te-btc/agent-wallet` once Phase 1 ships. | **NEXT** â€” unblocked, can start in parallel with cashu-mint |
 | **multi-mint-router** | Spec complete, no code | â€” | Enables cross-community commerce (Phase 4.5 multi-city federation). ArxMint's spend router delegates to the multi-mint-router when multiple mints are available. Deployed as MCP server. | **DEFERRED** â€” trigger: 2+ community mints live |
 | **integrity-anchor** | Spec complete, no code | â€” | Track B (defense/compliance). Independent from ArxMint payment flows. Provides OTS-anchored audit trails for SBOM, AI model provenance, compliance. Not on ArxMint's critical path. | **INDEPENDENT** â€” can start anytime, no ArxMint dependency |
 
@@ -100,13 +100,13 @@ DONE â”€â”€â”€â”€â”€â”€â”€â”€â”€â�
   [x] OpenBazaar.ai test baseline (517 tests green)
 
 NOW (PARALLEL) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  [ ] cashu-l402 â†’ npm publish + swap into ArxMint
+  [x] cashu-l402 → npm publish + swap into ArxMint (DONE 2026-03-24)
   [ ] cashu-mint â†’ finish P1 gaps (LND fee, NUT-08, integration tests)
   [ ] ArxMint â†’ first testnet payment on NUC (LND syncing)
   [ ] OpenBazaar.ai â†’ Phase 0 gate (real Stripe + POD purchase)
 
 NEXT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  [ ] agent-wallet Phase 1 (scaffold + core wallet + budget engine)
+  [x] agent-wallet Phase 1-3 complete + npm published (DONE 2026-03-24)
   [ ] cashu-mint Phase 2 (NUT-08, NUT-10/11/14, rate limiting)
   [ ] ArxMint Phase 4 full pilot (30 merchants, mainnet)
   [ ] OpenBazaar.ai â†’ ArxMint fulfillment webhook proof
@@ -158,9 +158,9 @@ Status key:
 | **Identity: auto-link on checkout** | Planned | When user pays via L402/Cashu with cross-auth JWT, auto-link `nostr_{pubkey}` <-> `teneo-auth_{userId}` |
 | **Identity: OpenAPI agent scopes** | Planned | Add `x-agent-scope`, `x-agent-safe`, `x-auth-method` to identity endpoints for agentic CLI |
 | **Identity: unlink route** | Planned | `DELETE /api/identity/unlink` - lib function exists (`unlinkIdentity`), route not wired |
-| **@te-btc/cashu-l402** | Complete | 265 tests, L402 server/client + NUT-24 paywall + offline P2PK+DLEQ + settlement queue + spend router. Ready for npm publish + ArxMint swap. `C:\code\te-btc\cashu-l402` |
+| **@te-btc/cashu-l402** | **Published (v0.1.0)** | 278 tests, published to npm (v0.1.0). Wired into ArxMint via lib/cashu-paywall.ts. L402 server/client + NUT-24 paywall + offline P2PK+DLEQ + settlement queue. `C:\code\te-btc\cashu-l402` |
 | **@te-btc/cashu-mint** | Partial | NUT-00..07 implemented, 33 unit tests passing. Gaps: LND fee extraction, NUT-08 advertising, keyset rotation API, LND integration testing. 59% feature gate (needs 90%). `C:\code\te-btc\cashu-mint` |
-| **@te-btc/agent-wallet** | Planned | Full spec + architecture written. No code yet. Phase 1: core wallet + budget enforcement + storage adapters. `C:\code\te-btc\agent-wallet` |
+| **@te-btc/agent-wallet** | **Published (v0.1.0)** | Full spec + architecture written. No code yet. Phase 1: core wallet + budget enforcement + storage adapters. `C:\code\te-btc\agent-wallet` |
 | **@te-btc/multi-mint-router** | Planned | Full spec + 47-citation research doc. No code yet. Deferred until 2+ community mints live. `C:\code\te-btc\multi-mint-router` |
 | **OpenBazaar.ai** | Partial | 517 tests green, 42 routes, 51 services. Catalog/redirect/webhook wired to ArxMint. Phase 0 gate: needs real Stripe purchase, real POD purchase, Supabase proof, auth flow. `C:\code\openbazaar-ai` |
 
@@ -175,9 +175,9 @@ The correct execution stance now is:
 - Do not rebuild Phase 5 surfaces from scratch.
 - Treat most Bazaar work as code-landed but not yet fully consolidated or verified.
 - **Prioritize ecosystem integration over new ArxMint features:**
-  - Publish `@te-btc/cashu-l402` to npm and swap into ArxMint (replaces inline code)
+  - @te-btc/cashu-l402 published to npm and wired into ArxMint (DONE 2026-03-24)
   - Finish `cashu-mint` Phase 1 gaps (LND fee extraction, NUT-08, integration tests)
-  - Start `agent-wallet` Phase 1 (spec is complete, code scaffold ready)
+  - @te-btc/agent-wallet published to npm and re-exported via lib/agent-wallet.ts (DONE 2026-03-24)
 - Focus ArxMint work on alignment, promotion, and verification:
   - Complete first testnet payment on NUC (LND syncing â€” this unblocks everything)
   - Unify checkout/status/package contracts
@@ -1464,7 +1464,7 @@ All merchant-facing endpoints use `/api/v1/` prefix. Once merchants integrate, b
         â””â”€â†’ OpenBazaar.ai stubs            â””â”€â†’ agent-wallet consumes
             (arxmintService.js)                  â”‚
                                                  â–¼
-                                    @te-btc/agent-wallet (SPEC ONLY)
+                                    @te-btc/agent-wallet (v0.1.0 PUBLISHED)
                                       Budget engine, policy, NIP-60/61
                                       Replaces ArxMint inline agent wallets
                                                  â”‚

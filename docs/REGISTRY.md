@@ -86,6 +86,7 @@
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/7-Operational Resilience for ArxMint Merchant Nodes.md | research, phase5, bazaar, self, hosting, ux, 7, operational | 7 Operational Resilience for ArxMint Merchant Nodes doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/8-Competitive UX Benchmarking for “Download an App, Start Accepting Bitcoin” When Merchants Must Run Their Own Server.md | research, phase5, bazaar, self, hosting, ux, 8, competitive | 8 Competitive UX Benchmarking for “Download an App, Start Accepting Bitcoin” When Merchants Must Run Their Own Server doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/Self-Hosting-UX-Deep-Research.md | research, phase5, bazaar, self, hosting, ux, deep | Self Hosting UX Deep Research doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
+| docs/research/7-Merchant-Payment-Operations-Stack.md | research, merchant, payment, operations, lightning, custody, POS, invoicing, onboarding | Gemini deep research prompt: full merchant payment stack decisions (Lightning node, custody, dashboard, POS, invoicing, compliance, GTM) |
 | docs/research/RESEARCH_PROMPTS.md | research, prompts | RESEARCH PROMPTS doc in docs/research |
 | docs/research/research-citation-policy.md | research, citation | research citation policy doc in docs/research |
 | docs/research/research-crossref.md | research, crossref | research crossref doc in docs/research |
