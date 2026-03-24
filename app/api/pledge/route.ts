@@ -114,11 +114,11 @@ const SEED_MERCHANTS = [
     businessName: "Black Bear Window Cleaning",
     location: "Boulder, Colorado",
     category: "services",
-    website: "https://www.blackbearwindowcleaning.com",
+    website: "https://www.blackbearclean.com",
     logoUrl: "/images/merchants/black-bear.png",
     reason:
       "Professional window cleaning serving Boulder and the Front Range. Black Bear Window Cleaning is joining the ArxMint network to accept Bitcoin payments — zero processing fees, instant settlement, full sovereignty over every transaction.",
-    featured: false,
+    featured: true,
     createdAt: new Date("2026-03-20").toISOString(),
     checkoutEnabled: false,
     defaultAmountSats: 0,
@@ -257,6 +257,20 @@ export async function POST(request: NextRequest) {
     const { referredBy, ...pledgeData } = data;
 
     const { supabase } = await import("@/lib/supabase");
+
+    // First 20 merchants get "Founding Merchant" status
+    const FOUNDING_MERCHANT_CAP = 20;
+    let isFounding = false;
+    try {
+      const { count } = await supabase
+        .from("merchant_pledges")
+        .select("id", { count: "exact", head: true })
+        .eq("approved", true);
+      isFounding = (count ?? 0) + SEED_MERCHANTS.length < FOUNDING_MERCHANT_CAP;
+    } catch {
+      // If count fails, still allow signup — just won't auto-feature
+    }
+
     const { data: pledge, error } = await supabase
       .from("merchant_pledges")
       .insert({
@@ -271,6 +285,7 @@ export async function POST(request: NextRequest) {
         reason: pledgeData.reason,
         email_opt_in: pledgeData.emailOptIn,
         approved: true,
+        featured: isFounding,
       })
       .select("id, business_name")
       .single();

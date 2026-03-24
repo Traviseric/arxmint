@@ -363,16 +363,16 @@ export default function MerchantsPage() {
 
                     {/* Logo banner across top */}
                     {m.logoUrl ? (
-                      <div className="w-full h-32 bg-white border-b border-border-default flex items-center justify-center">
+                      <div className="w-full h-40 bg-white border-b border-border-default flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={m.logoUrl}
                           alt={`${m.businessName} logo`}
-                          className="h-full w-full object-contain p-4"
+                          className="h-full w-full object-contain p-3"
                         />
                       </div>
                     ) : (
-                      <div className="w-full h-32 bg-bg-surface border-b border-border-default flex items-center justify-center text-4xl">
+                      <div className="w-full h-40 bg-bg-surface border-b border-border-default flex items-center justify-center text-4xl">
                         {CATEGORY_ICONS[m.category ?? "other"] ?? "⚡"}
                       </div>
                     )}
