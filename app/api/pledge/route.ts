@@ -114,7 +114,7 @@ const SEED_MERCHANTS = [
     businessName: "Black Bear Window Cleaning",
     location: "Boulder, Colorado",
     category: "services",
-    website: "https://www.blackbearclean.com",
+    website: "https://www.blackbearwindowcleaning.com",
     logoUrl: "/images/merchants/black-bear.png",
     reason:
       "Professional window cleaning serving Boulder and the Front Range. Black Bear Window Cleaning is joining the ArxMint network to accept Bitcoin payments — zero processing fees, instant settlement, full sovereignty over every transaction.",
