@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
+# ArxMint Merchant Init v1.1.0
+# Three questions → live merchant node
 # ============================================================
 # ArxMint — Merchant Node Initializer
-# 3 questions → .env + docker-compose.merchant.yml
+# 4 questions → .env + docker-compose.merchant.yml
 # Usage: bash scripts/merchant-init.sh
 #        curl -fsSL https://arxmint.com/scripts/merchant-init.sh | bash
 # ============================================================
@@ -48,7 +50,7 @@ if [ -f "$ENV_FILE" ] || [ -f "$COMPOSE_FILE" ]; then
 fi
 
 # ── Question 1: Merchant name ────────────────────────────────
-echo "Question 1 of 3"
+echo "Question 1 of 4"
 printf "What is your merchant name? "
 read -r MERCHANT_NAME
 MERCHANT_NAME="${MERCHANT_NAME:-My Bitcoin Store}"
@@ -58,7 +60,7 @@ MERCHANT_SLUG=$(echo "$MERCHANT_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-
 echo ""
 
 # ── Question 2: Payment methods ──────────────────────────────
-echo "Question 2 of 3"
+echo "Question 2 of 4"
 echo "What payment methods do you want to accept?"
 echo "  [1] lightning          — Lightning Network (recommended)"
 echo "  [2] lightning + cashu  — Lightning + private ecash (default)"
@@ -87,11 +89,45 @@ case "$PAY_CHOICE" in
 esac
 
 # ── Question 3: Domain ───────────────────────────────────────
-echo "Question 3 of 3"
+echo "Question 3 of 4"
 printf "What domain/hostname will this run on? [localhost]: "
 read -r DOMAIN
 DOMAIN="${DOMAIN:-localhost}"
 echo ""
+
+# ── Question 4: Bitcoin network ──────────────────────────────
+echo "Question 4 of 4"
+echo "Which Bitcoin network?"
+echo "  [1] testnet  (default — no real funds)"
+echo "  [2] signet   (developer signaling network)"
+echo "  [3] mainnet  (real Bitcoin)"
+printf "Choice [1/2/3, default 1]: "
+read -r NET_CHOICE
+NET_CHOICE="${NET_CHOICE:-1}"
+echo ""
+
+case "$NET_CHOICE" in
+  2)
+    BITCOIN_NETWORK="signet"
+    LND_NETWORK_FLAG="--bitcoin.signet"
+    NETWORK_LABEL="signet"
+    ;;
+  3)
+    BITCOIN_NETWORK="bitcoin"
+    LND_NETWORK_FLAG="--bitcoin.mainnet"
+    NETWORK_LABEL="mainnet"
+    echo "========================================"
+    echo " ⚠ MAINNET — real funds at risk."
+    echo " Ensure you have channel backups."
+    echo "========================================"
+    echo ""
+    ;;
+  *)
+    BITCOIN_NETWORK="testnet"
+    LND_NETWORK_FLAG="--bitcoin.testnet"
+    NETWORK_LABEL="testnet"
+    ;;
+esac
 
 # ── Generate secrets ─────────────────────────────────────────
 if ! command -v openssl &>/dev/null; then
@@ -118,7 +154,7 @@ MERCHANT_DOMAIN="${DOMAIN}"
 
 # Bitcoin network (testnet | signet | bitcoin)
 # Change to 'bitcoin' when ready for mainnet real sats.
-BITCOIN_NETWORK=testnet
+BITCOIN_NETWORK=${BITCOIN_NETWORK}
 
 # Cashu ecash mint private key — BACK THIS UP
 # Losing this key means wallet recovery is impossible.
@@ -179,7 +215,7 @@ services:
     command: >
       lnd
       --bitcoin.active
-      --bitcoin.testnet
+      ${LND_NETWORK_FLAG}
       --bitcoin.node=neutrino
       --neutrino.addpeer=faucet.lightning.community
       --rpclisten=0.0.0.0:10009
@@ -205,7 +241,7 @@ services:
     environment:
       - LND_REST_ENDPOINT=https://lnd:8080
       - LND_TLS_CERT_PATH=/root/.lnd/tls.cert
-      - LND_MACAROON_PATH=/root/.lnd/data/chain/bitcoin/testnet/admin.macaroon
+      - LND_MACAROON_PATH=/root/.lnd/data/chain/bitcoin/${BITCOIN_NETWORK}/admin.macaroon
       - LSP_URL=\${LSP_URL:-}
       - CLOUDFLARE_API_TOKEN=\${CLOUDFLARE_API_TOKEN:-}
       - CLOUDFLARE_ZONE_ID=\${CLOUDFLARE_ZONE_ID:-}
@@ -252,7 +288,7 @@ echo ""
 echo "  Merchant : ${MERCHANT_NAME}"
 echo "  Payments : ${PAYMENT_LABEL}"
 echo "  Domain   : ${DOMAIN}"
-echo "  Network  : testnet (edit ${ENV_FILE} to change)"
+echo "  Network  : ${NETWORK_LABEL}"
 echo ""
 echo "  Secrets written to ${ENV_FILE}:"
 echo "    CASHU_PRIVATE_KEY  = $(mask "$CASHU_PRIVATE_KEY")"
@@ -274,19 +310,53 @@ echo "  3. After starting the stack, create the LND wallet:"
 echo "       docker exec ${MERCHANT_SLUG}-lnd lncli create"
 echo "     Save the 24-word seed phrase offline."
 echo ""
-echo "========================================"
-echo " Start your node:"
-echo "========================================"
-echo ""
-echo "  docker compose -f ${COMPOSE_FILE} up -d"
-echo ""
-echo "  Your checkout page will be at:"
+
+# ── Compute URLs once ────────────────────────────────────────
 if [ "$DOMAIN" = "localhost" ]; then
-  echo "  http://localhost:3000/pay/${MERCHANT_SLUG}"
+  CHECKOUT_URL="http://localhost:3000/pay/${MERCHANT_SLUG}"
+  DASHBOARD_URL="http://localhost:3000/merchant"
+  LIGHTNING_ADDR="${MERCHANT_SLUG}@localhost"
 else
-  echo "  https://${DOMAIN}/pay/${MERCHANT_SLUG}"
+  CHECKOUT_URL="https://${DOMAIN}/pay/${MERCHANT_SLUG}"
+  DASHBOARD_URL="https://${DOMAIN}/merchant"
+  LIGHTNING_ADDR="${MERCHANT_SLUG}@pay.${DOMAIN}"
 fi
-echo ""
+
+# ── Post-setup validation: offer to start the stack ──────────
+if command -v docker &>/dev/null; then
+  echo ""
+  printf "Ready to start your merchant node? [Y/n] "
+  read -r START_REPLY
+  START_REPLY="${START_REPLY:-Y}"
+  echo ""
+
+  if [[ "$START_REPLY" =~ ^[Yy]$ ]]; then
+    echo "Starting stack..."
+    docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d
+
+    echo ""
+    echo "Waiting for health check (up to 60s)..."
+    HEALTHY=false
+    for i in $(seq 1 12); do
+      if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
+        HEALTHY=true
+        break
+      fi
+      sleep 5
+    done
+
+    if [ "$HEALTHY" = "true" ]; then
+      echo "  ✅ Health check passed!"
+      echo ""
+      echo "  Checkout live at: ${CHECKOUT_URL}"
+    else
+      echo "  ⏳ Health check did not pass within 60s."
+      echo "  The stack may still be starting. Check logs:"
+      echo "    docker compose -f ${COMPOSE_FILE} logs -f"
+    fi
+    echo ""
+  fi
+fi
 
 # ── Optional: Inbound Lightning liquidity (LSP bootstrap) ────
 echo "========================================"
@@ -361,4 +431,19 @@ if [[ "$CF_REPLY" =~ ^[Yy]$ ]]; then
     echo "    cloudflared tunnel run ${MERCHANT_SLUG}"
   fi
 fi
+
+# ── Final summary banner ─────────────────────────────────────
+echo ""
+echo "========================================"
+echo " 🏪 Your merchant node is ready!"
+echo "========================================"
+echo " Checkout:  ${CHECKOUT_URL}"
+echo " Dashboard: ${DASHBOARD_URL}"
+echo " API Keys:  ./scripts/arxmint.sh keys list --merchant-id ${MERCHANT_SLUG}"
+echo ""
+echo " Next steps:"
+echo " 1. Fund your Lightning node (min 100K sats inbound)"
+echo " 2. Test a checkout at the URL above"
+echo " 3. Share your Lightning Address: ${LIGHTNING_ADDR}"
+echo "========================================"
 echo ""

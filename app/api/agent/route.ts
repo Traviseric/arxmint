@@ -23,6 +23,7 @@ import {
 } from "@/lib/cashu-paywall";
 import { validateRemoteSignerEnv } from "@/lib/lightning-validator";
 import { logger } from "@/lib/logger";
+import { AgentWallet, MemoryStorage } from "@/lib/agent-wallet";
 
 /** Default paywall config — matches .env.example CASHU_MINT_URL */
 const PAYWALL_CONFIG: CashuPaywallConfig = {
@@ -39,7 +40,20 @@ const SERVICE_PRICES: Record<string, number> = {
   compute: 500,
   data: 100,
   "verify-payment": 0, // Free — used by downstream TE services to verify agent payments
+  "wallet-status": 0, // Free — agent introspection into wallet state
 };
+
+/** Create an ephemeral agent wallet (per-request, serverless-safe). */
+function getAgentWallet(): AgentWallet {
+  return new AgentWallet({
+    mintUrl: process.env.CASHU_MINT_URL || "http://localhost:3338",
+    storage: new MemoryStorage(),
+    budget: {
+      maxPerOperationSats: 1000,
+      maxPerSessionSats: 5000,
+    },
+  });
+}
 
 /**
  * Verify payment from either L402 or Cashu NUT-24.
@@ -274,7 +288,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    case "compute":
+    case "compute": {
+      const computeWallet = getAgentWallet();
       return NextResponse.json({
         service: "compute",
         demo: true,
@@ -287,8 +302,14 @@ export async function GET(request: NextRequest) {
           compute_units: 1,
           cost_sats: 500,
         },
+        wallet: {
+          balance_sats: computeWallet.getBalance(),
+          budget: computeWallet.getBudgetState(),
+          audit_log: computeWallet.exportAuditLog(),
+        },
         timestamp: Date.now(),
       });
+    }
 
     case "data":
       return NextResponse.json({
@@ -315,16 +336,36 @@ export async function GET(request: NextRequest) {
         timestamp: Date.now(),
       });
 
-    case "verify-payment":
+    case "verify-payment": {
       // Payment verification service for downstream TE services (e.g. teneo-publishing).
       // If we reach here, checkPayment() already verified the payment is valid.
+      const verifyWallet = getAgentWallet();
       return NextResponse.json({
         service: "verify-payment",
         verified: true,
         paymentMethod,
         amount_sats: SERVICE_PRICES[service] || PAYWALL_CONFIG.priceSats,
+        wallet: {
+          balance_sats: verifyWallet.getBalance(),
+          budget: verifyWallet.getBudgetState(),
+        },
         timestamp: Date.now(),
       });
+    }
+
+    case "wallet-status": {
+      const statusWallet = getAgentWallet();
+      return NextResponse.json({
+        service: "wallet-status",
+        paymentMethod,
+        wallet: {
+          balance_sats: statusWallet.getBalance(),
+          budget: statusWallet.getBudgetState(),
+          audit_log: statusWallet.exportAuditLog(),
+        },
+        timestamp: Date.now(),
+      });
+    }
 
     default:
       return NextResponse.json({
@@ -337,6 +378,7 @@ export async function GET(request: NextRequest) {
           "compute",
           "data",
           "verify-payment",
+          "wallet-status",
         ],
         pricing: {
           "privacy-audit": "200 sats",
@@ -344,6 +386,7 @@ export async function GET(request: NextRequest) {
           compute: "500 sats/job (demo — placeholder output)",
           data: "50-100 sats/dataset (demo — static catalog)",
           "verify-payment": "0 sats (TE service verification)",
+          "wallet-status": "0 sats (agent introspection)",
         },
         demo_services: ["compute", "data"],
         demo_notice: "compute and data endpoints are demo placeholders. privacy-audit and cycle-signals use real computations.",

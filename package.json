@@ -32,7 +32,8 @@
     "test:e2e:optional": "node scripts/run-bash.cjs scripts/test-e2e-optional.sh",
     "test:load:smoke": "artillery run tests/load/smoke.yml",
     "test:load:full": "artillery run tests/load/checkout-flow.yml",
-    "test:load:webhooks": "artillery run tests/load/webhook-delivery.yml"
+    "test:load:webhooks": "artillery run tests/load/webhook-delivery.yml",
+    "test:smoke:checkout": "bash scripts/smoke-checkout.sh"
   },
   "dependencies": {
     "@cashu/cashu-ts": "^3.5.0",
