@@ -6,7 +6,13 @@
 // Server-side only - do NOT import in "use client" components.
 // ============================================================
 
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { randomBytes } from "crypto";
+import {
+  signMacaroon as _signMacaroon,
+  verifyMacaroon as _verifyMacaroon,
+  verifyPreimage as _verifyPreimage,
+} from "@te-btc/cashu-l402";
+import type { MacaroonPayload } from "@te-btc/cashu-l402";
 import {
   verifyCashuPayment as _verifyCashuPayment,
   buildCashuChallenge,
@@ -94,41 +100,24 @@ async function createLNDInvoice(
 }
 
 export function signMacaroon(payload: object, rootKey: string): string {
-  const payloadJson = JSON.stringify(payload);
-  const sig = createHmac("sha256", rootKey).update(payloadJson).digest("hex");
-  return Buffer.from(JSON.stringify({ ...payload, sig })).toString("base64");
+  return _signMacaroon(payload as MacaroonPayload, rootKey);
 }
 
 export function verifyMacaroon(token: string, rootKey: string): { identifier: string } | null {
-  try {
-    const decoded = JSON.parse(Buffer.from(token, "base64").toString("utf8"));
-    const { sig, ...payload } = decoded;
-    if (!sig) return null;
-    const expectedSig = createHmac("sha256", rootKey).update(JSON.stringify(payload)).digest("hex");
-    if (sig !== expectedSig) return null;
-    return payload as { identifier: string };
-  } catch (error: unknown) {
-    logger.debug("payment_sdk_verify_macaroon_parse_failed", {
-      error: getErrorMessage(error),
-    });
+  const result = _verifyMacaroon(token, rootKey);
+  if (!result) {
+    logger.debug("payment_sdk_verify_macaroon_failed", {});
     return null;
   }
+  return result as { identifier: string };
 }
 
 export function verifyPreimage(preimage: string, rHashBase64: string): boolean {
-  try {
-    const preimageBytes = Buffer.from(preimage, "hex");
-    if (preimageBytes.length !== 32) return false;
-    const derived = createHash("sha256").update(preimageBytes).digest();
-    const expected = Buffer.from(rHashBase64, "base64");
-    if (derived.length !== expected.length) return false;
-    return timingSafeEqual(derived, expected);
-  } catch (error: unknown) {
-    logger.debug("payment_sdk_verify_preimage_failed", {
-      error: getErrorMessage(error),
-    });
-    return false;
+  const result = _verifyPreimage(preimage, rHashBase64);
+  if (!result) {
+    logger.debug("payment_sdk_verify_preimage_failed", {});
   }
+  return result;
 }
 
 const _pendingL402 = new Map<string, { rHashBase64: string; expiresAt: number }>();

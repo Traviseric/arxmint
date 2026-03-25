@@ -310,6 +310,7 @@ const PROOF_STORAGE_KEY_PREFIX = "arxmint_proofs_";
 /**
  * Save Cashu proofs to localStorage, namespaced by mint URL.
  * No-ops in SSR context (window undefined).
+ * @deprecated Use IProofStore implementations from '@te-btc/agent-wallet' (MemoryStorage, FileStorage, SqliteStorage) instead.
  */
 export function saveProofsToLocalStorage(mintUrl: string, proofs: Proof[]): void {
   if (typeof window === "undefined") return;
@@ -319,6 +320,7 @@ export function saveProofsToLocalStorage(mintUrl: string, proofs: Proof[]): void
 /**
  * Load Cashu proofs from localStorage for a given mint URL.
  * Returns empty array if not found or parse fails.
+ * @deprecated Use IProofStore implementations from '@te-btc/agent-wallet' (MemoryStorage, FileStorage, SqliteStorage) instead.
  */
 export function loadProofsFromLocalStorage(mintUrl: string): Proof[] {
   if (typeof window === "undefined") return [];
@@ -335,6 +337,7 @@ export function loadProofsFromLocalStorage(mintUrl: string): Proof[] {
 
 /**
  * Clear Cashu proofs from localStorage for a given mint URL.
+ * @deprecated Use IProofStore implementations from '@te-btc/agent-wallet' (MemoryStorage, FileStorage, SqliteStorage) instead.
  */
 export function clearProofsFromLocalStorage(mintUrl: string): void {
   if (typeof window === "undefined") return;
@@ -344,6 +347,7 @@ export function clearProofsFromLocalStorage(mintUrl: string): void {
 /**
  * Get all mint URLs that currently have proofs stored in localStorage.
  * Useful for multi-mint hydration on app startup.
+ * @deprecated Use IProofStore implementations from '@te-btc/agent-wallet' (MemoryStorage, FileStorage, SqliteStorage) instead.
  */
 export function getStoredMintUrls(): string[] {
   if (typeof window === "undefined") return [];
@@ -665,6 +669,7 @@ export interface AgentWalletConfig {
  * - Clean teardown on disconnect
  *
  * Source: Doc 1 (ecash as bearer value), Doc 6 (transaction independence)
+ * @deprecated Use AgentWallet from '@te-btc/agent-wallet' (re-exported via lib/agent-wallet.ts) instead.
  */
 export class AgentCashuWallet {
   private wallet: Wallet | null = null;
@@ -785,7 +790,10 @@ export class AgentCashuWallet {
   }
 }
 
-/** Create an ephemeral agent wallet */
+/**
+ * Create an ephemeral agent wallet
+ * @deprecated Use AgentWallet from '@te-btc/agent-wallet' instead.
+ */
 export function createAgentWallet(config: AgentWalletConfig): AgentCashuWallet {
   return new AgentCashuWallet(config);
 }
@@ -841,6 +849,7 @@ export interface ReissuanceProof {
  * - Hash-chained audit log (tamper-evident)
  * - Reissuance tracking (prove token was validly circulated)
  * - State snapshots for external verification
+ * @deprecated Use AgentWallet from '@te-btc/agent-wallet' (has built-in audit logging) instead.
  */
 export class AuditedAgentWallet {
   private _inner: AgentCashuWallet;
@@ -1025,7 +1034,10 @@ async function sha256Hex(data: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Create an audited agent wallet with ZK reissuance support */
+/**
+ * Create an audited agent wallet with ZK reissuance support
+ * @deprecated Use AgentWallet from '@te-btc/agent-wallet' instead.
+ */
 export function createAuditedAgentWallet(
   config: AgentWalletConfig
 ): AuditedAgentWallet {
