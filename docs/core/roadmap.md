@@ -1,7 +1,7 @@
 # ArxMint â€” Implementation Roadmap
 
-**Version:** 4.6 â€” March 12, 2026
-**Informed by:** 7 research documents cross-referenced in `docs/research/research-crossref.md` + 6 deep research studies in `docs/research/` + 11 self-hosting UX studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/`
+**Version:** 4.7 â€” March 24, 2026
+**Informed by:** 8 research documents cross-referenced in `docs/research/research-crossref.md` + 6 deep research studies in `docs/research/` + 11 self-hosting UX studies in `docs/research/Phase5-Bazaar/Self-Hosting-UX/` + 1 merchant payment operations study in `docs/research/7-ArxMint Merchant Payment Operations Research.md`
 **Canonical spec:** `docs/core/spec.md` (all `Spec Â§X` references point here)
 **Agent task queue:** `AGENT_TASKS.md` (canonical implementation task queue derived from this roadmap)
 **E2E testing:** `docs/testing/e2e-testing.md` (8 layers, 22 test flows)
@@ -101,19 +101,19 @@ DONE â”€â”€â”€â”€â”€â”€â”€â”€â”€â�
 
 NOW (PARALLEL) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   [x] cashu-l402 → npm publish + swap into ArxMint (DONE 2026-03-24)
+  [ ] **Phase 4.7 Milestone 1: “Black Bear is Live”** â†’ Deploy Phoenixd/LNbits, refactor checkout, build POS, sign ToS
   [ ] cashu-mint â†’ finish P1 gaps (LND fee, NUT-08, integration tests)
-  [ ] ArxMint â†’ first testnet payment on NUC (LND syncing)
   [ ] OpenBazaar.ai â†’ Phase 0 gate (real Stripe + POD purchase)
 
 NEXT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   [x] agent-wallet Phase 1-3 complete + npm published (DONE 2026-03-24)
+  [ ] **Phase 4.7 Milestone 2: “20 Founding Merchants”** â†’ Dashboard, invoicing, Bolt Cards, NWC, Pearl Street outreach
   [ ] cashu-mint Phase 2 (NUT-08, NUT-10/11/14, rate limiting)
-  [ ] ArxMint Phase 4 full pilot (30 merchants, mainnet)
   [ ] OpenBazaar.ai â†’ ArxMint fulfillment webhook proof
 
 LATER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   [ ] multi-mint-router (trigger: 2+ live community mints)
-  [ ] cashu-mint Phase 3-4 (programmable eCash, agent-wallet integration)
+  [ ] cashu-mint Phase 2 (NUT-10/11 P2PK, NUT-12 DLEQ, rate limiting)
   [ ] ArxMint Phase 5 full (merchant self-hosted nodes)
   [ ] ArxMint Phase 6 (enterprise audit, plugins, compliance)
 ```
@@ -150,7 +150,8 @@ Status key:
 | 2.7 Monitoring stack | Complete | Prometheus scrape config at `docker/prometheus.yml`; Grafana datasource + dashboards at `docker/grafana/`; services in `docker-compose.yml` |
 | 2.8 Fedimint gateway bridge | Prototype | Bridge implemented with placeholder preimage behavior in `lib/fedimint-sdk.ts` |
 | 3.x advanced features | Prototype | Initial scaffolding in `lib/cashu-sdk.ts`, `lib/silent-payments.ts`, `lib/community-generator.ts` |
-| 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\arxmint-internal\grants\`, KPI framework at `docs/operations/pilot-kpis.md`, deployment docs in `docs/`; merchant directory live at arxmint.com/merchants with Glacier + Teneo, 13 pipeline merchants, Nostr admin auth, public signup, and TE NUC testnet deployment running |
+| 4.x production/grant rollout | Partial | Grant applications in `C:\code\te-btc\internal\arxmint-internal\grants\`, KPI framework at `docs/operations/pilot-kpis.md`, deployment docs in `docs/`; merchant directory live at arxmint.com/merchants with Glacier + Teneo + Black Bear Window Cleaning, 13 pipeline merchants, Nostr admin auth, public signup, auto-approve with Founding Merchant status, and TE NUC testnet deployment running |
+| **4.7 merchant payment ops** | Planned | Research complete (`docs/research/7-ArxMint Merchant Payment Operations Research.md`). Architecture decided: Phoenixd/LNbits bimodal + Agent of Payee custody + BIP21 QR + PWA POS. Blocks on VPS provisioning (human) and ToS signing (human). |
 | 5.x merchant platform (Bazaar) | Partial | Repo now contains merchant API keys, webhook engines, checkout/status flows, dashboard shell, wizard/config generation, LNURL, load tests, packaging folders, and update/backup primitives. Remaining work is contract alignment, env wiring, and end-to-end merchant-node verification |
 | 4.6 developer portal & social proof | Partial | Docs site, quickstart, case-study/social-proof assets, and SEO pages are landed; content expansion and tighter integration remain |
 | 6.x enterprise polish | Partial | WooCommerce + Zapier scaffolds, compliance kit docs, and webhook subscription APIs are shipped in repo; external audit and platform publishing/distribution remain |
@@ -166,24 +167,31 @@ Status key:
 
 ---
 
-## Execution Update (March 12, 2026)
+## Execution Update (March 24, 2026)
 
-ArxMint is farther ahead in code than this roadmap previously implied. The TE-BTC ecosystem is also materializing â€” `cashu-l402` is production-ready (265 tests), `cashu-mint` has core NUTs implemented, and OpenBazaar.ai has 517 passing tests with the ArxMint integration wired.
+ArxMint is farther ahead in code than this roadmap previously implied. The TE-BTC ecosystem is also materializing â€” `cashu-l402` is production-ready (278 tests), `agent-wallet` is published (169 tests), `cashu-mint` has core NUTs implemented, and OpenBazaar.ai has 517 passing tests with the ArxMint integration wired.
+
+**Major pivot (March 24, 2026):** Merchant payment operations research (`docs/research/7-ArxMint Merchant Payment Operations Research.md`) locked in the **Phoenixd/LNbits bimodal architecture** for pilot merchant payments. This replaces the raw LND approach for merchant-facing flows. Key implications:
+- `lib/payment-sdk.ts` refactors from LND REST â†' LNbits API
+- Docker Compose adds `phoenixd` + `lnbits` services
+- Agent of Payee legal framework required (Colorado MTMA compliance)
+- First real merchant (Black Bear Window Cleaning, Boulder) signed up â€” this is the anchor for the pilot
 
 The correct execution stance now is:
 
+- **Phase 4.7 is the #1 priority** â€” get Black Bear accepting real payments (Phoenixd/LNbits stack)
 - Do not rebuild Phase 5 surfaces from scratch.
 - Treat most Bazaar work as code-landed but not yet fully consolidated or verified.
-- **Prioritize ecosystem integration over new ArxMint features:**
+- **Ecosystem packages are shipped:**
   - @te-btc/cashu-l402 published to npm and wired into ArxMint (DONE 2026-03-24)
-  - Finish `cashu-mint` Phase 1 gaps (LND fee extraction, NUT-08, integration tests)
   - @te-btc/agent-wallet published to npm and re-exported via lib/agent-wallet.ts (DONE 2026-03-24)
-- Focus ArxMint work on alignment, promotion, and verification:
-  - Complete first testnet payment on NUC (LND syncing â€” this unblocks everything)
-  - Unify checkout/status/package contracts
-  - Finish the real merchant init/export/provision path
-  - Replace remaining merchant stubs or explicitly defer them
-  - Run end-to-end testnet verification on the existing merchant-node flow
+  - Finish `cashu-mint` Phase 1 gaps (LND fee extraction, NUT-08, integration tests)
+- Focus ArxMint work on merchant payment operations:
+  - Deploy Phoenixd + LNbits on VPS (human action â€” blocks everything)
+  - Refactor checkout API to hit LNbits instead of raw LND
+  - Build POS PWA with Unified BIP21 QR
+  - Build merchant dashboard MVP (transaction ledger + payment link)
+  - Draft + sign Agent of Payee ToS (human action â€” blocks real money)
 - **OpenBazaar.ai must pass its Phase 0 gate** before ArxMint Bazaar can go live with real products.
 
 Agents should read the Phase 5 snapshot below as:
@@ -283,8 +291,15 @@ Six deep research studies in `docs/research/` + 11 self-hosting UX studies in `d
 | **Phase 5 backups** | Zero-knowledge encrypted: backup payload encrypted locally with seed-derived key before transmission. ArxMint stores encrypted blobs it cannot decrypt. LND SCB must be event-driven (on channel open/close), NOT nightly cron â€” old channel state is toxic. One-click restore: fresh host â†’ enter seed â†’ decrypt â†’ restore. Automated restore rehearsal. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/7-Operational Resilience for ArxMint Merchant Nodes.md` |
 | **Phase 5 liquidity** | LSP integration for JIT channel opening. Present as "max instant payment size" with one-tap "increase limit." Turbo channels (zero-conf) for instant onboarding. LND autopilot is secondary; LSP/Pool/Loop is primary liquidity strategy. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/5-Self-Hosting Bitcoin Node UX.md` |
 | **Phase 5 LND backend** | Neutrino light client as default (avoids 1-7 day full chain sync). Full node available as optional upgrade. This is the single biggest BTCPay UX lesson. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/8-Competitive UX Benchmarking.md` |
-| **Phase 5 revenue model** | BYOC managed operations: $15â€“25/mo subscription covering infra (~$6/mo raw), encrypted backup storage, signed updates, health monitoring, support. Merchant creates cloud account; ArxMint provisions via OAuth/API grant (revocable). | `docs/research/Phase5-Bazaar/Self-Hosting-UX/4-Managed Self-Hosting for ArxMint Phase 5.md` |
+| **Phase 5 revenue model** | BYOC managed operations: $15â€”25/mo subscription covering infra (~$6/mo raw), encrypted backup storage, signed updates, health monitoring, support. Merchant creates cloud account; ArxMint provisions via OAuth/API grant (revocable). | `docs/research/Phase5-Bazaar/Self-Hosting-UX/4-Managed Self-Hosting for ArxMint Phase 5.md` |
 | **Phase 5 home node packaging** | Umbrel is fastest target (Docker Compose maps directly to packaging format). StartOS as secondary (better ops UX but different packaging). Citadel low incremental effort from Umbrel package. | `docs/research/Phase5-Bazaar/Self-Hosting-UX/3-Merchant-Grade Self-Hosting Lessons.md` |
+| **Pilot Lightning backend** | **Bimodal: Phoenixd + LNbits (default) / Alby Hub via NWC (sovereign opt-in).** Phoenixd handles auto-liquidity via ACINQ LSP (splicing, no manual channels). LNbits provides multi-tenant merchant sub-wallets. Replaces raw LND for merchant-facing payments. LND retained for L402/agent commerce. Cost: ~$15â€”30/mo VPS + 0.4% routing + 1000 sat splice fee. | `docs/research/7-ArxMint Merchant Payment Operations Research.md` |
+| **Pilot custody model** | **Agent of Payee exemption (C.R.S. 11-110-301(1)(b)) + Hot Potato auto-sweep.** Written agreement with each merchant. Customer obligation extinguished on receipt. Funds auto-forward to merchant's cold storage/Lightning Address immediately. Colorado Digital Token Act repealed (SB24-180, Aug 2024); MTMA (HB25-1201, Aug 2025) applies. Fintech attorney review ~$1â€”2.5K. | `docs/research/7-ArxMint Merchant Payment Operations Research.md` |
+| **Pilot checkout UX** | **Unified BIP21 QR codes.** Single QR encodes both on-chain address + Lightning BOLT11. Works with any modern wallet. Eliminates “choose payment method” UX. | `docs/research/7-ArxMint Merchant Payment Operations Research.md` |
+| **Pilot POS** | **Next.js PWA at `/pos/[merchant-id]` + NFC Bolt Cards.** Mobile browser keypad â†' fiat-to-sat conversion â†' BIP21 QR. Bolt Cards ($1â€”3/unit) for tap-to-pay via LNURL-withdraw. No native app needed. | `docs/research/7-ArxMint Merchant Payment Operations Research.md` |
+| **Pilot invoicing** | **@react-pdf/renderer + Resend email (3K/mo free tier).** PDF with embedded BIP21 QR + dynamic payment link. QuickBooks 4-column CSV export for tax compliance. USD-equivalent logged at payment time per IRS requirements. | `docs/research/7-ArxMint Merchant Payment Operations Research.md` |
+| **Pilot data compliance** | **Aggressive data minimization + Supabase RLS.** No PCI scope (no card data). Colorado Privacy Act applies. Purge customer PII 30 days post-settlement. RLS ensures merchant-id isolation at Postgres level. | `docs/research/7-ArxMint Merchant Payment Operations Research.md` |
+| **Pilot GTM** | **Pearl Street Density Strategy.** Anchor merchant (Black Bear) â†' geographic cluster (Pearl Street / Boulder) â†' B2B vendor targeting (circular loop). BTCMap.org social proof. Bolt Card distribution to founding cohort. | `docs/research/7-ArxMint Merchant Payment Operations Research.md` |
 
 ---
 
@@ -716,16 +731,18 @@ Grant applications can begin before the pilot is live â€” prototype + roadm
 
 **Current status (March 2026):**
 - Merchant pledge directory LIVE at https://www.arxmint.com/merchants
-- 2 live merchants: Glacier Ice Cream (Fort Collins) + Teneo (Boulder)
+- 3 live merchants: Glacier Ice Cream (Fort Collins) + Teneo (Boulder) + **Black Bear Window Cleaning (Boulder) â€” first real external merchant**
 - 13 ecosystem merchants in pipeline (admin-only visibility, AI logos generated)
 - Nostr NIP-98 admin auth live â€” admin sees pipeline merchants when logged in
-- Checkout pages live at `/pay/[merchant-id]` with Lightning QR codes
+- Checkout pages live at `/pay/[merchant-id]` with Lightning QR codes (demo mode â€” no Lightning node connected)
 - Merchant badge + artwork kit live at `/badge`
 - `/create` now uses a merchant setup wizard beta instead of the old freeform community prompt
-- Public signup form accepting new merchant pledges â†’ Supabase
+- Public signup form accepting new merchant pledges â†’ Supabase (auto-approve, first 20 get Founding Merchant status)
 - Vercel + Supabase production infrastructure working
 - **Testnet stack deployed on TE NUC** â€” LND syncing, Cashu standing by
-- API endpoints verified: `/api/health-check`, `/api/pledge` (GET + POST), `/api/auth`
+- API endpoints verified: `/api/health-check`, `/api/pledge` (GET + POST), `/api/auth`, `/api/admin/pledges`
+- Admin API live with MARKETPLACE_SHARED_SECRET for Telegram bot merchant monitoring
+- **Merchant payment operations research complete** â€” Phoenixd/LNbits bimodal architecture selected (see 4.7)
 
 **Remaining for full pilot:**
 1. ~~Deploy Docker stack to hardware~~ âœ… Running on NUC (testnet)
@@ -797,6 +814,80 @@ Grant applications can begin before the pilot is live â€” prototype + roadm
 - RSS feed for grant reporting alignment (OpenSats monthly updates double as blog posts)
 
 **Priority:** High â€” low cost, high impact. Can begin during Phase 4 pilot with existing content. Developer portal is the single biggest credibility gap vs. enterprise competitors.
+
+### 4.7 â€” Merchant Payment Operations (Phoenixd/LNbits Stack)
+
+**Source:** `docs/research/7-ArxMint Merchant Payment Operations Research.md`
+**Goal:** Get real merchants (starting with Black Bear Window Cleaning) accepting real Bitcoin payments. Bridge the gap between “listed on directory” and “processing transactions.”
+**Architecture:** Bimodal â€” Phoenixd/LNbits default tier + Alby Hub NWC sovereign opt-in.
+
+#### Milestone 1: “Black Bear is Live” (first real $50 payment)
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **Deploy Phoenixd + LNbits** | Human + Agent | 2 days | Add `phoenixd` + `lnbits` services to Docker Compose. Deploy on Hetzner VPS ($15â€”30/mo). Secure seed phrase. Configure LNbits to use PhoenixdWallet backend. |
+| [ ] | **Draft Agent of Payee ToS** | Human | 1 day | Click-wrap Terms of Service with MTMA compliance language (C.R.S. 11-110-301(1)(b)). Establishes legal agency relationship. Get fintech attorney review (~$1â€”2.5K). |
+| [ ] | **Sign ToS with Black Bear** | Human | 1 day | Physical or digital signatures from Evan D'Agostino (Black Bear Window Cleaning) on the Agent of Payee agreement. |
+| [ ] | **Refactor checkout API â†' LNbits** | Agent | 3 days | Refactor `POST /api/checkout` (`lib/payment-sdk.ts`) to call LNbits `/api/v1/payments` endpoint using merchant-specific API keys instead of raw LND REST. New env vars: `LNBITS_URL`, `LNBITS_ADMIN_KEY`. |
+| [ ] | **Build POS prototype** | Agent | 2 days | `/app/pos/[merchant-id]/page.tsx` â€” mobile-first PWA with numeric keypad, real-time fiat-to-sat conversion via price oracle, Unified BIP21 QR generation. |
+| [ ] | **Configure auto-forwarding** | Human | 1 day | LNbits Scrub/Auto-forward extension routes funds immediately to Black Bear's provided cold storage address or Lightning Address. |
+| [ ] | **Enable checkout for Black Bear** | Agent | 1 hour | Set `checkoutEnabled: true` in seed data. Set reasonable `defaultAmountSats` or null for custom amounts. |
+
+#### Milestone 2: “20 Founding Merchants” (full pilot cohort)
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **Merchant dashboard MVP** | Agent | 3 days | `/app/merchant-dashboard/page.tsx` â€” transaction ledger (from LNbits API), shareable payment link, Unified BIP21 QR generator, API key management UI. Built with Next.js 15 Server Actions. |
+| [ ] | **Telegram payment notifications** | Agent | 1 day | Route LNbits payment webhooks through existing ArxMint Telegram bot â†' instant mobile notification to merchant on payment received. |
+| [ ] | **PDF invoice generation** | Agent | 3 days | `components/invoice-pdf.tsx` using @react-pdf/renderer. Branded with merchant logo. Embedded BIP21 QR + dynamic payment link (not static BOLT11). |
+| [ ] | **Email invoice delivery** | Agent | 2 days | Resend + React Email integration. Send invoices to customers. Free tier: 3K emails/mo. |
+| [ ] | **QuickBooks CSV export** | Agent | 2 days | Server Action: query Invoice table, format with historical USD conversion rate, output 4-column CSV (Date, Description, Credit, Debit). |
+| [ ] | **NFC Bolt Card support** | Agent | 3 days | Web NFC API in POS PWA reads LNURL-withdraw from tapped Bolt Cards. Routes through LNbits backend. |
+| [ ] | **Bolt Card provisioning + distribution** | Human | 2 days | Program NTAG424 DNA cards ($1â€”3/unit) with open-source Bolt Card programmer. Distribute to 20 founding merchants for their customers. |
+| [ ] | **SSE payment status** | Agent | 2 days | Refactor `GET /api/checkout/status/[id]` from polling to Server-Sent Events for instant POS confirmation. |
+| [ ] | **Sovereign opt-in (NWC)** | Agent | 2 days | Integrate @getalby/bitcoin-connect web component in merchant dashboard. Merchants input NWC string to override LNbits with their Alby Hub. |
+| [ ] | **Supabase RLS policies** | Agent | 1 day | Row Level Security: `auth.uid()` matches foreign keys on Invoice, PaymentSession, merchant_pledges tables. |
+| [ ] | **Data retention automation** | Agent | 1 day | Cron job: purge customer PII 30 days post-settlement. Keep only cryptographic transaction hashes for ledger integrity. |
+| [ ] | **Pearl Street merchant outreach** | Human | Ongoing | Geographic cluster strategy: Black Bear â†' neighboring Boulder businesses â†' B2B vendor loop. BTCMap.org listings for social proof. |
+
+#### Implementation Order
+
+```
+Week 1-2: THE FOUNDATION
+  â”œâ”€â”€ Deploy Phoenixd + LNbits on VPS (human action)
+  â”œâ”€â”€ Draft + sign Agent of Payee ToS (human action)
+  â””â”€â”€ Refactor checkout API â†' LNbits (agent)
+
+Week 2-3: THE INTERFACE
+  â”œâ”€â”€ Build POS prototype with BIP21 QR (agent)
+  â”œâ”€â”€ Merchant dashboard MVP (agent)
+  â”œâ”€â”€ Enable checkout for Black Bear (agent)
+  â””â”€â”€ Configure auto-forwarding (human action)
+
+Week 3-4: THE ASYNC LAYER
+  â”œâ”€â”€ PDF invoice generation (agent)
+  â”œâ”€â”€ Resend email delivery (agent)
+  â”œâ”€â”€ QuickBooks CSV export (agent)
+  â””â”€â”€ Telegram payment notifications (agent)
+
+Week 4-5: THE FRONTIER
+  â”œâ”€â”€ NFC Bolt Card support (agent)
+  â”œâ”€â”€ SSE payment status (agent)
+  â”œâ”€â”€ NWC sovereign opt-in (agent)
+  â””â”€â”€ RLS policies + data retention (agent)
+```
+
+#### Cost Estimates
+
+| Item | Monthly Cost | Notes |
+|------|-------------|-------|
+| Hetzner VPS (Phoenixd + LNbits) | $15â€”30 | CPX31 or similar |
+| ACINQ routing fees | ~0.4% of volume | Paid per transaction |
+| ACINQ splice fees | 1000 sat + mining fee | Per inbound channel resize |
+| Resend email | $0 (pilot) | Free tier: 3K emails/mo |
+| Bolt Cards (20 units) | $20â€”60 one-time | NTAG424 DNA at $1â€”3/unit |
+| Fintech attorney review | $1,000â€”2,500 one-time | Agent of Payee ToS validation |
+| **Total pilot cost** | **~$50â€”100/mo + ~$1,500 one-time** | |
 
 ---
 
@@ -1653,3 +1744,22 @@ Following the positioning doc's Tartarian builder theme:
 | Phase 3 | **Aether** | Advanced capabilities, reaching higher |
 | Phase 4 | **Citadel** | The complete sovereign fortress â€” deployed and defended |
 | Phase 5 | **Bazaar** | The open marketplace â€” sovereign commerce for all |
+
+### Recent Completions (2026-03-24)
+
+| Item | What | Impact |
+|------|------|--------|
+| @te-btc/cashu-l402 v0.1.0 | Published to npm, wired into ArxMint | Any project can `npm install` L402+NUT-24 paywalls |
+| @te-btc/agent-wallet v0.1.0 | Published to npm, wired into ArxMint | Budget-enforced agent wallets with audit logging |
+| Agent API wallet integration | `/api/agent` uses real AgentWallet | Agents get wallet introspection, audit trails |
+| Merchant init v1.1.0 | 4-question wizard + auto-start + network choice | Merchants can spin up testnet/signet/mainnet nodes |
+| Checkout smoke test | `npm run test:smoke:checkout` | E2E proof that checkout→payment→webhook works |
+| cashu-mint Phase 1 gaps | Reconnect resilience, gRPC guard, enum validation | Production-grade mint ready for Nutshell replacement |
+| Inline wallet deprecation | `@deprecated` markers on 8 ArxMint functions/classes | Clear migration path to @te-btc/agent-wallet |
+
+### Immediate Next Steps
+
+1. **Deploy regtest VPS** — Run `scripts/merchant-init.sh` on a real VPS, run `npm run test:smoke:checkout` to prove the loop
+2. **Replace Nutshell with cashu-mint** — Swap Docker image in `docker-compose.yml` once VPS validates
+3. **Onboard first Longmont merchant** — Use the wizard to set up their node, fund Lightning channels
+4. **Wire reputation-based pricing** — Connect aibridge reputation scores to agent API dynamic pricing
