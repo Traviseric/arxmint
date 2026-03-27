@@ -5,7 +5,7 @@
 // ============================================================
 
 import { Resend } from "resend";
-import { logger } from "./logger";
+import { logger } from "@/lib/logger";
 
 let _resend: Resend | null = null;
 
@@ -18,6 +18,11 @@ function getResend(): Resend | null {
   }
   _resend = new Resend(apiKey);
   return _resend;
+}
+
+/** Test-only: inject a mock Resend instance to avoid real API calls. */
+export function _setResendForTesting(instance: Resend | null): void {
+  _resend = instance;
 }
 
 const FROM_ADDRESS = "ArxMint <onboarding@arxmint.com>";
