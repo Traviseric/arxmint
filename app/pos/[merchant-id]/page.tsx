@@ -1,478 +1,152 @@
 // ============================================================
 // ArxMint — Point of Sale Terminal
 // /pos/[merchant-id] — merchant-facing POS for in-person Lightning payments
-// Mobile-first PWA. Numeric keypad, real-time USD→sats, BIP21 QR, NFC Bolt Card.
+// Mobile-first PWA. Numeric keypad, real-time USD/sats, QR code, polling.
 // ============================================================
 
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { QRCodeSVG } from "qrcode.react";
-import {
-  isNFCSupported,
-  readBoltCard,
-  decodeLNURL,
-  fetchLNURLWithdrawParams,
-  callLNURLWithdraw,
-} from "@/lib/nfc-bolt-card";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface MerchantData {
+type POSScreen = "keypad" | "qr" | "paid" | "expired" | "loading" | "error";
+type Currency = "usd" | "sats";
+
+interface MerchantInfo {
   id: string;
   businessName: string;
-  logoUrl: string | null;
-  location: string | null;
 }
 
-type ScreenState =
-  | "idle"
-  | "generating"
-  | "waiting"
-  | "paid"
-  | "expired"
-  | "nfc-reading"    // waiting for card tap
-  | "nfc-processing"; // got LNURL, creating invoice + calling callback
-
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const ACCENT = "#F7931A";
+const BG = "#fafafa";
+const TEXT = "#171717";
+const MUTED = "#888";
+const BORDER = "#e0e0e0";
+const FONT_STACK =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+const INVOICE_TTL_SECONDS = 600; // 10 minutes
+const POLL_INTERVAL_MS = 2_000;
+
 // Seed merchants (matches checkout API seed list)
-// ---------------------------------------------------------------------------
-
-const SEED_MERCHANTS: Record<string, MerchantData> = {
-  "seed-black-bear": {
-    id: "seed-black-bear",
-    businessName: "Black Bear Window Cleaning",
-    logoUrl: null,
-    location: "Boulder, CO",
-  },
-  "seed-glacier": {
-    id: "seed-glacier",
-    businessName: "The Ice Cream Parlor by Glacier",
-    logoUrl: "/images/merchants/glacier.png",
-    location: "Fort Collins, CO",
-  },
-  "seed-teneo": {
-    id: "seed-teneo",
-    businessName: "Teneo",
-    logoUrl: "/images/merchants/teneo.png",
-    location: "Boulder, Colorado",
-  },
-  "arxmint-store": {
-    id: "arxmint-store",
-    businessName: "ArxMint Store",
-    logoUrl: "/images/nav-logo-transparent.svg",
-    location: null,
-  },
+const SEED_MERCHANTS: Record<string, MerchantInfo> = {
+  "seed-black-bear": { id: "seed-black-bear", businessName: "Black Bear Window Cleaning" },
+  "seed-glacier": { id: "seed-glacier", businessName: "The Ice Cream Parlor by Glacier" },
+  "seed-teneo": { id: "seed-teneo", businessName: "Teneo" },
+  "arxmint-store": { id: "arxmint-store", businessName: "ArxMint Store" },
 };
 
 // ---------------------------------------------------------------------------
-// BTC price hook — polls CoinGecko every 60s
-// ---------------------------------------------------------------------------
-
-function useBtcPrice() {
-  const [price, setPrice] = useState<number | null>(null);
-
-  useEffect(() => {
-    async function fetchPrice() {
-      try {
-        const res = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
-          { cache: "no-store" }
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        setPrice(data?.bitcoin?.usd ?? null);
-      } catch {
-        // keep previous price on error
-      }
-    }
-
-    fetchPrice();
-    const interval = setInterval(fetchPrice, 60_000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return price;
-}
-
-// ---------------------------------------------------------------------------
-// Utility
+// Helpers
 // ---------------------------------------------------------------------------
 
 function usdToSats(usd: number, btcPrice: number): number {
   return Math.round((usd / btcPrice) * 100_000_000);
 }
 
-function formatSats(sats: number): string {
-  return sats.toLocaleString();
+function satsToUsd(sats: number, btcPrice: number): string {
+  return ((sats / 100_000_000) * btcPrice).toFixed(2);
+}
+
+function formatTimer(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function LoadingScreen() {
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-2 border-[#F7931A] border-t-transparent animate-spin" />
-    </div>
-  );
-}
-
-function NotFoundScreen() {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 px-8 text-center">
-      <p className="text-4xl">⚠️</p>
-      <p className="text-lg font-semibold">Merchant not found</p>
-      <p className="text-sm text-white/50">
-        This POS terminal is not configured. Check the merchant ID in the URL.
-      </p>
-    </div>
-  );
-}
-
-// Numeric keypad screen
-function KeypadScreen({
-  amount,
-  amountSats,
-  btcPrice,
-  nfcSupported,
-  nfcError,
-  onKey,
-  onCharge,
-  onNFC,
-}: {
-  amount: string;
-  amountSats: number;
-  btcPrice: number | null;
-  nfcSupported: boolean;
-  nfcError: string | null;
-  onKey: (key: string) => void;
-  onCharge: () => void;
-  onNFC: () => void;
-}) {
-  const displayAmount = amount === "" ? "0" : amount;
-  const canCharge = amountSats > 0;
-
-  const keys = [
-    ["1", "2", "3"],
-    ["4", "5", "6"],
-    ["7", "8", "9"],
-    [".", "0", "⌫"],
-  ];
-
-  return (
-    <div className="flex-1 flex flex-col">
-      {/* Amount display */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6">
-        <div className="flex items-start gap-1">
-          <span className="text-3xl text-white/50 mt-2">$</span>
-          <span
-            className="text-7xl font-light tracking-tight"
-            style={{ minWidth: "1ch" }}
-          >
-            {displayAmount}
-          </span>
-        </div>
-
-        {btcPrice && amountSats > 0 ? (
-          <p className="text-[#F7931A] text-lg font-medium">
-            {formatSats(amountSats)} sats
-          </p>
-        ) : btcPrice ? (
-          <p className="text-white/30 text-sm">Enter amount to see sats</p>
-        ) : (
-          <p className="text-white/30 text-sm">Fetching BTC price…</p>
-        )}
-
-        {/* NFC error feedback */}
-        {nfcError && (
-          <p className="text-red-400 text-xs text-center px-4 mt-1">{nfcError}</p>
-        )}
-      </div>
-
-      {/* Keypad */}
-      <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-        {keys.flat().map((key) => (
-          <button
-            key={key}
-            onClick={() => onKey(key === "⌫" ? "backspace" : key)}
-            className="h-16 rounded-2xl text-2xl font-medium bg-white/10 active:bg-white/20 transition-colors select-none"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            {key}
-          </button>
-        ))}
-      </div>
-
-      {/* Action buttons */}
-      <div className="px-4 pb-8 flex flex-col gap-3">
-        {/* Primary: Charge (QR) */}
-        <button
-          onClick={onCharge}
-          disabled={!canCharge}
-          className="w-full h-16 rounded-2xl text-xl font-bold transition-all select-none"
-          style={{
-            background: canCharge ? "#F7931A" : "#3a3a3a",
-            color: canCharge ? "#000" : "#666",
-          }}
-        >
-          {canCharge ? `Charge $${displayAmount}` : "Enter amount"}
-        </button>
-
-        {/* Secondary: Tap to Pay (NFC) — only on supported devices */}
-        {nfcSupported && (
-          <button
-            onClick={onNFC}
-            disabled={!canCharge}
-            className="w-full h-12 rounded-2xl text-base font-semibold transition-all select-none flex items-center justify-center gap-2"
-            style={{
-              background: canCharge ? "rgba(247,147,26,0.12)" : "transparent",
-              color: canCharge ? "#F7931A" : "#555",
-              border: `1.5px solid ${canCharge ? "rgba(247,147,26,0.4)" : "#333"}`,
-            }}
-          >
-            <span style={{ fontSize: "1.1em" }}>📲</span>
-            Tap to Pay (Bolt Card)
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// NFC reading screen — shown while waiting for card tap
-function NFCReadingScreen({ onCancel }: { onCancel: () => void }) {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
-      {/* Animated NFC ring */}
-      <div className="relative w-28 h-28 flex items-center justify-center">
-        <div
-          className="absolute inset-0 rounded-full border-2 border-[#F7931A] animate-ping opacity-30"
-          style={{ animationDuration: "1.5s" }}
-        />
-        <div
-          className="absolute inset-2 rounded-full border-2 border-[#F7931A]/60 animate-ping opacity-50"
-          style={{ animationDuration: "1.5s", animationDelay: "0.3s" }}
-        />
-        <span className="text-5xl relative z-10">📡</span>
-      </div>
-
-      <div className="text-center">
-        <p className="text-xl font-semibold">Hold Bolt Card to phone</p>
-        <p className="text-white/50 text-sm mt-2">
-          Touch the back of the customer&apos;s NFC card to your phone
-        </p>
-        <p className="text-white/30 text-xs mt-1">Waiting up to 10 seconds…</p>
-      </div>
-
-      <button
-        onClick={onCancel}
-        className="w-full h-12 rounded-xl text-white/50 text-sm bg-white/5 active:bg-white/10 transition-colors"
-      >
-        Cancel
-      </button>
-    </div>
-  );
-}
-
-// NFC processing screen — creating invoice + calling LNURL-withdraw callback
-function NFCProcessingScreen() {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
-      <div className="w-16 h-16 rounded-full border-2 border-[#F7931A] border-t-transparent animate-spin" />
-      <div className="text-center">
-        <p className="text-xl font-semibold">Processing…</p>
-        <p className="text-white/50 text-sm mt-2">Sending invoice to Bolt Card</p>
-      </div>
-    </div>
-  );
-}
-
-// Invoice / QR screen
-function InvoiceScreen({
-  invoice,
-  amountSats,
-  amountUSD,
-  status,
-  onCancel,
-}: {
-  invoice: string | null;
-  amountSats: number;
-  amountUSD: number;
-  status: ScreenState;
-  onCancel: () => void;
-}) {
-  // BIP21 unified URI: bitcoin:?lightning=<bolt11>
-  const bip21Uri = invoice ? `bitcoin:?lightning=${invoice}` : "";
-
-  return (
-    <div className="flex-1 flex flex-col items-center justify-between px-4 py-6">
-      <div className="text-center">
-        <p className="text-white/50 text-sm uppercase tracking-wider">Awaiting payment</p>
-        <p className="text-3xl font-bold mt-1">${amountUSD.toFixed(2)}</p>
-        {amountSats > 0 && (
-          <p className="text-[#F7931A] text-base mt-0.5">{formatSats(amountSats)} sats</p>
-        )}
-      </div>
-
-      {/* QR code */}
-      <div className="flex-1 flex items-center justify-center py-6">
-        {status === "generating" || !invoice ? (
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-full border-2 border-[#F7931A] border-t-transparent animate-spin" />
-            <p className="text-white/50 text-sm">Generating invoice…</p>
-          </div>
-        ) : (
-          <div
-            className="p-4 rounded-2xl bg-white"
-            style={{ boxShadow: "0 0 0 4px rgba(247,147,26,0.3)" }}
-          >
-            <QRCodeSVG
-              value={bip21Uri}
-              size={240}
-              bgColor="#ffffff"
-              fgColor="#000000"
-              level="M"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Instructions */}
-      {invoice && (
-        <p className="text-white/40 text-xs text-center px-4">
-          Scan with any Lightning wallet · BIP21 unified QR
-        </p>
-      )}
-
-      {/* Cancel */}
-      <button
-        onClick={onCancel}
-        className="mt-4 w-full h-12 rounded-xl text-white/50 text-sm bg-white/5 active:bg-white/10 transition-colors"
-      >
-        Cancel
-      </button>
-    </div>
-  );
-}
-
-// Paid confirmation screen
-function PaidScreen({
-  onReset,
-  amountSats,
-  amountUSD,
-}: {
-  onReset: () => void;
-  amountSats: number;
-  amountUSD: number;
-}) {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
-      {/* Green checkmark */}
-      <div
-        className="w-24 h-24 rounded-full flex items-center justify-center text-5xl"
-        style={{ background: "rgba(34,197,94,0.15)", border: "2px solid #22c55e" }}
-      >
-        ✓
-      </div>
-
-      <div className="text-center">
-        <p className="text-2xl font-bold text-green-400">Payment received!</p>
-        <p className="text-white/60 text-base mt-1">
-          ${amountUSD.toFixed(2)} · {formatSats(amountSats)} sats
-        </p>
-      </div>
-
-      <button
-        onClick={onReset}
-        className="w-full h-14 rounded-2xl text-lg font-bold text-black"
-        style={{ background: "#F7931A" }}
-      >
-        New sale
-      </button>
-    </div>
-  );
-}
-
-// Expired screen
-function ExpiredScreen({ onReset }: { onReset: () => void }) {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
-      <div
-        className="w-24 h-24 rounded-full flex items-center justify-center text-4xl"
-        style={{ background: "rgba(239,68,68,0.15)", border: "2px solid #ef4444" }}
-      >
-        ⏱
-      </div>
-      <div className="text-center">
-        <p className="text-2xl font-bold text-red-400">Invoice expired</p>
-        <p className="text-white/60 text-sm mt-1">The QR code has expired. Try again.</p>
-      </div>
-      <button
-        onClick={onReset}
-        className="w-full h-14 rounded-2xl text-lg font-bold text-black"
-        style={{ background: "#F7931A" }}
-      >
-        Try again
-      </button>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main POS Page
+// Main POS Page Component
 // ---------------------------------------------------------------------------
 
 export default function POSPage() {
   const params = useParams();
   const merchantId = params["merchant-id"] as string;
 
-  const [merchant, setMerchant] = useState<MerchantData | null | "loading">("loading");
-  const [amount, setAmount] = useState(""); // USD string e.g. "12.50"
-  const [screen, setScreen] = useState<ScreenState>("idle");
-  const [invoice, setInvoice] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [nfcSupported, setNfcSupported] = useState(false);
-  const [nfcError, setNfcError] = useState<string | null>(null);
-  const btcPrice = useBtcPrice();
-  const esRef = useRef<EventSource | null>(null);
+  // State
+  const [screen, setScreen] = useState<POSScreen>("loading");
+  const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
+  const [currency, setCurrency] = useState<Currency>("usd");
+  const [display, setDisplay] = useState("0");
+  const [btcPrice, setBtcPrice] = useState<number | null>(null);
+  const [invoice, setInvoice] = useState("");
+  const [sessionId, setSessionId] = useState("");
+  const [amountSats, setAmountSats] = useState(0);
+  const [amountUsd, setAmountUsd] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(INVOICE_TTL_SECONDS);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ---------------------------------------------------------------------------
-  // Load merchant
+  // Fetch BTC price from mempool.space
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPrice() {
+      try {
+        const res = await fetch("https://mempool.space/api/v1/prices");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.USD) setBtcPrice(data.USD);
+      } catch {
+        // keep previous price
+      }
+    }
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Load merchant info
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!merchantId) return;
 
-    // Check seed list first (instant)
+    // Check seed list (instant)
     if (SEED_MERCHANTS[merchantId]) {
       setMerchant(SEED_MERCHANTS[merchantId]);
+      setScreen("keypad");
       return;
     }
 
-    // Try Supabase via existing checkout API pattern
+    // Try fetching from API — use pledge endpoint or fall back
     let cancelled = false;
-    fetch(`/api/checkout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ merchantId, amountSats: 1, memo: "ping" }),
-    })
-      .then((res) => {
-        if (cancelled) return;
-        // If the checkout API knows this merchant, it's valid
-        if (res.status === 400 || res.status === 200) {
-          // merchant exists — but we need display name, fall back to ID
-          setMerchant({ id: merchantId, businessName: merchantId, logoUrl: null, location: null });
-        } else {
-          setMerchant(null);
+    (async () => {
+      try {
+        const res = await fetch(`/api/pledge?id=${encodeURIComponent(merchantId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) {
+            setMerchant({
+              id: merchantId,
+              businessName: data.businessName || merchantId,
+            });
+            setScreen("keypad");
+          }
+          return;
         }
-      })
-      .catch(() => {
-        if (!cancelled) setMerchant(null);
-      });
+      } catch {
+        // ignore
+      }
+      // Fallback: use merchantId as display name
+      if (!cancelled) {
+        setMerchant({ id: merchantId, businessName: merchantId });
+        setScreen("keypad");
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -480,244 +154,847 @@ export default function POSPage() {
   }, [merchantId]);
 
   // ---------------------------------------------------------------------------
-  // NFC feature detection (client-side only)
+  // Cleanup on unmount
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    setNfcSupported(isNFCSupported());
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   // ---------------------------------------------------------------------------
-  // SSE subscription for real-time payment status
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    if (screen !== "waiting" || !sessionId) return;
-
-    const es = new EventSource(`/api/checkout/status/${sessionId}`);
-    esRef.current = es;
-
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.status === "paid") {
-          setScreen("paid");
-          es.close();
-          esRef.current = null;
-        } else if (data.status === "expired") {
-          setScreen("expired");
-          es.close();
-          esRef.current = null;
-        }
-      } catch {
-        // ignore parse errors
-      }
-    };
-
-    es.onerror = () => {
-      es.close();
-      esRef.current = null;
-    };
-
-    return () => {
-      es.close();
-      esRef.current = null;
-    };
-  }, [screen, sessionId]);
-
-  // ---------------------------------------------------------------------------
-  // Computed values
-  // ---------------------------------------------------------------------------
-  const amountUSD = parseFloat(amount) || 0;
-  const amountSats = btcPrice && amountUSD > 0 ? usdToSats(amountUSD, btcPrice) : 0;
-
-  // ---------------------------------------------------------------------------
-  // Handlers
+  // Keypad handler
   // ---------------------------------------------------------------------------
   const handleKey = useCallback(
     (key: string) => {
-      if (screen !== "idle") return;
-      if (key === "backspace") {
-        setAmount((prev) => prev.slice(0, -1));
-        return;
-      }
-      setAmount((prev) => {
-        // Only one decimal point
-        if (key === "." && prev.includes(".")) return prev;
-        // Replace leading zero unless adding decimal
+      if (screen !== "keypad") return;
+      setDisplay((prev) => {
+        if (key === "clear") return "0";
+        if (key === "backspace") {
+          const next = prev.slice(0, -1);
+          return next === "" || next === "-" ? "0" : next;
+        }
+        if (key === ".") {
+          if (prev.includes(".")) return prev;
+          return prev + ".";
+        }
+        // Digit
         if (prev === "0" && key !== ".") return key;
-        // Limit to 2 decimal places
-        const next = prev + key;
-        const parts = next.split(".");
-        if (parts[1] && parts[1].length > 2) return prev;
-        return next;
+        // Limit decimal places: 2 for USD, 0 for sats
+        const parts = prev.split(".");
+        if (currency === "usd" && parts[1] && parts[1].length >= 2) return prev;
+        if (currency === "sats" && prev.includes(".")) return prev;
+        // Reasonable max length
+        if (prev.replace(".", "").length >= 10) return prev;
+        return prev + key;
       });
     },
-    [screen]
+    [screen, currency]
   );
 
+  // ---------------------------------------------------------------------------
+  // Currency toggle
+  // ---------------------------------------------------------------------------
+  const handleCurrencyToggle = useCallback(() => {
+    setCurrency((prev) => (prev === "usd" ? "sats" : "usd"));
+    setDisplay("0");
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Compute amounts
+  // ---------------------------------------------------------------------------
+  const numericValue = parseFloat(display) || 0;
+  const computedSats =
+    currency === "usd" && btcPrice
+      ? usdToSats(numericValue, btcPrice)
+      : currency === "sats"
+        ? Math.round(numericValue)
+        : 0;
+  const computedUsd =
+    currency === "sats" && btcPrice
+      ? satsToUsd(Math.round(numericValue), btcPrice)
+      : currency === "usd"
+        ? numericValue.toFixed(2)
+        : "0.00";
+
+  // ---------------------------------------------------------------------------
+  // Charge handler — create invoice
+  // ---------------------------------------------------------------------------
   const handleCharge = useCallback(async () => {
-    if (amountSats <= 0 || screen !== "idle" || !merchant || merchant === "loading") return;
-    setScreen("generating");
+    if (computedSats <= 0 || !merchant) return;
+
+    setScreen("loading");
+    setErrorMsg("");
 
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          merchantId,
-          amountSats,
+          merchantId: merchant.id,
+          amountSats: computedSats,
           memo: `POS sale — ${merchant.businessName}`,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create invoice");
+
       setInvoice(data.invoice);
       setSessionId(data.sessionId);
-      setScreen("waiting");
-    } catch {
-      setScreen("idle");
-    }
-  }, [amountSats, screen, merchant, merchantId]);
+      setAmountSats(computedSats);
+      setAmountUsd(parseFloat(
+        currency === "usd" ? numericValue.toFixed(2) : (computedUsd as string)
+      ));
+      setSecondsLeft(INVOICE_TTL_SECONDS);
+      setScreen("qr");
 
-  const handleNFCTap = useCallback(async () => {
-    if (amountSats <= 0 || !merchant || merchant === "loading") return;
-    setNfcError(null);
-    setScreen("nfc-reading");
+      // Start countdown timer
+      timerRef.current = setInterval(() => {
+        setSecondsLeft((prev) => {
+          if (prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (pollRef.current) clearInterval(pollRef.current);
+            setScreen("expired");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
 
-    try {
-      // 1. Read LNURL-withdraw from Bolt Card
-      const rawLNURL = await readBoltCard();
-
-      // 2. Create invoice while we process the card
-      setScreen("nfc-processing");
-
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          merchantId,
-          amountSats,
-          memo: `Bolt Card — ${merchant.businessName}`,
-        }),
-      });
-      const checkoutData = await res.json();
-      if (!res.ok) throw new Error(checkoutData.error || "Failed to create invoice");
-
-      // 3. Decode LNURL and fetch withdraw params
-      const url = decodeLNURL(rawLNURL);
-      const params = await fetchLNURLWithdrawParams(url);
-
-      // 4. Validate amount fits within card limits
-      const maxSats = Math.floor(params.maxWithdrawable / 1000);
-      const minSats = Math.ceil(params.minWithdrawable / 1000);
-      if (amountSats > maxSats) {
-        throw new Error(`Amount exceeds card limit of ${maxSats.toLocaleString()} sats`);
-      }
-      if (amountSats < minSats) {
-        throw new Error(`Amount below card minimum of ${minSats.toLocaleString()} sats`);
-      }
-
-      // 5. Send invoice to card — card will pay it
-      await callLNURLWithdraw(params.callback, params.k1, checkoutData.invoice);
-
-      // 6. Wait for payment confirmation via SSE (same as QR flow)
-      setInvoice(checkoutData.invoice);
-      setSessionId(checkoutData.sessionId);
-      setScreen("waiting");
-
+      // Start polling for payment status
+      pollRef.current = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/checkout/status/${data.sessionId}`);
+          if (statusRes.ok) {
+            const status = await statusRes.json();
+            if (status.status === "paid") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              if (timerRef.current) clearInterval(timerRef.current);
+              setScreen("paid");
+              // Vibrate on payment received
+              try {
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+              } catch {
+                // vibration not available
+              }
+            } else if (status.status === "expired") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              if (timerRef.current) clearInterval(timerRef.current);
+              setScreen("expired");
+            }
+          }
+        } catch {
+          // poll failed, continue
+        }
+      }, POLL_INTERVAL_MS);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "NFC tap failed";
-      setNfcError(msg);
-      setScreen("idle");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setErrorMsg(msg);
+      setScreen("error");
     }
-  }, [amountSats, merchant, merchantId]);
+  }, [computedSats, merchant, currency, numericValue, computedUsd]);
 
+  // ---------------------------------------------------------------------------
+  // Reset to keypad
+  // ---------------------------------------------------------------------------
   const handleReset = useCallback(() => {
-    esRef.current?.close();
-    esRef.current = null;
-    setScreen("idle");
-    setInvoice(null);
-    setSessionId(null);
-    setAmount("");
-    setNfcError(null);
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+    pollRef.current = null;
+    timerRef.current = null;
+    setScreen("keypad");
+    setInvoice("");
+    setSessionId("");
+    setDisplay("0");
+    setCopied(false);
+    setErrorMsg("");
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Render
+  // Copy invoice
   // ---------------------------------------------------------------------------
-  if (merchant === "loading") {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col max-w-[430px] mx-auto">
-        <LoadingScreen />
-      </div>
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(invoice);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard not available
+    }
+  }, [invoice]);
+
+  // ---------------------------------------------------------------------------
+  // Styles
+  // ---------------------------------------------------------------------------
+
+  const containerStyle: React.CSSProperties = {
+    background: BG,
+    color: TEXT,
+    minHeight: "100dvh",
+    display: "flex",
+    flexDirection: "column",
+    maxWidth: 430,
+    margin: "0 auto",
+    fontFamily: FONT_STACK,
+    WebkitUserSelect: "none",
+    userSelect: "none",
+    overflow: "hidden",
+  };
+
+  const headerStyle: React.CSSProperties = {
+    padding: "16px 20px",
+    borderBottom: `1px solid ${BORDER}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexShrink: 0,
+  };
+
+  const keyBtnStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 60,
+    borderRadius: 16,
+    fontSize: 24,
+    fontWeight: 500,
+    background: "#f0f0f0",
+    border: "none",
+    color: TEXT,
+    cursor: "pointer",
+    WebkitTapHighlightColor: "transparent",
+    touchAction: "manipulation",
+  };
+
+  const chargeBtnStyle: React.CSSProperties = {
+    width: "100%",
+    height: 60,
+    borderRadius: 16,
+    fontSize: 20,
+    fontWeight: 700,
+    border: "none",
+    cursor: "pointer",
+    background: computedSats > 0 ? ACCENT : "#ccc",
+    color: computedSats > 0 ? "#fff" : "#999",
+    touchAction: "manipulation",
+  };
+
+  const actionBtnStyle: React.CSSProperties = {
+    flex: 1,
+    padding: "14px 8px",
+    borderRadius: 12,
+    fontSize: 15,
+    fontWeight: 600,
+    border: "none",
+    cursor: "pointer",
+    textAlign: "center",
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    touchAction: "manipulation",
+  };
+
+  // ---------------------------------------------------------------------------
+  // PWA head tags injected via useEffect (client-side)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    // Theme color
+    let themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (!themeMeta) {
+      themeMeta = document.createElement("meta");
+      themeMeta.setAttribute("name", "theme-color");
+      document.head.appendChild(themeMeta);
+    }
+    themeMeta.setAttribute("content", ACCENT);
+
+    // Apple mobile web app capable
+    let appleMeta = document.querySelector('meta[name="apple-mobile-web-app-capable"]');
+    if (!appleMeta) {
+      appleMeta = document.createElement("meta");
+      appleMeta.setAttribute("name", "apple-mobile-web-app-capable");
+      document.head.appendChild(appleMeta);
+    }
+    appleMeta.setAttribute("content", "yes");
+
+    // Apple status bar style
+    let statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (!statusMeta) {
+      statusMeta = document.createElement("meta");
+      statusMeta.setAttribute("name", "apple-mobile-web-app-status-bar-style");
+      document.head.appendChild(statusMeta);
+    }
+    statusMeta.setAttribute("content", "black-translucent");
+
+    // Manifest link
+    let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    if (!manifestLink) {
+      manifestLink = document.createElement("link");
+      manifestLink.setAttribute("rel", "manifest");
+      document.head.appendChild(manifestLink);
+    }
+    manifestLink.setAttribute("href", `/pos/${merchantId}/manifest.json`);
+
+    // Viewport (ensure mobile-friendly)
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement("meta");
+      viewport.setAttribute("name", "viewport");
+      document.head.appendChild(viewport);
+    }
+    viewport.setAttribute(
+      "content",
+      "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     );
-  }
+  }, [merchantId]);
 
-  if (merchant === null) {
+  // ---------------------------------------------------------------------------
+  // Render: Loading state
+  // ---------------------------------------------------------------------------
+  if (screen === "loading" && !merchant) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col max-w-[430px] mx-auto">
-        <NotFoundScreen />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col max-w-[430px] mx-auto select-none">
-      {/* PWA viewport meta handled by Next.js metadata in layout */}
-
-      {/* Header */}
-      <header className="px-5 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
-        <div>
-          <p className="text-[10px] text-white/40 uppercase tracking-widest font-medium">
-            ArxMint POS
-          </p>
-          <p className="font-semibold text-sm leading-tight">{merchant.businessName}</p>
-          {merchant.location && (
-            <p className="text-[10px] text-white/40">{merchant.location}</p>
-          )}
+      <div style={containerStyle}>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              border: `3px solid ${BORDER}`,
+              borderTopColor: ACCENT,
+              animation: "pos-spin 0.8s linear infinite",
+            }}
+          />
+          <style>{`@keyframes pos-spin { to { transform: rotate(360deg); } }`}</style>
         </div>
-        <div className="text-right">
-          {btcPrice ? (
-            <>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">BTC</p>
-              <p className="text-sm font-medium text-[#F7931A]">
-                ${btcPrice.toLocaleString()}
-              </p>
-            </>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: Keypad screen
+  // ---------------------------------------------------------------------------
+  if (screen === "keypad") {
+    const keys = [
+      ["1", "2", "3"],
+      ["4", "5", "6"],
+      ["7", "8", "9"],
+      [".", "0", "backspace"],
+    ];
+
+    return (
+      <div style={containerStyle} data-theme="merchant">
+        {/* Header */}
+        <header style={headerStyle}>
+          <div>
+            <div style={{ fontSize: 10, color: MUTED, textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
+              ArxMint POS
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>
+              {merchant?.businessName}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            {btcPrice ? (
+              <>
+                <div style={{ fontSize: 10, color: MUTED, textTransform: "uppercase", letterSpacing: 1 }}>BTC</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: ACCENT }}>
+                  ${btcPrice.toLocaleString()}
+                </div>
+              </>
+            ) : (
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  border: `2px solid ${BORDER}`,
+                  borderTopColor: ACCENT,
+                  animation: "pos-spin 0.8s linear infinite",
+                }}
+              />
+            )}
+          </div>
+        </header>
+
+        {/* Amount display */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: "16px 24px",
+            minHeight: 0,
+          }}
+        >
+          {/* Currency toggle */}
+          <button
+            onClick={handleCurrencyToggle}
+            style={{
+              padding: "6px 20px",
+              borderRadius: 20,
+              border: `2px solid ${ACCENT}`,
+              background: "transparent",
+              color: ACCENT,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              marginBottom: 8,
+              touchAction: "manipulation",
+            }}
+          >
+            {currency === "usd" ? "USD" : "SATS"} (tap to switch)
+          </button>
+
+          {/* Main display */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+            {currency === "usd" && (
+              <span style={{ fontSize: 32, color: MUTED, marginTop: 8 }}>$</span>
+            )}
+            <span
+              style={{
+                fontSize: display.length > 7 ? 48 : 64,
+                fontWeight: 300,
+                letterSpacing: -2,
+                lineHeight: 1,
+                minWidth: "1ch",
+              }}
+            >
+              {display}
+            </span>
+            {currency === "sats" && (
+              <span style={{ fontSize: 18, color: MUTED, marginTop: 8, marginLeft: 4 }}>sats</span>
+            )}
+          </div>
+
+          {/* Conversion */}
+          {btcPrice && numericValue > 0 ? (
+            <div style={{ fontSize: 18, color: ACCENT, fontWeight: 600 }}>
+              {currency === "usd"
+                ? `${computedSats.toLocaleString()} sats`
+                : `$${computedUsd}`}
+            </div>
+          ) : btcPrice ? (
+            <div style={{ fontSize: 14, color: MUTED }}>Enter amount</div>
           ) : (
-            <div className="w-4 h-4 rounded-full border border-[#F7931A]/50 border-t-transparent animate-spin" />
+            <div style={{ fontSize: 14, color: MUTED }}>Loading price...</div>
           )}
         </div>
-      </header>
 
-      {/* Screen content */}
-      {screen === "paid" ? (
-        <PaidScreen onReset={handleReset} amountSats={amountSats} amountUSD={amountUSD} />
-      ) : screen === "expired" ? (
-        <ExpiredScreen onReset={handleReset} />
-      ) : screen === "nfc-reading" ? (
-        <NFCReadingScreen onCancel={handleReset} />
-      ) : screen === "nfc-processing" ? (
-        <NFCProcessingScreen />
-      ) : screen === "waiting" || screen === "generating" ? (
-        <InvoiceScreen
-          invoice={invoice}
-          amountSats={amountSats}
-          amountUSD={amountUSD}
-          status={screen}
-          onCancel={handleReset}
+        {/* Keypad grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 10,
+            padding: "0 16px 12px",
+          }}
+        >
+          {keys.flat().map((key) => (
+            <button
+              key={key}
+              onClick={() => handleKey(key)}
+              style={{
+                ...keyBtnStyle,
+                ...(key === "backspace"
+                  ? { fontSize: 20, color: MUTED }
+                  : {}),
+              }}
+            >
+              {key === "backspace" ? "\u232B" : key}
+            </button>
+          ))}
+        </div>
+
+        {/* Clear + Charge buttons */}
+        <div style={{ padding: "0 16px 24px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {display !== "0" && (
+            <button
+              onClick={() => handleKey("clear")}
+              style={{
+                width: "100%",
+                height: 44,
+                borderRadius: 12,
+                fontSize: 15,
+                fontWeight: 600,
+                border: `1px solid ${BORDER}`,
+                background: "transparent",
+                color: MUTED,
+                cursor: "pointer",
+                touchAction: "manipulation",
+              }}
+            >
+              Clear
+            </button>
+          )}
+          <button
+            onClick={handleCharge}
+            disabled={computedSats <= 0}
+            style={chargeBtnStyle}
+          >
+            {computedSats > 0
+              ? `Charge ${currency === "usd" ? `$${display}` : `${computedSats.toLocaleString()} sats`}`
+              : "Enter amount"}
+          </button>
+        </div>
+
+        <style>{`@keyframes pos-spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: QR screen
+  // ---------------------------------------------------------------------------
+  if (screen === "qr") {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent("lightning:" + invoice)}`;
+
+    return (
+      <div style={containerStyle} data-theme="merchant">
+        {/* Amount header */}
+        <div style={{ textAlign: "center", padding: "24px 16px 8px" }}>
+          <div style={{ fontSize: 14, color: MUTED }}>Charge</div>
+          <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2 }}>
+            ${amountUsd.toFixed(2)}
+          </div>
+          <div style={{ fontSize: 16, color: ACCENT, fontWeight: 600, marginTop: 2 }}>
+            {amountSats.toLocaleString()} sats
+          </div>
+        </div>
+
+        {/* QR code */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: 16,
+              borderRadius: 20,
+              border: `1px solid ${BORDER}`,
+              boxShadow: `0 0 0 4px rgba(247, 147, 26, 0.15)`,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={qrUrl}
+              alt="Lightning invoice QR code"
+              width={250}
+              height={250}
+              style={{ display: "block" }}
+            />
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ padding: "0 16px", display: "flex", gap: 10 }}>
+          <a
+            href={`lightning:${invoice}`}
+            style={{
+              ...actionBtnStyle,
+              background: ACCENT,
+              color: "#fff",
+            }}
+          >
+            Open in Wallet
+          </a>
+          <button
+            onClick={handleCopy}
+            style={{
+              ...actionBtnStyle,
+              background: "#f0f0f0",
+              color: TEXT,
+            }}
+          >
+            {copied ? "Copied!" : "Copy Invoice"}
+          </button>
+        </div>
+
+        {/* Timer + waiting */}
+        <div
+          style={{
+            textAlign: "center",
+            padding: "16px 16px 12px",
+            color: MUTED,
+            fontSize: 14,
+          }}
+        >
+          Waiting for payment... {formatTimer(secondsLeft)}
+        </div>
+
+        {/* Cancel */}
+        <div style={{ padding: "0 16px 24px" }}>
+          <button
+            onClick={handleReset}
+            style={{
+              width: "100%",
+              height: 48,
+              borderRadius: 12,
+              fontSize: 15,
+              fontWeight: 600,
+              border: `1px solid ${BORDER}`,
+              background: "transparent",
+              color: MUTED,
+              cursor: "pointer",
+              touchAction: "manipulation",
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: Paid screen
+  // ---------------------------------------------------------------------------
+  if (screen === "paid") {
+    return (
+      <div style={containerStyle} data-theme="merchant">
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+            padding: "32px 24px",
+          }}
+        >
+          {/* Animated checkmark */}
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: "50%",
+              background: "rgba(34, 197, 94, 0.1)",
+              border: "3px solid #22c55e",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 48,
+              color: "#22c55e",
+              animation: "pos-pop 0.4s ease-out",
+            }}
+          >
+            {"\u2713"}
+          </div>
+
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: "#22c55e" }}>
+              Payment received!
+            </div>
+            <div style={{ fontSize: 20, color: TEXT, marginTop: 8, fontWeight: 600 }}>
+              ${amountUsd.toFixed(2)}
+            </div>
+            <div style={{ fontSize: 15, color: MUTED, marginTop: 4 }}>
+              {amountSats.toLocaleString()} sats
+            </div>
+          </div>
+
+          <button
+            onClick={handleReset}
+            style={{
+              width: "100%",
+              maxWidth: 320,
+              height: 60,
+              borderRadius: 16,
+              fontSize: 20,
+              fontWeight: 700,
+              border: "none",
+              background: ACCENT,
+              color: "#fff",
+              cursor: "pointer",
+              marginTop: 16,
+              touchAction: "manipulation",
+            }}
+          >
+            New Payment
+          </button>
+        </div>
+
+        <style>{`
+          @keyframes pos-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: Expired screen
+  // ---------------------------------------------------------------------------
+  if (screen === "expired") {
+    return (
+      <div style={containerStyle} data-theme="merchant">
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+            padding: "32px 24px",
+          }}
+        >
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: "50%",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "3px solid #ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 40,
+            }}
+          >
+            {"\u23F1"}
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#ef4444" }}>
+              Invoice expired
+            </div>
+            <div style={{ fontSize: 15, color: MUTED, marginTop: 8 }}>
+              The QR code timed out. Tap below to try again.
+            </div>
+          </div>
+          <button
+            onClick={handleReset}
+            style={{
+              width: "100%",
+              maxWidth: 320,
+              height: 60,
+              borderRadius: 16,
+              fontSize: 20,
+              fontWeight: 700,
+              border: "none",
+              background: ACCENT,
+              color: "#fff",
+              cursor: "pointer",
+              marginTop: 8,
+              touchAction: "manipulation",
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: Error screen
+  // ---------------------------------------------------------------------------
+  if (screen === "error") {
+    return (
+      <div style={containerStyle} data-theme="merchant">
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+            padding: "32px 24px",
+          }}
+        >
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: "50%",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "3px solid #ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 40,
+            }}
+          >
+            {"\u26A0"}
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 24, fontWeight: 700 }}>Something went wrong</div>
+            <div style={{ fontSize: 14, color: "#ef4444", marginTop: 8 }}>{errorMsg}</div>
+          </div>
+          <button
+            onClick={handleReset}
+            style={{
+              width: "100%",
+              maxWidth: 320,
+              height: 60,
+              borderRadius: 16,
+              fontSize: 20,
+              fontWeight: 700,
+              border: "none",
+              background: ACCENT,
+              color: "#fff",
+              cursor: "pointer",
+              marginTop: 8,
+              touchAction: "manipulation",
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: Generic loading (creating invoice)
+  // ---------------------------------------------------------------------------
+  return (
+    <div style={containerStyle} data-theme="merchant">
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 16,
+        }}
+      >
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            border: `3px solid ${BORDER}`,
+            borderTopColor: ACCENT,
+            animation: "pos-spin 0.8s linear infinite",
+          }}
         />
-      ) : (
-        <KeypadScreen
-          amount={amount}
-          amountSats={amountSats}
-          btcPrice={btcPrice}
-          nfcSupported={nfcSupported}
-          nfcError={nfcError}
-          onKey={handleKey}
-          onCharge={handleCharge}
-          onNFC={handleNFCTap}
-        />
-      )}
+        <div style={{ fontSize: 16, color: MUTED }}>Creating invoice...</div>
+        <style>{`@keyframes pos-spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
     </div>
   );
 }
