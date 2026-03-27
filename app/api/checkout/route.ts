@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
       if (!merchant && merchantId === "arxmint-store") {
         merchant = { id: "arxmint-store", businessName: "ArxMint Store", checkout_enabled: true };
       }
+      if (!merchant && merchantId === "seed-black-bear") {
+        merchant = { id: "seed-black-bear", businessName: "Black Bear Window Cleaning", checkout_enabled: true };
+      }
 
       if (!merchant) {
         return apiError(404, "MERCHANT_NOT_FOUND", "Merchant not found");
@@ -145,19 +148,29 @@ export async function POST(request: NextRequest) {
       let demoMode = false;
 
       if (!DEMO_MODE) {
-        // Real mode: create LND invoice via payment-sdk
-        try {
-          const { createL402Challenge } = await import("@/lib/payment-sdk");
-          const challenge = await createL402Challenge({
-            amount: amountSats,
-            resourcePath: `/pay/${merchantId}`,
-          });
-          invoice = challenge.invoice || "";
-          // Extract r_hash if available (stored in the L402 pending map internally)
-          rHash = null; // LND r_hash tracked internally by payment-sdk
-        } catch {
-          // LND unavailable in production — return 503 instead of fake invoice
-          return apiError(503, "PAYMENT_BACKEND_UNAVAILABLE", "Payment backend temporarily unavailable. Please try again shortly.");
+        // Real mode: create invoice via LNbits (Phoenixd backend) or fall back to LND
+        const { createLNbitsInvoice } = await import("@/lib/lnbits");
+        const lnbitsResult = await createLNbitsInvoice({
+          amount: amountSats,
+          memo: sanitizedMemo || `Payment to ${merchant.businessName}`,
+        });
+
+        if (lnbitsResult) {
+          invoice = lnbitsResult.paymentRequest;
+          rHash = lnbitsResult.paymentHash;
+        } else {
+          // Fallback to LND via payment-sdk (for L402/agent commerce)
+          try {
+            const { createL402Challenge } = await import("@/lib/payment-sdk");
+            const challenge = await createL402Challenge({
+              amount: amountSats,
+              resourcePath: `/pay/${merchantId}`,
+            });
+            invoice = challenge.invoice || "";
+            rHash = null;
+          } catch {
+            return apiError(503, "PAYMENT_BACKEND_UNAVAILABLE", "Payment backend temporarily unavailable. Please try again shortly.");
+          }
         }
       } else {
         invoice = generateDemoInvoice(amountSats);

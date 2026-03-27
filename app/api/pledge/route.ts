@@ -120,8 +120,8 @@ const SEED_MERCHANTS = [
       "Professional window cleaning serving Boulder and the Front Range. Black Bear Window Cleaning is joining the ArxMint network to accept Bitcoin payments — zero processing fees, instant settlement, full sovereignty over every transaction.",
     featured: true,
     createdAt: new Date("2026-03-20").toISOString(),
-    checkoutEnabled: false,
-    defaultAmountSats: 0,
+    checkoutEnabled: true,
+    defaultAmountSats: null,
   },
   {
     id: "seed-teneo",

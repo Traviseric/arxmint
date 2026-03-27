@@ -23,7 +23,7 @@ async function resolveSession(id: string, requestUrl: string): Promise<{
   const { supabase } = await import("@/lib/supabase");
   const { data: session, error } = await supabase
     .from("checkout_sessions")
-    .select("id, status, demo_mode, created_at, expires_at, paid_at, amount_sats, merchant_id")
+    .select("id, status, demo_mode, created_at, expires_at, paid_at, amount_sats, merchant_id, r_hash")
     .eq("id", id)
     .single();
 
@@ -38,6 +38,41 @@ async function resolveSession(id: string, requestUrl: string): Promise<{
       .update({ status: "expired" })
       .eq("id", id);
     status = "expired";
+  }
+
+  // Check LNbits for payment confirmation (real payments)
+  if (status === "pending" && !session.demo_mode && session.r_hash) {
+    try {
+      const { checkLNbitsPayment } = await import("@/lib/lnbits");
+      const lnbitsStatus = await checkLNbitsPayment({ paymentHash: session.r_hash });
+      if (lnbitsStatus.paid) {
+        const paidAt = new Date().toISOString();
+        await supabase
+          .from("checkout_sessions")
+          .update({ status: "paid", paid_at: paidAt })
+          .eq("id", id);
+
+        // Fire webhook for fulfillment
+        fetch(new URL("/api/checkout/webhook", requestUrl).toString(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: id }),
+        }).catch(() => {});
+
+        return {
+          id: session.id,
+          status: "paid" as PaymentStatus,
+          amountSats: session.amount_sats,
+          createdAt: session.created_at,
+          expiresAt: session.expires_at,
+          paidAt,
+          demoMode: false,
+          merchantId: session.merchant_id,
+        };
+      }
+    } catch {
+      // LNbits check failed — continue with current status
+    }
   }
 
   // Dev-only: demo auto-pay after 5 seconds
