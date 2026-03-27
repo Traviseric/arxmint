@@ -8,10 +8,13 @@ import {
   resolveEscrowDispute,
   resolveEscrowResolve,
   resolveEscrowVoid,
+  resolveEscrowMediatorAssign,
+  resolveEscrowMediatorResolve,
   shouldTimeRelease,
   buildEscrowStateChangedPayload,
   isEscrowStatus,
   isEscrowReleaseCondition,
+  isEscrowResolution,
 } from "../lib/escrow.ts";
 
 // ── isEscrowStatus ────────────────────────────────────────
@@ -319,4 +322,265 @@ test("full create → fund → dispute → resolve flow (state machine only)", (
 
   const resolved = resolveEscrowResolve("disputed");
   assert.equal(resolved.status, "resolved");
+});
+
+// ═══════════════════════════════════════════════════════════
+// Phase 2: Dispute flow, mediator assignment, mediator resolution
+// ═══════════════════════════════════════════════════════════
+
+// ── isEscrowResolution ────────────────────────────────────
+
+test("isEscrowResolution accepts valid values", () => {
+  assert.equal(isEscrowResolution("buyer"), true);
+  assert.equal(isEscrowResolution("seller"), true);
+  assert.equal(isEscrowResolution("split"), true);
+  assert.equal(isEscrowResolution("refund"), false);
+  assert.equal(isEscrowResolution(""), false);
+});
+
+// ── resolveEscrowMediatorAssign ───────────────────────────
+
+test("resolveEscrowMediatorAssign transitions disputed → mediator_assigned", () => {
+  const result = resolveEscrowMediatorAssign("disputed");
+  assert.equal(result.status, "mediator_assigned");
+});
+
+test("resolveEscrowMediatorAssign rejects non-disputed status", () => {
+  assert.throws(() => resolveEscrowMediatorAssign("funded"), /Cannot assign mediator/);
+  assert.throws(() => resolveEscrowMediatorAssign("resolved"), /Cannot assign mediator/);
+});
+
+// ── resolveEscrowResolve with mediator_assigned ───────────
+
+test("resolveEscrowResolve accepts mediator_assigned status", () => {
+  const result = resolveEscrowResolve("mediator_assigned");
+  assert.equal(result.status, "resolved");
+});
+
+// ── resolveEscrowMediatorResolve — buyer resolution ───────
+
+test("resolveEscrowMediatorResolve resolves disputed → resolved for buyer", () => {
+  const result = resolveEscrowMediatorResolve({
+    currentStatus: "disputed",
+    mediatorAddress: "mediator-npub1abc",
+    actorId: "mediator-npub1abc",
+    resolution: "buyer",
+    reason: "Goods not delivered",
+  });
+  assert.equal(result.status, "resolved");
+  assert.equal(result.resolvedAs, "buyer");
+  assert.equal(result.splitBps, null);
+});
+
+test("resolveEscrowMediatorResolve resolves mediator_assigned → resolved for seller", () => {
+  const result = resolveEscrowMediatorResolve({
+    currentStatus: "mediator_assigned",
+    mediatorAddress: "mediator-npub1abc",
+    actorId: "mediator-npub1abc",
+    resolution: "seller",
+    reason: "Buyer failed to inspect within window",
+  });
+  assert.equal(result.status, "resolved");
+  assert.equal(result.resolvedAs, "seller");
+  assert.equal(result.splitBps, null);
+});
+
+// ── resolveEscrowMediatorResolve — split resolution ───────
+
+test("resolveEscrowMediatorResolve resolves disputed → resolved with split", () => {
+  const result = resolveEscrowMediatorResolve({
+    currentStatus: "disputed",
+    mediatorAddress: "mediator-npub1abc",
+    actorId: "mediator-npub1abc",
+    resolution: "split",
+    splitBps: 6000,
+    reason: "Partial delivery confirmed",
+  });
+  assert.equal(result.status, "resolved");
+  assert.equal(result.resolvedAs, "split");
+  assert.equal(result.splitBps, 6000);
+});
+
+test("resolveEscrowMediatorResolve accepts splitBps of 0 (all to seller)", () => {
+  const result = resolveEscrowMediatorResolve({
+    currentStatus: "disputed",
+    mediatorAddress: "mediator-npub1abc",
+    actorId: "mediator-npub1abc",
+    resolution: "split",
+    splitBps: 0,
+    reason: "Buyer claim rejected",
+  });
+  assert.equal(result.splitBps, 0);
+});
+
+test("resolveEscrowMediatorResolve accepts splitBps of 10000 (all to buyer)", () => {
+  const result = resolveEscrowMediatorResolve({
+    currentStatus: "disputed",
+    mediatorAddress: "mediator-npub1abc",
+    actorId: "mediator-npub1abc",
+    resolution: "split",
+    splitBps: 10000,
+    reason: "Seller defaulted",
+  });
+  assert.equal(result.splitBps, 10000);
+});
+
+// ── resolveEscrowMediatorResolve — auth failures ──────────
+
+test("resolveEscrowMediatorResolve rejects non-mediator caller", () => {
+  assert.throws(
+    () =>
+      resolveEscrowMediatorResolve({
+        currentStatus: "disputed",
+        mediatorAddress: "mediator-npub1abc",
+        actorId: "payer-1",
+        resolution: "buyer",
+        reason: "Fraudulent attempt",
+      }),
+    /Only the designated mediator/
+  );
+});
+
+test("resolveEscrowMediatorResolve rejects when no mediatorAddress on escrow", () => {
+  assert.throws(
+    () =>
+      resolveEscrowMediatorResolve({
+        currentStatus: "disputed",
+        mediatorAddress: null,
+        actorId: "payer-1",
+        resolution: "buyer",
+        reason: "Attempted self-resolve",
+      }),
+    /no mediator assigned/
+  );
+});
+
+// ── resolveEscrowMediatorResolve — validation failures ────
+
+test("resolveEscrowMediatorResolve rejects non-disputed status", () => {
+  assert.throws(
+    () =>
+      resolveEscrowMediatorResolve({
+        currentStatus: "funded",
+        mediatorAddress: "mediator-npub1abc",
+        actorId: "mediator-npub1abc",
+        resolution: "buyer",
+        reason: "Should fail",
+      }),
+    /Cannot resolve escrow in status/
+  );
+});
+
+test("resolveEscrowMediatorResolve rejects invalid resolution value", () => {
+  assert.throws(
+    () =>
+      resolveEscrowMediatorResolve({
+        currentStatus: "disputed",
+        mediatorAddress: "mediator-npub1abc",
+        actorId: "mediator-npub1abc",
+        resolution: "both" as "buyer",
+        reason: "Invalid",
+      }),
+    /Invalid resolution/
+  );
+});
+
+test("resolveEscrowMediatorResolve rejects split without splitBps", () => {
+  assert.throws(
+    () =>
+      resolveEscrowMediatorResolve({
+        currentStatus: "disputed",
+        mediatorAddress: "mediator-npub1abc",
+        actorId: "mediator-npub1abc",
+        resolution: "split",
+        reason: "Partial",
+      }),
+    /splitBps is required/
+  );
+});
+
+test("resolveEscrowMediatorResolve rejects splitBps out of range", () => {
+  assert.throws(
+    () =>
+      resolveEscrowMediatorResolve({
+        currentStatus: "disputed",
+        mediatorAddress: "mediator-npub1abc",
+        actorId: "mediator-npub1abc",
+        resolution: "split",
+        splitBps: 15000,
+        reason: "Out of range",
+      }),
+    /splitBps must be an integer between 0 and 10000/
+  );
+});
+
+test("resolveEscrowMediatorResolve rejects missing reason", () => {
+  assert.throws(
+    () =>
+      resolveEscrowMediatorResolve({
+        currentStatus: "disputed",
+        mediatorAddress: "mediator-npub1abc",
+        actorId: "mediator-npub1abc",
+        resolution: "buyer",
+        reason: "",
+      }),
+    /reason is required/
+  );
+});
+
+// ── Full flow: dispute → mediator_assigned → split resolve ─
+
+test("full dispute → mediator_assigned → split resolution flow", () => {
+  const disputed = resolveEscrowDispute("funded");
+  assert.equal(disputed.status, "disputed");
+
+  const assigned = resolveEscrowMediatorAssign("disputed");
+  assert.equal(assigned.status, "mediator_assigned");
+
+  const result = resolveEscrowMediatorResolve({
+    currentStatus: "mediator_assigned",
+    mediatorAddress: "npub1mediator",
+    actorId: "npub1mediator",
+    resolution: "split",
+    splitBps: 5000,
+    reason: "Equal fault on both sides",
+  });
+  assert.equal(result.status, "resolved");
+  assert.equal(result.resolvedAs, "split");
+  assert.equal(result.splitBps, 5000);
+});
+
+// ── Time-based auto-release mock-clock test ───────────────
+
+test("shouldTimeRelease uses custom now parameter (mock clock)", () => {
+  const releasesAt = new Date("2024-01-15T12:00:00Z");
+
+  // At exactly the release time — should release
+  const atRelease = new Date("2024-01-15T12:00:00Z");
+  assert.equal(
+    shouldTimeRelease({ status: "funded", releaseCondition: "time_based", releasesAt }, atRelease),
+    true
+  );
+
+  // One millisecond before — should NOT release
+  const justBefore = new Date("2024-01-15T11:59:59.999Z");
+  assert.equal(
+    shouldTimeRelease({ status: "funded", releaseCondition: "time_based", releasesAt }, justBefore),
+    false
+  );
+
+  // One hour after — should release
+  const afterRelease = new Date("2024-01-15T13:00:00Z");
+  assert.equal(
+    shouldTimeRelease({ status: "funded", releaseCondition: "time_based", releasesAt }, afterRelease),
+    true
+  );
+});
+
+test("shouldTimeRelease is false for disputed escrow (frozen during dispute)", () => {
+  const past = new Date(Date.now() - 1000);
+  assert.equal(
+    shouldTimeRelease({ status: "disputed", releaseCondition: "time_based", releasesAt: past }),
+    false
+  );
 });

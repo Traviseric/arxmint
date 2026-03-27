@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
   const releaseConditionRaw = (body.releaseCondition as string | undefined)?.trim();
   const releasesAtRaw = body.releasesAt as string | undefined;
   const invoiceId = (body.invoiceId as string | undefined)?.trim() || null;
+  const mediatorAddress = (body.mediatorAddress as string | undefined)?.trim() || null;
   const metadata = body.metadata as Record<string, unknown> | undefined;
 
   if (!payeeId) {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
   const releasesAt = releasesAtRaw ? new Date(releasesAtRaw) : null;
 
   try {
-    validateEscrowCreate({ payerId, payeeId, amountSats, releaseCondition, releasesAt, invoiceId });
+    validateEscrowCreate({ payerId, payeeId, amountSats, releaseCondition, releasesAt, invoiceId, mediatorAddress });
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Validation error" },
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
       releaseCondition,
       releasesAt,
       invoiceId,
+      mediatorAddress,
       metadata: metadata ? (metadata as Prisma.InputJsonObject) : Prisma.DbNull,
     },
     include: { events: true },

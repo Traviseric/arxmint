@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
-import { resolveEscrowDispute, resolveEscrowResolve, isEscrowStatus } from "@/lib/escrow";
+import { resolveEscrowDispute, isEscrowStatus } from "@/lib/escrow";
 import { emitEscrowStateChanged } from "@/lib/escrow-events";
 
-// POST /api/escrow/:id/dispute — either party raises a dispute
-// POST /api/escrow/:id/dispute?action=resolve — admin/mediator resolves
+// POST /api/escrow/:id/dispute — buyer or seller raises a dispute
+// Body: { reason: string, evidence?: string }
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -16,23 +16,27 @@ export async function POST(
   }
 
   const { id } = await params;
-  const { searchParams } = new URL(request.url);
-  const action = searchParams.get("action") ?? "dispute"; // "dispute" | "resolve"
 
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
   } catch {
-    // body is optional
+    // body optional — but reason is required below
   }
 
-  const note = (body.note as string | undefined)?.trim() || null;
+  const reason = (body.reason as string | undefined)?.trim() || "";
+  const evidence = (body.evidence as string | undefined)?.trim() || null;
+
+  if (!reason) {
+    return NextResponse.json({ error: "reason is required to raise a dispute" }, { status: 400 });
+  }
 
   const escrow = await db.escrow.findUnique({ where: { id } });
   if (!escrow) {
     return NextResponse.json({ error: "Escrow not found" }, { status: 404 });
   }
 
+  // Only a party to the escrow can raise a dispute
   if (escrow.payerId !== caller && escrow.payeeId !== caller) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -42,16 +46,8 @@ export async function POST(
   }
 
   let transition: { status: string };
-  let eventType: string;
-
   try {
-    if (action === "resolve") {
-      transition = resolveEscrowResolve(escrow.status);
-      eventType = "resolved";
-    } else {
-      transition = resolveEscrowDispute(escrow.status);
-      eventType = "disputed";
-    }
+    transition = resolveEscrowDispute(escrow.status);
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Transition error" },
@@ -60,15 +56,20 @@ export async function POST(
   }
 
   const previousStatus = escrow.status;
+  const note = `Disputed by ${caller}: ${reason}`;
 
   const [updated] = await db.$transaction([
     db.escrow.update({
       where: { id },
-      data: { status: transition.status },
+      data: {
+        status: transition.status,
+        disputeReason: reason,
+        disputeEvidence: evidence,
+      },
       include: { events: { orderBy: { createdAt: "asc" } } },
     }),
     db.escrowEvent.create({
-      data: { escrowId: id, type: eventType, actor: caller, note },
+      data: { escrowId: id, type: "disputed", actor: caller, note },
     }),
   ]);
 

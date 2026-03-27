@@ -1,12 +1,13 @@
 // ============================================================
-// ArxMint — Escrow State Machine (SPINE-ARX-02 Phase 1)
+// ArxMint — Escrow State Machine (SPINE-ARX-02 Phase 1 + 2)
 // ============================================================
 // Handles trustless escrow for OpenBazaar trade, agent commerce,
 // and high-value merchant transactions.
 //
 // State machine:
-//   pending_funding → funded → released
-//                           → disputed → resolved
+//   pending_funding → funded → released                  (manual / time_based)
+//                           → disputed → mediator_assigned → resolved
+//                                      → resolved          (direct mediator)
 //                                      → voided
 //   (any state) → voided (admin only)
 // ============================================================
@@ -16,6 +17,7 @@ export const ESCROW_STATUSES = [
   "funded",
   "released",
   "disputed",
+  "mediator_assigned",
   "resolved",
   "voided",
 ] as const;
@@ -27,8 +29,11 @@ export const ESCROW_RELEASE_CONDITIONS = [
   "dispute_resolved",
 ] as const;
 
+export const ESCROW_RESOLUTIONS = ["buyer", "seller", "split"] as const;
+
 export type EscrowStatus = (typeof ESCROW_STATUSES)[number];
 export type EscrowReleaseCondition = (typeof ESCROW_RELEASE_CONDITIONS)[number];
+export type EscrowResolution = (typeof ESCROW_RESOLUTIONS)[number];
 
 export function isEscrowStatus(value: string): value is EscrowStatus {
   return (ESCROW_STATUSES as readonly string[]).includes(value);
@@ -36,6 +41,10 @@ export function isEscrowStatus(value: string): value is EscrowStatus {
 
 export function isEscrowReleaseCondition(value: string): value is EscrowReleaseCondition {
   return (ESCROW_RELEASE_CONDITIONS as readonly string[]).includes(value);
+}
+
+export function isEscrowResolution(value: string): value is EscrowResolution {
+  return (ESCROW_RESOLUTIONS as readonly string[]).includes(value);
 }
 
 export interface EscrowRecordLike {
@@ -50,6 +59,12 @@ export interface EscrowRecordLike {
   invoiceId: string | null;
   paymentSessionId: string | null;
   metadata: unknown;
+  // Phase 2 fields
+  mediatorAddress: string | null;
+  disputeReason: string | null;
+  disputeEvidence: string | null;
+  resolvedAs: string | null;
+  splitBps: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +76,7 @@ export interface EscrowCreateParams {
   releaseCondition: EscrowReleaseCondition;
   releasesAt?: Date | null;
   invoiceId?: string | null;
+  mediatorAddress?: string | null;
   metadata?: Record<string, unknown> | null;
 }
 
@@ -154,7 +170,7 @@ export function resolveEscrowDispute(
 export function resolveEscrowResolve(
   currentStatus: EscrowStatus
 ): { status: EscrowStatus } {
-  if (currentStatus !== "disputed") {
+  if (currentStatus !== "disputed" && currentStatus !== "mediator_assigned") {
     throw new Error(`Cannot resolve escrow in status: ${currentStatus}`);
   }
   return { status: "resolved" };
@@ -167,6 +183,76 @@ export function resolveEscrowVoid(
     throw new Error(`Cannot void escrow in status: ${currentStatus}`);
   }
   return { status: "voided" };
+}
+
+// ── Phase 2: mediator assignment ──────────────────────────
+
+export function resolveEscrowMediatorAssign(
+  currentStatus: EscrowStatus
+): { status: EscrowStatus } {
+  if (currentStatus !== "disputed") {
+    throw new Error(`Cannot assign mediator to escrow in status: ${currentStatus}`);
+  }
+  return { status: "mediator_assigned" };
+}
+
+// ── Phase 2: mediator resolution ──────────────────────────
+
+export interface MediatorResolveParams {
+  currentStatus: EscrowStatus;
+  mediatorAddress: string | null;
+  actorId: string;
+  resolution: EscrowResolution;
+  splitBps?: number; // only relevant when resolution === 'split'
+  reason: string;
+}
+
+export interface MediatorResolveResult {
+  status: EscrowStatus;
+  resolvedAs: EscrowResolution;
+  splitBps: number | null;
+}
+
+export function resolveEscrowMediatorResolve(
+  params: MediatorResolveParams
+): MediatorResolveResult {
+  const { currentStatus, mediatorAddress, actorId, resolution, splitBps, reason } = params;
+
+  if (currentStatus !== "disputed" && currentStatus !== "mediator_assigned") {
+    throw new Error(`Cannot resolve escrow in status: ${currentStatus}`);
+  }
+
+  if (!mediatorAddress?.trim()) {
+    throw new Error("This escrow has no mediator assigned");
+  }
+  if (actorId.trim() !== mediatorAddress.trim()) {
+    throw new Error("Only the designated mediator can resolve this dispute");
+  }
+
+  if (!isEscrowResolution(resolution)) {
+    throw new Error(`Invalid resolution: ${resolution}. Must be buyer, seller, or split`);
+  }
+
+  if (!reason?.trim()) {
+    throw new Error("reason is required for mediator resolution");
+  }
+
+  let finalSplitBps: number | null = null;
+  if (resolution === "split") {
+    if (splitBps === undefined || splitBps === null) {
+      throw new Error("splitBps is required when resolution is split");
+    }
+    if (!Number.isInteger(splitBps) || splitBps < 0 || splitBps > 10000) {
+      throw new Error("splitBps must be an integer between 0 and 10000");
+    }
+    finalSplitBps = splitBps;
+  }
+
+  return {
+    status: "resolved",
+    resolvedAs: resolution,
+    splitBps: finalSplitBps,
+  };
 }
 
 // ── Time-based release check ──────────────────────────────

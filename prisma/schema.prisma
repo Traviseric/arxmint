@@ -277,10 +277,16 @@ model Escrow {
   currency         String       @default("BTC")
   releaseCondition String       // manual | time_based | delivery_confirmed | dispute_resolved
   releasesAt       DateTime?
-  status           String       @default("pending_funding") // pending_funding|funded|released|disputed|resolved|voided
+  status           String       @default("pending_funding") // pending_funding|funded|released|disputed|mediator_assigned|resolved|voided
   invoiceId        String?
   paymentSessionId String?
   metadata         Json?
+  // Phase 2: dispute & mediator fields
+  mediatorAddress  String?      // trusted third-party who can resolve disputes
+  disputeReason    String?      // reason given when dispute was raised
+  disputeEvidence  String?      // optional evidence URL / text
+  resolvedAs       String?      // buyer | seller | split
+  splitBps         Int?         // buyer's share in basis points (0–10000), used when resolvedAs=split
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
