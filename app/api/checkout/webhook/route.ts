@@ -199,6 +199,12 @@ export async function POST(request: NextRequest) {
             ).catch(() => {/* silent */});
         }
 
+        // Auto-submit to BTCMap on merchant's first payment (fire-and-forget)
+        if (session.merchant_id) {
+            submitToBtcMapOnFirstPayment(supabase, session.merchant_id)
+                .catch(() => {/* silent — never block webhook */});
+        }
+
         const invoice = await db.invoice.findUnique({
             where: { paymentSessionId: sessionId },
             include: {
@@ -290,4 +296,43 @@ async function sendTelegramNotificationForMerchant(
 
     const message = await formatPaymentMessage(amountSats, merchantName, memo);
     await sendTelegramNotification(telegramChatId, message);
+}
+
+// ---- BTCMap auto-submit on first payment ----
+
+/**
+ * Check if this is the merchant's first paid checkout session.
+ * If so, fire a BTCMap submission request (non-blocking).
+ */
+async function submitToBtcMapOnFirstPayment(
+    _supabase: unknown,
+    merchantId: string
+): Promise<void> {
+    // Re-import supabase to avoid deep type instantiation from chained generics
+    const { supabase: sb } = await import("@/lib/supabase");
+
+    // Count paid sessions for this merchant — if more than 1, it's not the first
+    const { data: sessions, error } = await sb
+        .from("checkout_sessions")
+        .select("id")
+        .eq("merchant_id", merchantId)
+        .eq("status", "paid")
+        .limit(2);
+
+    if (error || !sessions) return;
+
+    // Only proceed if this is the first (or possibly second due to race) paid session
+    if (sessions.length > 2) return;
+
+    try {
+        const origin = process.env.NEXT_PUBLIC_APP_URL || "https://arxmint.com";
+        await fetch(`${origin}/api/btcmap/submit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ merchantId }),
+        });
+        logger.info("btcmap_first_payment_submit_triggered", { merchantId });
+    } catch {
+        // Silent — BTCMap submission is best-effort
+    }
 }

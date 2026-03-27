@@ -61,6 +61,7 @@ interface MerchantPublic {
   checkoutEnabled?: boolean;
   defaultAmountSats?: number | null;
   pipeline?: boolean;
+  btcmapStatus?: string | null;
 }
 
 export default function MerchantsPage() {
@@ -79,7 +80,25 @@ export default function MerchantsPage() {
       const res = await fetch("/api/pledge");
       if (res.ok) {
         const data = await res.json();
-        setMerchants(data.pledges);
+        const pledges: MerchantPublic[] = data.pledges;
+
+        // Best-effort: load BTCMap submission statuses
+        try {
+          const btcRes = await fetch("/api/btcmap/status");
+          if (btcRes.ok) {
+            const btcData = await btcRes.json();
+            const statusMap: Record<string, string> = btcData.statuses ?? {};
+            for (const m of pledges) {
+              if (statusMap[m.id]) {
+                m.btcmapStatus = statusMap[m.id];
+              }
+            }
+          }
+        } catch {
+          // BTCMap status is optional — don't break page load
+        }
+
+        setMerchants(pledges);
         setCount(data.count);
       }
     } catch {
@@ -385,6 +404,12 @@ export default function MerchantsPage() {
                         {m.featured && (
                           <span className="inline-flex px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-mono uppercase tracking-wider">
                             Founding Merchant
+                          </span>
+                        )}
+                        {(m.btcmapStatus === "submitted" || m.btcmapStatus === "listed") && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 text-[10px] font-mono uppercase tracking-wider">
+                            <MapPin className="w-2.5 h-2.5" />
+                            BTCMap
                           </span>
                         )}
                       </div>
