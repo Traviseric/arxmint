@@ -149,10 +149,14 @@ export async function POST(request: NextRequest) {
 
       if (!DEMO_MODE) {
         // Real mode: create invoice via LNbits (Phoenixd backend) or fall back to LND
-        const { createLNbitsInvoice } = await import("@/lib/lnbits");
+        const { createLNbitsInvoice, getMerchantInvoiceKey } = await import("@/lib/lnbits");
+
+        // Look up merchant-specific wallet key, fall back to default
+        const merchantKey = await getMerchantInvoiceKey(merchantId);
         const lnbitsResult = await createLNbitsInvoice({
           amount: amountSats,
           memo: sanitizedMemo || `Payment to ${merchant.businessName}`,
+          walletInvoiceKey: merchantKey ?? undefined,
         });
 
         if (lnbitsResult) {

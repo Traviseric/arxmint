@@ -6,6 +6,26 @@
 
 import { logger } from "./logger";
 
+/**
+ * Look up a merchant's LNbits invoice key from the merchant_wallets table.
+ * Returns null if the merchant doesn't have a wallet configured yet.
+ */
+export async function getMerchantInvoiceKey(
+  merchantId: string
+): Promise<string | null> {
+  try {
+    const { supabase } = await import("@/lib/supabase");
+    const { data } = await supabase
+      .from("merchant_wallets")
+      .select("lnbits_invoice_key")
+      .eq("merchant_id", merchantId)
+      .single();
+    return data?.lnbits_invoice_key ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export interface LNbitsInvoice {
   paymentHash: string;
   paymentRequest: string;
