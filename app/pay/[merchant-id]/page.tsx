@@ -50,6 +50,16 @@ const SEED_MERCHANTS: Record<string, MerchantData> = {
     website: "https://arxmint.com/bazaar",
     reason: "Official ArxMint merch — fortress-energy gear for Bitcoiners. Powered by OpenBazaar.ai.",
   },
+  "seed-black-bear": {
+    id: "seed-black-bear",
+    businessName: "Black Bear Window Cleaning",
+    logoUrl: null,
+    location: "Boulder, CO",
+    checkout_enabled: true,
+    default_amount_sats: null,
+    website: "https://blackbearwindowcleaning.com",
+    reason: "Professional window cleaning in Boulder — pay in sats, zero fees, instant settlement.",
+  },
 };
 
 async function getMerchant(merchantId: string): Promise<MerchantData | null> {
