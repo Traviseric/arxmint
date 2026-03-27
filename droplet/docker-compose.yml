@@ -1,0 +1,79 @@
+# ArxMint DigitalOcean Droplet — Docker Compose
+# Minimal stack: Phoenixd + LNbits (mainnet)
+# Deployed on: 167.71.189.144
+#
+# SECURITY: LNbits is bound to 127.0.0.1:5000 (loopback only).
+# External access goes through Caddy at lnbits.arxmint.com.
+# Port 5000 must be closed in UFW: `ufw deny 5000`
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f lnbits
+
+services:
+
+  # === Phoenixd — Lightning node (mainnet) ===
+  phoenixd:
+    image: acinq/phoenixd:latest
+    container_name: arxmint-phoenixd
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9740:9740"   # HTTP API — loopback only, never public
+    volumes:
+      - phoenixd-data:/phoenix
+    environment:
+      - PHOENIX_HTTP_BIND_IP=0.0.0.0
+      - PHOENIX_HTTP_PORT=9740
+    networks:
+      - arxmint-net
+
+  # === LNbits — Lightning wallet/payments layer ===
+  lnbits:
+    image: lnbitsdocker/lnbits:latest
+    container_name: arxmint-lnbits
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:5000"   # SECURITY: loopback only — Caddy proxies external traffic
+      # NOT "5000:5000" — that would bind to 0.0.0.0 and expose to the internet
+    volumes:
+      - lnbits-data:/app/data
+    environment:
+      - LNBITS_DATA_FOLDER=/app/data
+      - LNBITS_BACKEND_WALLET_CLASS=PhoenixdWallet
+      - PHOENIXD_API_ENDPOINT=http://phoenixd:9740
+      - PHOENIXD_API_PASSWORD=${PHOENIXD_API_PASSWORD:?PHOENIXD_API_PASSWORD required — get from phoenixd logs on first start}
+      - LNBITS_SITE_TITLE=ArxMint Lightning
+      - LNBITS_SITE_TAGLINE=Bitcoin payments for Boulder merchants
+    depends_on:
+      - phoenixd
+    networks:
+      - arxmint-net
+
+  # === Caddy — HTTPS reverse proxy ===
+  caddy:
+    image: caddy:2-alpine
+    container_name: arxmint-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3 (QUIC)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - /var/log/caddy:/var/log/caddy
+    networks:
+      - arxmint-net
+    depends_on:
+      - lnbits
+
+volumes:
+  phoenixd-data:
+  lnbits-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  arxmint-net:
+    driver: bridge

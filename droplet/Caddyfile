@@ -1,0 +1,46 @@
+# ArxMint DigitalOcean Droplet — Caddyfile
+# Caddy reverse proxy for LNbits + Phoenixd on 167.71.189.144
+#
+# This config routes external traffic to LNbits through Caddy,
+# ensuring port 5000 is never exposed directly to the internet.
+#
+# Prerequisites:
+#   1. DNS A record: lnbits.arxmint.com → 167.71.189.144
+#   2. Port 80 and 443 open in UFW / DigitalOcean firewall
+#   3. Port 5000 CLOSED to public (UFW: ufw deny 5000)
+#
+# Usage (on droplet):
+#   caddy run --config /etc/caddy/Caddyfile
+#   # or with docker-compose:
+#   docker compose -f /opt/arxmint/docker-compose.yml up -d caddy
+
+{
+  email admin@arxmint.com
+}
+
+# LNbits — proxied through Caddy (port 5000 stays internal)
+# Vercel calls lnbits.arxmint.com via HTTPS; Caddy forwards to localhost:5000
+lnbits.arxmint.com {
+  reverse_proxy localhost:5000
+
+  # Restrict to Vercel egress IPs + localhost (uncomment after verifying Vercel IP ranges)
+  # Vercel edge IPs change; use the header-based approach below instead.
+
+  # Require internal API key header for all requests (set in Vercel env as LNBITS_PROXY_KEY)
+  # This adds an extra auth layer on top of LNbits invoice key.
+  # Uncomment once LNBITS_PROXY_KEY is set in Vercel:
+  # @unauthorized not header X-LNbits-Proxy-Key {$LNBITS_PROXY_KEY}
+  # respond @unauthorized "Forbidden" 403
+
+  # Standard security headers
+  header {
+    X-Content-Type-Options nosniff
+    X-Frame-Options DENY
+    Referrer-Policy strict-origin-when-cross-origin
+  }
+
+  log {
+    output file /var/log/caddy/lnbits-access.log
+    format json
+  }
+}
