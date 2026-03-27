@@ -12,9 +12,16 @@
 // /api/identity/create-root:
 //   post:
 //     summary: Create a minimal ArxMint identity root for ecosystem services
+//     operationId: createIdentityRoot
 //     x-agent-scope: identity:write
 //     x-agent-safe: false
-//     x-auth-method: X-Marketplace-Secret
+//     x-privacy-level: sensitive
+//     x-l402-scope: identity:write
+//     security:
+//       - MarketplaceSecret: []
+//       - NIP98: []
+//     tags: [Identity]
+//     see: docs/openapi/identity.yaml
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";

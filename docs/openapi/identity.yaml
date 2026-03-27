@@ -1,0 +1,489 @@
+openapi: "3.1.0"
+
+info:
+  title: ArxMint Identity API
+  version: "1.0.0"
+  description: |
+    Cross-auth identity graph for ArxMint.
+    Links external identifiers (Nostr pubkeys, Lightning Addresses, Teneo-auth JWTs, etc.)
+    to a canonical ArxMint User root, enabling returning-customer recognition and
+    privacy-preserving cross-session reputation across payment methods.
+
+    ## Agent-Scope Model
+
+    | Scope | Operations |
+    |-------|-----------|
+    | `identity:read` | resolve, getAliases |
+    | `identity:write` | link, unlink, createRoot |
+
+    ## Privacy Notice
+
+    Identity aliases may contain PII. All write operations require explicit caller
+    authentication. Callers are recorded in `linkedBy`. Maximum-privacy checkout
+    sessions (`privacy_level: maximum`) suppress automatic cross-auth linking.
+
+servers:
+  - url: https://arxmint.com
+    description: Production
+
+# ============================================================
+# Security Schemes
+# ============================================================
+components:
+  securitySchemes:
+    NIP98:
+      type: http
+      scheme: bearer
+      bearerFormat: Nostr NIP-98 signed event (base64-encoded JSON)
+      description: |
+        Nostr NIP-98 HTTP Auth. Include a base64-encoded Nostr event (kind 27235)
+        in the `Authorization: Nostr <base64>` header.
+        The event must sign the HTTP method + URL within a 60-second window.
+
+    MarketplaceSecret:
+      type: apiKey
+      in: header
+      name: X-Marketplace-Secret
+      description: |
+        Server-to-server shared secret for ecosystem service integrations.
+        Required for `create-root`. Also accepted on `link` and `unlink`.
+        Set via the `MARKETPLACE_SECRET` environment variable on the ArxMint server.
+
+    L402:
+      type: http
+      scheme: bearer
+      bearerFormat: L402 macaroon:preimage
+      description: |
+        L402 HTTP Authentication (RFC draft). Obtain a macaroon and pay the
+        attached Lightning invoice, then send `Authorization: L402 <macaroon>:<preimage>`.
+
+        Scopes are enforced as macaroon caveats:
+        - `identity:read`  — read-only access to the identity graph
+        - `identity:write` — create or remove identity links
+
+  # ============================================================
+  # Shared Schemas
+  # ============================================================
+  schemas:
+    IdentityAlias:
+      type: object
+      description: A single link between an external identifier and an ArxMint User root.
+      required: [id, rootId, namespace, externalId, linkedBy, linkedAt]
+      properties:
+        id:
+          type: string
+          description: Unique alias record ID (cuid).
+          example: "clxyz1234"
+        rootId:
+          type: string
+          description: ArxMint User.id — the canonical identity root.
+          example: "clroot5678"
+        namespace:
+          type: string
+          description: Caller-defined namespace (lowercase alphanumeric, hyphens, underscores, max 64 chars).
+          pattern: "^[a-z0-9_-]{1,64}$"
+          example: "nostr"
+        externalId:
+          type: string
+          description: The foreign identifier (e.g. Nostr hex pubkey, Lightning Address, Teneo userId).
+          maxLength: 512
+          example: "npub1abcdef..."
+        linkedBy:
+          type: string
+          description: Which system or user created this link.
+          example: "checkout-auto-link"
+        metadata:
+          type: object
+          nullable: true
+          description: Optional context stored with the link.
+          additionalProperties: true
+          example: { "source": "checkout", "sessionId": "sess_abc" }
+        linkedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the link was created.
+
+    ResolvedIdentity:
+      type: object
+      description: A canonical identity root with all its external aliases.
+      required: [rootId, aliases]
+      properties:
+        rootId:
+          type: string
+          description: ArxMint User.id — the canonical identity root.
+        aliases:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdentityAlias"
+
+    LinkRequest:
+      type: object
+      description: Request body for linking an external identity.
+      required: [rootId, namespace, externalId]
+      properties:
+        rootId:
+          type: string
+          description: ArxMint User.id to link to.
+          example: "clroot5678"
+        namespace:
+          type: string
+          description: Caller-defined namespace (lowercase alphanumeric, hyphens, underscores, max 64 chars).
+          pattern: "^[a-z0-9_-]{1,64}$"
+          example: "teneo-auth"
+        externalId:
+          type: string
+          description: The foreign identifier.
+          maxLength: 512
+          example: "teneo_user_abc123"
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Optional context to store with the link.
+
+    UnlinkRequest:
+      type: object
+      description: Request body for removing an identity link.
+      required: [namespace, externalId]
+      properties:
+        namespace:
+          type: string
+          pattern: "^[a-z0-9_-]{1,64}$"
+          example: "teneo-auth"
+        externalId:
+          type: string
+          maxLength: 512
+          example: "teneo_user_abc123"
+
+    CreateRootRequest:
+      type: object
+      description: Request body for creating a minimal ArxMint identity root.
+      required: [linkedBy]
+      properties:
+        linkedBy:
+          type: string
+          description: Identifies which system triggered the root creation (for audit trail).
+          example: "teneo-production"
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Optional context (e.g. event source, environment).
+          example: { "event": "signup", "source": "teneo-auth" }
+
+    IdentityRoot:
+      type: object
+      description: Minimal ArxMint user created as an identity root.
+      required: [ok, id, createdAt]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        id:
+          type: string
+          description: New ArxMint User.id.
+          example: "clnewroot123"
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: "rootId is required"
+
+# ============================================================
+# Paths
+# ============================================================
+paths:
+
+  /api/identity/link:
+    post:
+      operationId: linkIdentity
+      summary: Link an external identity to an ArxMint user
+      description: |
+        Creates a durable link between an external identifier (Nostr pubkey, Lightning Address,
+        Teneo-auth userId, etc.) and an ArxMint User root.
+
+        Idempotent: if the same `namespace` + `externalId` is already linked to `rootId`,
+        returns 200 with `created: false`. Returns 409 if the externalId is already linked
+        to a **different** root.
+
+        The `linkedBy` field is automatically set to the caller's identity.
+
+      tags: [Identity]
+      x-agent-scope: identity:write
+      x-agent-safe: false
+      x-privacy-level: sensitive
+
+      security:
+        - NIP98: []
+        - MarketplaceSecret: []
+        - L402:
+            - identity:write
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkRequest"
+            examples:
+              nostr_link:
+                summary: Link a Nostr pubkey
+                value:
+                  rootId: "clroot5678"
+                  namespace: "nostr"
+                  externalId: "npub1abc..."
+              teneo_link:
+                summary: Link a Teneo-auth userId
+                value:
+                  rootId: "clroot5678"
+                  namespace: "teneo-auth"
+                  externalId: "teneo_user_42"
+                  metadata: { "source": "checkout", "sessionId": "sess_abc" }
+
+      responses:
+        "201":
+          description: Link created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, alias, created]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  alias:
+                    $ref: "#/components/schemas/IdentityAlias"
+                  created:
+                    type: boolean
+                    example: true
+        "200":
+          description: Link already exists (idempotent).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, alias, created]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  alias:
+                    $ref: "#/components/schemas/IdentityAlias"
+                  created:
+                    type: boolean
+                    example: false
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Root user not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: externalId already linked to a different root.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/identity/resolve:
+    get:
+      operationId: resolveIdentity
+      summary: Resolve an external ID to a root identity and all aliases
+      description: |
+        Two resolution modes:
+
+        1. **By external ID** (`?id=`): looks up the root that owns a given external
+           identifier. Optionally narrow by `namespace`.
+        2. **By root ID** (`?rootId=`): return all aliases for a known ArxMint User.id.
+
+      tags: [Identity]
+      x-agent-scope: identity:read
+      x-agent-safe: true
+      x-privacy-level: sensitive
+
+      security:
+        - NIP98: []
+        - MarketplaceSecret: []
+        - L402:
+            - identity:read
+
+      parameters:
+        - name: id
+          in: query
+          description: External identifier to resolve (required unless rootId is provided).
+          schema:
+            type: string
+          example: "teneo_user_42"
+        - name: namespace
+          in: query
+          description: Narrow resolution to a specific namespace (optional).
+          schema:
+            type: string
+            pattern: "^[a-z0-9_-]{1,64}$"
+          example: "teneo-auth"
+        - name: rootId
+          in: query
+          description: ArxMint User.id — return all aliases for this root directly.
+          schema:
+            type: string
+          example: "clroot5678"
+
+      responses:
+        "200":
+          description: Identity resolved.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    required: [ok]
+                    properties:
+                      ok:
+                        type: boolean
+                        example: true
+                  - $ref: "#/components/schemas/ResolvedIdentity"
+        "400":
+          description: Missing required query parameter.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Identity not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/identity/unlink:
+    delete:
+      operationId: unlinkIdentity
+      summary: Remove an identity alias link
+      description: |
+        Permanently removes the link between an external identifier and its ArxMint root.
+
+        Returns 200 even if the link did not exist (idempotent delete).
+
+      tags: [Identity]
+      x-agent-scope: identity:write
+      x-agent-safe: false
+      x-privacy-level: sensitive
+
+      security:
+        - NIP98: []
+        - MarketplaceSecret: []
+        - L402:
+            - identity:write
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnlinkRequest"
+
+      responses:
+        "200":
+          description: Link removed (or did not exist).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/identity/create-root:
+    post:
+      operationId: createIdentityRoot
+      summary: Create a minimal ArxMint identity root for ecosystem services
+      description: |
+        Creates an empty ArxMint User to serve as an identity root. Use this when
+        an external system (e.g. Teneo-auth, AnalyticsOS) needs to attach identity
+        aliases before the user has authenticated natively with ArxMint.
+
+        The returned `id` can then be passed as `rootId` to `POST /api/identity/link`.
+
+        **Auth:** `X-Marketplace-Secret` only (server-to-server). Regular user
+        session credentials are also accepted.
+
+      tags: [Identity]
+      x-agent-scope: identity:write
+      x-agent-safe: false
+      x-privacy-level: sensitive
+
+      security:
+        - MarketplaceSecret: []
+        - NIP98: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRootRequest"
+
+      responses:
+        "201":
+          description: Root user created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityRoot"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthenticated or insufficient privileges.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Root user creation failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

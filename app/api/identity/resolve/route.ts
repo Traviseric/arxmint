@@ -8,9 +8,17 @@
 // /api/identity/resolve:
 //   get:
 //     summary: Resolve an external ID to a root identity and all aliases
+//     operationId: resolveIdentity
 //     x-agent-scope: identity:read
 //     x-agent-safe: true
-//     x-auth-method: NIP-98 | X-Marketplace-Secret
+//     x-privacy-level: sensitive
+//     x-l402-scope: identity:read
+//     security:
+//       - NIP98: []
+//       - MarketplaceSecret: []
+//       - L402: [identity:read]
+//     tags: [Identity]
+//     see: docs/openapi/identity.yaml
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";

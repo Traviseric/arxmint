@@ -53,3 +53,44 @@ export interface ListPaymentsOptions {
   status?: PaymentStatus;
   limit?: number;
 }
+
+// ---- Identity types (mirrors lib/identity.ts server types) ----
+
+export interface IdentityAlias {
+  id: string;
+  rootId: string;
+  namespace: string;
+  externalId: string;
+  linkedBy: string;
+  metadata?: Record<string, unknown> | null;
+  linkedAt: string; // ISO 8601
+}
+
+export interface ResolvedIdentity {
+  rootId: string;
+  aliases: IdentityAlias[];
+}
+
+export interface IdentityLinkRequest {
+  /** ArxMint User.id to link to. */
+  rootId: string;
+  /** Caller-defined namespace (lowercase alphanumeric, hyphens, underscores, max 64 chars). */
+  namespace: string;
+  /** The foreign identifier (e.g. Nostr pubkey, Lightning Address, teneo userId). */
+  externalId: string;
+  /** Optional context stored with the link. */
+  metadata?: Record<string, unknown>;
+}
+
+export interface IdentityLinkResult {
+  ok: true;
+  alias: IdentityAlias;
+  /** true if the link was newly created; false if it already existed (idempotent). */
+  created: boolean;
+}
+
+export interface IdentityRoot {
+  ok: true;
+  id: string;
+  createdAt: string; // ISO 8601
+}

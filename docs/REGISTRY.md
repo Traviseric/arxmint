@@ -54,6 +54,8 @@
 | docs/operations/pilot-readiness-status.md | operations, pilot, readiness, status | pilot readiness status doc in docs/operations |
 | docs/operations/pitr-runbook.md | operations, pitr, runbook | pitr runbook doc in docs/operations |
 | docs/operations/trust-statement.md | operations, trust, statement | trust statement doc in docs/operations |
+| docs/api-reference.md | api, reference, index, identity, openapi | Top-level API reference index; points to integration/api-reference.md and openapi/ |
+| docs/openapi/identity.yaml | openapi, identity, link, resolve, unlink, create-root, agent-scope, l402 | OpenAPI 3.1 spec for identity endpoints with agent-scope and L402 security declarations |
 | docs/quick-start/quickstart.md | quick, start, quickstart | quickstart doc in docs/quick-start |
 | docs/reference/brand.md | reference, brand | brand doc in docs/reference |
 | docs/reference/whitepaper.md | reference, whitepaper | whitepaper doc in docs/reference |

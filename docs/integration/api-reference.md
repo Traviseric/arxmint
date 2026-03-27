@@ -844,3 +844,72 @@ X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 57
 X-RateLimit-Reset: 1741516860
 ```
+
+---
+
+## Identity
+
+> **Agent scopes:** `identity:read` (resolve, getAliases) · `identity:write` (link, unlink, createRoot)
+>
+> **OpenAPI spec:** `docs/openapi/identity.yaml`
+>
+> **SDK:** `import { IdentityClient } from "@arxmint/js"`
+
+Cross-auth identity graph: link external identifiers (Nostr pubkeys, Lightning Addresses,
+Teneo-auth userIds, etc.) to a canonical ArxMint User root across payment methods.
+
+### POST /api/identity/link
+
+Link an external identifier to an ArxMint user root.
+
+**Auth:** NIP-98 | X-Marketplace-Secret | L402 `identity:write`
+
+**Request:**
+```json
+{
+  "rootId": "clroot5678",
+  "namespace": "nostr",
+  "externalId": "npub1abc...",
+  "metadata": { "source": "checkout" }
+}
+```
+
+**Response 201** (created) / **200** (already linked):
+```json
+{ "ok": true, "alias": { "id": "clxyz...", "rootId": "...", "namespace": "nostr", ... }, "created": true }
+```
+
+**Error responses:** 400 (validation), 401 (unauth), 404 (root not found), 409 (externalId already linked to different root)
+
+### GET /api/identity/resolve
+
+Resolve an external identifier or root ID to all aliases.
+
+**Auth:** NIP-98 | X-Marketplace-Secret | L402 `identity:read`
+
+**Query params:** `?id=<externalId>` or `?rootId=<rootId>`, optional `&namespace=<ns>`
+
+**Response 200:**
+```json
+{ "ok": true, "rootId": "clroot5678", "aliases": [ { "namespace": "nostr", "externalId": "npub1...", ... } ] }
+```
+
+### DELETE /api/identity/unlink
+
+Remove an identity alias link.
+
+**Auth:** NIP-98 | X-Marketplace-Secret | L402 `identity:write`
+
+**Request:** `{ "namespace": "nostr", "externalId": "npub1abc..." }`
+
+**Response 200:** `{ "ok": true }`
+
+### POST /api/identity/create-root
+
+Create a minimal ArxMint identity root (server-to-server only).
+
+**Auth:** X-Marketplace-Secret required
+
+**Request:** `{ "linkedBy": "teneo-production", "metadata": { "event": "signup" } }`
+
+**Response 201:** `{ "ok": true, "id": "clnewroot...", "createdAt": "ISO 8601" }`

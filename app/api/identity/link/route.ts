@@ -8,9 +8,17 @@
 // /api/identity/link:
 //   post:
 //     summary: Link an external identity to an ArxMint user
+//     operationId: linkIdentity
 //     x-agent-scope: identity:write
 //     x-agent-safe: false
-//     x-auth-method: NIP-98 | X-Marketplace-Secret
+//     x-privacy-level: sensitive
+//     x-l402-scope: identity:write
+//     security:
+//       - NIP98: []
+//       - MarketplaceSecret: []
+//       - L402: [identity:write]
+//     tags: [Identity]
+//     see: docs/openapi/identity.yaml
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
