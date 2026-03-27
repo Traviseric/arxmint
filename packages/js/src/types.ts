@@ -12,7 +12,7 @@ export interface CreateCheckoutOptions {
   amountSats: number;
   /** Optional payment description (max 200 chars). */
   memo?: string;
-  /** Optional metadata forwarded to the merchant webhook. */
+  /** Optional metadata sent with the checkout request. Reserved for future merchant webhook forwarding. */
   metadata?: Record<string, unknown>;
 }
 

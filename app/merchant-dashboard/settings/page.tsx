@@ -6,6 +6,8 @@
 // Business info, payment settings, notifications, API keys, export
 // ============================================================
 
+export const dynamic = "force-dynamic";
+
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";

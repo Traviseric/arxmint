@@ -148,6 +148,16 @@ export async function POST(request: NextRequest) {
       let demoMode = false;
 
       if (!DEMO_MODE) {
+        // Validate payment backend is configured before attempting invoice creation.
+        // Fail loudly here rather than silently falling through to a confusing L402/503 chain.
+        if (!process.env.LNBITS_URL || !process.env.LNBITS_INVOICE_KEY) {
+          return apiError(
+            503,
+            "LNBITS_NOT_CONFIGURED",
+            "Payment backend is not configured. Set LNBITS_URL and LNBITS_INVOICE_KEY environment variables."
+          );
+        }
+
         // Real mode: create invoice via LNbits (Phoenixd backend) or fall back to LND
         const { createLNbitsInvoice, getMerchantInvoiceKey } = await import("@/lib/lnbits");
 

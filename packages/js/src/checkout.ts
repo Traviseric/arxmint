@@ -21,6 +21,7 @@ export async function createCheckout(
       merchantId: options.merchantId,
       amountSats: options.amountSats,
       ...(options.memo && { memo: options.memo }),
+      ...(options.metadata && { metadata: options.metadata }),
     }),
   });
 
