@@ -1,7 +1,7 @@
 // ============================================================
 // ArxMint — Point of Sale Terminal
 // /pos/[merchant-id] — merchant-facing POS for in-person Lightning payments
-// Mobile-first PWA. Numeric keypad, real-time USD→sats, BIP21 QR.
+// Mobile-first PWA. Numeric keypad, real-time USD→sats, BIP21 QR, NFC Bolt Card.
 // ============================================================
 
 "use client";
@@ -9,6 +9,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
+import {
+  isNFCSupported,
+  readBoltCard,
+  decodeLNURL,
+  fetchLNURLWithdrawParams,
+  callLNURLWithdraw,
+} from "@/lib/nfc-bolt-card";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,7 +28,14 @@ interface MerchantData {
   location: string | null;
 }
 
-type ScreenState = "idle" | "generating" | "waiting" | "paid" | "expired";
+type ScreenState =
+  | "idle"
+  | "generating"
+  | "waiting"
+  | "paid"
+  | "expired"
+  | "nfc-reading"    // waiting for card tap
+  | "nfc-processing"; // got LNURL, creating invoice + calling callback
 
 // ---------------------------------------------------------------------------
 // Seed merchants (matches checkout API seed list)
@@ -125,14 +139,20 @@ function KeypadScreen({
   amount,
   amountSats,
   btcPrice,
+  nfcSupported,
+  nfcError,
   onKey,
   onCharge,
+  onNFC,
 }: {
   amount: string;
   amountSats: number;
   btcPrice: number | null;
+  nfcSupported: boolean;
+  nfcError: string | null;
   onKey: (key: string) => void;
   onCharge: () => void;
+  onNFC: () => void;
 }) {
   const displayAmount = amount === "" ? "0" : amount;
   const canCharge = amountSats > 0;
@@ -167,6 +187,11 @@ function KeypadScreen({
         ) : (
           <p className="text-white/30 text-sm">Fetching BTC price…</p>
         )}
+
+        {/* NFC error feedback */}
+        {nfcError && (
+          <p className="text-red-400 text-xs text-center px-4 mt-1">{nfcError}</p>
+        )}
       </div>
 
       {/* Keypad */}
@@ -183,8 +208,9 @@ function KeypadScreen({
         ))}
       </div>
 
-      {/* Charge button */}
-      <div className="px-4 pb-8">
+      {/* Action buttons */}
+      <div className="px-4 pb-8 flex flex-col gap-3">
+        {/* Primary: Charge (QR) */}
         <button
           onClick={onCharge}
           disabled={!canCharge}
@@ -194,10 +220,73 @@ function KeypadScreen({
             color: canCharge ? "#000" : "#666",
           }}
         >
-          {canCharge
-            ? `Charge $${displayAmount}`
-            : "Enter amount"}
+          {canCharge ? `Charge $${displayAmount}` : "Enter amount"}
         </button>
+
+        {/* Secondary: Tap to Pay (NFC) — only on supported devices */}
+        {nfcSupported && (
+          <button
+            onClick={onNFC}
+            disabled={!canCharge}
+            className="w-full h-12 rounded-2xl text-base font-semibold transition-all select-none flex items-center justify-center gap-2"
+            style={{
+              background: canCharge ? "rgba(247,147,26,0.12)" : "transparent",
+              color: canCharge ? "#F7931A" : "#555",
+              border: `1.5px solid ${canCharge ? "rgba(247,147,26,0.4)" : "#333"}`,
+            }}
+          >
+            <span style={{ fontSize: "1.1em" }}>📲</span>
+            Tap to Pay (Bolt Card)
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// NFC reading screen — shown while waiting for card tap
+function NFCReadingScreen({ onCancel }: { onCancel: () => void }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
+      {/* Animated NFC ring */}
+      <div className="relative w-28 h-28 flex items-center justify-center">
+        <div
+          className="absolute inset-0 rounded-full border-2 border-[#F7931A] animate-ping opacity-30"
+          style={{ animationDuration: "1.5s" }}
+        />
+        <div
+          className="absolute inset-2 rounded-full border-2 border-[#F7931A]/60 animate-ping opacity-50"
+          style={{ animationDuration: "1.5s", animationDelay: "0.3s" }}
+        />
+        <span className="text-5xl relative z-10">📡</span>
+      </div>
+
+      <div className="text-center">
+        <p className="text-xl font-semibold">Hold Bolt Card to phone</p>
+        <p className="text-white/50 text-sm mt-2">
+          Touch the back of the customer&apos;s NFC card to your phone
+        </p>
+        <p className="text-white/30 text-xs mt-1">Waiting up to 10 seconds…</p>
+      </div>
+
+      <button
+        onClick={onCancel}
+        className="w-full h-12 rounded-xl text-white/50 text-sm bg-white/5 active:bg-white/10 transition-colors"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+// NFC processing screen — creating invoice + calling LNURL-withdraw callback
+function NFCProcessingScreen() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
+      <div className="w-16 h-16 rounded-full border-2 border-[#F7931A] border-t-transparent animate-spin" />
+      <div className="text-center">
+        <p className="text-xl font-semibold">Processing…</p>
+        <p className="text-white/50 text-sm mt-2">Sending invoice to Bolt Card</p>
       </div>
     </div>
   );
@@ -347,6 +436,8 @@ export default function POSPage() {
   const [screen, setScreen] = useState<ScreenState>("idle");
   const [invoice, setInvoice] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [nfcSupported, setNfcSupported] = useState(false);
+  const [nfcError, setNfcError] = useState<string | null>(null);
   const btcPrice = useBtcPrice();
   const esRef = useRef<EventSource | null>(null);
 
@@ -387,6 +478,13 @@ export default function POSPage() {
       cancelled = true;
     };
   }, [merchantId]);
+
+  // ---------------------------------------------------------------------------
+  // NFC feature detection (client-side only)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    setNfcSupported(isNFCSupported());
+  }, []);
 
   // ---------------------------------------------------------------------------
   // SSE subscription for real-time payment status
@@ -480,6 +578,59 @@ export default function POSPage() {
     }
   }, [amountSats, screen, merchant, merchantId]);
 
+  const handleNFCTap = useCallback(async () => {
+    if (amountSats <= 0 || !merchant || merchant === "loading") return;
+    setNfcError(null);
+    setScreen("nfc-reading");
+
+    try {
+      // 1. Read LNURL-withdraw from Bolt Card
+      const rawLNURL = await readBoltCard();
+
+      // 2. Create invoice while we process the card
+      setScreen("nfc-processing");
+
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          merchantId,
+          amountSats,
+          memo: `Bolt Card — ${merchant.businessName}`,
+        }),
+      });
+      const checkoutData = await res.json();
+      if (!res.ok) throw new Error(checkoutData.error || "Failed to create invoice");
+
+      // 3. Decode LNURL and fetch withdraw params
+      const url = decodeLNURL(rawLNURL);
+      const params = await fetchLNURLWithdrawParams(url);
+
+      // 4. Validate amount fits within card limits
+      const maxSats = Math.floor(params.maxWithdrawable / 1000);
+      const minSats = Math.ceil(params.minWithdrawable / 1000);
+      if (amountSats > maxSats) {
+        throw new Error(`Amount exceeds card limit of ${maxSats.toLocaleString()} sats`);
+      }
+      if (amountSats < minSats) {
+        throw new Error(`Amount below card minimum of ${minSats.toLocaleString()} sats`);
+      }
+
+      // 5. Send invoice to card — card will pay it
+      await callLNURLWithdraw(params.callback, params.k1, checkoutData.invoice);
+
+      // 6. Wait for payment confirmation via SSE (same as QR flow)
+      setInvoice(checkoutData.invoice);
+      setSessionId(checkoutData.sessionId);
+      setScreen("waiting");
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "NFC tap failed";
+      setNfcError(msg);
+      setScreen("idle");
+    }
+  }, [amountSats, merchant, merchantId]);
+
   const handleReset = useCallback(() => {
     esRef.current?.close();
     esRef.current = null;
@@ -487,6 +638,7 @@ export default function POSPage() {
     setInvoice(null);
     setSessionId(null);
     setAmount("");
+    setNfcError(null);
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -542,6 +694,10 @@ export default function POSPage() {
         <PaidScreen onReset={handleReset} amountSats={amountSats} amountUSD={amountUSD} />
       ) : screen === "expired" ? (
         <ExpiredScreen onReset={handleReset} />
+      ) : screen === "nfc-reading" ? (
+        <NFCReadingScreen onCancel={handleReset} />
+      ) : screen === "nfc-processing" ? (
+        <NFCProcessingScreen />
       ) : screen === "waiting" || screen === "generating" ? (
         <InvoiceScreen
           invoice={invoice}
@@ -555,8 +711,11 @@ export default function POSPage() {
           amount={amount}
           amountSats={amountSats}
           btcPrice={btcPrice}
+          nfcSupported={nfcSupported}
+          nfcError={nfcError}
           onKey={handleKey}
           onCharge={handleCharge}
+          onNFC={handleNFCTap}
         />
       )}
     </div>
