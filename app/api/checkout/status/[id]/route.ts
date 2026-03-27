@@ -1,11 +1,15 @@
 // ============================================================
 // ArxMint — Checkout Status API
-// GET /api/checkout/status/[id] — poll payment status (clean schema)
-// GET /api/checkout/status/[id]/stream — SSE real-time stream
+// GET /api/checkout/status/[id]              — JSON snapshot (legacy / non-SSE clients)
+// GET /api/checkout/status/[id]              — SSE stream when Accept: text/event-stream
+// GET /api/checkout/status/[id]/stream       — dedicated SSE route (kept for backwards compat)
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
 import type { PaymentStatus } from "@/lib/types";
+
+const SSE_POLL_INTERVAL_MS = 2_000;
+const SSE_MAX_DURATION_MS = 15 * 60 * 1_000; // 15 minutes
 
 const DEMO_AUTO_PAY_DELAY_MS = 5_000; // Auto-settle demo payments after 5s (dev only)
 
@@ -117,6 +121,100 @@ async function resolveSession(id: string, requestUrl: string): Promise<{
   };
 }
 
+/** SSE handler — streams status events until paid/expired/timeout */
+function handleSSE(id: string, requestUrl: string): Response {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      let closed = false;
+      const startTime = Date.now();
+
+      const send = (data: object) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        } catch {
+          closed = true;
+        }
+      };
+
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try {
+          controller.close();
+        } catch {
+          // already closed
+        }
+      };
+
+      // Send initial state immediately
+      const initial = await resolveSession(id, requestUrl);
+      if (!initial) {
+        send({ error: "Session not found" });
+        close();
+        return;
+      }
+      send({
+        id: initial.id,
+        status: initial.status,
+        amountSats: initial.amountSats,
+        ...(initial.paidAt && { paidAt: initial.paidAt }),
+        ...(initial.demoMode && { demoMode: true }),
+      });
+      if (initial.status !== "pending") {
+        close();
+        return;
+      }
+
+      // Poll until terminal state or timeout
+      const interval = setInterval(async () => {
+        if (closed) {
+          clearInterval(interval);
+          return;
+        }
+
+        if (Date.now() - startTime > SSE_MAX_DURATION_MS) {
+          send({ status: "expired" });
+          clearInterval(interval);
+          close();
+          return;
+        }
+
+        const result = await resolveSession(id, requestUrl);
+        if (!result) {
+          clearInterval(interval);
+          close();
+          return;
+        }
+
+        send({
+          id: result.id,
+          status: result.status,
+          amountSats: result.amountSats,
+          ...(result.paidAt && { paidAt: result.paidAt }),
+          ...(result.demoMode && { demoMode: true }),
+        });
+
+        if (result.status !== "pending") {
+          clearInterval(interval);
+          close();
+        }
+      }, SSE_POLL_INTERVAL_MS);
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -127,6 +225,12 @@ export async function GET(
     return NextResponse.json({ error: "Invalid session ID" }, { status: 400 });
   }
 
+  // SSE mode: EventSource automatically sends Accept: text/event-stream
+  if ((request.headers.get("accept") ?? "").includes("text/event-stream")) {
+    return handleSSE(id, request.url);
+  }
+
+  // JSON mode — backward compatible for non-SSE clients
   try {
     const session = await resolveSession(id, request.url);
 

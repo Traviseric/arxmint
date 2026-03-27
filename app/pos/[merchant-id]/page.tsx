@@ -348,7 +348,7 @@ export default function POSPage() {
   const [invoice, setInvoice] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const btcPrice = useBtcPrice();
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const esRef = useRef<EventSource | null>(null);
 
   // ---------------------------------------------------------------------------
   // Load merchant
@@ -389,30 +389,39 @@ export default function POSPage() {
   }, [merchantId]);
 
   // ---------------------------------------------------------------------------
-  // Poll payment status
+  // SSE subscription for real-time payment status
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (screen !== "waiting" || !sessionId) return;
 
-    pollRef.current = setInterval(async () => {
+    const es = new EventSource(`/api/checkout/status/${sessionId}`);
+    esRef.current = es;
+
+    es.onmessage = (event) => {
       try {
-        const res = await fetch(`/api/checkout/status/${sessionId}`);
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = JSON.parse(event.data);
         if (data.status === "paid") {
           setScreen("paid");
-          if (pollRef.current) clearInterval(pollRef.current);
+          es.close();
+          esRef.current = null;
         } else if (data.status === "expired") {
           setScreen("expired");
-          if (pollRef.current) clearInterval(pollRef.current);
+          es.close();
+          esRef.current = null;
         }
       } catch {
-        // keep polling
+        // ignore parse errors
       }
-    }, 2000);
+    };
+
+    es.onerror = () => {
+      es.close();
+      esRef.current = null;
+    };
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      es.close();
+      esRef.current = null;
     };
   }, [screen, sessionId]);
 
@@ -472,7 +481,8 @@ export default function POSPage() {
   }, [amountSats, screen, merchant, merchantId]);
 
   const handleReset = useCallback(() => {
-    if (pollRef.current) clearInterval(pollRef.current);
+    esRef.current?.close();
+    esRef.current = null;
     setScreen("idle");
     setInvoice(null);
     setSessionId(null);

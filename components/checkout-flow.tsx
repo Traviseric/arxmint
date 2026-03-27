@@ -89,7 +89,7 @@ export function CheckoutFlow({
   const [shipping, setShipping] = useState<ShippingAddress>({
     email: "", fullName: "", street: "", city: "", state: "", zip: "",
   });
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const esRef = useRef<EventSource | null>(null);
   const hasCreatedInvoice = useRef(false);
 
   const createInvoice = useCallback(async (sats: number, shippingData?: ShippingAddress) => {
@@ -136,32 +136,43 @@ export function CheckoutFlow({
     }
   }, [presetAmount, createInvoice, collectShipping]);
 
-  // Poll for payment status
+  // SSE subscription for real-time payment status
   useEffect(() => {
     if (state !== "invoice" || !sessionId) return;
 
-    pollRef.current = setInterval(async () => {
+    const es = new EventSource(`/api/checkout/status/${sessionId}`);
+    esRef.current = es;
+
+    es.onmessage = (event) => {
       try {
-        const res = await fetch(`/api/checkout/status/${sessionId}`);
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = JSON.parse(event.data);
         if (data.status === "paid") {
-          setPaidAt(data.paidAt);
+          setPaidAt(data.paidAt ?? null);
           setState("paid");
           trackCheckoutEvent("payment_confirmed", { merchant_id: merchantId });
+          es.close();
+          esRef.current = null;
         } else if (data.status === "expired") {
           setState("expired");
           trackCheckoutEvent("invoice_expired", { merchant_id: merchantId });
+          es.close();
+          esRef.current = null;
         }
       } catch {
-        // Ignore poll errors
+        // ignore parse errors
       }
-    }, 2_000);
+    };
+
+    es.onerror = () => {
+      es.close();
+      esRef.current = null;
+    };
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      es.close();
+      esRef.current = null;
     };
-  }, [state, sessionId]);
+  }, [state, sessionId, merchantId]);
 
   const handleSubmitAmount = (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,7 +216,8 @@ export function CheckoutFlow({
   };
 
   const handleNewInvoice = () => {
-    if (pollRef.current) clearInterval(pollRef.current);
+    esRef.current?.close();
+    esRef.current = null;
     hasCreatedInvoice.current = false;
     setInvoice("");
     setSessionId("");
