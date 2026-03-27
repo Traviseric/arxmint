@@ -261,12 +261,14 @@ export async function POST(request: NextRequest) {
     // First 20 merchants get "Founding Merchant" status
     const FOUNDING_MERCHANT_CAP = 20;
     let isFounding = false;
+    let approvedCount = 0;
     try {
       const { count } = await supabase
         .from("merchant_pledges")
         .select("id", { count: "exact", head: true })
         .eq("approved", true);
-      isFounding = (count ?? 0) + SEED_MERCHANTS.length < FOUNDING_MERCHANT_CAP;
+      approvedCount = count ?? 0;
+      isFounding = approvedCount + SEED_MERCHANTS.length < FOUNDING_MERCHANT_CAP;
     } catch {
       // If count fails, still allow signup — just won't auto-feature
     }
@@ -295,8 +297,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
     }
 
-    // Email notification stub — replace with Resend/SendGrid when ready
-    console.log(`[arxmint] New self-registration: ${data.businessName} <${data.email}> → notify travis@arxmint.com`);
+    // Fire-and-forget: welcome email to merchant
+    const merchantNumber = approvedCount + SEED_MERCHANTS.length + 1;
+    if (data.email && data.emailOptIn !== false) {
+      import("@/lib/email").then(({ sendMerchantWelcomeEmail }) => {
+        sendMerchantWelcomeEmail({
+          businessName: data.businessName,
+          email: data.email!,
+          merchantId: pledge.id,
+          merchantNumber,
+          payLink: `https://www.arxmint.com/pay/${pledge.id}`,
+          location: data.location ?? undefined,
+        }).catch(() => {});
+      }).catch(() => {});
+    }
 
     // Fire-and-forget Telegram notification
     notifyTelegram({ id: pledge.id, businessName: pledge.business_name }, data);
