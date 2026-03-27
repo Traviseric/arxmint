@@ -10,7 +10,7 @@
     "deploy": "zapier push"
   },
   "dependencies": {
-    "zapier-platform-core": "^15.5.0"
+    "zapier-platform-core": "^18.3.0"
   },
   "devDependencies": {
     "jest": "^29.0.0"
