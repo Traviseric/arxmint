@@ -1,0 +1,52 @@
+{
+  "name": "@arxmint/agent-commerce",
+  "version": "0.1.0",
+  "description": "Agent-to-agent Bitcoin commerce SDK — L402 auto-pay, merchant checkout, budget enforcement",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --experimental-test-module-mocks --test \"tests/*.test.ts\""
+  },
+  "peerDependencies": {
+    "@te-btc/agent-wallet": ">=0.1.0",
+    "@te-btc/cashu-l402": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@te-btc/agent-wallet": "^0.1.0",
+    "@te-btc/cashu-l402": "^0.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "bitcoin",
+    "lightning",
+    "l402",
+    "agent",
+    "commerce",
+    "cashu",
+    "micropayments",
+    "arxmint"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Traviseric/arxmint.git",
+    "directory": "packages/agent-commerce"
+  }
+}
