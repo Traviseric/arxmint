@@ -161,7 +161,13 @@ export async function POST(request: NextRequest) {
         // Real mode: create invoice via LNbits (Phoenixd backend) or fall back to LND
         const { createLNbitsInvoice, getMerchantInvoiceKey } = await import("@/lib/lnbits");
 
-        // Look up merchant-specific wallet key, fall back to default
+        // Wallet isolation: each merchant has their own LNbits invoice key stored in
+        // merchant_wallets.lnbits_invoice_key. getMerchantInvoiceKey() looks up the key
+        // strictly by merchantId — there is no shared state between merchants.
+        // Fallback to LNBITS_INVOICE_KEY is only used for merchants not yet configured
+        // (e.g. new sign-ups before their wallet is provisioned). This is intentional
+        // and does not cause cross-merchant billing: invoices are created independently,
+        // and payment confirmation is keyed to the checkout session's r_hash, not the key.
         const merchantKey = await getMerchantInvoiceKey(merchantId);
         const lnbitsResult = await createLNbitsInvoice({
           amount: amountSats,
