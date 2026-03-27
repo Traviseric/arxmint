@@ -14,6 +14,8 @@ import {
   Check,
   ExternalLink,
   FileDown,
+  Mail,
+  X,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -125,6 +127,100 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   );
 }
 
+// ---- Send Invoice Modal ----
+
+function SendInvoiceModal({
+  sessionId,
+  amountSats,
+  onClose,
+}: {
+  sessionId: string;
+  amountSats: number;
+  onClose: () => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const send = useCallback(async () => {
+    if (!email) return;
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/invoice/${sessionId}/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerEmail: email }),
+      });
+      if (res.ok) {
+        setSent(true);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setError((d as { error?: string }).error ?? "Failed to send email.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }, [sessionId, email]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-900">Send Invoice by Email</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={18} />
+          </button>
+        </div>
+
+        {sent ? (
+          <div className="text-center py-6 space-y-3">
+            <div className="text-4xl">✅</div>
+            <p className="font-medium text-gray-900">Invoice sent!</p>
+            <p className="text-sm text-gray-500">Payment request delivered to {email}</p>
+            <button
+              onClick={onClose}
+              className="mt-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-gray-600 mb-4">
+              Send a payment request for{" "}
+              <span className="font-medium text-orange-600">{amountSats.toLocaleString()} sats</span>{" "}
+              to your customer.
+            </p>
+            <label className="block text-xs text-gray-500 mb-1">Customer email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="customer@example.com"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 mb-3"
+            />
+            {error && (
+              <p className="text-xs text-red-600 mb-3">{error}</p>
+            )}
+            <button
+              onClick={send}
+              disabled={sending || !email}
+              className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {sending ? <><RefreshCw size={14} className="animate-spin" /> Sending…</> : <><Mail size={14} /> Send Invoice</>}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ---- Tab: Transactions ----
 
 function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | null }) {
@@ -133,6 +229,7 @@ function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | nul
   const [loading, setLoading] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [emailModal, setEmailModal] = useState<{ sessionId: string; amountSats: number } | null>(null);
 
   const load = useCallback(async (p: number, f: string, t: string) => {
     setLoading(true);
@@ -162,6 +259,7 @@ function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | nul
   };
 
   return (
+    <>
     <div className="space-y-4">
       {/* Date filter */}
       <div className="flex flex-wrap gap-3 items-end">
@@ -248,15 +346,24 @@ function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | nul
                       {shortHash(tx.id)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <a
-                        href={`/api/invoice/${tx.id}/pdf`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Download PDF invoice"
-                        className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
-                      >
-                        <FileDown size={15} />
-                      </a>
+                      <div className="flex items-center justify-center gap-1">
+                        <a
+                          href={`/api/invoice/${tx.id}/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Download PDF invoice"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
+                        >
+                          <FileDown size={15} />
+                        </a>
+                        <button
+                          onClick={() => setEmailModal({ sessionId: tx.id, amountSats: tx.amountSats })}
+                          title="Email invoice to customer"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
+                        >
+                          <Mail size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -290,6 +397,16 @@ function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | nul
         </>
       )}
     </div>
+
+    {/* Send invoice email modal */}
+    {emailModal && (
+      <SendInvoiceModal
+        sessionId={emailModal.sessionId}
+        amountSats={emailModal.amountSats}
+        onClose={() => setEmailModal(null)}
+      />
+    )}
+    </>
   );
 }
 

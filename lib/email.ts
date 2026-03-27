@@ -65,6 +65,119 @@ export async function sendMerchantWelcomeEmail(
   }
 }
 
+export interface InvoiceEmailData {
+  to: string;
+  merchantName: string;
+  amountSats: number;
+  amountUsd: string | null;
+  paymentUrl: string;
+  sessionId: string;
+  memo?: string | null;
+}
+
+/**
+ * Send a payment request / invoice email to a customer on behalf of a merchant.
+ * Returns true on success, false on failure (never throws).
+ */
+export async function sendInvoiceEmail(data: InvoiceEmailData): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) return false;
+
+  const subject = `Payment request from ${data.merchantName} — ${data.amountSats.toLocaleString()} sats`;
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: data.to,
+      subject,
+      html: buildInvoiceHtml(data),
+    });
+    logger.info("email_sent", { type: "invoice", sessionId: data.sessionId });
+    return true;
+  } catch (error) {
+    logger.warn("email_send_failed", {
+      type: "invoice",
+      sessionId: data.sessionId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+function buildInvoiceHtml(data: InvoiceEmailData): string {
+  const usdLine = data.amountUsd ? ` (~$${data.amountUsd} USD)` : "";
+  const memoSection = data.memo
+    ? `<p style="font-size:14px;color:#555;margin:0 0 16px;"><strong>Note:</strong> ${data.memo}</p>`
+    : "";
+  const shortId = data.sessionId.slice(0, 8).toUpperCase();
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+
+    <!-- Header -->
+    <div style="background:#F7931A;border-radius:12px 12px 0 0;padding:24px 32px;">
+      <h1 style="font-size:22px;color:#fff;margin:0;">Payment Request ⚡</h1>
+      <p style="font-size:14px;color:rgba(255,255,255,0.85);margin:4px 0 0;">from ${data.merchantName}</p>
+    </div>
+
+    <!-- Main card -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-top:none;border-radius:0 0 12px 12px;padding:32px;margin-bottom:24px;">
+
+      <!-- Amount -->
+      <div style="text-align:center;padding:24px 0;border-bottom:1px solid #f0f0f0;margin-bottom:24px;">
+        <p style="font-size:13px;color:#888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;">Amount Due</p>
+        <p style="font-size:32px;font-weight:700;color:#171717;margin:0;">
+          ${data.amountSats.toLocaleString()} sats
+        </p>
+        ${data.amountUsd ? `<p style="font-size:16px;color:#888;margin:4px 0 0;">≈ $${data.amountUsd} USD</p>` : ""}
+      </div>
+
+      ${memoSection}
+
+      <!-- CTA Button -->
+      <div style="text-align:center;margin:0 0 24px;">
+        <a href="${data.paymentUrl}"
+           style="display:inline-block;background:#F7931A;color:#fff;font-size:16px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Pay Now with Lightning ⚡
+        </a>
+      </div>
+
+      <!-- Fallback link -->
+      <p style="font-size:13px;color:#888;text-align:center;margin:0 0 8px;">
+        Or copy this link into your Lightning wallet:
+      </p>
+      <p style="font-size:13px;text-align:center;margin:0;">
+        <a href="${data.paymentUrl}" style="color:#F7931A;word-break:break-all;">${data.paymentUrl}</a>
+      </p>
+    </div>
+
+    <!-- Invoice ref + download -->
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:20px 32px;margin-bottom:24px;">
+      <p style="font-size:13px;color:#888;margin:0 0 4px;">Invoice Reference</p>
+      <p style="font-size:14px;color:#171717;font-family:monospace;margin:0;">#${shortId}</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:16px 0;">
+      <p style="font-size:13px;color:#aaa;margin:0;">
+        Powered by <a href="https://arxmint.com" style="color:#F7931A;text-decoration:none;">ArxMint</a>
+        — Bitcoin payments, zero fees.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
 function buildWelcomeHtml(
   data: MerchantWelcomeEmailData,
   qrUrl: string
