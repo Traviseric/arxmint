@@ -33,9 +33,11 @@ export async function POST(request: NextRequest) {
   return withIdempotency(request, async () => {
     try {
       const body = await request.json();
-      const { merchantId: rawMerchantId, memo, shipping, invoiceId, privacyLevel: rawPrivacyLevel } = body;
+      const { merchantId: rawMerchantId, memo, shipping, invoiceId, privacyLevel: rawPrivacyLevel, paymentRail: rawPaymentRail } = body;
       const privacyLevel: "standard" | "maximum" =
         rawPrivacyLevel === "maximum" ? "maximum" : "standard";
+      const paymentRail: "lightning" | "cashu" | "onchain" =
+        rawPaymentRail === "cashu" ? "cashu" : rawPaymentRail === "onchain" ? "onchain" : "lightning";
       let merchantId =
         typeof rawMerchantId === "string" && rawMerchantId.trim().length > 0
           ? rawMerchantId.trim()
@@ -143,6 +145,36 @@ export async function POST(request: NextRequest) {
         return apiError(403, "CHECKOUT_DISABLED", "Checkout not enabled for this merchant");
       }
 
+      // Multi-rail: look up Cashu mint URL and on-chain address from merchant_wallets
+      let cashuMintUrl: string | null = null;
+      let bitcoinAddress: string | null = null;
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data } = await supabase
+          .from("merchant_wallets")
+          .select("cashu_mint_url, bitcoin_address")
+          .eq("merchant_id", merchantId)
+          .single();
+        cashuMintUrl = data?.cashu_mint_url ?? null;
+        bitcoinAddress = data?.bitcoin_address ?? null;
+      } catch {
+        // DB unavailable — multi-rail config stays null
+      }
+
+      // Compute which rails are available for this merchant
+      const availableRails: ("lightning" | "cashu" | "onchain")[] = ["lightning"];
+      if (cashuMintUrl || DEMO_MODE) availableRails.push("cashu");
+      if (bitcoinAddress || DEMO_MODE) availableRails.push("onchain");
+
+      // Validate requested rail is available
+      if (paymentRail !== "lightning" && !availableRails.includes(paymentRail)) {
+        return apiError(
+          400,
+          "RAIL_NOT_CONFIGURED",
+          `Payment rail '${paymentRail}' is not configured for this merchant`
+        );
+      }
+
       const sessionId = randomBytes(16).toString("hex");
       const expiresAt = new Date(Date.now() + INVOICE_TTL_MS);
       let invoice: string;
@@ -152,7 +184,7 @@ export async function POST(request: NextRequest) {
       if (!DEMO_MODE) {
         // Validate payment backend is configured before attempting invoice creation.
         // Fail loudly here rather than silently falling through to a confusing L402/503 chain.
-        if (!process.env.LNBITS_URL || !process.env.LNBITS_INVOICE_KEY) {
+        if (paymentRail === "lightning" && (!process.env.LNBITS_URL || !process.env.LNBITS_INVOICE_KEY)) {
           return apiError(
             503,
             "LNBITS_NOT_CONFIGURED",
@@ -163,39 +195,60 @@ export async function POST(request: NextRequest) {
         // Real mode: create invoice via LNbits (Phoenixd backend) or fall back to LND
         const { createLNbitsInvoice, getMerchantInvoiceKey } = await import("@/lib/lnbits");
 
-        // Wallet isolation: each merchant has their own LNbits invoice key stored in
-        // merchant_wallets.lnbits_invoice_key. getMerchantInvoiceKey() looks up the key
-        // strictly by merchantId — there is no shared state between merchants.
-        // Fallback to LNBITS_INVOICE_KEY is only used for merchants not yet configured
-        // (e.g. new sign-ups before their wallet is provisioned). This is intentional
-        // and does not cause cross-merchant billing: invoices are created independently,
-        // and payment confirmation is keyed to the checkout session's r_hash, not the key.
-        const merchantKey = await getMerchantInvoiceKey(merchantId);
-        const lnbitsResult = await createLNbitsInvoice({
-          amount: amountSats,
-          memo: sanitizedMemo || `Payment to ${merchant.businessName}`,
-          walletInvoiceKey: merchantKey ?? undefined,
-        });
-
-        if (lnbitsResult) {
-          invoice = lnbitsResult.paymentRequest;
-          rHash = lnbitsResult.paymentHash;
+        if (paymentRail === "cashu") {
+          // Cashu ecash rail: build a payment URI pointing to the merchant's mint
+          // Full NUT-24 ecash redemption webhook is a follow-up (SPINE-ARX-01 Phase 3).
+          // For now we construct a cashu+mint URI so the customer's Cashu wallet can
+          // direct the payment to the correct mint endpoint.
+          invoice = buildCashuPaymentUri(cashuMintUrl!, amountSats);
+        } else if (paymentRail === "onchain") {
+          // On-chain rail: BIP21 URI. No r_hash — on-chain confirmation via webhook
+          // (SPINE-ARX-01 Phase 3) will add block-explorer monitoring.
+          invoice = buildBip21Uri(bitcoinAddress!, amountSats);
         } else {
-          // Fallback to LND via payment-sdk (for L402/agent commerce)
-          try {
-            const { createL402Challenge } = await import("@/lib/payment-sdk");
-            const challenge = await createL402Challenge({
-              amount: amountSats,
-              resourcePath: `/pay/${merchantId}`,
-            });
-            invoice = challenge.invoice || "";
-            rHash = null;
-          } catch {
-            return apiError(503, "PAYMENT_BACKEND_UNAVAILABLE", "Payment backend temporarily unavailable. Please try again shortly.");
+          // Lightning rail (default)
+          // Wallet isolation: each merchant has their own LNbits invoice key stored in
+          // merchant_wallets.lnbits_invoice_key. getMerchantInvoiceKey() looks up the key
+          // strictly by merchantId — there is no shared state between merchants.
+          // Fallback to LNBITS_INVOICE_KEY is only used for merchants not yet configured
+          // (e.g. new sign-ups before their wallet is provisioned). This is intentional
+          // and does not cause cross-merchant billing: invoices are created independently,
+          // and payment confirmation is keyed to the checkout session's r_hash, not the key.
+          const merchantKey = await getMerchantInvoiceKey(merchantId);
+          const lnbitsResult = await createLNbitsInvoice({
+            amount: amountSats,
+            memo: sanitizedMemo || `Payment to ${merchant.businessName}`,
+            walletInvoiceKey: merchantKey ?? undefined,
+          });
+
+          if (lnbitsResult) {
+            invoice = lnbitsResult.paymentRequest;
+            rHash = lnbitsResult.paymentHash;
+          } else {
+            // Fallback to LND via payment-sdk (for L402/agent commerce)
+            try {
+              const { createL402Challenge } = await import("@/lib/payment-sdk");
+              const challenge = await createL402Challenge({
+                amount: amountSats,
+                resourcePath: `/pay/${merchantId}`,
+              });
+              invoice = challenge.invoice || "";
+              rHash = null;
+            } catch {
+              return apiError(503, "PAYMENT_BACKEND_UNAVAILABLE", "Payment backend temporarily unavailable. Please try again shortly.");
+            }
           }
         }
       } else {
-        invoice = generateDemoInvoice(amountSats);
+        // Demo mode: generate a realistic-looking placeholder URI for the selected rail
+        if (paymentRail === "cashu") {
+          invoice = buildCashuPaymentUri("https://demo.arxmint.com/mint", amountSats);
+        } else if (paymentRail === "onchain") {
+          // bc1q... — well-known signet/demo address (unpayable on mainnet)
+          invoice = buildBip21Uri("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", amountSats);
+        } else {
+          invoice = generateDemoInvoice(amountSats);
+        }
         demoMode = true;
       }
 
@@ -228,6 +281,7 @@ export async function POST(request: NextRequest) {
           demo_mode: demoMode,
           expires_at: expiresAt.toISOString(),
           privacy_level: privacyLevel,
+          payment_rail: paymentRail,
           ...(nostrPubkeySignal && { nostr_pubkey: nostrPubkeySignal }),
           ...(teneoUserIdSignal && { teneo_user_id: teneoUserIdSignal }),
           ...(shipping && { shipping_data: shipping }),
@@ -294,7 +348,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         sessionId,
-        invoice,
+        invoice,      // backward compat — always the primary payment URI for the selected rail
+        paymentUri: invoice,
+        paymentRail,
+        availableRails,
         expiresAt: expiresAt.toISOString(),
         demoMode,
         merchantName: merchant.businessName,
@@ -317,4 +374,20 @@ function generateDemoInvoice(amountSats: number): string {
   // Generate a realistic-looking but unpayable BOLT11 string for demo/dev
   const rand = randomBytes(32).toString("hex");
   return `lnbc${amountSats}n1demo${rand.slice(0, 52)}`;
+}
+
+/** Build a Cashu payment URI pointing to the merchant's Cashu mint */
+function buildCashuPaymentUri(mintUrl: string, amountSats: number): string {
+  // cashu:// scheme allows Cashu wallets to open and pay to a specific mint.
+  // Format: cashu://mint?mint=<encoded-url>&amount=<sats>&unit=sat
+  // Full NUT-24 ecash payment support (receive ecash tokens directly) is Phase 3.
+  const encoded = encodeURIComponent(mintUrl);
+  return `cashu://pay?mint=${encoded}&amount=${amountSats}&unit=sat`;
+}
+
+/** Build a BIP21 Bitcoin payment URI */
+function buildBip21Uri(address: string, amountSats: number): string {
+  // BIP21: bitcoin:<address>?amount=<BTC>
+  const btcAmount = (amountSats / 100_000_000).toFixed(8);
+  return `bitcoin:${address}?amount=${btcAmount}`;
 }

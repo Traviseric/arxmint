@@ -6,14 +6,11 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
 import Link from "next/link";
 import { trackCheckoutEvent } from "@/lib/analytics";
 import {
   Zap,
-  Copy,
-  Check,
   CheckCircle,
   Loader2,
   RefreshCw,
@@ -24,6 +21,7 @@ import {
   Star,
   Users,
 } from "lucide-react";
+import { PaymentRailSelector, type PaymentRail } from "@/components/checkout/PaymentRailSelector";
 
 type CheckoutState = "amount" | "shipping" | "invoice" | "paid" | "expired" | "error";
 
@@ -80,11 +78,13 @@ export function CheckoutFlow({
   const [state, setState] = useState<CheckoutState>(initialState);
   const [amount, setAmount] = useState(presetAmount?.toString() ?? "");
   const [invoice, setInvoice] = useState("");
+  const [paymentUri, setPaymentUri] = useState("");
+  const [selectedRail, setSelectedRail] = useState<PaymentRail>("lightning");
+  const [availableRails, setAvailableRails] = useState<PaymentRail[]>(["lightning"]);
   const [sessionId, setSessionId] = useState("");
   const [demoMode, setDemoMode] = useState(false);
   const [paidAt, setPaidAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shipping, setShipping] = useState<ShippingAddress>({
     email: "", fullName: "", street: "", city: "", state: "", zip: "",
@@ -92,7 +92,7 @@ export function CheckoutFlow({
   const esRef = useRef<EventSource | null>(null);
   const hasCreatedInvoice = useRef(false);
 
-  const createInvoice = useCallback(async (sats: number, shippingData?: ShippingAddress) => {
+  const createInvoice = useCallback(async (sats: number, shippingData?: ShippingAddress, rail: PaymentRail = "lightning") => {
     setLoading(true);
     setError(null);
     try {
@@ -103,6 +103,7 @@ export function CheckoutFlow({
           merchantId,
           amountSats: sats,
           memo: presetMemo,
+          paymentRail: rail,
           ...(shippingData && { shipping: shippingData }),
         }),
       });
@@ -115,8 +116,11 @@ export function CheckoutFlow({
         return;
       }
       setInvoice(data.invoice);
+      setPaymentUri(data.paymentUri ?? data.invoice);
       setSessionId(data.sessionId);
       setDemoMode(data.demoMode);
+      if (data.availableRails) setAvailableRails(data.availableRails);
+      setSelectedRail(data.paymentRail ?? rail);
       setState("invoice");
       trackCheckoutEvent("checkout_started", { merchant_id: merchantId, amount_sats: sats });
     } catch {
@@ -132,7 +136,7 @@ export function CheckoutFlow({
   useEffect(() => {
     if (presetAmount && !hasCreatedInvoice.current && !collectShipping) {
       hasCreatedInvoice.current = true;
-      createInvoice(presetAmount);
+      createInvoice(presetAmount, undefined, "lightning");
     }
   }, [presetAmount, createInvoice, collectShipping]);
 
@@ -202,17 +206,20 @@ export function CheckoutFlow({
     const sats = parseInt(amount, 10);
     if (isNaN(sats) || sats <= 0) return;
     hasCreatedInvoice.current = true;
-    createInvoice(sats, shipping);
+    createInvoice(sats, shipping, selectedRail);
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(invoice);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback: select text
-    }
+  const handleRailChange = (rail: PaymentRail) => {
+    const sats = parseInt(amount, 10);
+    if (isNaN(sats) || sats <= 0) return;
+    setSelectedRail(rail);
+    // Close existing SSE before switching rails (new session created)
+    esRef.current?.close();
+    esRef.current = null;
+    setInvoice("");
+    setPaymentUri("");
+    setSessionId("");
+    createInvoice(sats, undefined, rail);
   };
 
   const handleNewInvoice = () => {
@@ -220,8 +227,11 @@ export function CheckoutFlow({
     esRef.current = null;
     hasCreatedInvoice.current = false;
     setInvoice("");
+    setPaymentUri("");
     setSessionId("");
     setError(null);
+    setSelectedRail("lightning");
+    setAvailableRails(["lightning"]);
     setState("amount");
   };
 
@@ -460,8 +470,8 @@ export function CheckoutFlow({
         </div>
       )}
 
-      {/* Invoice / QR Code */}
-      {state === "invoice" && invoice && (
+      {/* Invoice / QR Code — multi-rail */}
+      {state === "invoice" && (invoice || loading) && (
         <div className="bg-bg-elevated border border-border-default rounded-xl p-6 shadow-sm">
           <div className="text-center mb-5">
             <p className="text-sm text-text-muted mb-1">Pay</p>
@@ -470,64 +480,27 @@ export function CheckoutFlow({
             </p>
           </div>
 
-          {/* QR Code */}
-          <div className="flex justify-center mb-5">
-            <a
-              href={`lightning:${invoice}`}
-              aria-label={`Pay ${displayAmount.toLocaleString()} sats to ${merchantName} — opens Lightning wallet`}
-              className="block bg-white rounded-xl p-4 shadow-sm"
-            >
-              <QRCodeSVG
-                value={`lightning:${invoice.toUpperCase()}`}
-                size={240}
-                level="M"
-                includeMargin={false}
-                bgColor="#ffffff"
-                fgColor="#000000"
-                aria-label="Lightning invoice QR code"
-                role="img"
-              />
-            </a>
-          </div>
+          <PaymentRailSelector
+            selectedRail={selectedRail}
+            availableRails={availableRails}
+            paymentUri={paymentUri}
+            amountSats={displayAmount}
+            merchantName={merchantName}
+            loading={loading}
+            onRailChange={handleRailChange}
+          />
 
-          <p className="text-xs text-text-muted text-center mb-4">
-            Scan with any Lightning wallet
-          </p>
-
-          {/* Copy + Deep Link */}
-          <div className="space-y-2">
-            <button
-              onClick={handleCopy}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-sm text-text-secondary hover:text-text-primary"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 text-green-600" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  Copy Invoice
-                </>
-              )}
-            </button>
-
-            <a
-              href={`lightning:${invoice}`}
-              aria-label={`Pay ${displayAmount.toLocaleString()} sats to ${merchantName} — open in Lightning wallet`}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border-default hover:border-accent/50 transition-colors text-sm text-text-secondary hover:text-text-primary"
-            >
-              <Zap className="w-4 h-4" />
-              Open in Wallet
-            </a>
-          </div>
-
-          {/* Waiting indicator */}
-          <div className="flex items-center justify-center gap-2 mt-5 text-text-muted">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-xs">Waiting for payment...</span>
-          </div>
+          {/* Waiting indicator — Lightning only (SSE-confirmed); other rails show manual note */}
+          {!loading && invoice && (
+            <div className="flex items-center justify-center gap-2 mt-5 text-text-muted">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-xs">
+                {selectedRail === "lightning"
+                  ? "Waiting for payment..."
+                  : "Send payment and refresh to confirm"}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
