@@ -248,6 +248,8 @@ function buildWelcomeHtml(
             &lt;script src="https://arxmint.com/embed.js" data-merchant="${data.merchantId}"&gt;&lt;/script&gt;
           </div>
         </li>
+        <li><strong>Use the POS</strong> on your phone — open <a href="https://www.arxmint.com/pos/${data.merchantId}" style="color:#F7931A;">arxmint.com/pos/${data.merchantId}</a> and add it to your home screen. Keypad, QR, done.</li>
+        <li><strong>View your dashboard</strong> at <a href="https://www.arxmint.com/merchant-dashboard?merchant=${data.merchantId}" style="color:#F7931A;">arxmint.com/merchant-dashboard</a> — see payments, export for taxes, manage settings.</li>
       </ol>
     </div>
 
