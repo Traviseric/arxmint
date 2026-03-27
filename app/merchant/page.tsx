@@ -340,6 +340,33 @@ function PaymentsTab({ merchantId }: { merchantId: string }) {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
 
+  // CSV export state
+  const today = new Date().toISOString().slice(0, 10);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const [csvFrom, setCsvFrom] = useState(thirtyDaysAgo);
+  const [csvTo, setCsvTo] = useState(today);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ from: csvFrom, to: csvTo });
+      const res = await fetch(`/api/merchant/export/csv?${params}`);
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `arxmint-payments-${csvFrom}-${csvTo}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silent — user will see nothing downloaded
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const fetchPayments = useCallback(
     (cursorParam: string | null) => {
       setLoading(true);
@@ -382,6 +409,53 @@ function PaymentsTab({ merchantId }: { merchantId: string }) {
 
   return (
     <div className="space-y-4">
+      {/* Export CSV */}
+      <div className="sovereign-card p-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex items-center gap-2 mr-2">
+            <ArrowDownToLine className="w-4 h-4 text-btc-orange flex-shrink-0" />
+            <span className="text-sm font-medium text-sovereign-text">Export for QuickBooks</span>
+          </div>
+          <div className="flex flex-wrap items-end gap-2 flex-1">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="csv-from" className="text-xs text-sovereign-muted">From</label>
+              <input
+                id="csv-from"
+                type="date"
+                value={csvFrom}
+                onChange={(e) => setCsvFrom(e.target.value)}
+                className="bg-sovereign-dark border border-sovereign-border rounded-lg px-3 py-1.5 text-xs text-sovereign-text focus:outline-none focus:border-btc-orange"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="csv-to" className="text-xs text-sovereign-muted">To</label>
+              <input
+                id="csv-to"
+                type="date"
+                value={csvTo}
+                onChange={(e) => setCsvTo(e.target.value)}
+                className="bg-sovereign-dark border border-sovereign-border rounded-lg px-3 py-1.5 text-xs text-sovereign-text focus:outline-none focus:border-btc-orange"
+              />
+            </div>
+            <button
+              onClick={handleExportCsv}
+              disabled={exporting}
+              className="sovereign-btn-outline !px-3 !py-1.5 text-xs flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {exporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <ArrowDownToLine className="w-3.5 h-3.5" />
+              )}
+              {exporting ? "Exporting…" : "Download CSV"}
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-sovereign-muted mt-2">
+          Historical BTC/USD rates used — accurate for bookkeeping and tax records
+        </p>
+      </div>
+
       {/* Status filter */}
       <div className="flex flex-wrap gap-2">
         {statuses.map((s) => (
