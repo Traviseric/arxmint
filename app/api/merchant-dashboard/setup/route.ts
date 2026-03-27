@@ -75,18 +75,54 @@ export async function POST(request: NextRequest) {
     return apiError(404, "MERCHANT_NOT_FOUND", "Merchant not found.");
   }
 
-  // Check if wallet already exists
+  // Check if wallet already exists (may have been auto-provisioned at signup)
   const { data: existingWallet } = await supabase
     .from("merchant_wallets")
-    .select("id")
+    .select("id, payout_address")
     .eq("merchant_id", merchantId)
     .single();
 
-  if (existingWallet) {
+  if (existingWallet?.payout_address) {
+    // Fully configured already — nothing to do
     return apiError(409, "WALLET_EXISTS", "Merchant wallet already set up.");
   }
 
-  // Create LNbits wallet via API
+  if (existingWallet) {
+    // Auto-provisioned wallet exists but payout_address not set yet — just update it
+    const { error: updateError } = await supabase
+      .from("merchant_wallets")
+      .update({
+        payout_address: payoutAddress,
+        payout_type: payoutType,
+        telegram_handle: telegramHandle || null,
+        email_notifications: true,
+        auto_forward_enabled: true,
+      })
+      .eq("merchant_id", merchantId);
+
+    if (updateError) {
+      logger.warn("merchant_wallet_update_failed", {
+        error: updateError.message,
+        merchantId,
+      });
+      return apiError(500, "DB_ERROR", "Failed to save wallet configuration.");
+    }
+
+    // Enable checkout
+    await supabase
+      .from("merchant_pledges")
+      .update({ checkout_enabled: true, onboarding_status: "active" })
+      .eq("id", merchantId);
+
+    logger.info("merchant_wallet_payout_configured", { merchantId, payoutType });
+    return NextResponse.json({
+      success: true,
+      paymentLink: `https://www.arxmint.com/pay/${merchantId}`,
+      walletId: existingWallet.id,
+    });
+  }
+
+  // No wallet yet — create one via LNbits then store it
   let walletData: LNbitsWalletResponse;
   try {
     const res = await fetch(`${LNBITS_URL}/api/v1/wallet`, {
@@ -143,7 +179,7 @@ export async function POST(request: NextRequest) {
   // Enable checkout on the merchant's pledge record
   const { error: updateError } = await supabase
     .from("merchant_pledges")
-    .update({ checkout_enabled: true })
+    .update({ checkout_enabled: true, onboarding_status: "active" })
     .eq("id", merchantId);
 
   if (updateError) {

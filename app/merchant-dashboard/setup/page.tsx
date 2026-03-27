@@ -27,6 +27,13 @@ import {
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
+interface OnboardingStatus {
+  walletProvisioned: boolean;
+  payoutConfigured: boolean;
+  onboardingComplete: boolean;
+  onboardingStatus: string;
+}
+
 function MerchantSetupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,6 +46,7 @@ function MerchantSetupPageInner() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
 
   // Apply merchant light theme
   useEffect(() => {
@@ -49,6 +57,21 @@ function MerchantSetupPageInner() {
       document.body.style.background = "";
     };
   }, []);
+
+  // Fetch onboarding status to show correct UI variant
+  useEffect(() => {
+    if (!merchantId) return;
+    fetch(`/api/merchant/${encodeURIComponent(merchantId)}/onboarding-status`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: OnboardingStatus | null) => {
+        if (data) setOnboardingStatus(data);
+        // If already fully configured, redirect to dashboard
+        if (data?.onboardingComplete) {
+          router.replace(`/merchant-dashboard?merchant=${encodeURIComponent(merchantId)}`);
+        }
+      })
+      .catch(() => {});
+  }, [merchantId, router]);
 
   const isLightningAddress = (addr: string) => addr.includes("@");
   const isBtcAddress = (addr: string) =>
@@ -170,17 +193,39 @@ function MerchantSetupPageInner() {
               >
                 <Zap size={32} className="text-white" />
               </motion.div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-                Start accepting Bitcoin
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-600">
-                  in 60 seconds
-                </span>
-              </h1>
-              <p className="text-gray-500 mt-4 max-w-md mx-auto">
-                Three fields is all we need. Your payment link will be live
-                immediately after setup.
-              </p>
+              {onboardingStatus?.walletProvisioned ? (
+                <>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                    Your Bitcoin wallet
+                    <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-green-600">
+                      is ready
+                    </span>
+                  </h1>
+                  <p className="text-gray-500 mt-4 max-w-md mx-auto">
+                    We auto-configured your payment wallet. Just add your payout
+                    destination and you&apos;re live.
+                  </p>
+                  <div className="inline-flex items-center gap-1.5 mt-3 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-3 py-1">
+                    <Check size={12} />
+                    Bitcoin wallet auto-provisioned
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                    Start accepting Bitcoin
+                    <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-600">
+                      in 60 seconds
+                    </span>
+                  </h1>
+                  <p className="text-gray-500 mt-4 max-w-md mx-auto">
+                    Three fields is all we need. Your payment link will be live
+                    immediately after setup.
+                  </p>
+                </>
+              )}
             </div>
           </ScrollReveal>
 

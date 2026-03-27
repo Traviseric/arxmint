@@ -297,6 +297,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
     }
 
+    // Fire-and-forget: auto-provision LNbits wallet for the new merchant
+    void (async () => {
+      try {
+        const { provisionMerchantWallet } = await import("@/lib/lnbits");
+        const credentials = await provisionMerchantWallet({
+          merchantId: pledge.id,
+          merchantName: pledge.business_name,
+        });
+        if (!credentials) return;
+
+        const { supabase: sb } = await import("@/lib/supabase");
+        // Store wallet credentials (payout_address added later via setup wizard)
+        const { error: walletError } = await sb.from("merchant_wallets").insert({
+          merchant_id: pledge.id,
+          lnbits_wallet_id: credentials.walletId,
+          lnbits_invoice_key: credentials.invoiceKey,
+          lnbits_admin_key: credentials.adminKey,
+        });
+        if (walletError) {
+          console.error("[pledge] wallet insert failed:", walletError.message);
+          return;
+        }
+        // Mark merchant as wallet_ready
+        await sb.from("merchant_pledges")
+          .update({
+            onboarding_status: "wallet_ready",
+            wallet_provisioned_at: new Date().toISOString(),
+          })
+          .eq("id", pledge.id);
+      } catch {
+        // Non-fatal — merchant was created, wallet provisioning can be retried
+      }
+    })();
+
     // Fire-and-forget: welcome email to merchant
     const merchantNumber = approvedCount + SEED_MERCHANTS.length + 1;
     if (data.email && data.emailOptIn !== false) {
