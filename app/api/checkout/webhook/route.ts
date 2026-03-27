@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { emitInvoiceStateChanged } from "@/lib/invoice-events";
 import { logger } from "@/lib/logger";
-import { triggerPaymentWebhooks } from "@/lib/webhook-engine";
+import { triggerPaymentWebhooks, deliverWebhook } from "@/lib/webhook-engine";
 import { sendTelegramNotification, formatPaymentMessage } from "@/lib/telegram-notify";
 
 const OPENBAZAAR_FULFILL_URL = "https://openbazaar.ai/api/storefront/fulfill";
@@ -101,6 +101,61 @@ export async function POST(request: NextRequest) {
                 });
                 return NextResponse.json({ error: "Gateway error to OpenBazaar" }, { status: 504 });
             }
+        }
+
+        // 3. If the session has a fulfillment_url, deliver a HMAC-signed webhook there.
+        //    This is the generic path for Bazaar and any future storefront integrations —
+        //    the receiver verifies ArxMint-Signature just like the webhook engine does.
+        if (session.fulfillment_url) {
+            const fulfillSecret =
+                process.env.ARXMINT_BAZAAR_WEBHOOK_SECRET ||
+                process.env.ARXMINT_WEBHOOK_SECRET ||
+                "development_secret";
+
+            const fulfillPayload = {
+                id: `wdlv_bazaar_${sessionId.slice(0, 8)}`,
+                event: "payment.completed" as const,
+                created: Math.floor(Date.now() / 1000),
+                data: {
+                    paymentId: sessionId,
+                    amount: session.amount_sats ?? 0,
+                    merchantId: session.merchant_id ?? "",
+                    metadata: {
+                        source: "bazaar",
+                        memo: session.memo ?? null,
+                    },
+                },
+            };
+
+            const syntheticEndpoint = {
+                id: `bazaar_fulfillment_${sessionId.slice(0, 8)}`,
+                merchantId: session.merchant_id ?? "",
+                url: session.fulfillment_url,
+                secret: fulfillSecret,
+                events: ["payment.completed" as const],
+                active: true,
+                createdAt: Date.now(),
+            };
+
+            // Fire-and-forget — fulfillment delivery must never block the webhook response
+            deliverWebhook(syntheticEndpoint, fulfillPayload)
+                .then((result) => {
+                    if (result.success) {
+                        logger.info("bazaar_fulfillment_delivered", {
+                            sessionId,
+                            fulfillmentUrl: session.fulfillment_url,
+                            attempts: result.attempts,
+                        });
+                    } else {
+                        logger.warn("bazaar_fulfillment_failed", {
+                            sessionId,
+                            fulfillmentUrl: session.fulfillment_url,
+                            attempts: result.attempts,
+                            error: result.error,
+                        });
+                    }
+                })
+                .catch(() => {/* already logged inside deliverWebhook */});
         }
 
         // Trigger merchant webhooks for payment.completed (fire-and-forget)
