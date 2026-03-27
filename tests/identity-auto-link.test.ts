@@ -104,3 +104,79 @@ test("auto-link proceeds when X-Teneo-Auth has a valid userId (sub claim)", () =
   assert.ok(userId !== null, "userId must be extracted when sub claim is present");
   assert.equal(userId, "teneo_user_42");
 });
+
+// ---- Privacy-level gate ----
+
+test("auto-link is skipped when privacyLevel is maximum", () => {
+  // Simulate the gate in checkout route: privacyLevel === 'maximum' → skip
+  const privacyLevel: "standard" | "maximum" = "maximum";
+  const nostrPubkey = "npub1abc";
+  const teneoUserId = "teneo_user_99";
+
+  // The guard condition from checkout/route.ts
+  const shouldLink = privacyLevel !== "maximum" && !!nostrPubkey && !!teneoUserId;
+  assert.equal(shouldLink, false, "maximum privacy must suppress identity linking");
+});
+
+test("auto-link is skipped when privacyLevel is standard but nostrPubkey is absent", () => {
+  const privacyLevel: "standard" | "maximum" = "standard";
+  const nostrPubkey: string | null = null;
+  const teneoUserId = "teneo_user_99";
+
+  const shouldLink = privacyLevel !== "maximum" && !!nostrPubkey && !!teneoUserId;
+  assert.equal(shouldLink, false, "both signals required for linking");
+});
+
+test("auto-link proceeds when privacyLevel is standard and both signals are present", () => {
+  const privacyLevel: "standard" | "maximum" = "standard";
+  const nostrPubkey = "npub1xyz";
+  const teneoUserId = "teneo_user_77";
+
+  const shouldLink = privacyLevel !== "maximum" && !!nostrPubkey && !!teneoUserId;
+  assert.equal(shouldLink, true, "standard privacy + both signals → link should fire");
+});
+
+// ---- identity_linked flag tracking ----
+
+test("identity_linked is false until linking succeeds", () => {
+  // Simulate session state: linking not yet done
+  const session = { identity_linked: false, privacy_level: "standard", nostr_pubkey: "npub1abc", teneo_user_id: "teneo_77" };
+  const shouldAttempt =
+    !session.identity_linked &&
+    session.privacy_level !== "maximum" &&
+    !!session.nostr_pubkey &&
+    !!session.teneo_user_id;
+  assert.equal(shouldAttempt, true, "webhook should attempt linking when identity_linked is false");
+});
+
+test("identity_linked=true suppresses duplicate linking in webhook", () => {
+  // Simulate session where linking already happened at checkout creation
+  const session = { identity_linked: true, privacy_level: "standard", nostr_pubkey: "npub1abc", teneo_user_id: "teneo_77" };
+  const shouldAttempt =
+    !session.identity_linked &&
+    session.privacy_level !== "maximum" &&
+    !!session.nostr_pubkey &&
+    !!session.teneo_user_id;
+  assert.equal(shouldAttempt, false, "webhook must not re-link when already linked");
+});
+
+test("maximum privacy_level suppresses webhook linking even when not yet linked", () => {
+  const session = { identity_linked: false, privacy_level: "maximum", nostr_pubkey: "npub1abc", teneo_user_id: "teneo_77" };
+  const shouldAttempt =
+    !session.identity_linked &&
+    session.privacy_level !== "maximum" &&
+    !!session.nostr_pubkey &&
+    !!session.teneo_user_id;
+  assert.equal(shouldAttempt, false, "maximum privacy must suppress webhook linking");
+});
+
+test("privacyLevel defaults to standard when not provided", () => {
+  // Simulate raw body value normalization from checkout route
+  function normalizePrivacyLevel(raw: unknown): "standard" | "maximum" {
+    return raw === "maximum" ? "maximum" : "standard";
+  }
+  assert.equal(normalizePrivacyLevel(undefined), "standard");
+  assert.equal(normalizePrivacyLevel(null), "standard");
+  assert.equal(normalizePrivacyLevel("high"), "standard");
+  assert.equal(normalizePrivacyLevel("maximum"), "maximum");
+});

@@ -33,7 +33,9 @@ export async function POST(request: NextRequest) {
   return withIdempotency(request, async () => {
     try {
       const body = await request.json();
-      const { merchantId: rawMerchantId, memo, shipping, invoiceId } = body;
+      const { merchantId: rawMerchantId, memo, shipping, invoiceId, privacyLevel: rawPrivacyLevel } = body;
+      const privacyLevel: "standard" | "maximum" =
+        rawPrivacyLevel === "maximum" ? "maximum" : "standard";
       let merchantId =
         typeof rawMerchantId === "string" && rawMerchantId.trim().length > 0
           ? rawMerchantId.trim()
@@ -197,6 +199,21 @@ export async function POST(request: NextRequest) {
         demoMode = true;
       }
 
+      // Extract identity signals now so they can be stored on the session
+      // and reused by the payment webhook if linking hasn't fired yet.
+      let nostrPubkeySignal: string | null = null;
+      let teneoUserIdSignal: string | null = null;
+      try {
+        nostrPubkeySignal = getAuthPubkey(request) || null;
+        const teneoHeader = request.headers.get("X-Teneo-Auth");
+        if (teneoHeader) {
+          const { parseTeneoAuthUserId } = await import("@/lib/identity");
+          teneoUserIdSignal = parseTeneoAuthUserId(teneoHeader);
+        }
+      } catch {
+        // Non-fatal — signals remain null
+      }
+
       // Store session in Supabase
       try {
         const { supabase } = await import("@/lib/supabase");
@@ -210,6 +227,9 @@ export async function POST(request: NextRequest) {
           status: "pending",
           demo_mode: demoMode,
           expires_at: expiresAt.toISOString(),
+          privacy_level: privacyLevel,
+          ...(nostrPubkeySignal && { nostr_pubkey: nostrPubkeySignal }),
+          ...(teneoUserIdSignal && { teneo_user_id: teneoUserIdSignal }),
           ...(shipping && { shipping_data: shipping }),
         });
       } catch {
@@ -252,21 +272,24 @@ export async function POST(request: NextRequest) {
       }
 
       // Best-effort cross-auth identity linking.
-      // When a request carries both a Nostr session (cookie or Bearer) AND a
-      // X-Teneo-Auth JWT, both identities are present — link them automatically.
-      // This call is fire-and-forget wrapped in try/catch — checkout never fails here.
-      try {
-        const nostrPubkey = getAuthPubkey(request);
-        const teneoAuthHeader = request.headers.get("X-Teneo-Auth");
-        if (nostrPubkey && teneoAuthHeader) {
-          const { parseTeneoAuthUserId, autoLinkCheckoutIdentity } = await import("@/lib/identity");
-          const teneoUserId = parseTeneoAuthUserId(teneoAuthHeader);
-          if (teneoUserId) {
-            await autoLinkCheckoutIdentity(nostrPubkey, teneoUserId);
-          }
+      // Skipped when privacyLevel === 'maximum' (customer has opted out of cross-auth tracking).
+      // Uses signals extracted above — no duplicate header reads.
+      // Fire-and-forget; checkout never fails due to identity linking.
+      if (privacyLevel !== "maximum" && nostrPubkeySignal && teneoUserIdSignal) {
+        try {
+          const { autoLinkCheckoutIdentity } = await import("@/lib/identity");
+          await autoLinkCheckoutIdentity(nostrPubkeySignal, teneoUserIdSignal);
+          // Mark session as identity-linked (best-effort — ignore if DB update fails)
+          try {
+            const { supabase } = await import("@/lib/supabase");
+            await supabase
+              .from("checkout_sessions")
+              .update({ identity_linked: true })
+              .eq("id", sessionId);
+          } catch { /* ignore */ }
+        } catch {
+          // Silent — identity linking must never affect checkout outcome
         }
-      } catch {
-        // Silent — identity linking must never affect checkout outcome
       }
 
       return NextResponse.json({

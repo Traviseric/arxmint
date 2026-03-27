@@ -158,6 +158,27 @@ export async function POST(request: NextRequest) {
                 .catch(() => {/* already logged inside deliverWebhook */});
         }
 
+        // Best-effort identity linking on payment confirmation.
+        // Fires when: session has stored identity signals AND has not already been linked.
+        // Skipped for privacy_level === 'maximum' sessions.
+        if (
+          !session.identity_linked &&
+          session.privacy_level !== "maximum" &&
+          session.nostr_pubkey &&
+          session.teneo_user_id
+        ) {
+          try {
+            const { autoLinkCheckoutIdentity } = await import("@/lib/identity");
+            await autoLinkCheckoutIdentity(session.nostr_pubkey, session.teneo_user_id);
+            await supabase
+              .from("checkout_sessions")
+              .update({ identity_linked: true })
+              .eq("id", sessionId);
+          } catch {
+            // Silent — webhook must never fail due to identity linking
+          }
+        }
+
         // Trigger merchant webhooks for payment.completed (fire-and-forget)
         if (session.merchant_id) {
             triggerPaymentWebhooks(
