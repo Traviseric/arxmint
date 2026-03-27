@@ -14,6 +14,7 @@
 
 import { createHmac, randomBytes } from "node:crypto";
 import { logger } from "@/lib/logger";
+import { incCounter, METRIC_WEBHOOK_FAILURES } from "@/lib/metrics";
 
 // ---- Types ----
 
@@ -249,6 +250,14 @@ export async function deliverWebhook(
       });
     }
   }
+
+  // All retry attempts exhausted — increment the failure counter so Grafana
+  // can alert on WebhookDeliveryFailureRate.
+  incCounter(
+    METRIC_WEBHOOK_FAILURES,
+    { endpoint_id: endpoint.id, merchant_id: endpoint.merchantId },
+    "Total webhook delivery failures after all retry attempts exhausted"
+  );
 
   return {
     success: false,

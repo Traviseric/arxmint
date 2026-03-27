@@ -34,3 +34,8 @@ scrape_configs:
     static_configs:
       - targets: ["fedimintd-2:18178"]
     metrics_path: /metrics
+
+  - job_name: "arxmint-app"
+    static_configs:
+      - targets: ["app:3000"]
+    metrics_path: /api/metrics/prometheus
