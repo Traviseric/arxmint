@@ -1,13 +1,14 @@
 "use client";
 
 // ============================================================
-// ArxMint — Merchant Dashboard MVP
-// /merchant-dashboard — self-service dashboard for merchants
-// Auth-gated via Nostr NIP-07 session (Zustand store)
+// ArxMint — Merchant Dashboard Home
+// /merchant-dashboard?merchant=[id] — self-service dashboard
+// Temporary query-param auth until Nostr/email auth is wired.
 // ============================================================
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Zap,
   Copy,
@@ -19,15 +20,18 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Key,
-  User,
-  BarChart2,
-  Link2,
-  LogOut,
+  Settings,
+  Wallet,
+  ArrowUpRight,
+  QrCode,
+  TrendingUp,
+  Clock,
+  Hash,
+  DollarSign,
+  Monitor,
 } from "lucide-react";
-import { useSovereignStore } from "@/lib/store";
-import { connectNostr } from "@/lib/nostr-auth";
-import { NWCConnect } from "@/components/nwc-connect";
+import { motion } from "framer-motion";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import type { TransactionRow } from "@/app/api/merchant-dashboard/transactions/route";
 
 // ---- Types ----
@@ -50,7 +54,10 @@ interface TransactionsResponse {
 
 // ---- Seed merchant data fallback ----
 
-const SEED_MERCHANTS: Record<string, { businessName: string; id: string; website: string | null }> = {
+const SEED_MERCHANTS: Record<
+  string,
+  { businessName: string; id: string; website: string | null }
+> = {
   "seed-black-bear": {
     id: "seed-black-bear",
     businessName: "Black Bear Window Cleaning",
@@ -75,7 +82,7 @@ function formatSats(sats: number): string {
 }
 
 function satsToUsd(sats: number, btcPrice: number): string {
-  if (!btcPrice) return "—";
+  if (!btcPrice) return "--";
   const usd = (sats / 100_000_000) * btcPrice;
   return "$" + usd.toFixed(2);
 }
@@ -102,7 +109,9 @@ function StatusBadge({ status }: { status: "paid" | "pending" | "expired" }) {
     expired: "bg-gray-100 text-gray-600",
   };
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
+    <span
+      className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}
+    >
       {status}
     </span>
   );
@@ -157,8 +166,10 @@ function SendInvoiceModal({
       if (res.ok) {
         setSent(true);
       } else {
-        const d = await res.json().catch(() => ({}));
-        setError((d as { error?: string }).error ?? "Failed to send email.");
+        const d = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        setError(d.error ?? "Failed to send email.");
       }
     } catch {
       setError("Network error. Please try again.");
@@ -172,16 +183,23 @@ function SendInvoiceModal({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-900">Send Invoice by Email</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X size={18} />
           </button>
         </div>
 
         {sent ? (
           <div className="text-center py-6 space-y-3">
-            <div className="text-4xl">✅</div>
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <Check size={24} className="text-green-600" />
+            </div>
             <p className="font-medium text-gray-900">Invoice sent!</p>
-            <p className="text-sm text-gray-500">Payment request delivered to {email}</p>
+            <p className="text-sm text-gray-500">
+              Payment request delivered to {email}
+            </p>
             <button
               onClick={onClose}
               className="mt-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
@@ -193,10 +211,14 @@ function SendInvoiceModal({
           <>
             <p className="text-sm text-gray-600 mb-4">
               Send a payment request for{" "}
-              <span className="font-medium text-orange-600">{amountSats.toLocaleString()} sats</span>{" "}
+              <span className="font-medium text-orange-600">
+                {amountSats.toLocaleString()} sats
+              </span>{" "}
               to your customer.
             </p>
-            <label className="block text-xs text-gray-500 mb-1">Customer email</label>
+            <label className="block text-xs text-gray-500 mb-1">
+              Customer email
+            </label>
             <input
               type="email"
               value={email}
@@ -205,15 +227,21 @@ function SendInvoiceModal({
               placeholder="customer@example.com"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 mb-3"
             />
-            {error && (
-              <p className="text-xs text-red-600 mb-3">{error}</p>
-            )}
+            {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
             <button
               onClick={send}
               disabled={sending || !email}
               className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              {sending ? <><RefreshCw size={14} className="animate-spin" /> Sending…</> : <><Mail size={14} /> Send Invoice</>}
+              {sending ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" /> Sending...
+                </>
+              ) : (
+                <>
+                  <Mail size={14} /> Send Invoice
+                </>
+              )}
             </button>
           </>
         )}
@@ -222,28 +250,262 @@ function SendInvoiceModal({
   );
 }
 
-// ---- Tab: Transactions ----
+// ---- Payment Link Card ----
 
-function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | null }) {
+function PaymentLinkCard({ merchantId }: { merchantId: string }) {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://arxmint.com";
+  const payUrl = `${origin}/pay/${merchantId}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}`;
+
+  return (
+    <ScrollReveal delay={0.1}>
+      <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+            <QrCode size={20} className="text-orange-600" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-gray-900">Payment Link</h2>
+            <p className="text-xs text-gray-500">
+              Share with customers or display at your counter
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-5">
+          {/* QR Code */}
+          <div className="flex-shrink-0 flex justify-center">
+            <div className="bg-white border border-gray-200 rounded-xl p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qrUrl}
+                alt="Payment QR code"
+                width={180}
+                height={180}
+                className="rounded"
+              />
+            </div>
+          </div>
+
+          {/* Link and actions */}
+          <div className="flex-1 space-y-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
+                Your payment URL
+              </label>
+              <a
+                href={payUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-600 hover:text-orange-700 font-mono text-sm break-all flex items-center gap-1"
+              >
+                {payUrl}
+                <ExternalLink size={12} className="flex-shrink-0" />
+              </a>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <CopyButton text={payUrl} label="Copy Link" />
+              <Link
+                href={`/pos/${merchantId}`}
+                target="_blank"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
+              >
+                <Monitor size={14} />
+                Open POS
+              </Link>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Customers can pay with any Lightning wallet by scanning the QR code
+              or visiting the link.
+            </p>
+          </div>
+        </div>
+      </div>
+    </ScrollReveal>
+  );
+}
+
+// ---- Today's Activity Card ----
+
+function TodayActivityCard({
+  stats,
+  loading,
+  btcPriceUsd,
+}: {
+  stats: Stats | null;
+  loading: boolean;
+  btcPriceUsd: number;
+}) {
+  return (
+    <ScrollReveal delay={0.2}>
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <TrendingUp size={20} className="text-green-600" />
+          </div>
+          <h2 className="font-semibold text-gray-900">Today&apos;s Activity</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Total received */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+              <Zap size={12} />
+              Total Received
+            </div>
+            {loading ? (
+              <div className="h-7 bg-gray-200 rounded animate-pulse w-24" />
+            ) : (
+              <>
+                <div className="text-xl font-bold text-gray-900">
+                  {stats ? formatSats(stats.todayTotal) : "0 sats"}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {stats
+                    ? satsToUsd(stats.todayTotal, btcPriceUsd)
+                    : "$0.00"}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Payment count */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+              <Hash size={12} />
+              Payments
+            </div>
+            {loading ? (
+              <div className="h-7 bg-gray-200 rounded animate-pulse w-12" />
+            ) : (
+              <div className="text-xl font-bold text-gray-900">
+                {stats ? stats.todayCount : 0}
+              </div>
+            )}
+          </div>
+
+          {/* Most recent */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+              <Clock size={12} />
+              Most Recent
+            </div>
+            {loading ? (
+              <div className="h-7 bg-gray-200 rounded animate-pulse w-32" />
+            ) : stats?.recentPayment ? (
+              <>
+                <div className="text-xl font-bold text-gray-900">
+                  {formatSats(stats.recentPayment.amount)}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {formatTime(stats.recentPayment.time)}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-400">No payments yet</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </ScrollReveal>
+  );
+}
+
+// ---- Balance Card ----
+
+function BalanceCard({
+  stats,
+  loading,
+  btcPriceUsd,
+}: {
+  stats: Stats | null;
+  loading: boolean;
+  btcPriceUsd: number;
+}) {
+  // For now, display balance as today's total (LNbits wallet balance API
+  // will be wired once per-merchant wallets are provisioned).
+  const balanceSats = stats?.todayTotal ?? 0;
+
+  return (
+    <ScrollReveal delay={0.3}>
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+            <Wallet size={20} className="text-purple-600" />
+          </div>
+          <h2 className="font-semibold text-gray-900">Balance</h2>
+        </div>
+
+        {loading ? (
+          <div className="space-y-2">
+            <div className="h-8 bg-gray-200 rounded animate-pulse w-32" />
+            <div className="h-4 bg-gray-100 rounded animate-pulse w-20" />
+          </div>
+        ) : (
+          <>
+            <div className="text-3xl font-bold text-gray-900">
+              {formatSats(balanceSats)}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              {satsToUsd(balanceSats, btcPriceUsd)}
+            </div>
+          </>
+        )}
+
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <ArrowUpRight size={12} />
+            <span>
+              {stats?.lnbitsAvailable
+                ? "Auto-forward to payout address is active"
+                : "Payout address not configured yet"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </ScrollReveal>
+  );
+}
+
+// ---- Transaction List ----
+
+function TransactionList({
+  merchantId: _merchantId,
+  btcPriceUsd,
+}: {
+  merchantId: string;
+  btcPriceUsd: number;
+}) {
   const [data, setData] = useState<TransactionsResponse | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [emailModal, setEmailModal] = useState<{ sessionId: string; amountSats: number } | null>(null);
+  const [emailModal, setEmailModal] = useState<{
+    sessionId: string;
+    amountSats: number;
+  } | null>(null);
 
-  const load = useCallback(async (p: number, f: string, t: string) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(p), limit: "10" });
-      if (f) params.set("from", f);
-      if (t) params.set("to", t);
-      const res = await fetch(`/api/merchant-dashboard/transactions?${params}`);
-      if (res.ok) setData(await res.json());
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (p: number, f: string, t: string) => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ page: String(p), limit: "10" });
+        if (f) params.set("from", f);
+        if (t) params.set("to", t);
+        const res = await fetch(
+          `/api/merchant-dashboard/transactions?${params}`
+        );
+        if (res.ok) setData(await res.json());
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     load(1, "", "");
@@ -259,557 +521,433 @@ function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | nul
     load(next, from, to);
   };
 
+  const handleExportCsv = () => {
+    const params = new URLSearchParams();
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    params.set("format", "csv");
+    window.open(
+      `/api/merchant-dashboard/export?${params.toString()}`,
+      "_blank"
+    );
+  };
+
   return (
-    <>
-    <div className="space-y-4">
-      {/* Date filter */}
-      <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">From</label>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">To</label>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
-        </div>
-        <button
-          onClick={handleFilter}
-          className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          Filter
-        </button>
-        {(from || to) && (
+    <ScrollReveal delay={0.4}>
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-semibold text-gray-900">Transactions</h2>
           <button
-            onClick={() => { setFrom(""); setTo(""); setPage(1); load(1, "", ""); }}
-            className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-sm rounded-lg"
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-medium transition-colors"
           >
-            Clear
+            <FileDown size={14} />
+            Export CSV
           </button>
+        </div>
+
+        {/* Date filter */}
+        <div className="flex flex-wrap gap-3 items-end mb-4">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">From</label>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">To</label>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+          <button
+            onClick={handleFilter}
+            className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            Filter
+          </button>
+          {(from || to) && (
+            <button
+              onClick={() => {
+                setFrom("");
+                setTo("");
+                setPage(1);
+                load(1, "", "");
+              }}
+              className="px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-sm rounded-lg"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Table */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-gray-400">
+            <RefreshCw size={20} className="animate-spin mr-2" />
+            Loading transactions...
+          </div>
+        ) : !data?.lnbitsAvailable ? (
+          <div className="py-12 text-center text-gray-400 text-sm">
+            Payment backend not connected. Set{" "}
+            <code className="bg-gray-100 px-1 rounded">LNBITS_URL</code> and{" "}
+            <code className="bg-gray-100 px-1 rounded">LNBITS_INVOICE_KEY</code>{" "}
+            in your environment.
+          </div>
+        ) : data.transactions.length === 0 ? (
+          <div className="py-12 text-center text-gray-400 text-sm">
+            No payments found
+            {from || to ? " for selected date range" : " yet"}.
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto rounded-xl border border-gray-100">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium">
+                      Date
+                    </th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium">
+                      Amount
+                    </th>
+                    <th className="text-right px-4 py-3 text-gray-500 font-medium hidden sm:table-cell">
+                      USD
+                    </th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium hidden md:table-cell">
+                      Memo
+                    </th>
+                    <th className="text-center px-4 py-3 text-gray-500 font-medium">
+                      Status
+                    </th>
+                    <th className="text-left px-4 py-3 text-gray-500 font-medium hidden lg:table-cell">
+                      Hash
+                    </th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {data.transactions.map((tx) => (
+                    <tr
+                      key={tx.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-4 py-3 text-gray-700">
+                        {formatTime(tx.time)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium text-gray-900">
+                        <span className="text-orange-600">
+                          <Zap size={12} className="inline" />
+                        </span>{" "}
+                        {formatSats(tx.amountSats)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-500 hidden sm:table-cell">
+                        {satsToUsd(tx.amountSats, btcPriceUsd)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 hidden md:table-cell max-w-[200px] truncate">
+                        {tx.memo || "--"}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <StatusBadge status={tx.status} />
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden lg:table-cell">
+                        {shortHash(tx.id)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <a
+                            href={`/api/invoice/${tx.id}/pdf`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Download PDF invoice"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
+                          >
+                            <FileDown size={15} />
+                          </a>
+                          <button
+                            onClick={() =>
+                              setEmailModal({
+                                sessionId: tx.id,
+                                amountSats: tx.amountSats,
+                              })
+                            }
+                            title="Email invoice to customer"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
+                          >
+                            <Mail size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {data.pages > 1 && (
+              <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
+                <span>{data.total} total payments</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePage(page - 1)}
+                    disabled={page <= 1}
+                    className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span>
+                    Page {page} of {data.pages}
+                  </span>
+                  <button
+                    onClick={() => handlePage(page + 1)}
+                    disabled={page >= data.pages}
+                    className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Table */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12 text-gray-400">
-          <RefreshCw size={20} className="animate-spin mr-2" />
-          Loading transactions…
-        </div>
-      ) : !data?.lnbitsAvailable ? (
-        <div className="py-12 text-center text-gray-400 text-sm">
-          Payment backend not connected. Set <code className="bg-gray-100 px-1 rounded">LNBITS_URL</code> and <code className="bg-gray-100 px-1 rounded">LNBITS_INVOICE_KEY</code> in your environment.
-        </div>
-      ) : data.transactions.length === 0 ? (
-        <div className="py-12 text-center text-gray-400 text-sm">
-          No payments found{from || to ? " for selected date range" : " yet"}.
-        </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto rounded-xl border border-gray-100">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Date</th>
-                  <th className="text-right px-4 py-3 text-gray-500 font-medium">Amount</th>
-                  <th className="text-right px-4 py-3 text-gray-500 font-medium hidden sm:table-cell">USD</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium hidden md:table-cell">Memo</th>
-                  <th className="text-center px-4 py-3 text-gray-500 font-medium">Status</th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium hidden lg:table-cell">Hash</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {data.transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-700">{formatTime(tx.time)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      <span className="text-orange-600">⚡</span> {formatSats(tx.amountSats)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-500 hidden sm:table-cell">
-                      {satsToUsd(tx.amountSats, data.btcPriceUsd)}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 hidden md:table-cell max-w-[200px] truncate">
-                      {tx.memo || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <StatusBadge status={tx.status} />
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden lg:table-cell">
-                      {shortHash(tx.id)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <a
-                          href={`/api/invoice/${tx.id}/pdf`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Download PDF invoice"
-                          className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
-                        >
-                          <FileDown size={15} />
-                        </a>
-                        <button
-                          onClick={() => setEmailModal({ sessionId: tx.id, amountSats: tx.amountSats })}
-                          title="Email invoice to customer"
-                          className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
-                        >
-                          <Mail size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {data.pages > 1 && (
-            <div className="flex items-center justify-between text-sm text-gray-500">
-              <span>{data.total} total payments</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePage(page - 1)}
-                  disabled={page <= 1}
-                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span>Page {page} of {data.pages}</span>
-                <button
-                  onClick={() => handlePage(page + 1)}
-                  disabled={page >= data.pages}
-                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+      {/* Send invoice email modal */}
+      {emailModal && (
+        <SendInvoiceModal
+          sessionId={emailModal.sessionId}
+          amountSats={emailModal.amountSats}
+          onClose={() => setEmailModal(null)}
+        />
       )}
-    </div>
-
-    {/* Send invoice email modal */}
-    {emailModal && (
-      <SendInvoiceModal
-        sessionId={emailModal.sessionId}
-        amountSats={emailModal.amountSats}
-        onClose={() => setEmailModal(null)}
-      />
-    )}
-    </>
-  );
-}
-
-// ---- Tab: Payment Link ----
-
-function PaymentLinkTab({ merchantId }: { merchantId: string }) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://arxmint.com";
-  const payUrl = `${origin}/pay/${merchantId}`;
-
-  const widgetSnippet = `<script src="${origin}/widget.js" data-merchant="${merchantId}" async></script>`;
-
-  return (
-    <div className="space-y-6">
-      {/* Payment link */}
-      <div className="rounded-xl border border-gray-100 p-5 space-y-3">
-        <h3 className="font-semibold text-gray-900">Your Payment Link</h3>
-        <div className="flex flex-wrap items-center gap-3">
-          <a
-            href={payUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-orange-600 hover:text-orange-700 font-mono text-sm break-all flex items-center gap-1.5"
-          >
-            {payUrl}
-            <ExternalLink size={14} className="flex-shrink-0" />
-          </a>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <CopyButton text={payUrl} label="Copy Link" />
-        </div>
-        <p className="text-xs text-gray-500">
-          Share this link with customers. They can pay with any Lightning wallet.
-        </p>
-      </div>
-
-      {/* Embed snippet */}
-      <div className="rounded-xl border border-gray-100 p-5 space-y-3">
-        <h3 className="font-semibold text-gray-900">Embeddable Widget</h3>
-        <p className="text-sm text-gray-600">
-          Add a one-click checkout button to any website with a single script tag.
-        </p>
-        <div className="bg-gray-900 rounded-lg p-4 font-mono text-xs text-green-400 overflow-x-auto">
-          {widgetSnippet}
-        </div>
-        <CopyButton text={widgetSnippet} label="Copy Snippet" />
-      </div>
-
-      {/* POS link */}
-      <div className="rounded-xl border border-gray-100 p-5 space-y-3">
-        <h3 className="font-semibold text-gray-900">Point of Sale</h3>
-        <p className="text-sm text-gray-600">
-          Open the POS view on any tablet or phone at your counter.
-        </p>
-        <a
-          href={`/pos/${merchantId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          Open POS <ExternalLink size={14} />
-        </a>
-      </div>
-    </div>
-  );
-}
-
-// ---- Tab: API Key ----
-
-function ApiKeyTab() {
-  // revealed/invoiceKey reserved for per-merchant key UI (Phase 4.7 M3)
-
-  // We don't expose the raw key client-side from env — show a masked placeholder
-  // with explanation. Real key management will come with per-merchant wallets.
-  const maskedKey = "••••••••••••••••••••••••••••••••";
-
-  return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-gray-100 p-5 space-y-4">
-        <h3 className="font-semibold text-gray-900">Invoice / Read Key</h3>
-        <p className="text-sm text-gray-600">
-          Use this key to integrate the ArxMint checkout with your own website or POS system.
-          This key can create invoices and check payment status — it cannot withdraw funds.
-        </p>
-        <div className="flex items-center gap-3">
-          <code className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-mono text-sm text-gray-700 overflow-hidden">
-            {maskedKey}
-          </code>
-        </div>
-        <p className="text-xs text-gray-500">
-          Full per-merchant API keys will be available once your wallet is provisioned.
-          Contact <a href="mailto:travis@arxmint.com" className="text-orange-600 hover:underline">travis@arxmint.com</a> to get your key.
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-gray-100 p-5 space-y-3">
-        <h3 className="font-semibold text-gray-900">API Documentation</h3>
-        <p className="text-sm text-gray-600">
-          Use our REST API to create invoices, check payment status, and integrate Lightning payments into your workflow.
-        </p>
-        <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs space-y-2">
-          <div className="text-gray-500"># Create invoice</div>
-          <div className="text-gray-800">POST /api/checkout</div>
-          <div className="text-gray-500 mt-3"># Check payment status</div>
-          <div className="text-gray-800">GET /api/checkout/status/[id]</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---- Tab: Account ----
-
-function AccountTab({ merchantId }: { merchantId: string }) {
-  const merchant = SEED_MERCHANTS[merchantId] ?? { businessName: "Your Business", website: null, id: merchantId };
-  const nostrUser = useSovereignStore((s) => s.nostrUser);
-
-  return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-gray-100 p-5 space-y-4">
-        <h3 className="font-semibold text-gray-900">Business Info</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Business Name</label>
-            <div className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50">
-              {merchant.businessName}
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Merchant ID</label>
-            <div className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 font-mono">
-              {merchantId}
-            </div>
-          </div>
-          {merchant.website && (
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Website</label>
-              <div className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50">
-                <a href={merchant.website} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline flex items-center gap-1">
-                  {merchant.website} <ExternalLink size={12} />
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-        <p className="text-xs text-gray-500">
-          To update your business info, contact <a href="mailto:travis@arxmint.com" className="text-orange-600 hover:underline">travis@arxmint.com</a> or edit your listing at <a href="/merchants" className="text-orange-600 hover:underline">arxmint.com/merchants</a>.
-        </p>
-      </div>
-
-      {nostrUser && (
-        <div className="rounded-xl border border-gray-100 p-5 space-y-3">
-          <h3 className="font-semibold text-gray-900">Nostr Identity</h3>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Display Name</label>
-            <div className="text-sm text-gray-700">{nostrUser.displayName}</div>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Public Key (npub)</label>
-            <div className="font-mono text-xs text-gray-600 break-all bg-gray-50 rounded-lg px-3 py-2">
-              {nostrUser.npub}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sovereign opt-in: bring your own Lightning node via NWC */}
-      <div className="rounded-xl border border-gray-100 p-5 space-y-4">
-        <div>
-          <h3 className="font-semibold text-gray-900">Lightning Node (Advanced)</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Connect your own Alby Hub or NWC-compatible Lightning node for full
-            self-custody. The shared LNbits backend remains active as fallback.
-          </p>
-        </div>
-        <NWCConnect merchantId={merchantId} />
-      </div>
-    </div>
+    </ScrollReveal>
   );
 }
 
 // ---- Main Page ----
 
-type Tab = "transactions" | "paymentLink" | "apiKey" | "account";
-
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "transactions", label: "Transactions", icon: <BarChart2 size={16} /> },
-  { id: "paymentLink", label: "Payment Link", icon: <Link2 size={16} /> },
-  { id: "apiKey", label: "API Key", icon: <Key size={16} /> },
-  { id: "account", label: "Account", icon: <User size={16} /> },
-];
-
 export default function MerchantDashboardPage() {
-  const router = useRouter();
-  const { nostrUser, setNostrUser, setAuthenticated, clearNostrUser } = useSovereignStore();
-  const [tab, setTab] = useState<Tab>("transactions");
+  const searchParams = useSearchParams();
+  const merchantId = searchParams.get("merchant") || "seed-black-bear";
+
+  const merchant = SEED_MERCHANTS[merchantId] ?? {
+    businessName: merchantId,
+    id: merchantId,
+    website: null,
+  };
+
   const [stats, setStats] = useState<Stats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [btcPriceUsd, setBtcPriceUsd] = useState(0);
 
-  // Derive merchantId from nostrUser — for now map pubkey → seed merchant (demo mode)
-  // In production this would look up the merchant by pubkey from Supabase
-  const merchantId = "seed-black-bear";
-
-  // Hydrate nostr session from localStorage on mount
+  // Apply merchant light theme
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const stored = localStorage.getItem("arxmint:nostr-user");
-      if (stored && !nostrUser) {
-        const user = JSON.parse(stored);
-        setNostrUser(user);
-        setAuthenticated(true);
-      }
-    } catch {
-      // ignore
-    }
-  }, [nostrUser, setNostrUser, setAuthenticated]);
+    document.documentElement.setAttribute("data-theme", "merchant");
+    document.body.style.background = "#fafafa";
+    return () => {
+      document.documentElement.removeAttribute("data-theme");
+      document.body.style.background = "";
+    };
+  }, []);
 
-  // Load today's stats
+  // Load stats
   useEffect(() => {
-    if (!nostrUser) return;
     setStatsLoading(true);
     fetch("/api/merchant-dashboard/stats")
       .then((r) => r.json())
       .then((d) => setStats(d))
       .catch(() => {})
       .finally(() => setStatsLoading(false));
-  }, [nostrUser]);
+  }, []);
 
-  const handleConnect = useCallback(async () => {
-    setConnecting(true);
-    setAuthError(null);
-    try {
-      const user = await connectNostr();
-      setNostrUser(user);
-      setAuthenticated(true);
-    } catch (err) {
-      setAuthError(err instanceof Error ? err.message : "Failed to connect Nostr");
-    } finally {
-      setConnecting(false);
-    }
-  }, [setNostrUser, setAuthenticated]);
+  // Load BTC price for USD conversion
+  useEffect(() => {
+    fetch("/api/merchant-dashboard/transactions?page=1&limit=1")
+      .then((r) => r.json())
+      .then((d: { btcPriceUsd?: number }) => {
+        if (d.btcPriceUsd) setBtcPriceUsd(d.btcPriceUsd);
+      })
+      .catch(() => {});
+  }, []);
 
-  const handleLogout = useCallback(() => {
-    clearNostrUser();
-    router.push("/");
-  }, [clearNostrUser, router]);
-
-  // ---- Auth Gate ----
-  if (!nostrUser) {
-    return (
-      <div
-        data-theme="merchant"
-        className="min-h-screen flex flex-col items-center justify-center px-4"
-        style={{ background: "#fafafa", color: "#171717" }}
-      >
-        <div className="w-full max-w-md text-center space-y-6">
-          <div className="flex justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-orange-500 flex items-center justify-center">
-              <Zap size={28} className="text-white" />
-            </div>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Merchant Dashboard</h1>
-            <p className="text-gray-500 mt-2">Sign in with your Nostr identity to access your dashboard.</p>
-          </div>
-
-          {authError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-              {authError}
-            </div>
-          )}
-
-          <button
-            onClick={handleConnect}
-            disabled={connecting}
-            className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            {connecting ? (
-              <><RefreshCw size={18} className="animate-spin" /> Connecting…</>
-            ) : (
-              <><Zap size={18} /> Connect with Nostr</>
-            )}
-          </button>
-
-          <p className="text-xs text-gray-400">
-            Requires a NIP-07 browser extension such as{" "}
-            <a href="https://getalby.com" target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline">Alby</a>
-            {" "}or{" "}
-            <a href="https://github.com/fiatjaf/nos2x" target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline">nos2x</a>.
-          </p>
-
-          <div className="pt-4 border-t border-gray-200">
-            <a href="/merchants" className="text-sm text-orange-600 hover:underline">
-              ← Back to merchant directory
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ---- Dashboard ----
   return (
     <div
       data-theme="merchant"
-      className="min-h-screen"
+      className="relative overflow-x-hidden min-h-screen"
       style={{ background: "#fafafa", color: "#171717" }}
     >
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-              <Zap size={16} className="text-white" />
-            </div>
-            <span className="font-semibold text-gray-900">Merchant Dashboard</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 hidden sm:block">{nostrUser.displayName}</span>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors"
-            >
-              <LogOut size={15} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Full-bleed light background */}
+      <div className="fixed inset-0 z-0" style={{ background: "#fafafa" }} />
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Stats bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <div className="text-xs text-gray-500 mb-1">Today&apos;s Revenue</div>
-            {statsLoading ? (
-              <div className="h-7 bg-gray-100 rounded animate-pulse w-24" />
-            ) : (
-              <div className="text-2xl font-bold text-gray-900">
-                <span className="text-orange-500">⚡</span>{" "}
-                {stats ? formatSats(stats.todayTotal) : "—"}
+      {/* Background ambience */}
+      <div className="fixed top-0 left-0 w-full h-[100vh] z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 right-1/4 w-[800px] h-[800px] rounded-full bg-[#F7931A]/[0.04] blur-[150px]" />
+        <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] rounded-full bg-[#F7931A]/[0.03] blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 w-full">
+        {/* Header */}
+        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
+                <Zap size={16} className="text-white" />
               </div>
-            )}
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <div className="text-xs text-gray-500 mb-1">Payments Today</div>
-            {statsLoading ? (
-              <div className="h-7 bg-gray-100 rounded animate-pulse w-12" />
-            ) : (
-              <div className="text-2xl font-bold text-gray-900">
-                {stats ? stats.todayCount : "—"}
-              </div>
-            )}
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <div className="text-xs text-gray-500 mb-1">Most Recent</div>
-            {statsLoading ? (
-              <div className="h-7 bg-gray-100 rounded animate-pulse w-32" />
-            ) : stats?.recentPayment ? (
               <div>
-                <div className="text-lg font-bold text-gray-900">
-                  <span className="text-orange-500">⚡</span> {formatSats(stats.recentPayment.amount)}
-                </div>
-                <div className="text-xs text-gray-400 mt-0.5">{formatTime(stats.recentPayment.time)}</div>
+                <span className="font-semibold text-gray-900 text-sm sm:text-base">
+                  {merchant.businessName}
+                </span>
+                <span className="text-xs text-gray-400 ml-2 hidden sm:inline">
+                  Dashboard
+                </span>
               </div>
-            ) : (
-              <div className="text-gray-400 text-sm">No payments yet</div>
-            )}
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          {/* Tab bar */}
-          <div className="flex border-b border-gray-100 overflow-x-auto">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
-                  tab === t.id
-                    ? "border-orange-500 text-orange-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/merchant-dashboard/settings?merchant=${merchantId}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-100 text-gray-600 text-sm transition-colors"
               >
-                {t.icon}
-                {t.label}
-              </button>
-            ))}
+                <Settings size={15} />
+                <span className="hidden sm:inline">Settings</span>
+              </Link>
+              <Link
+                href="/merchants"
+                className="text-sm text-orange-600 hover:text-orange-700 transition-colors"
+              >
+                Directory
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+          {/* Welcome banner (first visit) */}
+          <ScrollReveal>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold">
+                    Welcome, {merchant.businessName}
+                  </h1>
+                  <p className="text-orange-100 text-sm mt-1">
+                    Your Lightning payment dashboard. Accept Bitcoin instantly.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+                  <span className="text-sm text-orange-100 font-medium">
+                    {stats?.lnbitsAvailable ? "Payments active" : "Setting up"}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </ScrollReveal>
+
+          {/* Two-column layout on desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column: Payment Link + Balance */}
+            <div className="lg:col-span-1 space-y-6">
+              <PaymentLinkCard merchantId={merchantId} />
+              <BalanceCard
+                stats={stats}
+                loading={statsLoading}
+                btcPriceUsd={btcPriceUsd}
+              />
+            </div>
+
+            {/* Right column: Activity + Transactions */}
+            <div className="lg:col-span-2 space-y-6">
+              <TodayActivityCard
+                stats={stats}
+                loading={statsLoading}
+                btcPriceUsd={btcPriceUsd}
+              />
+              <TransactionList
+                merchantId={merchantId}
+                btcPriceUsd={btcPriceUsd}
+              />
+            </div>
           </div>
 
-          {/* Tab content */}
-          <div className="p-5 sm:p-6">
-            {tab === "transactions" && <TransactionsTab merchantId={merchantId} />}
-            {tab === "paymentLink" && <PaymentLinkTab merchantId={merchantId} />}
-            {tab === "apiKey" && <ApiKeyTab />}
-            {tab === "account" && <AccountTab merchantId={merchantId} />}
-          </div>
-        </div>
-      </main>
+          {/* Quick links footer */}
+          <ScrollReveal delay={0.5}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+              <Link
+                href={`/merchant-dashboard/setup?merchant=${merchantId}`}
+                className="bg-white rounded-xl border border-gray-100 p-4 hover:border-orange-200 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <DollarSign
+                      size={16}
+                      className="text-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 group-hover:text-orange-600 transition-colors">
+                      Payment Setup
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Configure payout address
+                    </div>
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                href={`/merchant-dashboard/settings?merchant=${merchantId}`}
+                className="bg-white rounded-xl border border-gray-100 p-4 hover:border-orange-200 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                    <Settings size={16} className="text-purple-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 group-hover:text-orange-600 transition-colors">
+                      Settings
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Notifications, API keys
+                    </div>
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                href={`/pay/${merchantId}`}
+                target="_blank"
+                className="bg-white rounded-xl border border-gray-100 p-4 hover:border-orange-200 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                    <Zap size={16} className="text-green-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 group-hover:text-orange-600 transition-colors">
+                      Test Payment
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Open your checkout page
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </ScrollReveal>
+        </main>
+      </div>
     </div>
   );
 }
