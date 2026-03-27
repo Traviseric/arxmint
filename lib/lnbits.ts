@@ -122,13 +122,19 @@ export async function provisionMerchantWallet(params: {
   }
 
   try {
-    const res = await fetch(`${baseUrl}/api/v1/wallet`, {
+    // LNbits: POST /api/v1/account with super-user key creates a new user + wallet.
+    // The username is the merchant ID (unique), password is auto-generated.
+    const merchantPassword = `arx-${params.merchantId}-${Date.now()}`;
+    const res = await fetch(`${baseUrl}/api/v1/account`, {
       method: "POST",
       headers: {
         "X-Api-Key": adminKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: `ArxMint - ${params.merchantName}` }),
+      body: JSON.stringify({
+        username: params.merchantId,
+        password: merchantPassword,
+      }),
     });
 
     if (!res.ok) {
