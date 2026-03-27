@@ -631,6 +631,10 @@ export function generateEnvTemplate(config: CommunityConfig): string {
   }
 
   lines.push(
+    `# LNbits — Lightning payment backend (required for hosted checkout)`,
+    `LNBITS_URL=https://your-lnbits-instance.com`,
+    `LNBITS_INVOICE_KEY=your_invoice_read_key_here`,
+    ``,
     `# Cloudflare Tunnel — for public HTTPS checkout URL (optional)`,
     `CLOUDFLARE_API_TOKEN=`,
     `CLOUDFLARE_ZONE_ID=`,

@@ -80,6 +80,13 @@ export function MerchantSetupWizard() {
   const [copied, setCopied] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("docker");
 
+  // Hosted merchant registration state
+  const [regContact, setRegContact] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [registering, setRegistering] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registeredId, setRegisteredId] = useState<string | null>(null);
+
   const setDeployment = useSovereignStore((s) => s.setDeployment);
 
   const hasAnyPayment = Object.values(payments).some(Boolean);
@@ -99,6 +106,34 @@ export function MerchantSetupWizard() {
     if (domain.trim()) parts.push(`on domain ${domain.trim()}`);
     parts.push("with merchant directory and privacy dashboard");
     return parts.join(" ") + ".";
+  }
+
+  async function handleRegister() {
+    setRegistering(true);
+    setRegisterError(null);
+    try {
+      const selectedMethods = PAYMENT_OPTIONS.filter((o) => payments[o.id]).map((o) => o.label).join(", ");
+      const reason = `${storeName.trim()} wants to accept Bitcoin${selectedMethods ? ` via ${selectedMethods}` : ""}${domain.trim() ? ` on ${domain.trim()}` : ""}.`;
+      const res = await fetch("/api/pledge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: storeName.trim(),
+          contactName: regContact.trim(),
+          email: regEmail.trim(),
+          website: domain.trim() ? `https://${domain.trim().replace(/^https?:\/\//, "")}` : undefined,
+          reason,
+          emailOptIn: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Registration failed");
+      setRegisteredId(data.pledge.id);
+    } catch (err: unknown) {
+      setRegisterError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setRegistering(false);
+    }
   }
 
   async function handleGenerate() {
@@ -440,22 +475,99 @@ export function MerchantSetupWizard() {
             </button>
           </div>
 
-          {/* Merchant signup */}
-          <div className="rounded-xl border border-border-default p-5 text-center space-y-3">
-            <p className="text-sm text-text-primary font-medium">
-              Want white-glove onboarding?
-            </p>
-            <a
-              href="/merchants"
-              className="antigravity-btn !py-2.5 !px-6 inline-flex items-center gap-2 text-sm"
-            >
-              <Store className="w-4 h-4" />
-              Join the merchant directory
-              <ArrowRight className="w-4 h-4" />
-            </a>
-            <p className="text-xs text-text-muted">
-              Get listed on arxmint.com/merchants and notified when hosted deployment ships.
-            </p>
+          {/* Merchant registration — hosted checkout URL */}
+          <div className="rounded-xl border border-accent/20 bg-accent/[0.03] p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Store className="w-4 h-4 text-accent shrink-0" />
+              <span className="text-sm font-semibold text-text-primary">Get a hosted checkout link</span>
+              <span className="ml-auto px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-mono">
+                free
+              </span>
+            </div>
+            {registeredId ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
+                  <Check className="w-4 h-4 shrink-0" />
+                  You&apos;re live!
+                </div>
+                <p className="text-xs text-text-secondary">Your checkout URL:</p>
+                <div className="relative rounded-lg bg-sovereign-dark border border-border-default">
+                  <pre className="px-4 py-3 text-xs text-text-primary font-mono overflow-x-auto">
+                    {`https://www.arxmint.com/pay/${registeredId}`}
+                  </pre>
+                  <div className="absolute top-1.5 right-2">
+                    <span aria-live="polite" className="sr-only">{copied === "checkout-url" ? "Copied" : ""}</span>
+                    <button
+                      aria-label="Copy checkout URL"
+                      onClick={() => copyToClipboard(`https://www.arxmint.com/pay/${registeredId}`, "checkout-url")}
+                      className="p-1.5 rounded-md bg-sovereign-panel hover:bg-white/10 transition-colors"
+                    >
+                      {copied === "checkout-url" ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-sovereign-muted" />}
+                    </button>
+                  </div>
+                </div>
+                <a
+                  href={`/merchant-dashboard/setup?merchant=${registeredId}`}
+                  className="antigravity-btn !py-2.5 w-full inline-flex items-center justify-center gap-2 text-sm"
+                >
+                  <Zap className="w-4 h-4" />
+                  Complete payment setup
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+                <p className="text-xs text-text-muted">
+                  Connect your Lightning wallet to start receiving payments.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Register <span className="text-text-primary font-medium">{storeName}</span> and get a hosted
+                  checkout page at <span className="font-mono text-accent">arxmint.com/pay/{storeName.toLowerCase().replace(/\s+/g, "-")}</span>.
+                  No card required.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={regContact}
+                    onChange={(e) => setRegContact(e.target.value)}
+                    placeholder="Your name"
+                    className="bg-bg-elevated border border-border-default rounded-lg px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent text-sm font-mono"
+                  />
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="bg-bg-elevated border border-border-default rounded-lg px-3 py-2.5 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent text-sm font-mono"
+                  />
+                </div>
+                {registerError && (
+                  <p className="text-xs text-red-400 font-mono">{registerError}</p>
+                )}
+                <button
+                  onClick={handleRegister}
+                  disabled={registering || !regContact.trim() || !regEmail.trim() || !regEmail.includes("@")}
+                  className="antigravity-btn w-full !py-2.5 inline-flex items-center justify-center gap-2 text-sm"
+                >
+                  {registering ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Registering...
+                    </>
+                  ) : (
+                    <>
+                      <Link className="w-4 h-4" />
+                      Get My Checkout URL
+                    </>
+                  )}
+                </button>
+                <p className="text-xs text-text-muted">
+                  Get listed on{" "}
+                  <a href="/merchants" className="text-accent hover:underline">arxmint.com/merchants</a>
+                  {" "}and notified when hosted deployment ships.
+                </p>
+              </div>
+            )}
           </div>
 
           <button onClick={() => setStep(2)} className="antigravity-btn-outline w-full !py-3">

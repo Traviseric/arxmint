@@ -6,7 +6,7 @@
 // Business info, payment settings, notifications, API keys, export
 // ============================================================
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -151,7 +151,7 @@ function ReadOnlyField({
 
 // ---- Main Component ----
 
-export default function MerchantSettingsPage() {
+function MerchantSettingsContent() {
   const searchParams = useSearchParams();
   const merchantId = searchParams.get("merchant") || "seed-black-bear";
 
@@ -759,5 +759,13 @@ export default function MerchantSettingsPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function MerchantSettingsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" style={{ background: "#fafafa" }} />}>
+      <MerchantSettingsContent />
+    </Suspense>
   );
 }

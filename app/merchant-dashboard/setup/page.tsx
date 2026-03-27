@@ -6,7 +6,7 @@
 // 3-field form: Email, Payout Address, Telegram handle
 // ============================================================
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -25,7 +25,7 @@ import {
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
-export default function MerchantSetupPage() {
+function MerchantSetupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const merchantId = searchParams.get("merchant") || "";
@@ -406,5 +406,13 @@ export default function MerchantSetupPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function MerchantSetupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" /></div>}>
+      <MerchantSetupPageInner />
+    </Suspense>
   );
 }

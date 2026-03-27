@@ -6,7 +6,7 @@
 // Temporary query-param auth until Nostr/email auth is wired.
 // ============================================================
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -733,7 +733,7 @@ function TransactionList({
 
 // ---- Main Page ----
 
-export default function MerchantDashboardPage() {
+function MerchantDashboardContent() {
   const searchParams = useSearchParams();
   const merchantId = searchParams.get("merchant") || "seed-black-bear";
 
@@ -949,5 +949,13 @@ export default function MerchantDashboardPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function MerchantDashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#fafafa]" />}>
+      <MerchantDashboardContent />
+    </Suspense>
   );
 }
