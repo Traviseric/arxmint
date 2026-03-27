@@ -13,6 +13,7 @@ import {
   Copy,
   Check,
   ExternalLink,
+  FileDown,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -224,6 +225,7 @@ function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | nul
                   <th className="text-left px-4 py-3 text-gray-500 font-medium hidden md:table-cell">Memo</th>
                   <th className="text-center px-4 py-3 text-gray-500 font-medium">Status</th>
                   <th className="text-left px-4 py-3 text-gray-500 font-medium hidden lg:table-cell">Hash</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -244,6 +246,17 @@ function TransactionsTab({ merchantId: _merchantId }: { merchantId: string | nul
                     </td>
                     <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden lg:table-cell">
                       {shortHash(tx.id)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <a
+                        href={`/api/invoice/${tx.id}/pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Download PDF invoice"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
+                      >
+                        <FileDown size={15} />
+                      </a>
                     </td>
                   </tr>
                 ))}
