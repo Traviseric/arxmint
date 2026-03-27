@@ -825,69 +825,157 @@ Grant applications can begin before the pilot is live â€” prototype + roadm
 
 | Status | Task | Owner | Timeline | Details |
 |--------|------|-------|----------|---------|
-| [ ] | **Deploy Phoenixd + LNbits** | Human + Agent | 2 days | Add `phoenixd` + `lnbits` services to Docker Compose. Deploy on Hetzner VPS ($15â€”30/mo). Secure seed phrase. Configure LNbits to use PhoenixdWallet backend. |
+| [x] | **Deploy Phoenixd + LNbits** | Human + Agent | 2 days | DigitalOcean Droplet (167.71.189.144), $24/mo + $7.20 daily backups. Phoenixd + LNbits running on mainnet. DONE 2026-03-27. |
+| [x] | **Refactor checkout API â†' LNbits** | Agent | 3 days | `lib/lnbits.ts` client created. `POST /api/checkout` calls LNbits first, LND fallback. `GET /api/checkout/status/[id]` checks LNbits for payment. DONE 2026-03-27. |
+| [x] | **Enable checkout for Black Bear** | Agent | 1 hour | `checkoutEnabled: true`, Black Bear LNbits wallet created (ID: 3ce5361fab6a41e088c848baf0dfd491). DONE 2026-03-27. |
+| [x] | **Embeddable checkout widget** | Agent | 4 days | `public/embed.js` (vanilla JS) + `/checkout-embed/[merchant-id]` iframe page. One script tag on any site â†' “Pay with Bitcoin” button â†' modal â†' Lightning QR â†' paid. Spec: `docs/specs/embed-checkout-widget.md`. DONE 2026-03-27. |
+| [ ] | **Verify live payment** | Human | 1 hour | Test `arxmint.com/pay/seed-black-bear` with a real Lightning wallet. Confirm invoice generates, payment settles, status updates. |
 | [ ] | **Draft Agent of Payee ToS** | Human | 1 day | Click-wrap Terms of Service with MTMA compliance language (C.R.S. 11-110-301(1)(b)). Establishes legal agency relationship. Get fintech attorney review (~$1â€”2.5K). |
 | [ ] | **Sign ToS with Black Bear** | Human | 1 day | Physical or digital signatures from Evan D'Agostino (Black Bear Window Cleaning) on the Agent of Payee agreement. |
-| [ ] | **Refactor checkout API â†' LNbits** | Agent | 3 days | Refactor `POST /api/checkout` (`lib/payment-sdk.ts`) to call LNbits `/api/v1/payments` endpoint using merchant-specific API keys instead of raw LND REST. New env vars: `LNBITS_URL`, `LNBITS_ADMIN_KEY`. |
-| [ ] | **Build POS prototype** | Agent | 2 days | `/app/pos/[merchant-id]/page.tsx` â€” mobile-first PWA with numeric keypad, real-time fiat-to-sat conversion via price oracle, Unified BIP21 QR generation. |
 | [ ] | **Configure auto-forwarding** | Human | 1 day | LNbits Scrub/Auto-forward extension routes funds immediately to Black Bear's provided cold storage address or Lightning Address. |
-| [ ] | **Enable checkout for Black Bear** | Agent | 1 hour | Set `checkoutEnabled: true` in seed data. Set reasonable `defaultAmountSats` or null for custom amounts. |
 
-#### Milestone 2: “20 Founding Merchants” (full pilot cohort)
+#### Milestone 2: Welcome Email + Merchant Onboarding
 
 | Status | Task | Owner | Timeline | Details |
 |--------|------|-------|----------|---------|
-| [ ] | **Merchant dashboard MVP** | Agent | 3 days | `/app/merchant-dashboard/page.tsx` â€” transaction ledger (from LNbits API), shareable payment link, Unified BIP21 QR generator, API key management UI. Built with Next.js 15 Server Actions. |
+| [ ] | **Resend integration** | Agent | 1 day | Install `resend` + `react-email` packages. Create transactional email infrastructure. API route: `POST /api/email/send`. Free tier: 3K emails/mo. |
+| [ ] | **Welcome email template** | Agent | 0.5 day | React Email template: “You're in! You're Founding Merchant #X.” Includes pay link, QR code image, “Print this QR” instructions, link to /badge for digital assets, link to /store for physical merch. |
+| [ ] | **Auto-send on signup** | Agent | 0.5 day | Hook into `POST /api/pledge` — on successful merchant creation, fire welcome email via Resend. |
+| [ ] | **Day-3 follow-up email** | Agent | 0.5 day | Automated follow-up: “Have you received your first payment yet?” Link to payout setup, link to merchant support channel. Triggered by cron or scheduled send. |
+
+#### Milestone 3: Merchant Dashboard
+
+Spec: `docs/specs/merchant-dashboard-mvp.md`
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **merchant_wallets Supabase table + RLS** | Agent | 1 day | Schema: merchant_id, lnbits_wallet_id, lnbits_invoice_key, lnbits_admin_key, payout_address, payout_type, telegram_handle, email_notifications, webhook_url. Row Level Security policies. |
+| [ ] | **Auto wallet creation on setup** | Agent | 2 days | `POST /api/merchant-dashboard/setup` — calls LNbits API to create wallet, stores credentials in merchant_wallets, configures auto-forward, enables checkout. 3-field form: email, payout address, Telegram handle. |
+| [ ] | **Dashboard home page** | Agent | 2 days | `/merchant-dashboard` — payment link + QR card, today's activity, transaction list from LNbits API, balance + payout status. Light theme, mobile-first. |
+| [ ] | **Dashboard settings page** | Agent | 1 day | `/merchant-dashboard/settings` — payout address, default amount, notification toggles, API keys display, webhook URL. |
+| [ ] | **QuickBooks CSV export** | Agent | 1 day | Server Action: query LNbits transactions, format with historical USD rate, stream 4-column CSV (Date, Description, Credit, Debit). Date range picker. |
 | [ ] | **Telegram payment notifications** | Agent | 1 day | Route LNbits payment webhooks through existing ArxMint Telegram bot â†' instant mobile notification to merchant on payment received. |
-| [ ] | **PDF invoice generation** | Agent | 3 days | `components/invoice-pdf.tsx` using @react-pdf/renderer. Branded with merchant logo. Embedded BIP21 QR + dynamic payment link (not static BOLT11). |
-| [ ] | **Email invoice delivery** | Agent | 2 days | Resend + React Email integration. Send invoices to customers. Free tier: 3K emails/mo. |
-| [ ] | **QuickBooks CSV export** | Agent | 2 days | Server Action: query Invoice table, format with historical USD conversion rate, output 4-column CSV (Date, Description, Credit, Debit). |
-| [ ] | **NFC Bolt Card support** | Agent | 3 days | Web NFC API in POS PWA reads LNURL-withdraw from tapped Bolt Cards. Routes through LNbits backend. |
-| [ ] | **Bolt Card provisioning + distribution** | Human | 2 days | Program NTAG424 DNA cards ($1â€”3/unit) with open-source Bolt Card programmer. Distribute to 20 founding merchants for their customers. |
-| [ ] | **SSE payment status** | Agent | 2 days | Refactor `GET /api/checkout/status/[id]` from polling to Server-Sent Events for instant POS confirmation. |
+| [ ] | **Print QR / POS link** | Agent | 0.5 day | “Print QR” button on dashboard generates printable PDF (merchant logo + QR + pay link). “Open POS” links to `/pos/[merchant-id]`. |
+
+#### Milestone 4: POS + Physical Payments
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **POS page** | Agent | 2 days | `/pos/[merchant-id]` — mobile-first PWA. Numeric keypad, real-time fiat-to-sat conversion via mempool.space price API, Unified BIP21 QR generation. Installable as home screen app. |
+| [ ] | **SSE payment status** | Agent | 2 days | Refactor `GET /api/checkout/status/[id]` from polling to Server-Sent Events for instant POS confirmation without page refresh. |
+| [ ] | **NFC Bolt Card support** | Agent | 3 days | Web NFC API in POS PWA reads LNURL-withdraw from tapped Bolt Cards. Routes payment request through LNbits backend. |
+| [ ] | **Bolt Card provisioning + distribution** | Human | 2 days | Order NTAG424 DNA cards ($1â€”3/unit). Program with open-source Bolt Card programmer. Distribute to 20 founding merchants for their customers. |
+
+#### Milestone 5: Sticker Store + Merch
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **ArxMint merch catalog** | Agent | 1 day | Products: “Bitcoin Accepted Here” stickers, window decals, table tents, NFC tap-to-pay card holders. Prices in sats. Images + descriptions. |
+| [ ] | **OpenBazaar.ai store integration** | Agent | 1.5 days | Wire `/store` or `/bazaar` page to OpenBazaar.ai catalog API. Checkout via ArxMint embed widget. Printful fulfillment for print-on-demand items. |
+| [ ] | **Link from /badge page** | Agent | 0.5 day | Add “Order Physical Stickers & Signage” section to existing `/badge` page with link to store. |
+| [ ] | **Founding Merchant starter kit** | Human | Ongoing | Free kit for first 20 merchants: 5 stickers + 1 window decal + 5 NFC cards. Ship via Printful or manual. Marketing cost, not revenue. |
+
+#### Milestone 6: BTCMap + Social Proof
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **Geocode merchant addresses** | Agent | 0.5 day | On merchant signup, geocode city/address to lat/lng via free geocoding API (Nominatim/OpenStreetMap). Store in merchant_pledges. |
+| [ ] | **BTCMap auto-submit** | Agent | 0.5 day | On first confirmed payment, submit merchant to BTCMap.org community API with name, lat/lng, Lightning payment tag. |
+| [ ] | **”Listed on BTCMap” badge** | Agent | 0.5 day | Show BTCMap badge on merchant card in `/merchants` directory after successful submission. Link to BTCMap listing. |
+
+#### Milestone 7: Security Hardening
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **Caddy reverse proxy on Droplet** | Agent | 0.5 day | Install Caddy on VPS. Route `lnbits.arxmint.com` â†' localhost:5000 with automatic HTTPS. Close port 5000 to public. |
+| [ ] | **Firewall lockdown** | Agent | 0.5 day | UFW: close port 5000 and 9740 to public internet. Only Caddy (443) and SSH (22) exposed. LNbits admin only accessible via SSH tunnel or Caddy auth. |
+| [ ] | **Supabase RLS policies** | Agent | 1 day | Row Level Security on merchant_wallets, checkout_sessions, merchant_pledges. auth.uid() isolation. |
+| [ ] | **Data retention automation** | Agent | 0.5 day | Cron job: purge customer PII (email) 30 days post-settlement. Keep only cryptographic transaction hashes for ledger integrity. |
+| [ ] | **Agent of Payee ToS implementation** | Agent | 0.5 day | Click-wrap ToS in merchant onboarding flow. Must accept before wallet creation. ToS text reviewed by fintech attorney. |
+
+#### Milestone 8: Deploy to First Customers
+
+| Status | Task | Owner | Timeline | Details |
+|--------|------|-------|----------|---------|
+| [ ] | **Embed on glacierparlor.com** | Human | 0.5 day | Drop `<script src=”https://arxmint.com/embed.js” data-merchant=”seed-glacier”>` on Glacier site. Test payment flow. |
+| [ ] | **Embed on teneo.io** | Human | 0.5 day | Drop embed script on Teneo site. Test payment flow with subscription amounts. |
 | [ ] | **Sovereign opt-in (NWC)** | Agent | 2 days | Integrate @getalby/bitcoin-connect web component in merchant dashboard. Merchants input NWC string to override LNbits with their Alby Hub. |
-| [ ] | **Supabase RLS policies** | Agent | 1 day | Row Level Security: `auth.uid()` matches foreign keys on Invoice, PaymentSession, merchant_pledges tables. |
-| [ ] | **Data retention automation** | Agent | 1 day | Cron job: purge customer PII 30 days post-settlement. Keep only cryptographic transaction hashes for ledger integrity. |
 | [ ] | **Pearl Street merchant outreach** | Human | Ongoing | Geographic cluster strategy: Black Bear â†' neighboring Boulder businesses â†' B2B vendor loop. BTCMap.org listings for social proof. |
 
 #### Implementation Order
 
 ```
-Week 1-2: THE FOUNDATION
-  â”œâ”€â”€ Deploy Phoenixd + LNbits on VPS (human action)
-  â”œâ”€â”€ Draft + sign Agent of Payee ToS (human action)
-  â””â”€â”€ Refactor checkout API â†' LNbits (agent)
+DONE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  [x] Deploy Phoenixd + LNbits on DigitalOcean (2026-03-27)
+  [x] Refactor checkout API â†' LNbits (2026-03-27)
+  [x] Enable checkout for Black Bear (2026-03-27)
+  [x] Embeddable checkout widget (2026-03-27)
 
-Week 2-3: THE INTERFACE
-  â”œâ”€â”€ Build POS prototype with BIP21 QR (agent)
-  â”œâ”€â”€ Merchant dashboard MVP (agent)
-  â”œâ”€â”€ Enable checkout for Black Bear (agent)
-  â””â”€â”€ Configure auto-forwarding (human action)
+Block 1: VERIFY (1 hour) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â””â”€â”€ Test live payment at arxmint.com/pay/seed-black-bear
+  â””â”€â”€ Test embed at arxmint.com/checkout-embed/seed-black-bear
+  â””â”€â”€ Fix any issues
 
-Week 3-4: THE ASYNC LAYER
-  â”œâ”€â”€ PDF invoice generation (agent)
-  â”œâ”€â”€ Resend email delivery (agent)
-  â”œâ”€â”€ QuickBooks CSV export (agent)
-  â””â”€â”€ Telegram payment notifications (agent)
+Block 2: WELCOME EMAIL (2 days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â”œâ”€â”€ Resend integration
+  â”œâ”€â”€ Welcome email template with QR + pay link
+  â”œâ”€â”€ Auto-send on merchant signup
+  â””â”€â”€ Day-3 follow-up email
 
-Week 4-5: THE FRONTIER
-  â”œâ”€â”€ NFC Bolt Card support (agent)
-  â”œâ”€â”€ SSE payment status (agent)
-  â”œâ”€â”€ NWC sovereign opt-in (agent)
-  â””â”€â”€ RLS policies + data retention (agent)
+Block 3: MERCHANT DASHBOARD (8.5 days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â”œâ”€â”€ merchant_wallets Supabase table + RLS
+  â”œâ”€â”€ Auto wallet creation on setup
+  â”œâ”€â”€ Dashboard home: pay link, QR, transactions
+  â”œâ”€â”€ Dashboard settings: payout, notifications, API keys
+  â”œâ”€â”€ QuickBooks CSV export
+  â”œâ”€â”€ Telegram payment notifications
+  â””â”€â”€ Print QR / POS link
+
+Block 4: POS + PHYSICAL PAYMENTS (7 days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â”œâ”€â”€ POS page with keypad + BIP21 QR
+  â”œâ”€â”€ SSE payment status (instant confirmation)
+  â”œâ”€â”€ NFC Bolt Card support
+  â””â”€â”€ Bolt Card provisioning + distribution (human)
+
+Block 5: STICKER STORE (3 days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â”œâ”€â”€ ArxMint merch catalog
+  â”œâ”€â”€ OpenBazaar.ai store integration
+  â”œâ”€â”€ Link from /badge page
+  â””â”€â”€ Founding Merchant starter kit (human)
+
+Block 6: BTCMAP + SOCIAL PROOF (1.5 days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â”œâ”€â”€ Geocode merchant addresses
+  â”œâ”€â”€ BTCMap auto-submit on first payment
+  â””â”€â”€ “Listed on BTCMap” badge on merchant card
+
+Block 7: SECURITY HARDENING (3 days) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â”œâ”€â”€ Caddy HTTPS on Droplet
+  â”œâ”€â”€ Firewall lockdown (close 5000/9740)
+  â”œâ”€â”€ Supabase RLS policies
+  â”œâ”€â”€ Data retention automation
+  â””â”€â”€ Agent of Payee ToS in onboarding
+
+Block 8: DEPLOY TO FIRST CUSTOMERS (1 day) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â”œâ”€â”€ Embed on glacierparlor.com
+  â”œâ”€â”€ Embed on teneo.io
+  â”œâ”€â”€ NWC sovereign opt-in
+  â””â”€â”€ Pearl Street outreach (ongoing, human)
 ```
+
+**Total: ~26 days agent work + human actions (ToS, Bolt Cards, outreach, testing)**
 
 #### Cost Estimates
 
 | Item | Monthly Cost | Notes |
 |------|-------------|-------|
-| Hetzner VPS (Phoenixd + LNbits) | $15â€”30 | CPX31 or similar |
+| DigitalOcean Droplet (Phoenixd + LNbits) | $31.20 | $24/mo + $7.20 daily backups |
 | ACINQ routing fees | ~0.4% of volume | Paid per transaction |
 | ACINQ splice fees | 1000 sat + mining fee | Per inbound channel resize |
 | Resend email | $0 (pilot) | Free tier: 3K emails/mo |
 | Bolt Cards (20 units) | $20â€”60 one-time | NTAG424 DNA at $1â€”3/unit |
 | Fintech attorney review | $1,000â€”2,500 one-time | Agent of Payee ToS validation |
-| **Total pilot cost** | **~$50â€”100/mo + ~$1,500 one-time** | |
+| Founding Merchant starter kits | $200â€”400 one-time | Stickers + decals + NFC cards for 20 merchants |
+| **Total pilot cost** | **~$31/mo + ~$1,700â€”3,000 one-time** | |
 
 ---
 
