@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useSovereignStore } from "@/lib/store";
 import { connectNostr } from "@/lib/nostr-auth";
+import { NWCConnect } from "@/components/nwc-connect";
 import type { TransactionRow } from "@/app/api/merchant-dashboard/transactions/route";
 
 // ---- Types ----
@@ -571,6 +572,18 @@ function AccountTab({ merchantId }: { merchantId: string }) {
           </div>
         </div>
       )}
+
+      {/* Sovereign opt-in: bring your own Lightning node via NWC */}
+      <div className="rounded-xl border border-gray-100 p-5 space-y-4">
+        <div>
+          <h3 className="font-semibold text-gray-900">Lightning Node (Advanced)</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Connect your own Alby Hub or NWC-compatible Lightning node for full
+            self-custody. The shared LNbits backend remains active as fallback.
+          </p>
+        </div>
+        <NWCConnect merchantId={merchantId} />
+      </div>
     </div>
   );
 }

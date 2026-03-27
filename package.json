@@ -39,6 +39,7 @@
     "@cashu/cashu-ts": "^3.5.0",
     "@fedimint/core": "^0.1.0",
     "@fedimint/transport-web": "^0.1.2",
+    "@getalby/bitcoin-connect": "^3.12.2",
     "@gsap/react": "^2.1.2",
     "@lightninglabs/lnc-web": "0.3.5-alpha",
     "@prisma/client": "~5.22.0",
