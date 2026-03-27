@@ -246,6 +246,7 @@ export interface MerchantListing {
   location: string;
   paymentMethods: PaymentMethod[];
   contactInfo?: string;
+  telegramChatId?: string;
   createdAt: number;
   active: boolean;
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { emitInvoiceStateChanged } from "@/lib/invoice-events";
 import { logger } from "@/lib/logger";
 import { triggerPaymentWebhooks } from "@/lib/webhook-engine";
+import { sendTelegramNotification, formatPaymentMessage } from "@/lib/telegram-notify";
 
 const OPENBAZAAR_FULFILL_URL = "https://openbazaar.ai/api/storefront/fulfill";
 
@@ -113,6 +114,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Send Telegram notification to merchant (fire-and-forget, never blocks payment)
+        if (session.merchant_id) {
+            sendTelegramNotificationForMerchant(
+                session.merchant_id,
+                session.amount_sats ?? 0,
+                session.memo ?? null
+            ).catch(() => {/* silent */});
+        }
+
         const invoice = await db.invoice.findUnique({
             where: { paymentSessionId: sessionId },
             include: {
@@ -151,4 +161,57 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
+}
+
+// ---- Telegram helpers ----
+
+interface MerchantRow {
+  businessName?: string;
+  telegram_chat_id?: string | null;
+}
+
+/**
+ * Look up merchant's Telegram chat ID and send a payment notification.
+ * Tries Supabase first, falls back to seed-merchant names.
+ * Always fire-and-forget — never throws.
+ */
+async function sendTelegramNotificationForMerchant(
+    merchantId: string,
+    amountSats: number,
+    memo: string | null
+): Promise<void> {
+    let merchantName = merchantId;
+    let telegramChatId: string | null = null;
+
+    // Seed merchant display names
+    const SEED_NAMES: Record<string, string> = {
+        "seed-black-bear": "Black Bear Window Cleaning",
+        "seed-glacier": "The Ice Cream Parlor by Glacier",
+        "seed-teneo": "Teneo",
+        "arxmint-store": "ArxMint Store",
+    };
+    if (SEED_NAMES[merchantId]) merchantName = SEED_NAMES[merchantId];
+
+    // Try Supabase for name + telegram_chat_id
+    try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data } = await supabase
+            .from("merchant_pledges")
+            .select("businessName, telegram_chat_id")
+            .eq("id", merchantId)
+            .single();
+
+        const row = data as MerchantRow | null;
+        if (row) {
+            if (row.businessName) merchantName = row.businessName;
+            if (row.telegram_chat_id) telegramChatId = row.telegram_chat_id;
+        }
+    } catch {
+        // DB unavailable — no Telegram chat ID
+    }
+
+    if (!telegramChatId) return;
+
+    const message = await formatPaymentMessage(amountSats, merchantName, memo);
+    await sendTelegramNotification(telegramChatId, message);
 }
