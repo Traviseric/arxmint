@@ -5,6 +5,7 @@ import { emitInvoiceStateChanged } from "@/lib/invoice-events";
 import { logger } from "@/lib/logger";
 import { triggerPaymentWebhooks, deliverWebhook } from "@/lib/webhook-engine";
 import { sendTelegramNotification, formatPaymentMessage } from "@/lib/telegram-notify";
+import { sendPaymentReceivedEmail, sendPaymentReceiptEmail } from "@/lib/email";
 
 const OPENBAZAAR_FULFILL_URL = "https://openbazaar.ai/api/storefront/fulfill";
 
@@ -199,6 +200,17 @@ export async function POST(request: NextRequest) {
             ).catch(() => {/* silent */});
         }
 
+        // Send payment notification emails (fire-and-forget, never blocks webhook)
+        if (session.merchant_id) {
+            sendPaymentNotificationEmails(
+                session.merchant_id,
+                session.amount_sats ?? 0,
+                sessionId,
+                session.paid_at ?? new Date().toISOString(),
+                session.customer_email ?? session.shipping_data?.email ?? null
+            ).catch(() => {/* silent */});
+        }
+
         // Auto-submit to BTCMap on merchant's first payment (fire-and-forget)
         if (session.merchant_id) {
             submitToBtcMapOnFirstPayment(supabase, session.merchant_id)
@@ -334,5 +346,92 @@ async function submitToBtcMapOnFirstPayment(
         logger.info("btcmap_first_payment_submit_triggered", { merchantId });
     } catch {
         // Silent — BTCMap submission is best-effort
+    }
+}
+
+// ---- Payment notification email helpers ----
+
+/**
+ * Fetch BTC/USD price from mempool.space (best-effort).
+ * Returns null on any failure — caller must handle gracefully.
+ */
+async function fetchBtcPriceUsd(): Promise<number | null> {
+    try {
+        const res = await fetch("https://mempool.space/api/v1/prices", {
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return typeof data.USD === "number" ? data.USD : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Look up merchant info and send payment notification emails.
+ * - Always sends to merchant if email is on file.
+ * - Sends receipt to customer only if customerEmail is provided.
+ * Always fire-and-forget — never throws.
+ */
+async function sendPaymentNotificationEmails(
+    merchantId: string,
+    amountSats: number,
+    sessionId: string,
+    paidAt: string,
+    customerEmail: string | null
+): Promise<void> {
+    // Seed merchant display names + emails
+    const SEED_MERCHANTS: Record<string, { name: string; email?: string }> = {
+        "seed-black-bear": { name: "Black Bear Window Cleaning" },
+        "seed-glacier": { name: "The Ice Cream Parlor by Glacier" },
+        "seed-teneo": { name: "Teneo" },
+        "arxmint-store": { name: "ArxMint Store" },
+    };
+
+    let merchantName = SEED_MERCHANTS[merchantId]?.name ?? merchantId;
+    let merchantEmail: string | null = null;
+
+    // Look up merchant from Supabase
+    try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data } = await supabase
+            .from("merchant_pledges")
+            .select("businessName, email")
+            .eq("id", merchantId)
+            .single();
+
+        if (data) {
+            if (data.businessName) merchantName = data.businessName;
+            if (data.email) merchantEmail = data.email;
+        }
+    } catch {
+        // DB unavailable
+    }
+
+    // Fetch BTC price for USD conversion
+    const btcPrice = await fetchBtcPriceUsd();
+    const amountUsd = btcPrice
+        ? ((amountSats / 100_000_000) * btcPrice).toFixed(2)
+        : null;
+
+    const emailData = {
+        merchantName,
+        amountSats,
+        amountUsd,
+        sessionId,
+        paidAt,
+    };
+
+    // Send merchant notification
+    if (merchantEmail) {
+        sendPaymentReceivedEmail({ ...emailData, to: merchantEmail })
+            .catch(() => {/* silent */});
+    }
+
+    // Send customer receipt (only if email available)
+    if (customerEmail) {
+        sendPaymentReceiptEmail({ ...emailData, to: customerEmail })
+            .catch(() => {/* silent */});
     }
 }

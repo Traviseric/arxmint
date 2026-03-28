@@ -109,6 +109,231 @@ export async function sendInvoiceEmail(data: InvoiceEmailData): Promise<boolean>
   }
 }
 
+// ---- Payment notification emails ----
+
+export interface PaymentReceivedEmailData {
+  to: string;
+  merchantName: string;
+  amountSats: number;
+  amountUsd: string | null;
+  sessionId: string;
+  paidAt: string;
+}
+
+/**
+ * Send "payment received" notification to merchant.
+ * Returns true on success, false on failure (never throws).
+ */
+export async function sendPaymentReceivedEmail(
+  data: PaymentReceivedEmailData
+): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) return false;
+
+  const shortId = data.sessionId.slice(0, 8).toUpperCase();
+  const usdPart = data.amountUsd ? `$${data.amountUsd}` : `${data.amountSats.toLocaleString()} sats`;
+  const subject = `Payment received: ${usdPart} — Checkout #${shortId}`;
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: data.to,
+      subject,
+      html: buildPaymentReceivedHtml(data, shortId),
+    });
+    logger.info("email_sent", { type: "payment_received", sessionId: data.sessionId });
+    return true;
+  } catch (error) {
+    logger.warn("email_send_failed", {
+      type: "payment_received",
+      sessionId: data.sessionId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+export interface PaymentReceiptEmailData {
+  to: string;
+  merchantName: string;
+  amountSats: number;
+  amountUsd: string | null;
+  sessionId: string;
+  paidAt: string;
+}
+
+/**
+ * Send payment receipt to customer (only if customer email is available).
+ * Returns true on success, false on failure (never throws).
+ */
+export async function sendPaymentReceiptEmail(
+  data: PaymentReceiptEmailData
+): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) return false;
+
+  const usdPart = data.amountUsd ? `$${data.amountUsd}` : `${data.amountSats.toLocaleString()} sats`;
+  const subject = `Receipt: Your ${usdPart} payment to ${data.merchantName}`;
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: data.to,
+      subject,
+      html: buildPaymentReceiptHtml(data),
+    });
+    logger.info("email_sent", { type: "payment_receipt", sessionId: data.sessionId });
+    return true;
+  } catch (error) {
+    logger.warn("email_send_failed", {
+      type: "payment_receipt",
+      sessionId: data.sessionId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+function buildPaymentReceivedHtml(data: PaymentReceivedEmailData, shortId: string): string {
+  const timestamp = new Date(data.paidAt).toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+
+    <!-- Header -->
+    <div style="background:#F7931A;border-radius:12px 12px 0 0;padding:24px 32px;">
+      <h1 style="font-size:22px;color:#fff;margin:0;">Payment Received</h1>
+      <p style="font-size:14px;color:rgba(255,255,255,0.85);margin:4px 0 0;">${data.merchantName}</p>
+    </div>
+
+    <!-- Main card -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-top:none;border-radius:0 0 12px 12px;padding:32px;margin-bottom:24px;">
+
+      <!-- Amount -->
+      <div style="text-align:center;padding:24px 0;border-bottom:1px solid #f0f0f0;margin-bottom:24px;">
+        <p style="font-size:13px;color:#888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;">Amount Received</p>
+        <p style="font-size:32px;font-weight:700;color:#171717;margin:0;">
+          ${data.amountSats.toLocaleString()} sats
+        </p>
+        ${data.amountUsd ? `<p style="font-size:16px;color:#888;margin:4px 0 0;">&#8776; $${data.amountUsd} USD</p>` : ""}
+      </div>
+
+      <!-- Details -->
+      <table style="width:100%;font-size:14px;color:#333;margin-bottom:24px;" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:8px 0;color:#888;">Checkout Reference</td>
+          <td style="padding:8px 0;text-align:right;font-family:monospace;">#${shortId}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#888;">Confirmed</td>
+          <td style="padding:8px 0;text-align:right;">${timestamp}</td>
+        </tr>
+      </table>
+
+      <!-- CTA -->
+      <div style="text-align:center;">
+        <a href="https://arxmint.com/merchant-dashboard"
+           style="display:inline-block;background:#F7931A;color:#fff;font-size:16px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          View in Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:16px 0;">
+      <p style="font-size:13px;color:#aaa;margin:0;">
+        Powered by <a href="https://arxmint.com" style="color:#F7931A;text-decoration:none;">ArxMint</a>
+        — Bitcoin payments, zero fees.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+function buildPaymentReceiptHtml(data: PaymentReceiptEmailData): string {
+  const shortId = data.sessionId.slice(0, 8).toUpperCase();
+  const timestamp = new Date(data.paidAt).toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+
+    <!-- Header -->
+    <div style="background:#F7931A;border-radius:12px 12px 0 0;padding:24px 32px;">
+      <h1 style="font-size:22px;color:#fff;margin:0;">Payment Confirmed</h1>
+      <p style="font-size:14px;color:rgba(255,255,255,0.85);margin:4px 0 0;">to ${data.merchantName}</p>
+    </div>
+
+    <!-- Main card -->
+    <div style="background:#fff;border:1px solid #e5e5e5;border-top:none;border-radius:0 0 12px 12px;padding:32px;margin-bottom:24px;">
+
+      <!-- Amount -->
+      <div style="text-align:center;padding:24px 0;border-bottom:1px solid #f0f0f0;margin-bottom:24px;">
+        <p style="font-size:13px;color:#888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;">Amount Paid</p>
+        <p style="font-size:32px;font-weight:700;color:#171717;margin:0;">
+          ${data.amountSats.toLocaleString()} sats
+        </p>
+        ${data.amountUsd ? `<p style="font-size:16px;color:#888;margin:4px 0 0;">&#8776; $${data.amountUsd} USD</p>` : ""}
+      </div>
+
+      <!-- Details -->
+      <table style="width:100%;font-size:14px;color:#333;margin-bottom:24px;" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:8px 0;color:#888;">Merchant</td>
+          <td style="padding:8px 0;text-align:right;">${data.merchantName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#888;">Checkout Reference</td>
+          <td style="padding:8px 0;text-align:right;font-family:monospace;">#${shortId}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#888;">Confirmed</td>
+          <td style="padding:8px 0;text-align:right;">${timestamp}</td>
+        </tr>
+      </table>
+
+      <!-- Confirmation message -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;text-align:center;">
+        <p style="font-size:15px;color:#166534;margin:0;font-weight:600;">Payment confirmed. No further action needed.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:16px 0;">
+      <p style="font-size:13px;color:#aaa;margin:0;">
+        Powered by <a href="https://arxmint.com" style="color:#F7931A;text-decoration:none;">ArxMint</a>
+        — Bitcoin payments, zero fees.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
 function buildInvoiceHtml(data: InvoiceEmailData): string {
   const usdLine = data.amountUsd ? ` (~$${data.amountUsd} USD)` : "";
   const memoSection = data.memo
