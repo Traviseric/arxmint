@@ -31,7 +31,11 @@ export function NavBar() {
     pathname?.startsWith("/merchants") ||
     pathname?.startsWith("/bazaar") ||
     pathname?.startsWith("/store") ||
-    pathname?.startsWith("/pay");
+    pathname?.startsWith("/pay") ||
+    pathname?.startsWith("/badge") ||
+    pathname?.startsWith("/pos") ||
+    pathname?.startsWith("/merchant-dashboard") ||
+    pathname?.startsWith("/checkout-embed");
 
   // Hydrate Nostr session from localStorage on mount
   useEffect(() => {
