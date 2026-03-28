@@ -132,6 +132,16 @@ export function CheckoutFlow({
     }
   }, [merchantId, presetMemo]);
 
+  // Apply merchant light theme to nav + body so the entire page feels light
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", "merchant");
+    document.body.style.background = "#fafafa";
+    return () => {
+      document.documentElement.removeAttribute("data-theme");
+      document.body.style.background = "";
+    };
+  }, []);
+
   // Auto-create invoice when preset amount provided (skip if shipping needed)
   useEffect(() => {
     if (presetAmount && !hasCreatedInvoice.current && !collectShipping) {
