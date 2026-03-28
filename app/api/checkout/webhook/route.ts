@@ -211,6 +211,13 @@ export async function POST(request: NextRequest) {
             ).catch(() => {/* silent */});
         }
 
+        // Auto-forward payment to merchant's Lightning Address (fire-and-forget)
+        // This is the "hot potato" custody model — funds leave ArxMint in seconds
+        if (session.merchant_id) {
+            autoForwardToMerchant(supabase, session.merchant_id, session.amount_sats ?? 0, sessionId)
+                .catch(() => {/* silent — never block webhook */});
+        }
+
         // Auto-submit to BTCMap on merchant's first payment (fire-and-forget)
         if (session.merchant_id) {
             submitToBtcMapOnFirstPayment(supabase, session.merchant_id)
@@ -433,5 +440,50 @@ async function sendPaymentNotificationEmails(
     if (customerEmail) {
         sendPaymentReceiptEmail({ ...emailData, to: customerEmail })
             .catch(() => {/* silent */});
+    }
+}
+
+/**
+ * Auto-forward payment to merchant's Lightning Address.
+ * Implements "hot potato" custody — funds leave ArxMint in seconds.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function autoForwardToMerchant(supabase: any, merchantId: string, amountSats: number, sessionId: string) {
+    if (!amountSats || amountSats < 1) return;
+
+    // Look up merchant's wallet and payout address
+    const { data: wallet } = await supabase
+        .from("merchant_wallets")
+        .select("lnbits_admin_key, payout_address, payout_type, auto_forward_enabled")
+        .eq("merchant_id", merchantId)
+        .single();
+
+    if (!wallet?.payout_address || !wallet?.lnbits_admin_key) {
+        logger.info("auto_forward_skipped", { merchantId, reason: "no payout address or wallet" });
+        return;
+    }
+
+    if (wallet.auto_forward_enabled === false) {
+        logger.info("auto_forward_skipped", { merchantId, reason: "auto_forward disabled" });
+        return;
+    }
+
+    if (wallet.payout_type !== "lightning_address") {
+        logger.info("auto_forward_skipped", { merchantId, reason: `payout_type=${wallet.payout_type}, only lightning_address supported` });
+        return;
+    }
+
+    const { forwardPaymentToMerchant } = await import("@/lib/lnbits");
+    const result = await forwardPaymentToMerchant({
+        amountSats,
+        lightningAddress: wallet.payout_address,
+        walletAdminKey: wallet.lnbits_admin_key,
+        memo: `ArxMint forward — session ${sessionId.slice(0, 8)}`,
+    });
+
+    if (result.success) {
+        logger.info("auto_forward_success", { merchantId, amountSats, lightningAddress: wallet.payout_address });
+    } else {
+        logger.warn("auto_forward_failed", { merchantId, amountSats, error: result.error });
     }
 }

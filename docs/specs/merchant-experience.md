@@ -23,8 +23,8 @@ The merchant controls their own wallet (Phoenix, Wallet of Satoshi, etc). ArxMin
 | **Mobile POS** | `arxmint.com/pos/[merchant]` — keypad on phone, installable PWA | LIVE |
 | **Fiat pricing** | Customer enters $50, ArxMint converts to sats at current rate | LIVE |
 | **Auto-forward to merchant wallet** | Payment received → instantly forwarded to merchant's Lightning Address | NOT WIRED |
-| **Payment notification email** | "You received $50.00 from checkout #ABC" | NOT WIRED |
-| **Customer receipt email** | "Your payment of $50.00 to Black Bear was successful" | NOT WIRED |
+| **Payment notification email** | "You received $50.00 from checkout #ABC" | LIVE |
+| **Customer receipt email** | "Your payment of $50.00 to Black Bear was successful" | LIVE |
 | **Transaction history** | Dashboard at `/merchant-dashboard` with payment list | BUILT, NOT CONNECTED |
 | **Tax CSV export** | QuickBooks-compatible 4-column CSV with USD values | BUILT, NOT TESTED |
 | **Invoice emails** | Merchant sends payment request to customer's email | BUILT, NO UI |

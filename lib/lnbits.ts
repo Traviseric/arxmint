@@ -163,6 +163,94 @@ export async function provisionMerchantWallet(params: {
 }
 
 /**
+ * Auto-forward payment to merchant's Lightning Address.
+ * Called after payment confirmation to implement "hot potato" custody.
+ * Uses the merchant's LNbits admin key to pay out.
+ */
+export async function forwardPaymentToMerchant(params: {
+  amountSats: number;
+  lightningAddress: string;
+  walletAdminKey: string;
+  memo?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const baseUrl = process.env.LNBITS_URL;
+  if (!baseUrl) return { success: false, error: "LNBITS_URL not configured" };
+
+  try {
+    // Step 1: Resolve Lightning Address to LNURL pay endpoint
+    const [user, domain] = params.lightningAddress.split("@");
+    if (!user || !domain) {
+      return { success: false, error: "Invalid Lightning Address format" };
+    }
+
+    const lnurlRes = await fetch(`https://${domain}/.well-known/lnurlp/${user}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!lnurlRes.ok) {
+      return { success: false, error: `LNURL resolve failed: ${lnurlRes.status}` };
+    }
+
+    const lnurlData = await lnurlRes.json();
+    const callback = lnurlData.callback;
+    if (!callback) {
+      return { success: false, error: "No callback in LNURL response" };
+    }
+
+    // Step 2: Request invoice from merchant's LNURL endpoint
+    const amountMsat = params.amountSats * 1000;
+    const sep = callback.includes("?") ? "&" : "?";
+    const invoiceRes = await fetch(`${callback}${sep}amount=${amountMsat}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!invoiceRes.ok) {
+      return { success: false, error: `Invoice request failed: ${invoiceRes.status}` };
+    }
+
+    const invoiceData = await invoiceRes.json();
+    const bolt11 = invoiceData.pr;
+    if (!bolt11) {
+      return { success: false, error: "No invoice in LNURL callback response" };
+    }
+
+    // Step 3: Pay the invoice via LNbits using merchant's admin key
+    const payRes = await fetch(`${baseUrl}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "X-Api-Key": params.walletAdminKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        out: true,
+        bolt11,
+        memo: params.memo || "ArxMint auto-forward",
+      }),
+    });
+
+    if (!payRes.ok) {
+      const text = await payRes.text();
+      logger.warn("lnbits_forward_payment_failed", {
+        status: payRes.status,
+        body: text.slice(0, 200),
+      });
+      return { success: false, error: `LNbits pay failed: ${payRes.status}` };
+    }
+
+    logger.info("lnbits_payment_forwarded", {
+      amountSats: params.amountSats,
+      lightningAddress: params.lightningAddress,
+    });
+    return { success: true };
+  } catch (error) {
+    logger.warn("lnbits_forward_payment_error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
  * Check if a Lightning invoice has been paid via LNbits.
  */
 export async function checkLNbitsPayment(params: {
