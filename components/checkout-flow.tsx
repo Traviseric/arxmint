@@ -572,6 +572,13 @@ export function CheckoutFlow({
               This was a demo payment
             </p>
           )}
+          <button
+            onClick={handleNewInvoice}
+            className="mt-6 antigravity-btn-outline !px-6 !py-2.5 inline-flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            New Payment
+          </button>
         </div>
       )}
 
