@@ -18,6 +18,7 @@ import {
   ExternalLink,
   FileDown,
   Mail,
+  Send,
   X,
   RefreshCw,
   ChevronLeft,
@@ -862,6 +863,30 @@ function MerchantDashboardContent() {
             {/* Left column: Payment Link + Balance */}
             <div className="lg:col-span-1 space-y-6">
               <PaymentLinkCard merchantId={merchantId} />
+
+              {/* Send Invoice CTA */}
+              <ScrollReveal delay={0.15}>
+                <Link
+                  href={`/merchant-dashboard/send-invoice?merchant=${merchantId}`}
+                  className="block bg-white rounded-xl border border-gray-100 p-6 hover:border-orange-200 hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-orange-500 group-hover:bg-orange-600 flex items-center justify-center transition-colors">
+                      <Send size={22} className="text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
+                        Send Invoice
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Email a payment request to a customer
+                      </p>
+                    </div>
+                    <Mail size={18} className="text-gray-300 group-hover:text-orange-400 transition-colors" />
+                  </div>
+                </Link>
+              </ScrollReveal>
+
               <BalanceCard
                 stats={stats}
                 loading={statsLoading}
