@@ -86,6 +86,7 @@ export function CheckoutFlow({
   const [paidAt, setPaidAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [btcPrice, setBtcPrice] = useState<number | null>(null);
   const [shipping, setShipping] = useState<ShippingAddress>({
     email: "", fullName: "", street: "", city: "", state: "", zip: "",
   });
@@ -131,6 +132,19 @@ export function CheckoutFlow({
       setLoading(false);
     }
   }, [merchantId, presetMemo]);
+
+  // Fetch BTC price for USD conversion
+  useEffect(() => {
+    fetch("https://mempool.space/api/v1/prices")
+      .then((r) => r.json())
+      .then((d) => setBtcPrice(d.USD))
+      .catch(() => {});
+  }, []);
+
+  const satsToUsd = (sats: number) => {
+    if (!btcPrice) return null;
+    return (sats / 100_000_000 * btcPrice).toFixed(2);
+  };
 
   // Apply merchant light theme to nav + body so the entire page feels light
   useEffect(() => {
@@ -324,7 +338,9 @@ export function CheckoutFlow({
                 autoFocus
               />
               <p className="text-xs text-text-muted text-center mt-2">
-                1 – 1,000,000 sats
+                {amount && btcPrice
+                  ? `≈ $${satsToUsd(Number(amount))} USD`
+                  : "1 – 1,000,000 sats"}
               </p>
             </div>
 
@@ -338,6 +354,7 @@ export function CheckoutFlow({
                   className="px-3 py-1.5 rounded-lg text-sm font-mono border border-border-default hover:border-accent/50 hover:bg-accent/5 transition-colors text-text-secondary"
                 >
                   {q.toLocaleString()}
+                  {btcPrice && <span className="text-[10px] text-text-muted block">${satsToUsd(q)}</span>}
                 </button>
               ))}
             </div>
@@ -488,6 +505,11 @@ export function CheckoutFlow({
             <p className="text-3xl font-mono font-semibold text-text-primary">
               {displayAmount.toLocaleString()} <span className="text-base text-text-muted">sats</span>
             </p>
+            {btcPrice && (
+              <p className="text-sm text-text-muted mt-1">
+                ≈ ${satsToUsd(displayAmount)} USD
+              </p>
+            )}
           </div>
 
           <PaymentRailSelector
@@ -531,9 +553,12 @@ export function CheckoutFlow({
           <h2 className="text-2xl font-semibold text-text-primary mb-2">
             Payment Received
           </h2>
-          <p className="text-3xl font-mono font-semibold text-green-600 mb-2">
+          <p className="text-3xl font-mono font-semibold text-green-600 mb-1">
             {displayAmount.toLocaleString()} <span className="text-base">sats</span>
           </p>
+          {btcPrice && (
+            <p className="text-sm text-text-muted mb-2">≈ ${satsToUsd(displayAmount)} USD</p>
+          )}
           <p className="text-sm text-text-muted">
             Paid to {merchantName}
           </p>
