@@ -251,6 +251,34 @@ export async function forwardPaymentToMerchant(params: {
 }
 
 /**
+ * Check if a Lightning invoice has been paid via Phoenixd directly.
+ * Handles fee-credit payments that LNbits can't detect.
+ */
+export async function checkPhoenixdPayment(paymentHash: string): Promise<boolean> {
+  const baseUrl = process.env.LNBITS_URL;
+  if (!baseUrl) return false;
+
+  // Derive Phoenixd URL from LNbits URL (same host, port 9740)
+  const phoenixdPassword = process.env.PHOENIXD_API_PASSWORD;
+  const phoenixdUrl = process.env.PHOENIXD_URL;
+  if (!phoenixdPassword || !phoenixdUrl) return false;
+
+  try {
+    const res = await fetch(`${phoenixdUrl}/payments/incoming/${paymentHash}`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`:${phoenixdPassword}`).toString("base64")}`,
+      },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.isPaid === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Check if a Lightning invoice has been paid via LNbits.
  */
 export async function checkLNbitsPayment(params: {

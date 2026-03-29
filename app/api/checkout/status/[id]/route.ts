@@ -44,12 +44,14 @@ async function resolveSession(id: string, requestUrl: string): Promise<{
     status = "expired";
   }
 
-  // Check LNbits for payment confirmation (real payments)
+  // Check LNbits + Phoenixd for payment confirmation (real payments)
   if (status === "pending" && !session.demo_mode && session.r_hash) {
     try {
-      const { checkLNbitsPayment } = await import("@/lib/lnbits");
+      const { checkLNbitsPayment, checkPhoenixdPayment } = await import("@/lib/lnbits");
       const lnbitsStatus = await checkLNbitsPayment({ paymentHash: session.r_hash });
-      if (lnbitsStatus.paid) {
+      // Fall back to Phoenixd direct check (handles fee-credit payments LNbits can't see)
+      const isPaid = lnbitsStatus.paid || await checkPhoenixdPayment(session.r_hash);
+      if (isPaid) {
         const paidAt = new Date().toISOString();
         await supabase
           .from("checkout_sessions")
