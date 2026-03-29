@@ -101,34 +101,34 @@ export function PaymentRailSelector({
 
   return (
     <div className="space-y-4">
-      {/* Rail tabs */}
-      <div className="flex rounded-lg border border-border-default overflow-hidden">
-        {(["lightning", "cashu", "onchain"] as PaymentRail[]).map((rail) => {
-          const available = availableRails.includes(rail);
-          const isActive = rail === selectedRail;
-          const m = RAIL_META[rail];
-          return (
-            <button
-              key={rail}
-              type="button"
-              disabled={!available || loading}
-              onClick={() => available && !loading && onRailChange(rail)}
-              title={!available ? "Not configured for this merchant" : undefined}
-              className={[
-                "flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5",
-                isActive
-                  ? "bg-accent text-white"
-                  : available
-                    ? "text-text-secondary hover:bg-accent/5 hover:text-text-primary"
-                    : "text-text-muted opacity-40 cursor-not-allowed",
-              ].join(" ")}
-            >
-              <span aria-hidden="true">{m.icon}</span>
-              <span>{m.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Rail tabs — only show if more than one rail is available */}
+      {availableRails.length > 1 && (
+        <div className="flex rounded-lg border border-border-default overflow-hidden">
+          {(["lightning", "cashu", "onchain"] as PaymentRail[]).map((rail) => {
+            const available = availableRails.includes(rail);
+            if (!available) return null;
+            const isActive = rail === selectedRail;
+            const m = RAIL_META[rail];
+            return (
+              <button
+                key={rail}
+                type="button"
+                disabled={loading}
+                onClick={() => !loading && onRailChange(rail)}
+                className={[
+                  "flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5",
+                  isActive
+                    ? "bg-accent text-white"
+                    : "text-text-secondary hover:bg-accent/5 hover:text-text-primary",
+                ].join(" ")}
+              >
+                <span aria-hidden="true">{m.icon}</span>
+                <span>{m.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Privacy indicator */}
       <div className="flex items-center justify-center gap-1.5">
@@ -149,11 +149,7 @@ export function PaymentRailSelector({
       {!loading && isAvailable && paymentUri && (
         <>
           <div className="flex justify-center">
-            <a
-              href={toWalletUri(selectedRail, paymentUri)}
-              aria-label={`Pay ${amountSats.toLocaleString()} sats to ${merchantName} — opens wallet`}
-              className="block bg-white rounded-xl p-4 shadow-sm"
-            >
+            <div className="bg-white rounded-xl p-4 shadow-sm">
               <QRCodeSVG
                 value={toQrValue(selectedRail, paymentUri)}
                 size={240}
@@ -164,7 +160,7 @@ export function PaymentRailSelector({
                 aria-label={`${meta.label} payment QR code`}
                 role="img"
               />
-            </a>
+            </div>
           </div>
 
           <p className="text-xs text-text-muted text-center">{meta.scanLabel}</p>
