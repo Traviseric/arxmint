@@ -334,6 +334,114 @@ function buildPaymentReceiptHtml(data: PaymentReceiptEmailData): string {
   `.trim();
 }
 
+// ---- Magic link login email ----
+
+export interface MagicLinkEmailData {
+  email: string;
+  businessName: string;
+  loginUrl: string;
+}
+
+/**
+ * Send a magic link login email to a merchant.
+ * Returns true on success, false on failure (never throws).
+ */
+export async function sendMagicLinkEmail(
+  data: MagicLinkEmailData
+): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) return false;
+
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: data.email,
+      subject: "Log in to your ArxMint merchant dashboard",
+      html: buildMagicLinkHtml(data),
+    });
+    logger.info("email_sent", { type: "magic_link", email: data.email });
+    return true;
+  } catch (error) {
+    logger.warn("email_send_failed", {
+      type: "magic_link",
+      email: data.email,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+function buildMagicLinkHtml(data: MagicLinkEmailData): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:32px;">
+      <h1 style="font-size:28px;color:#171717;margin:0 0 8px;">
+        Arx<span style="color:#F7931A;">Mint</span>
+      </h1>
+      <p style="font-size:14px;color:#888;margin:0;">Merchant Dashboard</p>
+    </div>
+
+    <!-- Main card -->
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:32px;margin-bottom:24px;">
+      <p style="font-size:16px;color:#333;line-height:1.6;margin:0 0 8px;">
+        Hey ${data.businessName} team,
+      </p>
+      <p style="font-size:16px;color:#333;line-height:1.6;margin:0 0 24px;">
+        Click the button below to log in to your ArxMint merchant dashboard.
+      </p>
+
+      <!-- CTA Button -->
+      <div style="text-align:center;margin:0 0 24px;">
+        <a href="${data.loginUrl}"
+           style="display:inline-block;background:#F7931A;color:#fff;font-size:16px;font-weight:700;padding:14px 40px;border-radius:8px;text-decoration:none;">
+          Log In to Dashboard
+        </a>
+      </div>
+
+      <!-- Expiry notice -->
+      <p style="font-size:13px;color:#888;text-align:center;margin:0 0 16px;">
+        This link expires in 15 minutes.
+      </p>
+
+      <!-- Fallback link -->
+      <p style="font-size:13px;color:#888;text-align:center;margin:0 0 4px;">
+        If the button doesn't work, copy and paste this link:
+      </p>
+      <p style="font-size:12px;text-align:center;margin:0;">
+        <a href="${data.loginUrl}" style="color:#F7931A;word-break:break-all;">${data.loginUrl}</a>
+      </p>
+    </div>
+
+    <!-- Security notice -->
+    <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:16px 24px;margin-bottom:24px;">
+      <p style="font-size:13px;color:#666;margin:0;line-height:1.5;">
+        If you didn't request this login link, you can safely ignore this email. No one can access your account without clicking this link.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:16px 0;">
+      <p style="font-size:13px;color:#aaa;margin:0;">
+        Powered by <a href="https://arxmint.com" style="color:#F7931A;text-decoration:none;">ArxMint</a>
+        — Bitcoin payments, zero fees.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
 function buildInvoiceHtml(data: InvoiceEmailData): string {
   const usdLine = data.amountUsd ? ` (~$${data.amountUsd} USD)` : "";
   const memoSection = data.memo
