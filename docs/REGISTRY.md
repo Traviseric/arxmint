@@ -29,6 +29,7 @@
 | docs/core/roadmap-execution-spec.md | core, roadmap, execution, spec | roadmap execution spec doc in docs/core |
 | docs/core/spec.md | core, spec | spec doc in docs/core |
 | docs/core/why-arxmint.md | core, why | why arxmint doc in docs/core |
+| docs/core/incentives.md | core, incentives, rewards, adoption, dual pricing, sats-back, cashu, loyalty, B2B, flywheel, agent | Incentive strategy — dual pricing, Cashu sats-back, B2B routing, build phases, what works and what doesn't |
 | docs/deployment/deploy.md | deployment, deploy | deploy doc in docs/deployment |
 | docs/deployment/migration-plan.md | deployment, migration | migration plan doc in docs/deployment |
 | docs/deployment/restore.md | deployment, restore | restore doc in docs/deployment |
