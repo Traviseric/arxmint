@@ -80,12 +80,18 @@ export async function POST(request: NextRequest) {
           return apiError(404, "INVOICE_NOT_FOUND", "Invoice not found");
         }
 
-        if (invoiceRecord.currency !== "BTC") {
-          return apiError(
-            409,
-            "INVOICE_CURRENCY_UNSUPPORTED",
-            "Only BTC invoices can be settled through ArxMint checkout"
-          );
+        // USD invoices or stripe-rail invoices → redirect to Stripe checkout
+        if (invoiceRecord.currency === "USD" || invoiceRecord.paymentRail === "stripe") {
+          const origin = new URL(request.url).origin;
+          return NextResponse.json({
+            redirect: "stripe",
+            checkoutUrl: `${origin}/api/checkout/stripe`,
+            message: "This invoice requires payment via credit card. POST to /api/checkout/stripe with { invoiceId }.",
+            invoiceId: invoiceRecord.id,
+            invoiceNumber: invoiceRecord.invoiceNumber,
+            currency: invoiceRecord.currency,
+            paymentRail: invoiceRecord.paymentRail,
+          }, { status: 303 });
         }
 
         if (invoiceRecord.status === "paid") {

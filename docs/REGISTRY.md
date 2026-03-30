@@ -68,15 +68,15 @@
 | docs/research/3-CDK vs Nutshell as a production Cashu mint for ArxMint.md | research, 3, cdk, vs, nutshell, as, production, cashu | 3 CDK vs Nutshell as a production Cashu mint for ArxMint doc in docs/research |
 | docs/research/4-CDK vs Nutshell as a production Cashu mint for ArxMint.md | research, 4, cdk, vs, nutshell, as, production, cashu | 4 CDK vs Nutshell as a production Cashu mint for ArxMint doc in docs/research |
 | docs/research/5-Cashu Proof Persistence & Recovery Architecture for Web Wallets.md | research, 5, cashu, proof, persistence, recovery, architecture, web | 5 Cashu Proof Persistence & Recovery Architecture for Web Wallets doc in docs/research |
-| docs/research/Phase5-Bazaar/1-Crypto Payment Infrastructure Legal Analysis.md | research, phase5, bazaar, 1, crypto, payment, infrastructure, legal | 1 Crypto Payment Infrastructure Legal Analysis doc in docs/research/Phase5-Bazaar |
-| docs/research/Phase5-Bazaar/2-ArxMint Competitive Analysis and MVP.md | research, phase5, bazaar, 2, competitive, analysis, mvp | 2 ArxMint Competitive Analysis and MVP doc in docs/research/Phase5-Bazaar |
+| ~~MOVED~~ Phase5-Bazaar/1-Crypto Payment Infrastructure Legal Analysis | MOVED TO INTERNAL | Regulatory/legal analysis — moved to te-btc/internal/arxmint-internal/research/ |
+| ~~MOVED~~ Phase5-Bazaar/2-ArxMint Competitive Analysis and MVP | MOVED TO INTERNAL | Competitive intelligence — moved to te-btc/internal/arxmint-internal/research/ |
 | docs/research/Phase5-Bazaar/3-ArxMint Phase 5 Architecture Decisions.md | research, phase5, bazaar, 3, 5, architecture, decisions | 3 ArxMint Phase 5 Architecture Decisions doc in docs/research/Phase5-Bazaar |
 | docs/research/Phase5-Bazaar/4-ArxMint Phase 5 Developer Experience Research.md | research, phase5, bazaar, 4, 5, developer, experience | 4 ArxMint Phase 5 Developer Experience Research doc in docs/research/Phase5-Bazaar |
 | docs/research/Phase5-Bazaar/4-Enhancing Developer Experience for ArxMint.md | research, phase5, bazaar, 4, enhancing, developer, experience | 4 Enhancing Developer Experience for ArxMint doc in docs/research/Phase5-Bazaar |
-| docs/research/Phase5-Bazaar/5-Go-to-market and adoption research for ArxMint Phase 5.md | research, phase5, bazaar, 5, go, market, adoption | 5 Go to market and adoption research for ArxMint Phase 5 doc in docs/research/Phase5-Bazaar |
+| ~~MOVED~~ Phase5-Bazaar/5-Go-to-market and adoption research | MOVED TO INTERNAL | GTM strategy — moved to te-btc/internal/arxmint-internal/research/ |
 | docs/research/Phase5-Bazaar/6-Security Considerations for ArxMint Phase 5 Merchant API Layer.md | research, phase5, bazaar, 6, security, considerations, 5, merchant | 6 Security Considerations for ArxMint Phase 5 Merchant API Layer doc in docs/research/Phase5-Bazaar |
 | docs/research/Phase5-Bazaar/7-Infrastructure and Scaling Targets for ArxMint Phase 5 Merchant API.md | research, phase5, bazaar, 7, infrastructure, scaling, targets, 5 | 7 Infrastructure and Scaling Targets for ArxMint Phase 5 Merchant API doc in docs/research/Phase5-Bazaar |
-| docs/research/Phase5-Bazaar/Phase5-Bazaar-Deep-Research.md | research, phase5, bazaar, deep | Phase5 Bazaar Deep Research doc in docs/research/Phase5-Bazaar |
+| ~~MOVED~~ Phase5-Bazaar/Phase5-Bazaar-Deep-Research.md | MOVED TO INTERNAL | Strategic research prompt — moved to te-btc/internal/arxmint-internal/research/ |
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/0-Making Self-Hosting Feel Like Downloading an App for ArxMint Phase 5.8.md | research, phase5, bazaar, self, hosting, ux, 0, making | 0 Making Self Hosting Feel Like Downloading an App for ArxMint Phase 5.8 doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/0-Simplifying Self-Hosted Bitcoin Payments.md | research, phase5, bazaar, self, hosting, ux, 0, simplifying | 0 Simplifying Self Hosted Bitcoin Payments doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/1-Operational UX Paths for Merchant Self-Hosting of a Lightning Payment Node.md | research, phase5, bazaar, self, hosting, ux, 1, operational | 1 Operational UX Paths for Merchant Self Hosting of a Lightning Payment Node doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
@@ -89,9 +89,8 @@
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/8-Competitive UX Benchmarking for “Download an App, Start Accepting Bitcoin” When Merchants Must Run Their Own Server.md | research, phase5, bazaar, self, hosting, ux, 8, competitive | 8 Competitive UX Benchmarking for “Download an App, Start Accepting Bitcoin” When Merchants Must Run Their Own Server doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
 | docs/research/Phase5-Bazaar/Self-Hosting-UX/Self-Hosting-UX-Deep-Research.md | research, phase5, bazaar, self, hosting, ux, deep | Self Hosting UX Deep Research doc in docs/research/Phase5-Bazaar/Self-Hosting-UX |
 | docs/specs/merchant-dashboard-mvp.md | spec, merchant, dashboard, onboarding, LNbits, payments, wallet, setup | Merchant dashboard MVP spec — self-service onboarding, payment link, transaction list, CSV export, Telegram notifications |
-| docs/research/7-Merchant-Payment-Operations-Stack.md | research, merchant, payment, operations, lightning, custody, POS, invoicing, onboarding, prompt | Gemini deep research prompt: full merchant payment stack decisions (Lightning node, custody, dashboard, POS, invoicing, compliance, GTM) |
-| docs/research/7-ArxMint Merchant Payment Operations Research.md | research, merchant, payment, operations, phoenixd, lnbits, custody, MTMA, BIP21, bolt-card, POS, invoicing, compliance, GTM | Gemini deep research output: Phoenixd/LNbits bimodal architecture, Agent of Payee custody, BIP21 QR, PWA POS, invoicing, compliance, Pearl Street GTM strategy |
-| docs/research/RESEARCH_PROMPTS.md | research, prompts | RESEARCH PROMPTS doc in docs/research |
+| ~~MOVED~~ 7-Merchant-Payment-Operations-Stack-prompt.md | MOVED TO INTERNAL | Research prompt for merchant payment stack — moved to te-btc/internal/arxmint-internal/research/ |
+| ~~MOVED~~ 7-ArxMint Merchant Payment Operations Research.md | MOVED TO INTERNAL | Merchant ops research (regulatory, custody, GTM) — moved to te-btc/internal/arxmint-internal/research/ |
 | docs/research/research-citation-policy.md | research, citation | research citation policy doc in docs/research |
 | docs/research/research-crossref.md | research, crossref | research crossref doc in docs/research |
 | docs/research/shopify-feasibility.md | research, shopify, feasibility | shopify feasibility doc in docs/research |
@@ -99,3 +98,5 @@
 | docs/testing/e2e-testing.md | testing, e2e | e2e testing doc in docs/testing |
 | docs/testing/flaky-test-policy.md | testing, flaky, test | flaky test policy doc in docs/testing |
 | docs/tracking/upstream-deps.md | tracking, upstream, deps | upstream deps doc in docs/tracking |
+| docs/research/9-Distributed-Fiat-Onramp-Protocol.md | fiat, onramp, stripe, distributed, merchant, swap, quote, reputation, ecash, credit-card | Distributed fiat on-ramp protocol spec — merchant-as-on-ramp architecture with quote protocol, atomic swaps, Nostr-based reputation |
+| docs/research/RESEARCH_PROMPTS.md | research, prompts, index | Pointer to internal research prompts — full prompts and results in te-btc/internal |
