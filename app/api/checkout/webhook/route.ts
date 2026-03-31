@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 import { triggerPaymentWebhooks, deliverWebhook } from "@/lib/webhook-engine";
 import { sendTelegramNotification, formatPaymentMessage } from "@/lib/telegram-notify";
 import { sendPaymentReceivedEmail, sendPaymentReceiptEmail } from "@/lib/email";
+import { createDropshipOrder } from "@/lib/printful/client";
+import type { PrintfulOrderPayload } from "@/lib/printful/types";
 
 const OPENBAZAAR_FULFILL_URL = "https://openbazaar.ai/api/storefront/fulfill";
 
@@ -159,9 +161,55 @@ export async function POST(request: NextRequest) {
                 .catch(() => {/* already logged inside deliverWebhook */});
         }
 
+        // 4. If this payment is for ArxMint Merch (Lightning-paid), trigger Printful dropship
+        if (session.merchant_id === "arxmint-merch") {
+            const meta = session.metadata || {};
+            if (meta.needs_dropship === "true" && meta.printful_items) {
+                logger.info(`Triggering Printful fulfillment for merch session ${sessionId}`);
+                try {
+                    const printfulItems = JSON.parse(meta.printful_items) as Array<{
+                        sync_variant_id: number;
+                        quantity: number;
+                        name: string;
+                    }>;
+
+                    const shippingData = session.shipping_data;
+                    if (!shippingData) {
+                        logger.error(`No shipping data for merch session ${sessionId}`);
+                    } else {
+                        const payload: PrintfulOrderPayload = {
+                            external_id: sessionId,
+                            recipient: {
+                                name: shippingData.fullName || "Customer",
+                                address1: shippingData.street || "",
+                                city: shippingData.city || "",
+                                state_code: shippingData.state || "",
+                                country_code: "US",
+                                zip: shippingData.zip || "",
+                                email: shippingData.email || "",
+                            },
+                            items: printfulItems.map((item) => ({
+                                sync_variant_id: item.sync_variant_id,
+                                quantity: item.quantity,
+                            })),
+                        };
+
+                        const result = await createDropshipOrder(payload, { confirm: true });
+                        if (result.ok) {
+                            logger.info(`Printful order created: ${result.data.id} for session ${sessionId}`);
+                        } else {
+                            logger.error(`Printful order failed for session ${sessionId}: ${result.error}`);
+                        }
+                    }
+                } catch (err: unknown) {
+                    logger.error("Printful fulfillment error", {
+                        error: err instanceof Error ? err.message : String(err),
+                    });
+                }
+            }
+        }
+
         // Best-effort identity linking on payment confirmation.
-        // Fires when: session has stored identity signals AND has not already been linked.
-        // Skipped for privacy_level === 'maximum' sessions.
         if (
           !session.identity_linked &&
           session.privacy_level !== "maximum" &&

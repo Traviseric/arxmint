@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   return withIdempotency(request, async () => {
     try {
       const body = await request.json();
-      const { merchantId: rawMerchantId, memo, shipping, invoiceId, privacyLevel: rawPrivacyLevel, paymentRail: rawPaymentRail, customerEmail: rawCustomerEmail } = body;
+      const { merchantId: rawMerchantId, memo, shipping, metadata, invoiceId, privacyLevel: rawPrivacyLevel, paymentRail: rawPaymentRail, customerEmail: rawCustomerEmail } = body;
       const privacyLevel: "standard" | "maximum" =
         rawPrivacyLevel === "maximum" ? "maximum" : "standard";
       const paymentRail: "lightning" | "cashu" | "onchain" =
@@ -146,6 +146,9 @@ export async function POST(request: NextRequest) {
       }
       if (!merchant && merchantId === "seed-black-bear") {
         merchant = { id: "seed-black-bear", businessName: "Black Bear Window Cleaning", checkout_enabled: true };
+      }
+      if (!merchant && merchantId === "arxmint-merch") {
+        merchant = { id: "arxmint-merch", businessName: "ArxMint Merch", checkout_enabled: true };
       }
 
       if (!merchant) {
@@ -296,6 +299,7 @@ export async function POST(request: NextRequest) {
           ...(teneoUserIdSignal && { teneo_user_id: teneoUserIdSignal }),
           ...(shipping && { shipping_data: shipping }),
           ...(customerEmail && { customer_email: customerEmail }),
+          ...(metadata && { metadata }),
         });
       } catch {
         // If DB insert fails, session still works in-memory for demo

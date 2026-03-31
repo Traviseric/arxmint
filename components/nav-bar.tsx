@@ -88,6 +88,12 @@ export function NavBar() {
           >
             Bazaar
           </Link>
+          <Link
+            href="/merch"
+            className="text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors hidden sm:block"
+          >
+            Merch
+          </Link>
 
           {/* Learn dropdown — desktop */}
           <div ref={learnRef} className="relative hidden sm:block">
@@ -179,6 +185,13 @@ export function NavBar() {
               className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors font-medium"
             >
               Bazaar
+            </Link>
+            <Link
+              href="/merch"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm text-sovereign-muted hover:text-sovereign-text transition-colors"
+            >
+              Merch
             </Link>
             {LEARN_LINKS.map((link) => (
               <Link

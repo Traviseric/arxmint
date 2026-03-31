@@ -1402,9 +1402,12 @@ Phase 5 SDK and API must be compatible with the existing Teneo Marketplace integ
 | 5.13 Mobile merchant remote control | Partial | PWA/mobile-control direction is represented in the app shell and supporting client surfaces, but it is not yet fully productized |
 | 5.14 UX polish & conversion optimization | Partial | Large amounts of landing, checkout, nav, and accessibility polish are shipped; remaining work is conversion instrumentation and verification against the merchant flow |
 
+| **5.15 ArxMint Merch Store** | Code Complete | Printful dropship client (`lib/printful/`), Stripe + Lightning dual checkout, merch storefront at `/merch`, fulfillment webhook. **Go-live blocked on:** Printful product IDs, product images, Stripe env vars, Supabase `metadata` column. See `specs/MERCH-STORE.md`. |
+
 **Live Phase 5-adjacent prototype surfaces (March 2026):**
 - `/badge` is live as a merchant acquisition + branding kit (embed badge, referral link, printable assets)
 - `/create` is live as a merchant-first beta wizard, but still stops short of actual one-command deploy
+- `/merch` is code-complete: ArxMint-branded stickers, tees, hats with Lightning + Stripe dual payment, Printful dropship. Pending: Printful variant IDs, product images, Stripe account + env vars
 
 ### Phase 5 Priority Order
 

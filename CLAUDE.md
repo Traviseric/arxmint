@@ -4,7 +4,7 @@
 
 ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app that lets anyone create private Bitcoin circular economies from a natural language prompt. Generates Fedimint federations, Cashu mints, Lightning L402 agent commerce rails, and privacy defaults, deployable via Docker.
 
-**Status:** Materially built, past greenfield. Current work is Phase 5/6 alignment. See `docs/core/roadmap.md`.
+**Status:** Materially built, past greenfield. Current work is Phase 5/6 alignment. **Merch store** (`/merch`) code complete — Lightning + Stripe dual checkout, Printful dropship. Go-live pending: Printful product IDs, images, Stripe env vars. See `specs/MERCH-STORE.md`. See `docs/core/roadmap.md`.
 
 ## Lookup Table
 
@@ -29,6 +29,13 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 | Docs index | `docs/README.md` | — |
 | Roadmap | `docs/core/roadmap.md` | Phase Fortify Keystone |
 | Brand guide | `docs/reference/brand.md` | tagline voice palette |
+| Merch store | `app/merch/page.tsx`, `lib/merch/products.ts` | MERCH_PRODUCTS sticker tee hat cart Lightning Stripe |
+| Merch Stripe checkout | `app/api/merch/checkout/route.ts`, `app/api/merch/webhook/route.ts` | Stripe session dropship printful_items |
+| Merch Lightning checkout | `app/api/merch/lightning/route.ts` | Lightning merch sats shipping |
+| Printful client | `lib/printful/client.ts`, `lib/printful/webhook.ts`, `lib/printful/types.ts` | createDropshipOrder verifyWebhookSignature |
+| Printful shipping webhook | `app/api/webhooks/printful/route.ts` | package_shipped tracking createWebhookHandler |
+| Stripe client | `lib/stripe/client.ts` | getStripe STRIPE_SECRET_KEY |
+| Merch store setup | `specs/MERCH-STORE.md` | Printful variant IDs env vars Stripe webhook |
 | TE-BTC ecosystem | `C:\code\te-btc\` | cashu-mint cashu-l402 agent-wallet |
 | @te-btc/cashu-l402 | `C:\code\te-btc\cashu-l402` | L402 server/client + NUT-24 paywall (278 tests, npm published) |
 | @te-btc/agent-wallet | `C:\code\te-btc\agent-wallet` | Agent Cashu wallet + budget enforcement (169 tests, npm published) |
@@ -36,7 +43,7 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 
 ## Tech Stack
 
-Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark, `#F7931A`), Zustand, Supabase, `@cashu/cashu-ts` 3.5.0, `@te-btc/cashu-l402` 0.1.0 (L402 + NUT-24), `@te-btc/agent-wallet` 0.1.0 (agent wallets), `@lightninglabs/lnc-web` 0.3.5-alpha, Docker Compose.
+Next.js 15 App Router, React 19, TypeScript, Tailwind CSS (dark, `#F7931A`), Zustand, Supabase, `@cashu/cashu-ts` 3.5.0, `@te-btc/cashu-l402` 0.1.0 (L402 + NUT-24), `@te-btc/agent-wallet` 0.1.0 (agent wallets), `@lightninglabs/lnc-web` 0.3.5-alpha, `stripe` 17.7.0 (USD merch payments), Docker Compose.
 
 ## Key Architecture Rules
 

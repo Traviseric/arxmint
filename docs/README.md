@@ -118,6 +118,29 @@ Rules for this repo:
 | `docs/governance/README.md` | Governance entry point |
 | `docs/blog/` | Blog and thought-leadership drafts |
 
+## Merch Store
+
+| Doc | Purpose |
+|-----|---------|
+| `specs/MERCH-STORE.md` | Full implementation spec — Printful + Stripe + Lightning, setup checklist |
+| `te-btc/internal/arxmint-internal/BAZAAR_STRATEGY.md` | Bazaar/OpenBazaar.ai strategy |
+
+**Merch store routes (ArxMint-branded, Printful dropship):**
+- `/merch` — Storefront (stickers, tees, hats) with cart, Lightning + Stripe checkout
+- `/api/merch/checkout` — Stripe session with `printful_items` metadata + shipping
+- `/api/merch/webhook` — Stripe webhook → Printful dropship order
+- `/api/merch/lightning` — Lightning checkout with shipping
+- `/api/webhooks/printful` — Printful shipping webhook (tracking)
+- `/api/checkout/webhook` — Also handles `arxmint-merch`: Lightning paid → Printful fulfillment
+
+**Go-live checklist** (see `specs/MERCH-STORE.md`):
+1. Create products in Printful dashboard (store 17809413), update `printfulVariantId` in `lib/merch/products.ts`
+2. Add product images to `public/merch/`
+3. Set Vercel env vars: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `PRINTFUL_API_KEY`, `PRINTFUL_STORE_ID`
+4. Add `metadata` JSONB column to `checkout_sessions` Supabase table
+5. Register Stripe webhook → `https://arxmint.com/api/merch/webhook`
+6. Deploy to Vercel
+
 ## Internal Companion Docs
 
 Public repo docs describe the product and operating system.
