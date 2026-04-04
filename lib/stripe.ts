@@ -25,7 +25,7 @@ export function getStripeClient(): Stripe {
         "Add it to .env to enable fiat on-ramp."
     );
   }
-  _stripe = new Stripe(key, { apiVersion: "2024-12-18.acacia" });
+  _stripe = new Stripe(key, { apiVersion: "2025-02-24.acacia" });
   return _stripe;
 }
 

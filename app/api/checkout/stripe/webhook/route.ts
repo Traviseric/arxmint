@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   // ---- Route by event type ----
   if (event.type === "checkout.session.completed") {
-    return handleCheckoutCompleted(event);
+    return handleCheckoutCompleted(event as unknown as { type: string; data: { object: Record<string, unknown> } });
   }
 
   // Acknowledge other events we don't handle
