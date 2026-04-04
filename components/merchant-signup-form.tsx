@@ -176,13 +176,13 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           <CheckCircle className="w-8 h-8 text-accent" />
         </div>
         <h3 className="text-2xl font-semibold text-text-primary mb-3">
-          You&apos;re on the list.
+          Application received.
         </h3>
         <p className="text-text-secondary max-w-md mx-auto">
-          <span className="text-text-primary font-medium">{businessName}</span> has
-          been added to the ArxMint merchant network. We&apos;ll reach out to{" "}
-          <span className="text-text-primary font-medium">{email}</span> when
-          Bitcoin checkout goes live.
+          <span className="text-text-primary font-medium">{businessName}</span> is
+          under review. We&apos;ll reach out to{" "}
+          <span className="text-text-primary font-medium">{email}</span> once
+          you&apos;re approved and Bitcoin checkout is ready.
         </p>
       </div>
     );
@@ -301,10 +301,10 @@ export function MerchantSignupForm({ onSuccess }: MerchantSignupFormProps) {
           Website
         </label>
         <input
-          type="url"
+          type="text"
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
-          placeholder="https://yoursite.com"
+          placeholder="yoursite.com"
           className="sovereign-input w-full"
         />
       </div>

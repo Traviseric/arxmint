@@ -238,10 +238,10 @@ export function MerchantPledgeForm({ onSuccess }: PledgeFormProps) {
           Website
         </label>
         <input
-          type="url"
+          type="text"
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
-          placeholder="https://yoursite.com"
+          placeholder="yoursite.com"
           className="sovereign-input w-full"
         />
       </div>

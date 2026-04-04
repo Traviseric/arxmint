@@ -84,6 +84,54 @@ export async function POST(request: NextRequest) {
         .update({ approved: true, reason })
         .eq("id", pledgeId);
 
+      // Fire-and-forget: provision LNbits wallet now that merchant is approved
+      void (async () => {
+        try {
+          const { provisionMerchantWallet } = await import("@/lib/lnbits");
+          const credentials = await provisionMerchantWallet({
+            merchantId: pledgeId,
+            merchantName: pledge.business_name,
+          });
+          if (!credentials) return;
+          const { error: walletError } = await supabase.from("merchant_wallets").insert({
+            merchant_id: pledgeId,
+            lnbits_wallet_id: credentials.walletId,
+            lnbits_invoice_key: credentials.invoiceKey,
+            lnbits_admin_key: credentials.adminKey,
+          });
+          if (walletError) {
+            console.error("[approve] wallet insert failed:", walletError.message);
+            return;
+          }
+          await supabase.from("merchant_pledges")
+            .update({ onboarding_status: "wallet_ready", wallet_provisioned_at: new Date().toISOString() })
+            .eq("id", pledgeId);
+        } catch (e) {
+          console.error("[approve] wallet provisioning failed:", e);
+        }
+      })();
+
+      // Fire-and-forget: welcome email
+      if (pledge.business_name) {
+        const { data: full } = await supabase
+          .from("merchant_pledges")
+          .select("email, email_opt_in, location")
+          .eq("id", pledgeId)
+          .single();
+        if (full?.email) {
+          import("@/lib/email").then(({ sendMerchantWelcomeEmail }) => {
+            sendMerchantWelcomeEmail({
+              businessName: pledge.business_name,
+              email: full.email,
+              merchantId: pledgeId,
+              merchantNumber: 0,
+              payLink: `https://www.arxmint.com/pay/${pledgeId}`,
+              location: full.location ?? undefined,
+            }).catch(() => {});
+          }).catch(() => {});
+        }
+      }
+
       // Update the Telegram message to show approved
       await tgApi("editMessageReplyMarkup", {
         chat_id: callback.message?.chat?.id,
