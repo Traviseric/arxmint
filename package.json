@@ -52,7 +52,7 @@
     "framer-motion": "^12.34.3",
     "gsap": "^3.14.2",
     "lucide-react": "^0.469.0",
-    "next": "^15.1.0",
+    "next": "^16.2.1",
     "nostr-tools": "^2.23.2",
     "pdf-lib": "^1.17.1",
     "qrcode": "^1.5.4",
