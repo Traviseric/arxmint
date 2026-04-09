@@ -42,7 +42,7 @@
     "@getalby/bitcoin-connect": "^3.12.2",
     "@gsap/react": "^2.1.2",
     "@lightninglabs/lnc-web": "0.3.5-alpha",
-    "@prisma/client": "~5.22.0",
+    "@prisma/client": "~7.6.0",
     "@scure/base": "^2.0.0",
     "@supabase/supabase-js": "^2.98.0",
     "@te-btc/agent-wallet": "^0.1.0",
