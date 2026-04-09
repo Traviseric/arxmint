@@ -36,7 +36,7 @@
     "test:smoke:checkout": "bash scripts/smoke-checkout.sh"
   },
   "dependencies": {
-    "@cashu/cashu-ts": "^3.5.0",
+    "@cashu/cashu-ts": "^3.6.2",
     "@fedimint/core": "^0.1.0",
     "@fedimint/transport-web": "^0.1.2",
     "@getalby/bitcoin-connect": "^3.12.2",
