@@ -99,6 +99,22 @@ export function parseMerchantKey(
   return { scope: match[1] as MerchantKeyScope, token: match[2] };
 }
 
+/**
+ * Extract an arx_* merchant API key from an Authorization header.
+ * Accepts: "Bearer arx_live_..." or raw "arx_live_..." value.
+ * Returns null if the header is absent or does not contain an arx_* key.
+ *
+ * Server-safe — lives here (not in lightning-agent.ts, which is "use client"
+ * because of the LNC-Web WASM dep). API routes import from here directly.
+ */
+export function extractMerchantKey(authHeader: string | null): string | null {
+  if (!authHeader) return null;
+  const candidate = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : authHeader.trim();
+  return candidate.startsWith("arx_") ? candidate : null;
+}
+
 // ---- Key verification ----
 
 /**

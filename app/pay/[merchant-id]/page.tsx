@@ -7,6 +7,7 @@
 import { notFound } from "next/navigation";
 import { CheckoutFlow } from "@/components/checkout-flow";
 import type { Metadata } from "next";
+import { db } from "@/lib/db";
 
 interface MerchantData {
   id: string;
@@ -60,6 +61,16 @@ const SEED_MERCHANTS: Record<string, MerchantData> = {
     website: "https://blackbearwindowcleaning.com",
     reason: "Professional window cleaning in Boulder — pay in sats, zero fees, instant settlement.",
   },
+  "arxmint-merch": {
+    id: "arxmint-merch",
+    businessName: "ArxMint Merch",
+    logoUrl: "/images/nav-logo-transparent.svg",
+    location: null,
+    checkout_enabled: true,
+    default_amount_sats: null,
+    website: "https://arxmint.com/merch",
+    reason: "Official ArxMint-branded merch — stickers, tees, hats. Lightning-paid, Printful-dropshipped, zero platform fees.",
+  },
 };
 
 async function getMerchant(merchantId: string): Promise<MerchantData | null> {
@@ -68,11 +79,22 @@ async function getMerchant(merchantId: string): Promise<MerchantData | null> {
     const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName, logoUrl, location, checkout_enabled, default_amount_sats, website, reason")
+      .select("id, business_name, logo_url, location, checkout_enabled, default_amount_sats, website, reason")
       .eq("id", merchantId)
       .single();
 
-    if (!error && data && data.checkout_enabled) return data;
+    if (!error && data && data.checkout_enabled) {
+      return {
+        id: data.id,
+        businessName: data.business_name,
+        logoUrl: data.logo_url,
+        location: data.location,
+        checkout_enabled: data.checkout_enabled,
+        default_amount_sats: data.default_amount_sats,
+        website: data.website,
+        reason: data.reason,
+      };
+    }
   } catch {
     // DB unavailable
   }
@@ -108,15 +130,103 @@ export default async function PayMerchantPage({
   searchParams,
 }: {
   params: Promise<{ "merchant-id": string }>;
-  searchParams: Promise<{ amount?: string; memo?: string; shipping?: string }>;
+  searchParams: Promise<{
+    amount?: string;
+    memo?: string;
+    shipping?: string;
+    invoiceId?: string;
+    /**
+     * Pre-minted ArxMint session ID. When set, /pay does NOT mint its own
+     * invoice — it loads the existing session and renders its QR. Used by
+     * cross-system integrations (e.g. Teneo's btc-create-checkout Lambda
+     * mints a session with fulfillment_url, then redirects the user here).
+     */
+    session?: string;
+  }>;
 }) {
   const { "merchant-id": merchantId } = await params;
-  const { amount, memo, shipping } = await searchParams;
+  const { amount, memo, shipping, invoiceId, session } = await searchParams;
   const merchant = await getMerchant(merchantId);
 
   if (!merchant) notFound();
 
-  const presetAmount = amount ? parseInt(amount, 10) : merchant.default_amount_sats ?? undefined;
+  // If a pre-minted session was passed, validate it belongs to this merchant.
+  // We fetch via Supabase directly (faster + avoids self-call HTTP overhead).
+  let presetSession: {
+    id: string;
+    amountSats: number;
+    paymentRail: "lightning" | "cashu" | "onchain";
+    demoMode: boolean;
+    invoice: string;
+  } | null = null;
+  if (session) {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data, error } = await supabase
+        .from("checkout_sessions")
+        .select("id, merchant_id, amount_sats, payment_rail, demo_mode, expires_at, status, invoice")
+        .eq("id", session)
+        .single();
+      if (
+        !error &&
+        data &&
+        data.merchant_id === merchant.id &&
+        data.status !== "expired" &&
+        new Date(data.expires_at) > new Date() &&
+        typeof data.invoice === "string" &&
+        data.invoice.length > 0
+      ) {
+        presetSession = {
+          id: data.id,
+          amountSats: data.amount_sats,
+          paymentRail: (data.payment_rail ?? "lightning") as "lightning" | "cashu" | "onchain",
+          demoMode: Boolean(data.demo_mode),
+          invoice: data.invoice,
+        };
+      }
+    } catch {
+      // DB unavailable — fall through to normal flow (user mints a fresh invoice).
+    }
+  }
+
+  let invoicePreset:
+    | { id: string; amountSats: number; memo: string }
+    | null = null;
+
+  if (invoiceId) {
+    const invoice = await db.invoice.findUnique({
+      where: { id: invoiceId },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        merchantId: true,
+        status: true,
+        currency: true,
+        totalMinor: true,
+      },
+    });
+
+    if (
+      !invoice ||
+      invoice.merchantId !== merchant.id ||
+      invoice.currency !== "BTC" ||
+      invoice.status === "void"
+    ) {
+      notFound();
+    }
+
+    invoicePreset = {
+      id: invoice.id,
+      amountSats: invoice.totalMinor,
+      memo: `Invoice ${invoice.invoiceNumber}`,
+    };
+  }
+
+  const presetAmount = invoicePreset
+    ? invoicePreset.amountSats
+    : amount
+      ? parseInt(amount, 10)
+      : merchant.default_amount_sats ?? undefined;
 
   return (
     <div
@@ -132,8 +242,10 @@ export default async function PayMerchantPage({
         merchantWebsite={merchant.website}
         merchantDescription={merchant.reason}
         presetAmount={presetAmount && !isNaN(presetAmount) ? presetAmount : undefined}
-        presetMemo={memo}
+        presetMemo={invoicePreset?.memo ?? memo}
+        invoiceId={invoicePreset?.id}
         collectShipping={shipping === "1"}
+        presetSession={presetSession ?? undefined}
       />
     </div>
   );

@@ -9,8 +9,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCallerFromRequest } from "@/lib/auth-middleware";
-import { extractMerchantKey } from "@/lib/lightning-agent";
-import { parseMerchantKey, verifyMerchantKey, scopeAllowsPayments } from "@/lib/merchant-auth";
+import {
+  extractMerchantKey,
+  parseMerchantKey,
+  verifyMerchantKey,
+  scopeAllowsPayments,
+} from "@/lib/merchant-auth";
 import {
   registerWebhook,
   listWebhooks,
@@ -51,27 +55,38 @@ async function resolveMerchant(
 
 /** GET /api/v1/webhooks?merchantId=... — list webhook endpoints */
 export async function GET(request: NextRequest) {
-  const resolved = await resolveMerchant(request);
-  if (!resolved) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const resolved = await resolveMerchant(request);
+    if (!resolved) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const merchantId = searchParams.get("merchantId") ?? resolved.merchantId;
+
+    const endpoints = await listWebhooks(merchantId);
+    return NextResponse.json({
+      merchantId,
+      endpoints: endpoints.map((e) => ({
+        id: e.id,
+        url: e.url,
+        events: e.events,
+        active: e.active,
+        createdAt: e.createdAt,
+        // secret omitted from listing — only returned on creation
+      })),
+      count: endpoints.length,
+    });
+  } catch (error: unknown) {
+    // Belt-and-suspenders: an unhandled throw here was returning an empty
+    // 500 (no Content-Type) which broke consumers parsing JSON. Always
+    // return a structured error so callers can handle it.
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { error: "Internal server error", detail: message },
+      { status: 500 }
+    );
   }
-
-  const { searchParams } = new URL(request.url);
-  const merchantId = searchParams.get("merchantId") ?? resolved.merchantId;
-
-  const endpoints = await listWebhooks(merchantId);
-  return NextResponse.json({
-    merchantId,
-    endpoints: endpoints.map((e) => ({
-      id: e.id,
-      url: e.url,
-      events: e.events,
-      active: e.active,
-      createdAt: e.createdAt,
-      // secret omitted from listing — only returned on creation
-    })),
-    count: endpoints.length,
-  });
 }
 
 /** POST /api/v1/webhooks — register a new webhook endpoint */

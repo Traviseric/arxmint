@@ -107,13 +107,13 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. If the session has a fulfillment_url, deliver a HMAC-signed webhook there.
-        //    This is the generic path for Bazaar and any future storefront integrations —
-        //    the receiver verifies ArxMint-Signature just like the webhook engine does.
+        //    This is the generic path for Bazaar, Teneo, and any future storefront
+        //    integrations — the receiver verifies ArxMint-Signature just like the
+        //    webhook engine does. Secret is per-merchant so each integration can
+        //    rotate independently; falls through to the global secret if no
+        //    merchant-specific one is set.
         if (session.fulfillment_url) {
-            const fulfillSecret =
-                process.env.ARXMINT_BAZAAR_WEBHOOK_SECRET ||
-                process.env.ARXMINT_WEBHOOK_SECRET ||
-                "development_secret";
+            const fulfillSecret = getFulfillmentSecret(session.merchant_id ?? "");
 
             const fulfillPayload = {
                 id: `wdlv_bazaar_${sessionId.slice(0, 8)}`,
@@ -312,10 +312,34 @@ export async function POST(request: NextRequest) {
     }
 }
 
+// ---- Fulfillment helpers ----
+
+/**
+ * Pick the HMAC secret used to sign fulfillment webhooks based on merchant.
+ * Each integration gets its own secret so we can rotate them independently
+ * without affecting the others. ARXMINT_WEBHOOK_SECRET is the global fallback
+ * for new merchants that haven't been given a dedicated secret yet.
+ */
+function getFulfillmentSecret(merchantId: string): string {
+    if (merchantId === "seed-teneo") {
+        return (
+            process.env.ARXMINT_TENEO_WEBHOOK_SECRET ||
+            process.env.ARXMINT_WEBHOOK_SECRET ||
+            "development_secret"
+        );
+    }
+    // arxmint-store / Bazaar / catch-all
+    return (
+        process.env.ARXMINT_BAZAAR_WEBHOOK_SECRET ||
+        process.env.ARXMINT_WEBHOOK_SECRET ||
+        "development_secret"
+    );
+}
+
 // ---- Telegram helpers ----
 
 interface MerchantRow {
-  businessName?: string;
+  business_name?: string;
   telegram_chat_id?: string | null;
 }
 
@@ -346,13 +370,13 @@ async function sendTelegramNotificationForMerchant(
         const { supabase } = await import("@/lib/supabase");
         const { data } = await supabase
             .from("merchant_pledges")
-            .select("businessName, telegram_chat_id")
+            .select("business_name, telegram_chat_id")
             .eq("id", merchantId)
             .single();
 
         const row = data as MerchantRow | null;
         if (row) {
-            if (row.businessName) merchantName = row.businessName;
+            if (row.business_name) merchantName = row.business_name;
             if (row.telegram_chat_id) telegramChatId = row.telegram_chat_id;
         }
     } catch {
@@ -452,12 +476,12 @@ async function sendPaymentNotificationEmails(
         const { supabase } = await import("@/lib/supabase");
         const { data } = await supabase
             .from("merchant_pledges")
-            .select("businessName, email")
+            .select("business_name, email")
             .eq("id", merchantId)
             .single();
 
         if (data) {
-            if (data.businessName) merchantName = data.businessName;
+            if (data.business_name) merchantName = data.business_name;
             if (data.email) merchantEmail = data.email;
         }
     } catch {

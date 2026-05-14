@@ -57,8 +57,22 @@ interface CheckoutFlowProps {
   merchantDescription?: string | null;
   presetAmount?: number;
   presetMemo?: string;
+  invoiceId?: string;
   /** Show shipping address form before payment (for physical merch) */
   collectShipping?: boolean;
+  /**
+   * Pre-minted ArxMint session. When provided, CheckoutFlow skips its own
+   * /api/checkout call and renders the existing session's QR directly.
+   * Used by cross-system integrations (Teneo etc.) that need to attach
+   * a fulfillment_url server-side before the customer reaches /pay.
+   */
+  presetSession?: {
+    id: string;
+    amountSats: number;
+    paymentRail: "lightning" | "cashu" | "onchain";
+    demoMode: boolean;
+    invoice: string;
+  };
 }
 
 export function CheckoutFlow({
@@ -70,19 +84,30 @@ export function CheckoutFlow({
   merchantDescription,
   presetAmount,
   presetMemo,
+  invoiceId,
   collectShipping,
+  presetSession,
 }: CheckoutFlowProps) {
-  const initialState = presetAmount
-    ? collectShipping ? "shipping" : "invoice"
-    : "amount";
+  // presetSession (Teneo etc.) → jump straight to invoice state.
+  // presetAmount with no session → mint a fresh invoice on mount.
+  // No preset → show amount picker.
+  const initialState: CheckoutState = presetSession
+    ? "invoice"
+    : presetAmount
+      ? collectShipping ? "shipping" : "invoice"
+      : "amount";
   const [state, setState] = useState<CheckoutState>(initialState);
-  const [amount, setAmount] = useState(presetAmount?.toString() ?? "");
-  const [invoice, setInvoice] = useState("");
-  const [paymentUri, setPaymentUri] = useState("");
-  const [selectedRail, setSelectedRail] = useState<PaymentRail>("lightning");
+  const [amount, setAmount] = useState(
+    presetSession?.amountSats.toString() ?? presetAmount?.toString() ?? ""
+  );
+  const [invoice, setInvoice] = useState(presetSession?.invoice ?? "");
+  const [paymentUri, setPaymentUri] = useState(presetSession?.invoice ?? "");
+  const [selectedRail, setSelectedRail] = useState<PaymentRail>(
+    presetSession?.paymentRail ?? "lightning"
+  );
   const [availableRails, setAvailableRails] = useState<PaymentRail[]>(["lightning"]);
-  const [sessionId, setSessionId] = useState("");
-  const [demoMode, setDemoMode] = useState(false);
+  const [sessionId, setSessionId] = useState(presetSession?.id ?? "");
+  const [demoMode, setDemoMode] = useState(presetSession?.demoMode ?? false);
   const [paidAt, setPaidAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +128,7 @@ export function CheckoutFlow({
         body: JSON.stringify({
           merchantId,
           amountSats: sats,
+          invoiceId,
           memo: presetMemo,
           paymentRail: rail,
           ...(shippingData && { shipping: shippingData }),
@@ -131,7 +157,7 @@ export function CheckoutFlow({
     } finally {
       setLoading(false);
     }
-  }, [merchantId, presetMemo]);
+  }, [merchantId, presetMemo, invoiceId]);
 
   // Fetch BTC price for USD conversion
   useEffect(() => {
@@ -156,13 +182,23 @@ export function CheckoutFlow({
     };
   }, []);
 
-  // Auto-create invoice when preset amount provided (skip if shipping needed)
+  // Pre-minted session (Teneo etc.): mark "invoice already minted" so the
+  // auto-create effect below skips minting a fresh one. SSE subscription
+  // handles status transitions; nothing else to do here. The invoice +
+  // payment URI + sessionId are already populated from initial state.
   useEffect(() => {
+    if (presetSession) hasCreatedInvoice.current = true;
+  }, [presetSession]);
+
+  // Auto-create invoice when preset amount provided (skip if shipping needed
+  // OR a pre-minted session was provided)
+  useEffect(() => {
+    if (presetSession) return;
     if (presetAmount && !hasCreatedInvoice.current && !collectShipping) {
       hasCreatedInvoice.current = true;
       createInvoice(presetAmount, undefined, "lightning");
     }
-  }, [presetAmount, createInvoice, collectShipping]);
+  }, [presetAmount, createInvoice, collectShipping, presetSession]);
 
   // SSE subscription for real-time payment status
   useEffect(() => {

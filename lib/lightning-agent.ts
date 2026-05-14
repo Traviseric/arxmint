@@ -652,19 +652,12 @@ export function getLightningClient(): SovereignLightningClient {
 // ---- Merchant API Key Auth helpers ----
 // Accepts arx_live_*, arx_pub_*, arx_test_* keys as an alternative to L402/session auth.
 
-/**
- * Extract an arx_* merchant API key from an Authorization header.
- * Accepts: "Bearer arx_live_..." or raw "arx_live_..." value.
- * Returns null if the header is absent or does not contain an arx_* key.
- */
-export function extractMerchantKey(authHeader: string | null): string | null {
-  if (!authHeader) return null;
-  // Support "Bearer arx_..." and bare "arx_..." values
-  const candidate = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : authHeader.trim();
-  return candidate.startsWith("arx_") ? candidate : null;
-}
+// extractMerchantKey moved to `lib/merchant-auth.ts` (server-safe) so API
+// routes don't pull in this "use client" module just to read a header.
+// Re-imported + re-exported here for backward compat with client callers
+// and for internal use by verifyMerchantKeyFromHeader below.
+import { extractMerchantKey } from "./merchant-auth";
+export { extractMerchantKey };
 
 /**
  * Verify a merchant API key from a request's Authorization header.

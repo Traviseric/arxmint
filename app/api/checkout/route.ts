@@ -20,9 +20,12 @@ const INVOICE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const DEMO_MODE = process.env.DEMO_MODE === "true" || process.env.NODE_ENV === "development";
 
 export async function POST(request: NextRequest) {
-  // Rate limit: 10 per minute per IP
+  // Rate limit: 60 per minute per IP. The previous bucket (10/hour) tripped on
+  // any moderately busy merchant — a shared NAT (cafe wifi, corporate VPN) would
+  // hit the ceiling after the 11th customer of the hour and start returning 429.
+  // 60/min keeps real abuse out while letting legitimate retail traffic through.
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const rl = checkRateLimit(`checkout:${ip}`, { windowMs: 3_600_000, maxRequests: 10 });
+  const rl = checkRateLimit(`checkout:${ip}`, { windowMs: 60_000, maxRequests: 60 });
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Try again later." },
@@ -33,7 +36,23 @@ export async function POST(request: NextRequest) {
   return withIdempotency(request, async () => {
     try {
       const body = await request.json();
-      const { merchantId: rawMerchantId, memo, shipping, metadata, invoiceId, privacyLevel: rawPrivacyLevel, paymentRail: rawPaymentRail, customerEmail: rawCustomerEmail } = body;
+      const { merchantId: rawMerchantId, memo, shipping, metadata, invoiceId, privacyLevel: rawPrivacyLevel, paymentRail: rawPaymentRail, customerEmail: rawCustomerEmail, fulfillmentUrl: rawFulfillmentUrl } = body;
+      // Optional: caller may pass a fulfillment_url (e.g. Teneo's
+      // /webhook/btcpay endpoint). On payment confirmation, ArxMint's
+      // checkout/webhook fires a signed ArxMint-Signature POST to this URL.
+      // We validate it's a real URL but otherwise trust the caller — receiver
+      // verifies the signature with the per-merchant secret.
+      let fulfillmentUrl: string | null = null;
+      if (typeof rawFulfillmentUrl === "string" && rawFulfillmentUrl.trim().length > 0) {
+        try {
+          const parsed = new URL(rawFulfillmentUrl.trim());
+          if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+            fulfillmentUrl = parsed.toString();
+          }
+        } catch {
+          // Invalid URL — silently ignored. Caller can detect via status response.
+        }
+      }
       const privacyLevel: "standard" | "maximum" =
         rawPrivacyLevel === "maximum" ? "maximum" : "standard";
       const paymentRail: "lightning" | "cashu" | "onchain" =
@@ -102,6 +121,14 @@ export async function POST(request: NextRequest) {
           return apiError(409, "INVOICE_VOID", "Void invoices cannot be paid");
         }
 
+        if (
+          merchantId &&
+          invoiceRecord.merchantId &&
+          merchantId !== invoiceRecord.merchantId
+        ) {
+          return apiError(403, "INVOICE_MERCHANT_MISMATCH", "Invoice does not belong to this merchant");
+        }
+
         merchantId = merchantId ?? invoiceRecord.merchantId ?? undefined;
       }
 
@@ -125,11 +152,17 @@ export async function POST(request: NextRequest) {
         const { supabase } = await import("@/lib/supabase");
         const { data, error } = await supabase
           .from("merchant_pledges")
-          .select("id, businessName, checkout_enabled")
+          .select("id, business_name, checkout_enabled")
           .eq("id", merchantId)
           .single();
 
-        if (!error && data) merchant = data;
+        if (!error && data) {
+          merchant = {
+            id: data.id,
+            businessName: data.business_name,
+            checkout_enabled: data.checkout_enabled,
+          };
+        }
       } catch {
         // DB unavailable — check seed merchants
       }
@@ -300,6 +333,7 @@ export async function POST(request: NextRequest) {
           ...(shipping && { shipping_data: shipping }),
           ...(customerEmail && { customer_email: customerEmail }),
           ...(metadata && { metadata }),
+          ...(fulfillmentUrl && { fulfillment_url: fulfillmentUrl }),
         });
       } catch {
         // If DB insert fails, session still works in-memory for demo
