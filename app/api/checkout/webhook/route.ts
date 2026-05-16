@@ -540,6 +540,22 @@ async function autoForwardToMerchant(supabase: any, merchantId: string, amountSa
         return;
     }
 
+    if (wallet.payout_type === "bolt12_offer") {
+        // BOLT12 auto-forward is captured here for audit but not yet executed:
+        // ArxMint's LNbits adapter only speaks LNURL-pay today. To wire actual
+        // payout we need (a) LND_REST_URL + readonly macaroon on Vercel and
+        // (b) the `fetchinvoice` + pay flow in lib/lnbits.ts. Until then the
+        // funds accumulate on the source LNbits wallet and the merchant
+        // drains manually by paying the offer from a BOLT12-capable wallet.
+        logger.warn("bolt12_auto_forward_pending", {
+            merchantId,
+            amountSats,
+            sessionId,
+            offerPrefix: wallet.payout_address?.slice(0, 32),
+            reason: "BOLT12 forwarding not yet implemented — capture only",
+        });
+        return;
+    }
     if (wallet.payout_type !== "lightning_address") {
         logger.info("auto_forward_skipped", { merchantId, reason: `payout_type=${wallet.payout_type}, only lightning_address supported` });
         return;
