@@ -541,19 +541,41 @@ async function autoForwardToMerchant(supabase: any, merchantId: string, amountSa
     }
 
     if (wallet.payout_type === "bolt12_offer") {
-        // BOLT12 auto-forward is captured here for audit but not yet executed:
-        // ArxMint's LNbits adapter only speaks LNURL-pay today. To wire actual
-        // payout we need (a) LND_REST_URL + readonly macaroon on Vercel and
-        // (b) the `fetchinvoice` + pay flow in lib/lnbits.ts. Until then the
-        // funds accumulate on the source LNbits wallet and the merchant
-        // drains manually by paying the offer from a BOLT12-capable wallet.
-        logger.warn("bolt12_auto_forward_pending", {
-            merchantId,
+        // BOLT12 auto-forward via LND REST. Activates only when
+        // LND_REST_URL + LND_MACAROON_HEX env vars are set on Vercel —
+        // otherwise falls back to capture-only (logs the intent so the
+        // merchant can drain manually by paying their own offer).
+        if (!wallet.payout_address) {
+            logger.warn("bolt12_auto_forward_skipped", { merchantId, reason: "no offer on row" });
+            return;
+        }
+        const { forwardPaymentToBolt12Offer } = await import("@/lib/lnbits");
+        const result = await forwardPaymentToBolt12Offer({
             amountSats,
-            sessionId,
-            offerPrefix: wallet.payout_address?.slice(0, 32),
-            reason: "BOLT12 forwarding not yet implemented — capture only",
+            offer: wallet.payout_address,
+            memo: `ArxMint forward — session ${sessionId.slice(0, 8)}`,
         });
+        if (result.success) {
+            logger.info("bolt12_auto_forward_success", { merchantId, amountSats, sessionId });
+        } else if (result.unsupported) {
+            // Expected state until tunnel + macaroon are configured. Logged
+            // with offer prefix so manual reconciliation can match payments
+            // to the right BOLT12 offer.
+            logger.warn("bolt12_auto_forward_pending", {
+                merchantId,
+                amountSats,
+                sessionId,
+                offerPrefix: wallet.payout_address.slice(0, 32),
+                reason: "LND REST not configured — capture only, manual drain required",
+            });
+        } else {
+            logger.warn("bolt12_auto_forward_failed", {
+                merchantId,
+                amountSats,
+                sessionId,
+                error: result.error,
+            });
+        }
         return;
     }
     if (wallet.payout_type !== "lightning_address") {

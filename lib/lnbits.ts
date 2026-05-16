@@ -251,6 +251,89 @@ export async function forwardPaymentToMerchant(params: {
 }
 
 /**
+ * Forward a payment to a merchant's BOLT12 offer (lno1...).
+ * Two-step flow against the backing LND node's experimental BOLT12 RPCs:
+ *   1. POST /v2/offers/fetchinvoice → returns a BOLT11 invoice for the amount
+ *   2. POST /v1/channels/transactions → pays the BOLT11
+ *
+ * Prerequisites:
+ *   - LND_REST_URL env var (e.g. https://<cloudflared-tunnel>.trycloudflare.com)
+ *   - LND_MACAROON_HEX env var with offers + router + invoice permissions
+ *   - LND on the backing node has BOLT12 enabled (`protocol.bolt12-offers=experimental`)
+ *
+ * Returns `unsupported: true` if either env var is missing — caller should
+ * treat that as "skip silently, capture-only mode" rather than a failure.
+ */
+export async function forwardPaymentToBolt12Offer(params: {
+  amountSats: number;
+  offer: string;
+  memo?: string;
+}): Promise<{ success: boolean; unsupported?: boolean; error?: string }> {
+  const lndRestUrl = process.env.LND_REST_URL?.replace(/\/$/, "");
+  const macaroonHex = process.env.LND_MACAROON_HEX;
+  if (!lndRestUrl || !macaroonHex) {
+    return { success: false, unsupported: true, error: "LND_REST_URL or LND_MACAROON_HEX not configured" };
+  }
+
+  try {
+    // Step 1: ask the offer issuer (via our LND) for a BOLT11 invoice.
+    const fetchRes = await fetch(`${lndRestUrl}/v2/offers/fetchinvoice`, {
+      method: "POST",
+      headers: {
+        "Grpc-Metadata-macaroon": macaroonHex,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        offer: params.offer,
+        msats: params.amountSats * 1000,
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!fetchRes.ok) {
+      const text = await fetchRes.text();
+      return { success: false, error: `LND fetchinvoice failed: ${fetchRes.status} ${text.slice(0, 200)}` };
+    }
+    const fetchData = (await fetchRes.json()) as { invoice?: string };
+    const bolt11 = fetchData.invoice;
+    if (!bolt11) {
+      return { success: false, error: "LND fetchinvoice returned no invoice field" };
+    }
+
+    // Step 2: pay the BOLT11 via LND's standard /v1/channels/transactions.
+    // (Could also go via LNbits here — staying with LND-direct since that's
+    // already the channel that decoded the offer.)
+    const payRes = await fetch(`${lndRestUrl}/v1/channels/transactions`, {
+      method: "POST",
+      headers: {
+        "Grpc-Metadata-macaroon": macaroonHex,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ payment_request: bolt11 }),
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (!payRes.ok) {
+      const text = await payRes.text();
+      return { success: false, error: `LND pay failed: ${payRes.status} ${text.slice(0, 200)}` };
+    }
+    const payData = (await payRes.json()) as { payment_error?: string };
+    if (payData.payment_error) {
+      return { success: false, error: `payment_error: ${payData.payment_error}` };
+    }
+
+    logger.info("bolt12_payment_forwarded", {
+      amountSats: params.amountSats,
+      offerPrefix: params.offer.slice(0, 32),
+    });
+    return { success: true };
+  } catch (error) {
+    logger.warn("bolt12_forward_payment_error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
  * Check if a Lightning invoice has been paid via Phoenixd directly.
  * Handles fee-credit payments that LNbits can't detect.
  */
