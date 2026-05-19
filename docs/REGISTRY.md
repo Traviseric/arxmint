@@ -28,6 +28,7 @@
 | docs/ROADMAP.md | roadmap, spine, orchestrator, high-level | High-level roadmap with SPINE items and cross-references |
 | docs/core/roadmap-execution-spec.md | core, roadmap, execution, spec | roadmap execution spec doc in docs/core |
 | docs/core/spec.md | core, spec | spec doc in docs/core |
+| docs/integration/teneo-bridge.md | integration, teneo, bridge, btc, bolt12, phoenixd, seed-teneo, payouts | Teneo→ArxMint BTC integration — seed-teneo merchant, fulfillment webhook, Phoenixd BOLT12 auto-forward to operator's Phoenix wallet. See also teneo-production/docs/features/payments/BTC-CHECKOUT.md for the Teneo-side counterpart. |
 | docs/core/why-arxmint.md | core, why | why arxmint doc in docs/core |
 | docs/core/incentives.md | core, incentives, rewards, adoption, dual pricing, sats-back, cashu, loyalty, B2B, flywheel, agent | Incentive strategy — dual pricing, Cashu sats-back, B2B routing, build phases, what works and what doesn't |
 | docs/deployment/deploy.md | deployment, deploy | deploy doc in docs/deployment |
