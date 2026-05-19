@@ -252,77 +252,68 @@ export async function forwardPaymentToMerchant(params: {
 
 /**
  * Forward a payment to a merchant's BOLT12 offer (lno1...).
- * Two-step flow against the backing LND node's experimental BOLT12 RPCs:
- *   1. POST /v2/offers/fetchinvoice → returns a BOLT11 invoice for the amount
- *   2. POST /v1/channels/transactions → pays the BOLT11
  *
- * Prerequisites:
- *   - LND_REST_URL env var (e.g. https://<cloudflared-tunnel>.trycloudflare.com)
- *   - LND_MACAROON_HEX env var with offers + router + invoice permissions
- *   - LND on the backing node has BOLT12 enabled (`protocol.bolt12-offers=experimental`)
+ * Single-call against Phoenixd's `POST /payoffer` — Phoenixd is the actual
+ * Lightning backend funding lnbits.arxmint.com, and it has native BOLT12
+ * support. No LND tunnel, no fetchinvoice round-trip — Phoenixd does the
+ * offer-decode and onion-message dance internally.
  *
- * Returns `unsupported: true` if either env var is missing — caller should
- * treat that as "skip silently, capture-only mode" rather than a failure.
+ * Prerequisites (already configured on Vercel as of 2026-05-19):
+ *   - PHOENIXD_URL: http://<host>:9740
+ *   - PHOENIXD_API_PASSWORD: HTTP Basic password (username is empty)
+ *
+ * Returns `unsupported: true` only if env vars are missing — caller treats
+ * that as "skip silently, capture-only mode" rather than a failure.
  */
 export async function forwardPaymentToBolt12Offer(params: {
   amountSats: number;
   offer: string;
   memo?: string;
 }): Promise<{ success: boolean; unsupported?: boolean; error?: string }> {
-  const lndRestUrl = process.env.LND_REST_URL?.replace(/\/$/, "");
-  const macaroonHex = process.env.LND_MACAROON_HEX;
-  if (!lndRestUrl || !macaroonHex) {
-    return { success: false, unsupported: true, error: "LND_REST_URL or LND_MACAROON_HEX not configured" };
+  const phoenixdUrl = process.env.PHOENIXD_URL?.replace(/\/$/, "");
+  const phoenixdPassword = process.env.PHOENIXD_API_PASSWORD;
+  if (!phoenixdUrl || !phoenixdPassword) {
+    return { success: false, unsupported: true, error: "PHOENIXD_URL or PHOENIXD_API_PASSWORD not configured" };
   }
 
   try {
-    // Step 1: ask the offer issuer (via our LND) for a BOLT11 invoice.
-    const fetchRes = await fetch(`${lndRestUrl}/v2/offers/fetchinvoice`, {
-      method: "POST",
-      headers: {
-        "Grpc-Metadata-macaroon": macaroonHex,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        offer: params.offer,
-        msats: params.amountSats * 1000,
-      }),
-      signal: AbortSignal.timeout(30_000),
+    // Phoenixd /payoffer expects form-urlencoded body.
+    // Auth is HTTP Basic with empty username and password=PHOENIXD_API_PASSWORD.
+    const auth = Buffer.from(`:${phoenixdPassword}`).toString("base64");
+    const formBody = new URLSearchParams({
+      offer: params.offer,
+      amountSat: String(params.amountSats),
+      ...(params.memo ? { message: params.memo.slice(0, 200) } : {}),
     });
-    if (!fetchRes.ok) {
-      const text = await fetchRes.text();
-      return { success: false, error: `LND fetchinvoice failed: ${fetchRes.status} ${text.slice(0, 200)}` };
-    }
-    const fetchData = (await fetchRes.json()) as { invoice?: string };
-    const bolt11 = fetchData.invoice;
-    if (!bolt11) {
-      return { success: false, error: "LND fetchinvoice returned no invoice field" };
-    }
-
-    // Step 2: pay the BOLT11 via LND's standard /v1/channels/transactions.
-    // (Could also go via LNbits here — staying with LND-direct since that's
-    // already the channel that decoded the offer.)
-    const payRes = await fetch(`${lndRestUrl}/v1/channels/transactions`, {
+    const res = await fetch(`${phoenixdUrl}/payoffer`, {
       method: "POST",
       headers: {
-        "Grpc-Metadata-macaroon": macaroonHex,
-        "Content-Type": "application/json",
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: JSON.stringify({ payment_request: bolt11 }),
+      body: formBody.toString(),
       signal: AbortSignal.timeout(60_000),
     });
-    if (!payRes.ok) {
-      const text = await payRes.text();
-      return { success: false, error: `LND pay failed: ${payRes.status} ${text.slice(0, 200)}` };
+    if (!res.ok) {
+      const text = await res.text();
+      // Common failure modes worth surfacing distinctly so logs are actionable:
+      //   402 Payment Required → insufficient outbound liquidity
+      //   400 → bad offer / amount mismatch
+      //   504 / network errors → onion message to recipient timed out
+      return { success: false, error: `Phoenixd /payoffer failed: ${res.status} ${text.slice(0, 200)}` };
     }
-    const payData = (await payRes.json()) as { payment_error?: string };
-    if (payData.payment_error) {
-      return { success: false, error: `payment_error: ${payData.payment_error}` };
-    }
+    const data = (await res.json()) as {
+      paymentId?: string;
+      paymentHash?: string;
+      recipientAmountSat?: number;
+      routingFeeSat?: number;
+    };
 
-    logger.info("bolt12_payment_forwarded", {
+    logger.info("bolt12_payment_forwarded_phoenixd", {
       amountSats: params.amountSats,
       offerPrefix: params.offer.slice(0, 32),
+      paymentHash: data.paymentHash,
+      routingFeeSat: data.routingFeeSat,
     });
     return { success: true };
   } catch (error) {
