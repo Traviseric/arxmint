@@ -9,7 +9,7 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Zap,
@@ -18,6 +18,7 @@ import {
   ExternalLink,
   FileDown,
   Mail,
+  FileText,
   Send,
   X,
   RefreshCw,
@@ -42,7 +43,9 @@ import type { TransactionRow } from "@/app/api/merchant-dashboard/transactions/r
 interface Stats {
   todayTotal: number;
   todayCount: number;
-  recentPayment: { amount: number; memo: string | null; time: number } | null;
+  recentPayment?: { amount: number; memo: string | null; time: number } | null;
+  recentPayments?: Array<{ amount: number; memo: string | null; time: number }>;
+  balance?: number;
   lnbitsAvailable: boolean;
 }
 
@@ -53,6 +56,27 @@ interface TransactionsResponse {
   pages: number;
   btcPriceUsd: number;
   lnbitsAvailable: boolean;
+}
+
+interface DashboardInvoice {
+  id: string;
+  invoiceNumber: string;
+  status: "draft" | "sent" | "paid" | "overdue" | "void";
+  totalMinor: number;
+  dueDate: string | null;
+  sentAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  serviceAddress: string | null;
+  serviceDate: string | null;
+  paymentLink: string | null;
+  lineItems: Array<{
+    description: string;
+    quantity: number;
+    totalAmountMinor: number;
+  }>;
 }
 
 // ---- Seed merchant data fallback ----
@@ -103,6 +127,15 @@ function shortHash(hash: string): string {
   return hash.slice(0, 8) + "..." + hash.slice(-8);
 }
 
+function formatDate(value: string | null): string {
+  if (!value) return "--";
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 // ---- Sub-components ----
 
 function StatusBadge({ status }: { status: "paid" | "pending" | "expired" }) {
@@ -115,6 +148,25 @@ function StatusBadge({ status }: { status: "paid" | "pending" | "expired" }) {
     <span
       className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}
     >
+      {status}
+    </span>
+  );
+}
+
+function InvoiceStatusBadge({
+  status,
+}: {
+  status: DashboardInvoice["status"];
+}) {
+  const styles: Record<DashboardInvoice["status"], string> = {
+    draft: "bg-gray-100 text-gray-700",
+    sent: "bg-blue-100 text-blue-800",
+    paid: "bg-green-100 text-green-800",
+    overdue: "bg-red-100 text-red-800",
+    void: "bg-gray-200 text-gray-500",
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
       {status}
     </span>
   );
@@ -428,9 +480,7 @@ function BalanceCard({
   loading: boolean;
   btcPriceUsd: number;
 }) {
-  // For now, display balance as today's total (LNbits wallet balance API
-  // will be wired once per-merchant wallets are provisioned).
-  const balanceSats = stats?.todayTotal ?? 0;
+  const balanceSats = stats?.balance ?? stats?.todayTotal ?? 0;
 
   return (
     <ScrollReveal delay={0.3}>
@@ -476,7 +526,7 @@ function BalanceCard({
 // ---- Transaction List ----
 
 function TransactionList({
-  merchantId: _merchantId,
+  merchantId,
   btcPriceUsd,
 }: {
   merchantId: string;
@@ -496,7 +546,11 @@ function TransactionList({
     async (p: number, f: string, t: string) => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ page: String(p), limit: "10" });
+        const params = new URLSearchParams({
+          merchantId,
+          page: String(p),
+          limit: "10",
+        });
         if (f) params.set("from", f);
         if (t) params.set("to", t);
         const res = await fetch(
@@ -507,7 +561,7 @@ function TransactionList({
         setLoading(false);
       }
     },
-    []
+    [merchantId]
   );
 
   useEffect(() => {
@@ -526,6 +580,7 @@ function TransactionList({
 
   const handleExportCsv = () => {
     const params = new URLSearchParams();
+    params.set("merchantId", merchantId);
     if (from) params.set("from", from);
     if (to) params.set("to", to);
     params.set("format", "csv");
@@ -734,11 +789,169 @@ function TransactionList({
   );
 }
 
+// ---- Invoice List ----
+
+function InvoiceList({ merchantId }: { merchantId: string }) {
+  const [invoices, setInvoices] = useState<DashboardInvoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<"all" | DashboardInvoice["status"]>("all");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        merchantId,
+        limit: "8",
+      });
+      if (status !== "all") params.set("status", status);
+      const res = await fetch(`/api/merchant-dashboard/invoices?${params.toString()}`);
+      if (res.ok) {
+        const data = (await res.json()) as { invoices?: DashboardInvoice[] };
+        setInvoices(data.invoices ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [merchantId, status]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return (
+    <ScrollReveal delay={0.35}>
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+              <FileText size={20} className="text-orange-600" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">Invoices</h2>
+              <p className="text-xs text-gray-500">Sent requests and payment status</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            >
+              <option value="all">All</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+              <option value="draft">Draft</option>
+              <option value="void">Void</option>
+            </select>
+            <Link
+              href={`/merchant-dashboard/send-invoice?merchant=${merchantId}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
+            >
+              <Send size={14} />
+              New
+            </Link>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-10 text-gray-400">
+            <RefreshCw size={18} className="animate-spin mr-2" />
+            Loading invoices...
+          </div>
+        ) : invoices.length === 0 ? (
+          <div className="py-10 text-center text-gray-400 text-sm">
+            No invoices found.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-gray-100">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Invoice</th>
+                  <th className="text-left px-4 py-3 text-gray-500 font-medium">Customer</th>
+                  <th className="text-left px-4 py-3 text-gray-500 font-medium hidden md:table-cell">Service</th>
+                  <th className="text-right px-4 py-3 text-gray-500 font-medium">Amount</th>
+                  <th className="text-center px-4 py-3 text-gray-500 font-medium">Status</th>
+                  <th className="text-right px-4 py-3 text-gray-500 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {invoices.map((invoice) => (
+                  <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-mono text-xs text-gray-900">{invoice.invoiceNumber}</div>
+                      <div className="text-xs text-gray-500">Sent {formatDate(invoice.sentAt ?? invoice.createdAt)}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">
+                        {invoice.customerName || invoice.customerEmail || "--"}
+                      </div>
+                      {invoice.customerEmail && (
+                        <div className="text-xs text-gray-500">{invoice.customerEmail}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell max-w-[240px]">
+                      <div className="text-gray-700 truncate">
+                        {invoice.lineItems[0]?.description ?? "Window cleaning service"}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {invoice.serviceDate ? `${formatDate(invoice.serviceDate)} · ` : ""}
+                        {invoice.serviceAddress ?? ""}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                      {formatSats(invoice.totalMinor)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <InvoiceStatusBadge status={invoice.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <a
+                          href={`/api/invoices/${invoice.id}/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Download PDF"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
+                        >
+                          <FileDown size={15} />
+                        </a>
+                        {invoice.paymentLink && (
+                          <a
+                            href={invoice.paymentLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open payment link"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-orange-50 text-gray-400 hover:text-orange-600 transition-colors"
+                          >
+                            <ExternalLink size={15} />
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </ScrollReveal>
+  );
+}
+
 // ---- Main Page ----
 
 function MerchantDashboardContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const merchantId = searchParams.get("merchant") || "seed-black-bear";
+  const isProduction = process.env.NODE_ENV === "production";
+  const requestedMerchantId = searchParams.get("merchant");
+  const [authChecked, setAuthChecked] = useState(!isProduction);
+  const [merchantId, setMerchantId] = useState(
+    isProduction ? "" : requestedMerchantId || "seed-black-bear"
+  );
 
   const merchant = SEED_MERCHANTS[merchantId] ?? {
     businessName: merchantId,
@@ -749,6 +962,32 @@ function MerchantDashboardContent() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [btcPriceUsd, setBtcPriceUsd] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/merchant-auth/session")
+      .then((r) => r.json())
+      .then((data: { authenticated?: boolean; merchantId?: string }) => {
+        if (data.authenticated && data.merchantId) {
+          if (requestedMerchantId && requestedMerchantId !== data.merchantId) {
+            router.replace("/merchant-dashboard");
+            return;
+          }
+          setMerchantId(data.merchantId);
+          setAuthChecked(true);
+        } else if (isProduction) {
+          router.replace("/merchant-login");
+        } else {
+          setAuthChecked(true);
+        }
+      })
+      .catch(() => {
+        if (isProduction) {
+          router.replace("/merchant-login");
+        } else {
+          setAuthChecked(true);
+        }
+      });
+  }, [isProduction, requestedMerchantId, router]);
 
   // Apply merchant light theme
   useEffect(() => {
@@ -762,23 +1001,36 @@ function MerchantDashboardContent() {
 
   // Load stats
   useEffect(() => {
+    if (!merchantId) return;
     setStatsLoading(true);
-    fetch("/api/merchant-dashboard/stats")
+    fetch(`/api/merchant-dashboard/stats?merchantId=${encodeURIComponent(merchantId)}`)
       .then((r) => r.json())
-      .then((d) => setStats(d))
+      .then((d: Stats) =>
+        setStats({
+          ...d,
+          recentPayment: d.recentPayment ?? d.recentPayments?.[0] ?? null,
+        })
+      )
       .catch(() => {})
       .finally(() => setStatsLoading(false));
-  }, []);
+  }, [merchantId]);
 
   // Load BTC price for USD conversion
   useEffect(() => {
-    fetch("/api/merchant-dashboard/transactions?page=1&limit=1")
+    if (!merchantId) return;
+    fetch(
+      `/api/merchant-dashboard/transactions?merchantId=${encodeURIComponent(merchantId)}&page=1&limit=1`
+    )
       .then((r) => r.json())
       .then((d: { btcPriceUsd?: number }) => {
         if (d.btcPriceUsd) setBtcPriceUsd(d.btcPriceUsd);
       })
       .catch(() => {});
-  }, []);
+  }, [merchantId]);
+
+  if (!authChecked || !merchantId) {
+    return <div className="min-h-screen bg-[#fafafa]" />;
+  }
 
   return (
     <div
@@ -901,6 +1153,7 @@ function MerchantDashboardContent() {
                 loading={statsLoading}
                 btcPriceUsd={btcPriceUsd}
               />
+              <InvoiceList merchantId={merchantId} />
               <TransactionList
                 merchantId={merchantId}
                 btcPriceUsd={btcPriceUsd}

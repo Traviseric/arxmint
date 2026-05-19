@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api-error";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { requireMerchantDashboardAccess } from "@/lib/merchant-dashboard-auth";
 
 interface LNbitsPayment {
   payment_hash: string;
@@ -67,6 +68,9 @@ export async function GET(request: NextRequest) {
   if (!merchantId) {
     return apiError(400, "MISSING_MERCHANT_ID", "merchantId query param is required.");
   }
+
+  const authError = await requireMerchantDashboardAccess(request, merchantId, "read");
+  if (authError) return authError;
 
   const LNBITS_URL = process.env.LNBITS_URL;
   if (!LNBITS_URL) {

@@ -53,9 +53,13 @@ async function resolveSession(
   // --- LNbits payment check (real payments) ---
   if (status === "pending" && !session.demo_mode && session.r_hash) {
     try {
-      const { checkLNbitsPayment } = await import("@/lib/lnbits");
+      const { checkLNbitsPayment, getMerchantInvoiceKey } = await import("@/lib/lnbits");
+      const walletInvoiceKey = session.merchant_id
+        ? await getMerchantInvoiceKey(session.merchant_id)
+        : null;
       const lnbitsStatus = await checkLNbitsPayment({
         paymentHash: session.r_hash,
+        walletInvoiceKey: walletInvoiceKey ?? undefined,
       });
       if (lnbitsStatus.paid) {
         const paidAt = new Date().toISOString();

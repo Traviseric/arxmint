@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api-error";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { requireMerchantDashboardAccess } from "@/lib/merchant-dashboard-auth";
 
 export async function GET(request: NextRequest) {
   // Rate limit by IP
@@ -26,6 +27,9 @@ export async function GET(request: NextRequest) {
   if (!merchantId) {
     return apiError(400, "MISSING_MERCHANT_ID", "merchantId query param is required.");
   }
+
+  const authError = await requireMerchantDashboardAccess(request, merchantId, "read");
+  if (authError) return authError;
 
   const { supabase } = await import("@/lib/supabase");
 
@@ -43,31 +47,48 @@ export async function GET(request: NextRequest) {
   // Fetch wallet settings
   const { data: wallet } = await supabase
     .from("merchant_wallets")
-    .select("payout_address, payout_type, telegram_handle, email_notifications, webhook_url, auto_forward_enabled, created_at, updated_at")
+    .select("payout_address, payout_type, telegram_handle, email_notifications, webhook_url, auto_forward_enabled, lnbits_invoice_key, created_at, updated_at")
     .eq("merchant_id", merchantId)
     .single();
 
+  const merchantSettings = {
+    businessName: merchant.business_name,
+    location: merchant.location,
+    category: merchant.category,
+    website: merchant.website,
+    payoutAddress: wallet?.payout_address ?? null,
+    payoutType: wallet?.payout_type ?? null,
+    defaultAmountSats: merchant.default_amount_sats ?? null,
+    customMemo: null,
+    telegramHandle: wallet?.telegram_handle ?? null,
+    emailNotifications: wallet?.email_notifications ?? true,
+    webhookUrl: wallet?.webhook_url ?? null,
+    invoiceKey: wallet?.lnbits_invoice_key ?? null,
+  };
+
   return NextResponse.json({
+    ...merchantSettings,
     merchant: {
       id: merchant.id,
-      businessName: merchant.business_name,
-      location: merchant.location,
-      category: merchant.category,
-      website: merchant.website,
+      businessName: merchantSettings.businessName,
+      location: merchantSettings.location,
+      category: merchantSettings.category,
+      website: merchantSettings.website,
       logoUrl: merchant.logo_url,
       reason: merchant.reason,
       featured: merchant.featured,
       checkoutEnabled: merchant.checkout_enabled ?? false,
-      defaultAmountSats: merchant.default_amount_sats ?? null,
+      defaultAmountSats: merchantSettings.defaultAmountSats,
     },
     wallet: wallet
       ? {
-          payoutAddress: wallet.payout_address,
-          payoutType: wallet.payout_type,
-          telegramHandle: wallet.telegram_handle,
-          emailNotifications: wallet.email_notifications,
-          webhookUrl: wallet.webhook_url,
+          payoutAddress: merchantSettings.payoutAddress,
+          payoutType: merchantSettings.payoutType,
+          telegramHandle: merchantSettings.telegramHandle,
+          emailNotifications: merchantSettings.emailNotifications,
+          webhookUrl: merchantSettings.webhookUrl,
           autoForwardEnabled: wallet.auto_forward_enabled,
+          invoiceKey: merchantSettings.invoiceKey,
           createdAt: wallet.created_at,
           updatedAt: wallet.updated_at,
         }
@@ -105,6 +126,9 @@ export async function PUT(request: NextRequest) {
   if (!merchantId || typeof merchantId !== "string") {
     return apiError(400, "MISSING_MERCHANT_ID", "merchantId is required.");
   }
+
+  const authError = await requireMerchantDashboardAccess(request, merchantId, "write");
+  if (authError) return authError;
 
   const { supabase } = await import("@/lib/supabase");
 

@@ -107,14 +107,21 @@ test("auto-link proceeds when X-Teneo-Auth has a valid userId (sub claim)", () =
 
 // ---- Privacy-level gate ----
 
+function shouldAutoLinkIdentity(
+  privacyLevel: "standard" | "maximum",
+  nostrPubkey: string | null,
+  teneoUserId: string | null
+): boolean {
+  return privacyLevel !== "maximum" && !!nostrPubkey && !!teneoUserId;
+}
+
 test("auto-link is skipped when privacyLevel is maximum", () => {
   // Simulate the gate in checkout route: privacyLevel === 'maximum' → skip
   const privacyLevel: "standard" | "maximum" = "maximum";
   const nostrPubkey = "npub1abc";
   const teneoUserId = "teneo_user_99";
 
-  // The guard condition from checkout/route.ts
-  const shouldLink = privacyLevel !== "maximum" && !!nostrPubkey && !!teneoUserId;
+  const shouldLink = shouldAutoLinkIdentity(privacyLevel, nostrPubkey, teneoUserId);
   assert.equal(shouldLink, false, "maximum privacy must suppress identity linking");
 });
 
@@ -123,7 +130,7 @@ test("auto-link is skipped when privacyLevel is standard but nostrPubkey is abse
   const nostrPubkey: string | null = null;
   const teneoUserId = "teneo_user_99";
 
-  const shouldLink = privacyLevel !== "maximum" && !!nostrPubkey && !!teneoUserId;
+  const shouldLink = shouldAutoLinkIdentity(privacyLevel, nostrPubkey, teneoUserId);
   assert.equal(shouldLink, false, "both signals required for linking");
 });
 
@@ -132,7 +139,7 @@ test("auto-link proceeds when privacyLevel is standard and both signals are pres
   const nostrPubkey = "npub1xyz";
   const teneoUserId = "teneo_user_77";
 
-  const shouldLink = privacyLevel !== "maximum" && !!nostrPubkey && !!teneoUserId;
+  const shouldLink = shouldAutoLinkIdentity(privacyLevel, nostrPubkey, teneoUserId);
   assert.equal(shouldLink, true, "standard privacy + both signals → link should fire");
 });
 

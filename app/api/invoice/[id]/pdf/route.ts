@@ -85,12 +85,12 @@ export async function GET(_req: Request, { params }: Params) {
     const { supabase } = await import("@/lib/supabase");
     const { data } = await supabase
       .from("merchant_pledges")
-      .select("businessName, location, website")
+      .select("business_name, location, website")
       .eq("id", merchantId)
       .single();
     if (data) {
       merchant = {
-        name: (data as { businessName?: string }).businessName ?? merchant.name,
+        name: (data as { business_name?: string }).business_name ?? merchant.name,
         location: (data as { location?: string }).location ?? merchant.location,
         website: (data as { website?: string }).website ?? null,
       };

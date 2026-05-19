@@ -137,7 +137,7 @@ Rules for this repo:
 1. Create products in Printful dashboard (store 17809413), update `printfulVariantId` in `lib/merch/products.ts`
 2. Add product images to `public/merch/`
 3. Set Vercel env vars: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `PRINTFUL_API_KEY`, `PRINTFUL_STORE_ID`
-4. Add `metadata` JSONB column to `checkout_sessions` Supabase table
+4. Run Prisma migrations, then apply `docs/deployment/supabase-migrations.sql` if the supplemental Supabase columns are missing
 5. Register Stripe webhook → `https://arxmint.com/api/merch/webhook`
 6. Deploy to Vercel
 

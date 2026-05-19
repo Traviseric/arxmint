@@ -206,7 +206,7 @@ function MerchantSettingsContent() {
   // Load settings from API
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/merchant-dashboard/settings?merchant=${encodeURIComponent(merchantId)}`)
+    fetch(`/api/merchant-dashboard/settings?merchantId=${encodeURIComponent(merchantId)}`)
       .then((r) => {
         if (r.ok) return r.json();
         return null;
@@ -282,7 +282,7 @@ function MerchantSettingsContent() {
   ]);
 
   const handleExportCsv = () => {
-    const params = new URLSearchParams({ format: "csv" });
+    const params = new URLSearchParams({ merchantId, format: "csv" });
     if (exportFrom) params.set("from", exportFrom);
     if (exportTo) params.set("to", exportTo);
     window.open(

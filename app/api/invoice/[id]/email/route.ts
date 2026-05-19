@@ -86,11 +86,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { supabase } = await import("@/lib/supabase");
     const { data } = await supabase
       .from("merchant_pledges")
-      .select("businessName")
+      .select("business_name")
       .eq("id", merchantId)
       .single();
-    const row = data as { businessName?: string } | null;
-    if (row?.businessName) merchantName = row.businessName;
+    const row = data as { business_name?: string } | null;
+    if (row?.business_name) merchantName = row.business_name;
   } catch {
     // use seed fallback
   }

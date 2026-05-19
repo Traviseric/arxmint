@@ -30,14 +30,14 @@ export async function lookupLnurlMerchant(username: string): Promise<LnurlMercha
     // Try exact slug match first, then "seed-{slug}" pattern used by seeded merchants
     const { data } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName")
+      .select("id, business_name")
       .or(`id.eq.${slug},id.eq.seed-${slug}`)
       .eq("approved", true)
       .limit(1)
       .maybeSingle();
 
-    if (data?.businessName) {
-      return { username: slug, displayName: data.businessName as string };
+    if (data?.business_name) {
+      return { username: slug, displayName: data.business_name as string };
     }
   } catch {
     // DB unavailable — fall through to hardcoded fallback

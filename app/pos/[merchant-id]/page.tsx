@@ -1,7 +1,7 @@
 // ============================================================
 // ArxMint — Point of Sale Terminal
 // /pos/[merchant-id] — merchant-facing POS for in-person Lightning payments
-// Mobile-first PWA. Numeric keypad, real-time USD/sats, QR code, polling.
+// Mobile-first PWA. Numeric keypad, real-time USD/sats, QR code, SSE status.
 // ============================================================
 
 "use client";
@@ -33,7 +33,6 @@ const BORDER = "#e0e0e0";
 const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const INVOICE_TTL_SECONDS = 600; // 10 minutes
-const POLL_INTERVAL_MS = 2_000;
 
 // Seed merchants (matches checkout API seed list)
 const SEED_MERCHANTS: Record<string, MerchantInfo> = {
@@ -83,7 +82,7 @@ export default function POSPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ---------------------------------------------------------------------------
@@ -158,7 +157,7 @@ export default function POSPage() {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      eventSourceRef.current?.close();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
@@ -240,8 +239,9 @@ export default function POSPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create invoice");
 
+      const sessionId = data.sessionId as string;
       setInvoice(data.invoice);
-      setSessionId(data.sessionId);
+      setSessionId(sessionId);
       setAmountSats(computedSats);
       setAmountUsd(parseFloat(
         currency === "usd" ? numericValue.toFixed(2) : (computedUsd as string)
@@ -254,7 +254,8 @@ export default function POSPage() {
         setSecondsLeft((prev) => {
           if (prev <= 1) {
             if (timerRef.current) clearInterval(timerRef.current);
-            if (pollRef.current) clearInterval(pollRef.current);
+            eventSourceRef.current?.close();
+            eventSourceRef.current = null;
             setScreen("expired");
             return 0;
           }
@@ -262,32 +263,38 @@ export default function POSPage() {
         });
       }, 1000);
 
-      // Start polling for payment status
-      pollRef.current = setInterval(async () => {
+      // Subscribe for payment status
+      const es = new EventSource(`/api/checkout/status/${sessionId}`);
+      eventSourceRef.current = es;
+
+      es.onmessage = (event) => {
         try {
-          const statusRes = await fetch(`/api/checkout/status/${data.sessionId}`);
-          if (statusRes.ok) {
-            const status = await statusRes.json();
-            if (status.status === "paid") {
-              if (pollRef.current) clearInterval(pollRef.current);
-              if (timerRef.current) clearInterval(timerRef.current);
-              setScreen("paid");
-              // Vibrate on payment received
-              try {
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-              } catch {
-                // vibration not available
-              }
-            } else if (status.status === "expired") {
-              if (pollRef.current) clearInterval(pollRef.current);
-              if (timerRef.current) clearInterval(timerRef.current);
-              setScreen("expired");
+          const data = JSON.parse(event.data);
+          if (data.status === "paid") {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setScreen("paid");
+            es.close();
+            eventSourceRef.current = null;
+            try {
+              if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            } catch {
+              // vibration not available
             }
+          } else if (data.status === "expired") {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setScreen("expired");
+            es.close();
+            eventSourceRef.current = null;
           }
         } catch {
-          // poll failed, continue
+          // ignore malformed events
         }
-      }, POLL_INTERVAL_MS);
+      };
+
+      es.onerror = () => {
+        es.close();
+        eventSourceRef.current = null;
+      };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setErrorMsg(msg);
@@ -299,9 +306,9 @@ export default function POSPage() {
   // Reset to keypad
   // ---------------------------------------------------------------------------
   const handleReset = useCallback(() => {
-    if (pollRef.current) clearInterval(pollRef.current);
+    eventSourceRef.current?.close();
     if (timerRef.current) clearInterval(timerRef.current);
-    pollRef.current = null;
+    eventSourceRef.current = null;
     timerRef.current = null;
     setScreen("keypad");
     setInvoice("");

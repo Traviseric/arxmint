@@ -39,9 +39,12 @@ function SendInvoiceContent() {
 
   // Form state
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [serviceAddress, setServiceAddress] = useState("");
+  const [serviceDate, setServiceDate] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<"USD" | "sats">("USD");
-  const [memo, setMemo] = useState("");
+  const [memo, setMemo] = useState("Window cleaning service");
 
   // BTC price
   const [btcPrice, setBtcPrice] = useState<number | null>(null);
@@ -111,6 +114,9 @@ function SendInvoiceContent() {
         body: JSON.stringify({
           merchantId,
           customerEmail: customerEmail.trim(),
+          customerName: customerName.trim() || undefined,
+          serviceAddress: serviceAddress.trim() || undefined,
+          serviceDate: serviceDate || undefined,
           amountSats: satsValue,
           memo: memo.trim() || undefined,
         }),
@@ -141,12 +147,25 @@ function SendInvoiceContent() {
     } finally {
       setSending(false);
     }
-  }, [customerEmail, satsValue, merchantId, memo, currency, numericAmount]);
+  }, [
+    customerEmail,
+    customerName,
+    serviceAddress,
+    serviceDate,
+    satsValue,
+    merchantId,
+    memo,
+    currency,
+    numericAmount,
+  ]);
 
   const handleReset = () => {
     setCustomerEmail("");
+    setCustomerName("");
+    setServiceAddress("");
+    setServiceDate("");
     setAmount("");
-    setMemo("");
+    setMemo("Window cleaning service");
     setSuccess(false);
     setSentEmail("");
     setSentAmount("");
@@ -251,6 +270,21 @@ function SendInvoiceContent() {
               {/* Customer Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Customer Name{" "}
+                  <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Customer or company name"
+                  maxLength={120}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent placeholder:text-gray-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Customer Email
                 </label>
                 <input
@@ -260,6 +294,36 @@ function SendInvoiceContent() {
                   placeholder="customer@example.com"
                   className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent placeholder:text-gray-400"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Service Date{" "}
+                    <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={serviceDate}
+                    onChange={(e) => setServiceDate(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Service Address{" "}
+                    <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={serviceAddress}
+                    onChange={(e) => setServiceAddress(e.target.value)}
+                    placeholder="123 Main St"
+                    maxLength={180}
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent placeholder:text-gray-400"
+                  />
+                </div>
               </div>
 
               {/* Amount with USD/sats toggle */}

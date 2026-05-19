@@ -202,7 +202,45 @@ npm install
 npx prisma migrate deploy
 ```
 
-This creates the `communities`, `wallet_proofs`, `merchants`, `transactions`, and `users` tables.
+This creates the core application schema, including `communities`, `merchants`,
+`transactions`, `users`, `checkout_sessions`, `invoices`, and
+`invoice_line_items`.
+
+For Supabase projects where migrations are applied manually through the SQL
+Editor, run the Prisma migration files in timestamp order. The merchant
+invoicing flow requires:
+
+```text
+prisma/migrations/20260316233000_invoice_primitive/migration.sql
+```
+
+After the Prisma schema is present, apply supplemental Supabase-only SQL if
+needed:
+
+```text
+docs/deployment/supabase-migrations.sql
+supabase/migrations/20260514000000_harden_merchant_payment_rls.sql
+```
+
+That supplemental file provisions merchant wallet/BTCMap helper tables and
+adds compatibility columns to `checkout_sessions` and `merchant_pledges`; it
+does not create the invoice tables. The hardening migration removes direct
+anon/authenticated table access and relies on server-side service-role API
+routes for merchant/payment data.
+
+To verify invoicing is installed:
+
+```sql
+select table_name
+from information_schema.tables
+where table_schema = 'public'
+  and table_name in ('invoices', 'invoice_line_items', 'checkout_sessions', 'merchant_pledges')
+order by table_name;
+```
+
+You should see all four tables. If rerunning raw SQL gives
+`type "InvoiceStatus" already exists`, stop and verify the schema; that means
+the invoice migration has already started or completed.
 
 ---
 
@@ -568,6 +606,11 @@ npx prisma migrate reset
 # Production: deploy only
 npx prisma migrate deploy
 ```
+
+For Supabase SQL Editor runs, duplicate enum errors such as
+`type "InvoiceStatus" already exists` mean a raw Prisma migration has already
+been applied. Do not keep rerunning it. Verify `invoices` and
+`invoice_line_items` exist, then continue with supplemental SQL only if needed.
 
 ### Web app build fails inside Docker
 

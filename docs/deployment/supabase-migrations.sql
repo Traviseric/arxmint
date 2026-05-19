@@ -1,6 +1,22 @@
 -- ============================================================
--- ArxMint — Supabase Migrations for Phase 4.7
+-- ArxMint — Supplemental Supabase Migrations for Phase 4.7
 -- Run in Supabase Dashboard → SQL Editor
+--
+-- This file is NOT the full application schema.
+-- Run Prisma migrations first:
+--   npx prisma migrate deploy
+--
+-- If you are applying migrations manually in Supabase SQL Editor, run the
+-- Prisma migration files under prisma/migrations/ first. Invoicing requires:
+--   prisma/migrations/20260316233000_invoice_primitive/migration.sql
+--
+-- Do not rerun raw Prisma migration SQL after it succeeds. If PostgreSQL
+-- reports type "InvoiceStatus" already exists, the invoice migration has
+-- already been applied at least once; verify tables instead of rerunning it.
+--
+-- After this supplemental file, run:
+--   supabase/migrations/20260514000000_harden_merchant_payment_rls.sql
+-- to remove broad anon/authenticated table access from merchant/payment data.
 -- ============================================================
 
 -- 1. Merchant Wallets (stores LNbits wallet credentials per merchant)
@@ -23,9 +39,10 @@ CREATE TABLE IF NOT EXISTS merchant_wallets (
 -- RLS for merchant_wallets
 ALTER TABLE merchant_wallets ENABLE ROW LEVEL SECURITY;
 
--- Allow service role full access (server-side API routes)
-CREATE POLICY "service_role_all" ON merchant_wallets
-  FOR ALL USING (true) WITH CHECK (true);
+-- Server-side API routes use SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS.
+-- Do not add broad USING (true) public policies here.
+REVOKE ALL ON TABLE merchant_wallets FROM anon, authenticated;
+GRANT ALL ON TABLE merchant_wallets TO service_role;
 
 -- 2. BTCMap Submissions (tracks merchant submissions to BTCMap.org)
 CREATE TABLE IF NOT EXISTS btcmap_submissions (
@@ -45,9 +62,10 @@ CREATE TABLE IF NOT EXISTS btcmap_submissions (
 -- RLS for btcmap_submissions
 ALTER TABLE btcmap_submissions ENABLE ROW LEVEL SECURITY;
 
--- Allow service role full access
-CREATE POLICY "service_role_all" ON btcmap_submissions
-  FOR ALL USING (true) WITH CHECK (true);
+-- Server-side API routes use SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS.
+-- Do not add broad USING (true) public policies here.
+REVOKE ALL ON TABLE btcmap_submissions FROM anon, authenticated;
+GRANT ALL ON TABLE btcmap_submissions TO service_role;
 
 -- 3. Add columns to checkout_sessions if they don't exist
 -- (These may have been added by earlier migrations)

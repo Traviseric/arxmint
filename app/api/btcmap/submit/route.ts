@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Look up merchant from merchant_pledges
     const { data: merchant, error: merchantError } = await supabase
       .from("merchant_pledges")
-      .select("id, businessName, location, website")
+      .select("id, business_name, location, website")
       .eq("id", merchantId)
       .single();
 
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Check if already listed on BTCMap
     const alreadyListed = await checkBtcMapListed(
-      merchant.businessName,
+      merchant.business_name,
       coordinates.lat,
       coordinates.lng
     );
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     if (alreadyListed) {
       logger.info("btcmap_already_listed", {
         merchantId,
-        businessName: merchant.businessName,
+        businessName: merchant.business_name,
       });
       return NextResponse.json({
         submitted: false,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     const paymentUrl = `https://arxmint.com/pay/${merchantId}`;
     const submitted = await submitToBtcMap({
       merchantId,
-      businessName: merchant.businessName,
+      businessName: merchant.business_name,
       location: merchant.location,
       lat: coordinates.lat,
       lng: coordinates.lng,

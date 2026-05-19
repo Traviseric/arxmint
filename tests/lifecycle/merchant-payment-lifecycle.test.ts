@@ -314,8 +314,9 @@ test("lifecycle step 6 — full chain: invoice → pay → webhook → verify �
   const origFetch = global.fetch;
   // @ts-ignore
   global.fetch = createLNbitsMockFetch(
-    async (url: string, opts?: RequestInit): Promise<Response> => {
+    async (input: RequestInfo | URL, opts?: RequestInit): Promise<Response> => {
       // Intercept webhook delivery
+      const url = String(input);
       if (String(url).includes("/webhook")) {
         webhookCalled = true;
         capturedSignature = (opts?.headers as Record<string, string>)["ArxMint-Signature"] ?? "";

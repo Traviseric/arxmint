@@ -3,26 +3,21 @@
 // POST /api/merchant-dashboard/send-invoice
 // Sends a payment request email to a customer on behalf of a merchant.
 //
-// Supabase table (run once):
-// CREATE TABLE sent_invoices (
-//   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//   merchant_id TEXT NOT NULL,
-//   customer_email TEXT NOT NULL,
-//   amount_sats INTEGER NOT NULL,
-//   amount_usd TEXT,
-//   memo TEXT,
-//   payment_url TEXT NOT NULL,
-//   status TEXT DEFAULT 'sent',
-//   sent_at TIMESTAMPTZ DEFAULT NOW(),
-//   paid_at TIMESTAMPTZ
-// );
+// Persists invoices through the canonical Prisma Invoice model.
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "crypto";
+import { Prisma } from "@prisma/client";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
 import { sendInvoiceEmail } from "@/lib/email";
+import { db } from "@/lib/db";
+import {
+  buildInvoicePaymentLink,
+  calculateInvoiceSummary,
+  generateInvoiceNumber,
+} from "@/lib/invoices";
+import { requireMerchantDashboardAccess } from "@/lib/merchant-dashboard-auth";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_SATS = 1;
@@ -31,13 +26,24 @@ const MAX_SATS = 1_000_000;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { merchantId, customerEmail, amountSats: rawAmount, memo: rawMemo } = body;
+    const {
+      merchantId,
+      customerEmail,
+      customerName: rawCustomerName,
+      serviceAddress: rawServiceAddress,
+      serviceDate: rawServiceDate,
+      amountSats: rawAmount,
+      memo: rawMemo,
+    } = body;
 
     // --- Validate merchantId ---
     if (typeof merchantId !== "string" || merchantId.trim().length === 0) {
       return apiError(400, "MISSING_FIELD", "merchantId is required");
     }
     const mid = merchantId.trim();
+
+    const authError = await requireMerchantDashboardAccess(request, mid, "write");
+    if (authError) return authError;
 
     // --- Rate limit: 20 per hour per merchant ---
     const rl = checkRateLimit(`send-invoice:${mid}`, {
@@ -67,6 +73,19 @@ export async function POST(request: NextRequest) {
     const memo = typeof rawMemo === "string" && rawMemo.trim().length > 0
       ? rawMemo.trim().slice(0, 200)
       : null;
+    const customerName = typeof rawCustomerName === "string" && rawCustomerName.trim().length > 0
+      ? rawCustomerName.trim().slice(0, 120)
+      : null;
+    const serviceAddress = typeof rawServiceAddress === "string" && rawServiceAddress.trim().length > 0
+      ? rawServiceAddress.trim().slice(0, 180)
+      : null;
+    const serviceDate = typeof rawServiceDate === "string" && rawServiceDate.trim().length > 0
+      ? rawServiceDate.trim().slice(0, 10)
+      : null;
+    const parsedServiceDate = serviceDate ? new Date(`${serviceDate}T00:00:00.000Z`) : null;
+    if (serviceDate && Number.isNaN(parsedServiceDate?.getTime())) {
+      return apiError(400, "INVALID_SERVICE_DATE", "serviceDate must be a valid YYYY-MM-DD date.");
+    }
 
     // --- Look up merchant ---
     let merchant: { id: string; businessName: string; checkout_enabled: boolean } | null = null;
@@ -75,10 +94,16 @@ export async function POST(request: NextRequest) {
       const { supabase } = await import("@/lib/supabase");
       const { data, error } = await supabase
         .from("merchant_pledges")
-        .select("id, businessName, checkout_enabled")
+        .select("id, business_name, checkout_enabled")
         .eq("id", mid)
         .single();
-      if (!error && data) merchant = data;
+      if (!error && data) {
+        merchant = {
+          id: data.id,
+          businessName: data.business_name,
+          checkout_enabled: data.checkout_enabled,
+        };
+      }
     } catch {
       // DB unavailable — check seed merchants
     }
@@ -118,13 +143,82 @@ export async function POST(request: NextRequest) {
       // Non-fatal — USD conversion will be null
     }
 
-    // --- Build payment URL ---
-    const paymentUrl = memo
-      ? `https://www.arxmint.com/pay/${mid}?amount=${amountSats}&memo=${encodeURIComponent(memo)}`
-      : `https://www.arxmint.com/pay/${mid}?amount=${amountSats}`;
+    // --- Create a real invoice record ---
+    const origin =
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+      new URL(request.url).origin;
+    const summary = calculateInvoiceSummary([
+      {
+        description: memo || "Window cleaning service",
+        quantity: 1,
+        unitAmountMinor: amountSats,
+        metadata: {
+          customerEmail: email,
+          ...(customerName && { customerName }),
+          ...(serviceAddress && { serviceAddress }),
+          ...(serviceDate && { serviceDate }),
+          source: "merchant-dashboard",
+        },
+      },
+    ]);
 
-    // --- Generate a session ID for the invoice reference ---
-    const sessionId = randomBytes(16).toString("hex");
+    const invoice = await db.invoice.create({
+      data: {
+        invoiceNumber: generateInvoiceNumber(),
+        fromOrgId: `merchant:${mid}`,
+        fromOrgName: merchant.businessName,
+        toOrgId: `customer:${email}`,
+        toOrgName: customerName || email,
+        merchantId: mid,
+        status: "sent",
+        currency: "BTC",
+        paymentRail: "lightning",
+        subtotalMinor: summary.subtotalMinor,
+        totalMinor: summary.totalMinor,
+        sentAt: new Date(),
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        notes: memo,
+        metadata: {
+          customerEmail: email,
+          ...(customerName && { customerName }),
+          ...(serviceAddress && { serviceAddress }),
+          ...(serviceDate && { serviceDate }),
+          source: "merchant-dashboard-send-invoice",
+        } as Prisma.InputJsonObject,
+        lineItems: {
+          create: summary.normalizedLineItems.map((item, index) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unitAmountMinor: item.unitAmountMinor,
+            totalAmountMinor: item.totalAmountMinor,
+            currency: "BTC",
+            sortOrder: index,
+            metadata: item.metadata
+              ? (item.metadata as Prisma.InputJsonObject)
+              : undefined,
+          })),
+        },
+      },
+      include: {
+        lineItems: {
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+    });
+
+    const paymentUrl = buildInvoicePaymentLink(
+      {
+        id: invoice.id,
+        merchantId: mid,
+        paymentRail: "lightning",
+      },
+      origin
+    );
+
+    await db.invoice.update({
+      where: { id: invoice.id },
+      data: { paymentLink: paymentUrl },
+    });
 
     // --- Send the email ---
     const sent = await sendInvoiceEmail({
@@ -133,42 +227,39 @@ export async function POST(request: NextRequest) {
       amountSats,
       amountUsd,
       paymentUrl,
-      sessionId,
-      memo,
+      sessionId: invoice.id,
+      memo: [
+        memo,
+        serviceDate ? `Service date: ${serviceDate}` : null,
+        serviceAddress ? `Service address: ${serviceAddress}` : null,
+      ].filter(Boolean).join(" | ") || null,
     });
 
     if (!sent) {
-      return apiError(500, "EMAIL_FAILED", "Failed to send invoice email. Check RESEND_API_KEY configuration.");
-    }
-
-    // --- Store in Supabase ---
-    let invoiceId: string | null = null;
-    try {
-      const { supabase } = await import("@/lib/supabase");
-      const { data } = await supabase
-        .from("sent_invoices")
-        .insert({
-          merchant_id: mid,
-          customer_email: email,
-          amount_sats: amountSats,
-          amount_usd: amountUsd,
-          memo,
-          payment_url: paymentUrl,
-          status: "sent",
-        })
-        .select("id")
-        .single();
-      invoiceId = data?.id ?? null;
-    } catch {
-      // Non-fatal — email was already sent
+      return NextResponse.json(
+        {
+          error: {
+            code: "EMAIL_FAILED",
+            message: "Invoice was created, but email delivery failed. Check RESEND_API_KEY configuration.",
+          },
+          invoiceId: invoice.id,
+          paymentUrl,
+        },
+        { status: 503 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      invoiceId: invoiceId ?? sessionId,
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      paymentUrl,
       amountSats,
       amountUsd,
       customerEmail: email,
+      customerName,
+      serviceAddress,
+      serviceDate,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Something went wrong";

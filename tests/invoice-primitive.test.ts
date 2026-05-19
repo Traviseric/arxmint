@@ -31,6 +31,18 @@ test("calculateInvoiceSummary totals line items in minor units", () => {
   assert.equal(summary.normalizedLineItems[1].totalAmountMinor, 5000);
 });
 
+test("calculateInvoiceSummary supports window-cleaning service line items", () => {
+  const summary = calculateInvoiceSummary([
+    { description: "Exterior window cleaning", quantity: 18, unitAmountMinor: 450 },
+    { description: "Screen cleaning", quantity: 12, unitAmountMinor: 200 },
+  ]);
+
+  assert.equal(summary.subtotalMinor, 10500);
+  assert.equal(summary.totalMinor, 10500);
+  assert.equal(summary.normalizedLineItems[0].totalAmountMinor, 8100);
+  assert.equal(summary.normalizedLineItems[1].totalAmountMinor, 2400);
+});
+
 test("resolveInvoiceTransition enforces draft to sent to paid flow", () => {
   const sent = resolveInvoiceTransition("draft", "send");
   assert.equal(sent.status, "sent");
@@ -68,6 +80,22 @@ test("buildInvoicePaymentLink prefers merchant pay pages when merchant is linked
   assert.equal(
     url,
     "https://arxmint.test/pay/seed-teneo?invoiceId=inv_123"
+  );
+});
+
+test("buildInvoicePaymentLink keeps window-cleaner invoice ids on the pay page", () => {
+  const url = buildInvoicePaymentLink(
+    {
+      id: "inv_window_001",
+      merchantId: "seed-black-bear",
+      paymentRail: "lightning",
+    },
+    "https://arxmint.test/"
+  );
+
+  assert.equal(
+    url,
+    "https://arxmint.test/pay/seed-black-bear?invoiceId=inv_window_001"
   );
 });
 

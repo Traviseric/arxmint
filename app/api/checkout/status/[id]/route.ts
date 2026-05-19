@@ -47,8 +47,14 @@ async function resolveSession(id: string, requestUrl: string): Promise<{
   // Check LNbits + Phoenixd for payment confirmation (real payments)
   if (status === "pending" && !session.demo_mode && session.r_hash) {
     try {
-      const { checkLNbitsPayment, checkPhoenixdPayment } = await import("@/lib/lnbits");
-      const lnbitsStatus = await checkLNbitsPayment({ paymentHash: session.r_hash });
+      const { checkLNbitsPayment, checkPhoenixdPayment, getMerchantInvoiceKey } = await import("@/lib/lnbits");
+      const walletInvoiceKey = session.merchant_id
+        ? await getMerchantInvoiceKey(session.merchant_id)
+        : null;
+      const lnbitsStatus = await checkLNbitsPayment({
+        paymentHash: session.r_hash,
+        walletInvoiceKey: walletInvoiceKey ?? undefined,
+      });
       // Fall back to Phoenixd direct check (handles fee-credit payments LNbits can't see)
       const isPaid = lnbitsStatus.paid || await checkPhoenixdPayment(session.r_hash);
       if (isPaid) {
