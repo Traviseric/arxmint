@@ -656,7 +656,7 @@ export function getLightningClient(): SovereignLightningClient {
 // routes don't pull in this "use client" module just to read a header.
 // Re-imported + re-exported here for backward compat with client callers
 // and for internal use by verifyMerchantKeyFromHeader below.
-import { extractMerchantKey } from "./merchant-auth";
+import { extractMerchantKey } from "./merchant-auth.ts";
 export { extractMerchantKey };
 
 /**
@@ -676,13 +676,13 @@ export { extractMerchantKey };
 export async function verifyMerchantKeyFromHeader(
   request: { headers: { get(name: string): string | null } },
   merchantId: string
-): Promise<import("./merchant-auth").MerchantApiKey | null> {
+): Promise<import("./merchant-auth.ts").MerchantApiKey | null> {
   const authHeader = request.headers.get("Authorization");
   const key = extractMerchantKey(authHeader);
   if (!key) return null;
 
   const { verifyMerchantKey, scopeAllowedInProduction } = await import(
-    "./merchant-auth"
+    "./merchant-auth.ts"
   );
   const record = await verifyMerchantKey(key, merchantId);
   if (!record) return null;
