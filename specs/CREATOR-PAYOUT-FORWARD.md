@@ -1,19 +1,32 @@
-# Creator Payout Forward — `POST /api/payout`
+# Creator Payout Forward — `POST /api/creator-payout`
 
-**Status:** Implementation-ready spec — DRAFT 2026-05-23. Not built.
+**Status:** IMPLEMENTED 2026-05-25 — `lib/creator-payout.ts` (core),
+`app/api/creator-payout/route.ts` (thin handler), `supabase/migrations/20260525000000_payout_forwards.sql`,
+`tests/creator-payout.test.ts` (16 tests, all green). **Pending:** Supabase migration
+applied to the live DB, env config, and a real end-to-end forward.
 **Why:** Teneo sells a creator's book; the creator's share must reach **their**
 Lightning destination, not the single hardcoded `seed-teneo` wallet. This is the
 ArxMint receiver for Teneo's `payout-forwarder`.
 **Caller:** `teneo-production` `Lambda/payout-forwarder/` (defines the request it sends).
 **Inert until configured** — no money moves until `PHOENIXD_URL`/`PHOENIXD_API_PASSWORD`,
-`MARKETPLACE_SHARED_SECRET`, and (on Teneo) `ARXMINT_PAYOUT_URL` are all set.
+`MARKETPLACE_SHARED_SECRET`, and (on Teneo) `ARXMINT_PAYOUT_URL` (→ `/api/creator-payout`) are all set.
+
+**Route name:** `/api/creator-payout` (not the bare `/api/payout` the draft proposed) —
+ArxMint already has `GET /api/payouts` (merchant-scheduled payout history, `lib/payouts.ts`)
+and `POST /api/settlement` (referral-fee ecash/fedimint). `creator-payout` is unambiguous and
+avoids the singular/plural footgun. Teneo's `ARXMINT_PAYOUT_URL` is a full URL set in env, so
+the path is not hardcoded on the caller side — point it at `/api/creator-payout`.
+
+**Architecture:** logic in `lib/creator-payout.ts` (pure orchestration over injected store +
+forwarder seams — matches the repo's "test the lib, keep the route thin" idiom); the route only
+wires the real Supabase `payout_forwards` store and the `lib/lnbits` forwarders in.
 
 ---
 
 ## Contract
 
 ```
-POST /api/payout
+POST /api/creator-payout
 Headers: X-Marketplace-Secret: <MARKETPLACE_SHARED_SECRET>   (server-to-server)
 Body:
 {
@@ -64,7 +77,7 @@ CREATE TABLE IF NOT EXISTS payout_forwards (
 );
 ```
 
-### 2. Route — `app/api/payout/route.ts`
+### 2. Route — `app/api/creator-payout/route.ts` (+ core in `lib/creator-payout.ts`)
 
 Conventions (verified in the repo): `apiError` (`@/lib/api-error`),
 `checkRateLimit`/`RATE_LIMITS` (`@/lib/rate-limit`), `logger` (`@/lib/logger`),
@@ -89,8 +102,13 @@ export async function POST(request: NextRequest) {
 
   // --- forward by rail ---
   // bolt12:    forwardPaymentToBolt12Offer({ amountSats, offer: value, memo })   // Phoenixd /payoffer
-  // lnaddress: read merchant_wallets.lnbits_admin_key for merchant; if missing -> mark failed + 404;
-  //            forwardPaymentToMerchant({ amountSats, lightningAddress: value, walletAdminKey, memo })
+  //            PRIMARY, treasury-coherent rail: the sale landed in Phoenix (seed-teneo
+  //            auto-forward), so the creator's share leaves the same Phoenix node.
+  // lnaddress: forwardPaymentToMerchant({ amountSats, lightningAddress: value, walletAdminKey, memo })
+  //            funded from the GLOBAL LNbits wallet (process.env.LNBITS_ADMIN_KEY), not a
+  //            per-merchant key — seed-teneo pays out via BOLT12 and has no lnbits sub-wallet
+  //            (see 20260516000000_merchant_wallets_bolt12.sql). If LNBITS_ADMIN_KEY is unset
+  //            the forwarder returns unsupported -> pending (inert), same as a missing Phoenixd env.
 
   // --- finalize ---
   // result.success      -> update status="forwarded";  200 {success:true, status:"forwarded", forwardId:payoutId}
