@@ -530,8 +530,13 @@ async function autoForwardToMerchant(supabase: any, merchantId: string, amountSa
         .eq("merchant_id", merchantId)
         .single();
 
-    if (!wallet?.payout_address || !wallet?.lnbits_admin_key) {
-        logger.info("auto_forward_skipped", { merchantId, reason: "no payout address or wallet" });
+    // Only payout_address is universally required. lnbits_admin_key is needed
+    // ONLY for the lightning_address (LNURL-pay) path — the bolt12_offer path
+    // forwards via Phoenixd /payoffer and has no admin key (e.g. seed-teneo).
+    // Requiring it here would skip every BOLT12 merchant's forward. Checked
+    // in the lightning_address branch below instead.
+    if (!wallet?.payout_address) {
+        logger.info("auto_forward_skipped", { merchantId, reason: "no payout address" });
         return;
     }
 
@@ -580,6 +585,13 @@ async function autoForwardToMerchant(supabase: any, merchantId: string, amountSa
     }
     if (wallet.payout_type !== "lightning_address") {
         logger.info("auto_forward_skipped", { merchantId, reason: `payout_type=${wallet.payout_type}, only lightning_address supported` });
+        return;
+    }
+
+    // LNURL-pay forwarding pulls funds from the merchant's LNbits wallet, which
+    // needs the admin key. (BOLT12 above doesn't — it pays from Phoenixd.)
+    if (!wallet.lnbits_admin_key) {
+        logger.info("auto_forward_skipped", { merchantId, reason: "lightning_address payout requires lnbits_admin_key" });
         return;
     }
 
