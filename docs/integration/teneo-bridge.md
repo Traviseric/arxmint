@@ -34,7 +34,26 @@ When payment confirms, `app/api/checkout/webhook/route.ts → autoForwardToMerch
 
 `forwardPaymentToBolt12Offer` posts to Phoenixd's native `/payoffer` endpoint (Phoenixd has BOLT12 baked in — no LND tunnel, no fetchinvoice round-trip). Phoenixd is at `process.env.PHOENIXD_URL` (`http://167.71.189.144:9740`) with HTTP Basic auth (`process.env.PHOENIXD_API_PASSWORD`).
 
-The path: customer pays Lightning invoice (sats arrive at Phoenixd via lnbits.arxmint.com) → ArxMint webhook fires → Phoenixd `/payoffer` → onion message to Travis's Phoenix mobile → invoice fetched and paid → sats land in Phoenix within seconds.
+The intended path: customer pays Lightning invoice (sats arrive at Phoenixd via lnbits.arxmint.com) → ArxMint webhook fires → Phoenixd `/payoffer` → onion message to Travis's Phoenix mobile → invoice fetched and paid → sats land in Phoenix within seconds.
+
+### ⚠️ BUG (2026-06-05): forward never fires for seed-teneo — sats pile up in the node
+
+Verified empirically: two real paid sales (11,347 + 10,645 sats) landed in Phoenixd (`/getbalance` ≈ 22,492 sats) with **zero** outgoing forwards. The money is safe but never reached Travis's Phoenix.
+
+**Root cause** — `autoForwardToMerchant()` (`app/api/checkout/webhook/route.ts`, ~line 533):
+```ts
+if (!wallet?.payout_address || !wallet?.lnbits_admin_key) {
+    logger.info("auto_forward_skipped", { merchantId, reason: "no payout address or wallet" });
+    return;   // <-- seed-teneo returns HERE
+}
+```
+`seed-teneo` deliberately has **no `lnbits_admin_key`** (global-wallet/Phoenixd merchant — the migration below dropped that column's NOT NULL, and `creator-payout/route.ts` notes "seed-teneo … has no per-merchant admin key"). So this guard returns early and the `bolt12_offer` branch below (which uses Phoenixd `/payoffer`, **not** the admin key) is never reached. `forwardPaymentToBolt12Offer` + Phoenixd creds are correct and work — they're just never called.
+
+**Fix:** `lnbits_admin_key` is only needed for the `lightning_address` path. Require `payout_address` up front; move the `lnbits_admin_key` check *below* the `bolt12_offer` branch (or gate it on `payout_type === 'lightning_address'`).
+
+**Secondary factor:** even after the guard fix, a BOLT12 `/payoffer` to a Phoenix *mobile* wallet needs the phone online (else a 504 onion-timeout — see the status-code comment in `lib/lnbits.ts:forwardPaymentToBolt12Offer`). For reliable hands-off payouts, point `seed-teneo` at an always-on Lightning Address / node or add a scheduled drain of the Phoenixd balance.
+
+**Recovery of stuck funds:** drain the Phoenixd node manually — pay Travis's offer (or a Phoenix invoice) from the node API (`POST /payoffer` or `/payinvoice`) while Phoenix mobile is open.
 
 ---
 
