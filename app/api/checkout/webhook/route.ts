@@ -260,10 +260,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Auto-forward payment to merchant's Lightning Address (fire-and-forget)
-        // This is the "hot potato" custody model — funds leave ArxMint in seconds
-        if (session.merchant_id) {
+        // This is the "hot potato" custody model — funds leave ArxMint in seconds.
+        // skipAutoForward (set by Teneo on third-party-creator marketplace sales)
+        // keeps the sats in the pool so the creator's share can be paid from it
+        // without double-draining — Teneo sweeps its residual separately.
+        if (session.merchant_id && !session.metadata?.skipAutoForward) {
             autoForwardToMerchant(supabase, session.merchant_id, session.amount_sats ?? 0, sessionId)
                 .catch(() => {/* silent — never block webhook */});
+        } else if (session.metadata?.skipAutoForward) {
+            logger.info("auto_forward_skipped", { merchantId: session.merchant_id, sessionId, reason: "skipAutoForward (marketplace pool retains funds for creator payout)" });
         }
 
         // Auto-submit to BTCMap on merchant's first payment (fire-and-forget)
