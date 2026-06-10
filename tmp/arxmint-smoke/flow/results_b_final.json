@@ -1,0 +1,19 @@
+{
+  "B": {
+    "verdict": "PASS",
+    "errors": [],
+    "rails_seen": [
+      "lightning",
+      "cashu",
+      "onchain"
+    ],
+    "default_uri_sample": "lightning:lnbc1000n1demoaa9ea3cea7001fd5fe27265031a02f928717",
+    "default_is_lightning": true,
+    "cashu_uri_sample": "cashu://pay?mint=https%3A%2F%2Fdemo.arxmint.com%2Fmint&amoun",
+    "cashu_starts_with_cashu": true,
+    "onchain_uri_sample": "bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.",
+    "onchain_starts_with_bitcoin": true,
+    "cashu_unavailable_msg_shown": false,
+    "onchain_unavailable_msg_shown": false
+  }
+}

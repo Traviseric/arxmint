@@ -1,0 +1,85 @@
+[
+  {
+    "url": "/",
+    "slug": "home",
+    "status": 200,
+    "title": "ArxMint \u2014 The Sovereign Payment Network",
+    "nav": true,
+    "errors": [],
+    "broken_imgs": 0,
+    "screenshot": "nav/home.png"
+  },
+  {
+    "url": "/merchants",
+    "slug": "merchants",
+    "status": 200,
+    "title": "",
+    "nav": true,
+    "errors": [],
+    "broken_imgs": 0,
+    "screenshot": "nav/merchants.png"
+  },
+  {
+    "url": "/bazaar",
+    "slug": "bazaar",
+    "status": 200,
+    "title": "ArxMint \u2014 The Sovereign Payment Network",
+    "nav": true,
+    "errors": [
+      "console.error: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "console.error: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "console.error: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "console.error: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "console.error: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "console.error: Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+    ],
+    "broken_imgs": 0,
+    "screenshot": "nav/bazaar.png"
+  },
+  {
+    "url": "/merch",
+    "slug": "merch",
+    "status": 200,
+    "title": "ArxMint \u2014 The Sovereign Payment Network",
+    "nav": true,
+    "errors": [],
+    "broken_imgs": 0,
+    "screenshot": "nav/merch.png"
+  },
+  {
+    "url": "/roadmap",
+    "slug": "roadmap",
+    "status": 200,
+    "title": "Roadmap \u2014 Sovereign Payment Network",
+    "nav": true,
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "broken_imgs": 0,
+    "screenshot": "nav/roadmap.png"
+  },
+  {
+    "url": "/about",
+    "slug": "about",
+    "status": 404,
+    "title": "ArxMint \u2014 The Sovereign Payment Network",
+    "nav": true,
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "broken_imgs": 0,
+    "screenshot": "nav/about.png"
+  },
+  {
+    "url": "/learn",
+    "slug": "learn",
+    "status": 404,
+    "title": "ArxMint \u2014 The Sovereign Payment Network",
+    "nav": true,
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "broken_imgs": 0,
+    "screenshot": "nav/learn.png"
+  }
+]

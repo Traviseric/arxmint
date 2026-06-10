@@ -1,0 +1,114 @@
+[
+  {
+    "merchant_id": "seed-teneo",
+    "url": "http://localhost:3000/pay/seed-teneo",
+    "status": 200,
+    "title": "Pay Teneo \u2014 ArxMint",
+    "name_in_dom": true,
+    "expected_names": [
+      "Teneo"
+    ],
+    "body_excerpt": "Skip to main content | Roadmap | Merchants | Bazaar | Merch | Learn | Login | Get Started | Teneo |  | Boulder, Colorado |  | DEMO MODE |  | Test environment \u2014 no real payment is processed |  | Pay |  | 1,000 sats |  | \u2248 $0.80 USD |  | \u26a1 | Lightning | \ud83e\udd5c | Cashu | \u20bf | On-chain | Good privacy |  | Scan with any Lightning wallet |  | Copy Invoice | Open in Lightning Wallet | Waiting for payment... | About Teneo |  | AI-powered publishing and agent commerce. Teneo is the first platform where AI agents and humans share the same Bitcoin payment rails \u2014 agents sell data and ",
+    "qr_count": 1,
+    "spinner_still_showing": false,
+    "sats_shown": true,
+    "usd_shown": true,
+    "errors": [],
+    "broken_imgs": 0,
+    "screenshot_path": "E:/TE-Code/te-btc/arxmint/tmp/arxmint-smoke/pay/seed-teneo.png"
+  },
+  {
+    "merchant_id": "seed-glacier",
+    "url": "http://localhost:3000/pay/seed-glacier",
+    "status": 200,
+    "title": "Pay The Ice Cream Parlor by Glacier \u2014 ArxMint",
+    "name_in_dom": true,
+    "expected_names": [
+      "Glacier"
+    ],
+    "body_excerpt": "Skip to main content | Roadmap | Merchants | Bazaar | Merch | Learn | Login | Get Started | The Ice Cream Parlor by Glacier |  | Fort Collins, CO |  | DEMO MODE |  | Test environment \u2014 no real payment is processed |  | Pay |  | 500 sats |  | \u2248 $0.40 USD |  | \u26a1 | Lightning | \ud83e\udd5c | Cashu | \u20bf | On-chain | Good privacy |  | Scan with any Lightning wallet |  | Copy Invoice | Open in Lightning Wallet | Waiting for payment... |  | Powered by ArxMint \u2014 Bitcoin payments with zero fees |  | Financial privacy as a human right. |  | Censorship-resistant rails for humans + autonomous AI a",
+    "qr_count": 1,
+    "spinner_still_showing": false,
+    "sats_shown": true,
+    "usd_shown": true,
+    "errors": [],
+    "broken_imgs": 0,
+    "screenshot_path": "E:/TE-Code/te-btc/arxmint/tmp/arxmint-smoke/pay/seed-glacier.png"
+  },
+  {
+    "merchant_id": "seed-black-bear",
+    "url": "http://localhost:3000/pay/seed-black-bear",
+    "status": 200,
+    "title": "Pay Black Bear Window Cleaning \u2014 ArxMint",
+    "name_in_dom": true,
+    "expected_names": [
+      "Black Bear"
+    ],
+    "body_excerpt": "Skip to main content | Roadmap | Merchants | Bazaar | Merch | Learn | Login | Get Started | Black Bear Window Cleaning |  | Boulder, CO |  | Amount (sats) |  | 1 \u2013 1,000,000 sats |  | 100 | $0.08 | 500 | $0.40 | 1,000 | $0.80 | 5,000 | $3.99 | Generate Invoice | About Black Bear Window Cleaning |  | Professional window cleaning in Boulder \u2014 pay in sats, zero fees, instant settlement. |  | blackbearwindowcleaning.com |  | GET INVOLVED |  | Join the Pilot \u2014 Become a Founding Merchant | Star on GitHub \u2014 Help us grow |  | Powered by ArxMint \u2014 Bitcoin payments with zero ",
+    "qr_count": 0,
+    "spinner_still_showing": false,
+    "sats_shown": true,
+    "usd_shown": true,
+    "errors": [],
+    "broken_imgs": 0,
+    "screenshot_path": "E:/TE-Code/te-btc/arxmint/tmp/arxmint-smoke/pay/seed-black-bear.png"
+  },
+  {
+    "merchant_id": "arxmint-store",
+    "url": "http://localhost:3000/pay/arxmint-store",
+    "status": 200,
+    "title": "Pay ArxMint Store \u2014 ArxMint",
+    "name_in_dom": true,
+    "expected_names": [
+      "ArxMint",
+      "Store"
+    ],
+    "body_excerpt": "Skip to main content | Roadmap | Merchants | Bazaar | Merch | Learn | Login | Get Started | ArxMint Store | Amount (sats) |  | 1 \u2013 1,000,000 sats |  | 100 | $0.08 | 500 | $0.40 | 1,000 | $0.80 | 5,000 | $3.99 | Generate Invoice | About ArxMint Store |  | Official ArxMint merch \u2014 fortress-energy gear for Bitcoiners. Powered by OpenBazaar.ai. |  | arxmint.com/bazaar |  | GET INVOLVED |  | Join the Pilot \u2014 Become a Founding Merchant | Star on GitHub \u2014 Help us grow |  | Powered by ArxMint \u2014 Bitcoin payments with zero fees |  | Financial privacy as a human right. |  | Cens",
+    "qr_count": 0,
+    "spinner_still_showing": false,
+    "sats_shown": true,
+    "usd_shown": true,
+    "errors": [],
+    "broken_imgs": 0,
+    "screenshot_path": "E:/TE-Code/te-btc/arxmint/tmp/arxmint-smoke/pay/arxmint-store.png"
+  },
+  {
+    "merchant_id": "arxmint-merch",
+    "url": "http://localhost:3000/pay/arxmint-merch",
+    "status": 404,
+    "title": "404: This page could not be found.",
+    "name_in_dom": false,
+    "expected_names": [
+      "ArxMint",
+      "Merch"
+    ],
+    "body_excerpt": "Skip to main content | Roadmap | Merchants | Bazaar | Merch | Learn | Login | Get Started | 404 | This page could not be found. |  | Financial privacy as a human right. |  | Censorship-resistant rails for humans + autonomous AI agents.",
+    "qr_count": 0,
+    "spinner_still_showing": false,
+    "sats_shown": false,
+    "usd_shown": false,
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "broken_imgs": 0,
+    "screenshot_path": "E:/TE-Code/te-btc/arxmint/tmp/arxmint-smoke/pay/arxmint-merch.png"
+  },
+  {
+    "merchant_id": "nonexistent-merchant-xyz",
+    "url": "http://localhost:3000/pay/nonexistent-merchant-xyz",
+    "status": 404,
+    "title": "404: This page could not be found.",
+    "name_in_dom": false,
+    "expected_names": [],
+    "body_excerpt": "Skip to main content | Roadmap | Merchants | Bazaar | Merch | Learn | Login | Get Started | 404 | This page could not be found. |  | Financial privacy as a human right. |  | Censorship-resistant rails for humans + autonomous AI agents.",
+    "qr_count": 0,
+    "spinner_still_showing": false,
+    "sats_shown": false,
+    "usd_shown": false,
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "broken_imgs": 0,
+    "screenshot_path": "E:/TE-Code/te-btc/arxmint/tmp/arxmint-smoke/pay/nonexistent-merchant-xyz.png"
+  }
+]

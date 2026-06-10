@@ -1,0 +1,115 @@
+{
+  "teneo": {
+    "url": "http://localhost:3000/pay/seed-teneo",
+    "errors": [
+      "pageerror: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'\".\n"
+    ],
+    "bad_responses": [],
+    "buttons_count": 14,
+    "buttons": [
+      {
+        "tag": "button",
+        "text": "Learn",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "button",
+        "text": "Login",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "button",
+        "text": "",
+        "aria": "Toggle mobile menu",
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Skip to main content",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Roadmap",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Merchants",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Bazaar",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Merch",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "",
+        "aria": "GitHub repository",
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Get Started",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "teneo.io",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Join the Pilot \u2014 Become a Founding Merchant",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "Star on GitHub \u2014 Help us grow",
+        "aria": null,
+        "data_rail": null
+      },
+      {
+        "tag": "a",
+        "text": "ArxMint",
+        "aria": null,
+        "data_rail": null
+      }
+    ],
+    "inputs": [],
+    "body_excerpt": "Skip to main content\nRoadmap\nMerchants\nBazaar\nMerch\nLearn\nLogin\nGet Started\nTeneo\n\nBoulder, Colorado\n\nAbout Teneo\n\nAI-powered publishing and agent commerce. Teneo is the first platform where AI agents and humans share the same Bitcoin payment rails \u2014 agents sell data and compute via L402 paywalls, creators sell books and courses, all settled instantly in sats with zero platform fees.\n\nteneo.io\n\nGET INVOLVED\n\nJoin the Pilot \u2014 Become a Founding Merchant\nStar on GitHub \u2014 Help us grow\n\nPowered by ArxMint \u2014 Bitcoin payments with zero fees\n\nFinancial privacy as a human right.\n\nCensorship-resistant rails for humans + autonomous AI agents."
+  },
+  "merch": {
+    "url": "http://localhost:3000/pay/arxmint-merch?shipping=1",
+    "errors": [
+      "console: [error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "pageerror: Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'\".\n",
+      "console: [warning] The resource http://localhost:3000/_next/static/css/app/layout.css?v=1778739252746 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+      "console: [warning] The resource http://localhost:3000/images/wordmark-b.png?v=5 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+      "console: [warning] The resource http://localhost:3000/images/nav-logo-transparent.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    ],
+    "bad_responses": [
+      "404 http://localhost:3000/pay/arxmint-merch?shipping=1"
+    ],
+    "buttons_count": 0,
+    "buttons": [],
+    "inputs": [],
+    "body_excerpt": ""
+  }
+}

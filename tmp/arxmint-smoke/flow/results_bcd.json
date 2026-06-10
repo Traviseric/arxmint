@@ -1,0 +1,49 @@
+{
+  "B": {
+    "verdict": "WARN",
+    "errors": [],
+    "rails_seen": [
+      "lightning",
+      "cashu",
+      "onchain"
+    ],
+    "default_uri_prefix": "",
+    "cashu_uri_prefix": null,
+    "onchain_uri_prefix": null,
+    "cashu_starts_with_cashu": false,
+    "onchain_starts_with_bitcoin": false
+  },
+  "C": {
+    "verdict": "WARN",
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "spec_url_status": 404,
+    "spec_url_is_notfound_or_empty": true,
+    "note": "Spec URL /pay/arxmint-merch \u2014 actual seed merchant ID is 'arxmint-store'. Tested arxmint-store as fallback.",
+    "shipping_fields_on_store": {
+      "name": true,
+      "street": true,
+      "city": true,
+      "zip": true,
+      "country": false
+    },
+    "passed_field_count": 4,
+    "triggered_form_via_amount": true,
+    "input_count": 6,
+    "screenshots": [
+      "shipping_form.png",
+      "shipping_form_store.png",
+      "shipping_form_after_amount.png"
+    ]
+  },
+  "D": {
+    "verdict": "PASS",
+    "errors": [],
+    "has_amount_2500": true,
+    "has_memo_in_visible_text": false,
+    "has_memo_in_html": true,
+    "has_memo_in_input_value": false,
+    "body_excerpt": "Skip to main content\nRoadmap\nMerchants\nBazaar\nMerch\nLearn\nLogin\nGet Started\nThe Ice Cream Parlor by Glacier\n\nFort Collins, CO\n\nDEMO MODE\n\nTest environment \u2014 no real payment is processed\n\nPay\n\n2,500 sats\n\n\u2248 $2.00 USD\n\n\u26a1\nLightning\n\ud83e\udd5c\nCashu\n\u20bf\nOn-chain\nGood privacy\n\nScan with any Lightning wallet\n\nCopy Invoice\nOpen in Lightning Wallet\nWaiting for payment...\n\nPowered by ArxMint \u2014 Bitcoin payments with z"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "A": {
+    "errors": [],
+    "initial_has_invoice": true,
+    "settle_keywords_found": [
+      "paid",
+      "thank you",
+      "confirmed",
+      "settled"
+    ],
+    "action_buttons": [
+      "New Payment"
+    ],
+    "body_excerpt": "skip to main content\nroadmap\nmerchants\nbazaar\nmerch\nlearn\nlogin\nget started\npayment confirmed. thank you!\nteneo\n\nboulder, colorado\n\ndemo mode\n\ntest environment \u2014 no real payment is processed\n\npayment received\n\n1,000 sats\n\n\u2248 $0.80 usd\n\npaid to teneo\n\n5/14/2026, 12:12:33 am\n\nthis was a demo payment\n\nnew payment\nabout teneo\n\nai-powered publishing and agent commerce. teneo is the first platform where "
+  },
+  "B": {
+    "errors": [],
+    "rail_buttons_found": [],
+    "default_uri": "",
+    "cashu_uri": "",
+    "onchain_uri": ""
+  },
+  "C": {
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "shipping_fields": {
+      "name": false,
+      "street": false,
+      "city": false,
+      "zip": false
+    },
+    "fields_sample": []
+  },
+  "D": {
+    "errors": [],
+    "has_amount_2500": true,
+    "has_memo": false,
+    "body_excerpt": "Skip to main content\nRoadmap\nMerchants\nBazaar\nMerch\nLearn\nLogin\nGet Started\nPayment confirmed. Thank you!\nThe Ice Cream Parlor by Glacier\n\nFort Collins, CO\n\nDEMO MODE\n\nTest environment \u2014 no real payment is processed\n\nPayment Received\n\n2,500 sats\n\n\u2248 $2.00 USD\n\nPaid to The Ice Cream Parlor by Glacier\n\n5/14/2026, 12:13:22 AM\n\nThis was a demo payment\n\nNew Payment\n\nPowered by ArxMint \u2014 Bitcoin payments with zero fees\n\nFinancial privacy as a human right.\n\nCensorship-resistant rails for humans + autonomous AI agents."
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "responsive": [
+    {
+      "page": "root",
+      "url": "http://localhost:3000/",
+      "mobile_hscroll": false,
+      "mobile_scrollW": 375,
+      "mobile_innerW": 375,
+      "mobile_smallBtns": 6,
+      "mobile_totalBtns": 18,
+      "tablet_hscroll": false,
+      "tablet_scrollW": 768,
+      "tablet_innerW": 768,
+      "tablet_smallBtns": 10,
+      "tablet_totalBtns": 17,
+      "desktop_hscroll": false,
+      "desktop_scrollW": 1440,
+      "desktop_innerW": 1440,
+      "desktop_smallBtns": 10,
+      "desktop_totalBtns": 18
+    },
+    {
+      "page": "pay-seed-teneo",
+      "url": "http://localhost:3000/pay/seed-teneo",
+      "mobile_hscroll": false,
+      "mobile_scrollW": 375,
+      "mobile_innerW": 375,
+      "mobile_smallBtns": 14,
+      "mobile_totalBtns": 20,
+      "tablet_hscroll": false,
+      "tablet_scrollW": 768,
+      "tablet_innerW": 768,
+      "tablet_smallBtns": 19,
+      "tablet_totalBtns": 20,
+      "desktop_hscroll": false,
+      "desktop_scrollW": 1440,
+      "desktop_innerW": 1440,
+      "desktop_smallBtns": 19,
+      "desktop_totalBtns": 20
+    },
+    {
+      "page": "merchants",
+      "url": "http://localhost:3000/merchants",
+      "mobile_hscroll": false,
+      "mobile_scrollW": 375,
+      "mobile_innerW": 375,
+      "mobile_smallBtns": 24,
+      "mobile_totalBtns": 32,
+      "tablet_hscroll": false,
+      "tablet_scrollW": 768,
+      "tablet_innerW": 768,
+      "tablet_smallBtns": 28,
+      "tablet_totalBtns": 32,
+      "desktop_hscroll": false,
+      "desktop_scrollW": 1440,
+      "desktop_innerW": 1440,
+      "desktop_smallBtns": 28,
+      "desktop_totalBtns": 32
+    },
+    {
+      "page": "bazaar",
+      "url": "http://localhost:3000/bazaar",
+      "mobile_hscroll": false,
+      "mobile_scrollW": 375,
+      "mobile_innerW": 375,
+      "mobile_smallBtns": 20,
+      "mobile_totalBtns": 46,
+      "tablet_hscroll": false,
+      "tablet_scrollW": 768,
+      "tablet_innerW": 768,
+      "tablet_smallBtns": 25,
+      "tablet_totalBtns": 46,
+      "desktop_hscroll": false,
+      "desktop_scrollW": 1440,
+      "desktop_innerW": 1440,
+      "desktop_smallBtns": 25,
+      "desktop_totalBtns": 46
+    },
+    {
+      "page": "merch",
+      "url": "http://localhost:3000/merch",
+      "mobile_hscroll": false,
+      "mobile_scrollW": 375,
+      "mobile_innerW": 375,
+      "mobile_smallBtns": 17,
+      "mobile_totalBtns": 23,
+      "tablet_hscroll": false,
+      "tablet_scrollW": 768,
+      "tablet_innerW": 768,
+      "tablet_smallBtns": 21,
+      "tablet_totalBtns": 23,
+      "desktop_hscroll": false,
+      "desktop_scrollW": 1440,
+      "desktop_innerW": 1440,
+      "desktop_smallBtns": 21,
+      "desktop_totalBtns": 23
+    }
+  ],
+  "a11y": [
+    {
+      "page": "root",
+      "h1": 1,
+      "imgs_missing_alt": 0,
+      "total_imgs": 4,
+      "lang": "en",
+      "errors": []
+    },
+    {
+      "page": "pay-seed-teneo",
+      "h1": 1,
+      "imgs_missing_alt": 0,
+      "total_imgs": 4,
+      "lang": "en",
+      "errors": []
+    },
+    {
+      "page": "merchants",
+      "h1": 1,
+      "imgs_missing_alt": 0,
+      "total_imgs": 7,
+      "lang": "en",
+      "errors": []
+    },
+    {
+      "page": "bazaar",
+      "h1": 1,
+      "imgs_missing_alt": 0,
+      "total_imgs": 16,
+      "lang": "en",
+      "errors": []
+    },
+    {
+      "page": "merch",
+      "h1": 1,
+      "imgs_missing_alt": 0,
+      "total_imgs": 3,
+      "lang": "en",
+      "errors": []
+    }
+  ]
+}

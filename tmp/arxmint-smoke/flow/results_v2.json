@@ -1,0 +1,70 @@
+{
+  "A": {
+    "verdict": "PASS",
+    "errors": [],
+    "initial_state": "invoice/loading",
+    "settle_keywords": [
+      "paid",
+      "thank you",
+      "confirmed",
+      "settled"
+    ],
+    "action_buttons": [
+      "New Payment"
+    ],
+    "screenshots": [
+      "state_initial.png",
+      "state_after_30s.png"
+    ]
+  },
+  "B": {
+    "verdict": "WARN",
+    "errors": [],
+    "rails_seen": [
+      "lightning",
+      "on-chain"
+    ],
+    "default_uri": "",
+    "cashu_uri": null,
+    "onchain_uri": null,
+    "cashu_prefix_ok": false,
+    "onchain_prefix_ok": false,
+    "screenshots": [
+      "rails_default.png",
+      "rails_cashu.png",
+      "rails_onchain.png"
+    ]
+  },
+  "C": {
+    "verdict": "WARN",
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "arxmint_merch_404": true,
+    "note": "Spec said /pay/arxmint-merch but seed merchant ID is 'arxmint-store'. Tested both.",
+    "shipping_fields_on_store": {
+      "name": true,
+      "street": false,
+      "city": true,
+      "zip": false
+    },
+    "input_count": 6,
+    "screenshots": [
+      "shipping_form.png",
+      "shipping_form_store.png",
+      "shipping_form_after_amount.png"
+    ]
+  },
+  "D": {
+    "verdict": "FAIL",
+    "errors": [
+      "console.error: Failed to load resource: the server responded with a status of 429 (Too Many Requests)"
+    ],
+    "has_amount_2500": false,
+    "has_memo_two_scoops": true,
+    "body_excerpt": "Skip to main content\nRoadmap\nMerchants\nBazaar\nMerch\nLearn\nLogin\nGet Started\nToo many requests. Try again later.\nThe Ice Cream Parlor by Glacier\n\nFort Collins, CO\n\nSomething Went Wrong\n\nToo many requests. Try again later.\n\nTry Again\n\nPowered by ArxMint \u2014 Bitcoin payments with zero fees\n\nFinancial privacy as a human right.\n\nCensorship-resistant rails for humans + autonomous AI agents.",
+    "screenshots": [
+      "preset_params.png"
+    ]
+  }
+}
