@@ -24,6 +24,9 @@ import {
 import { validateRemoteSignerEnv } from "@/lib/lightning-validator";
 import { logger } from "@/lib/logger";
 import { AgentWallet, MemoryStorage } from "@/lib/agent-wallet";
+import { getNetworkIntel, computeRoutingAdvice, getMempoolStats, getFeeEstimates } from "@/lib/mempool-data";
+import { createJob, getJob, listComputeTypes, COMPUTE_PRICES } from "@/lib/compute-engine";
+import { computeReputation, recordPaymentEvent, checkTrust, compareReputation, TRUST_THRESHOLDS } from "@/lib/agent-reputation";
 
 /** Default paywall config — matches .env.example CASHU_MINT_URL */
 const PAYWALL_CONFIG: CashuPaywallConfig = {
@@ -37,22 +40,35 @@ const PAYWALL_CONFIG: CashuPaywallConfig = {
 const SERVICE_PRICES: Record<string, number> = {
   "privacy-audit": 200,
   "cycle-signals": 50,
-  compute: 500,
-  data: 100,
-  "verify-payment": 0, // Free — used by downstream TE services to verify agent payments
-  "wallet-status": 0, // Free — agent introspection into wallet state
+  liquidity: 100,
+  "network-intel": 100,
+  compute: 500, // Default for compute — actual price per job type in COMPUTE_PRICES
+  "verify-payment": 0,
+  "wallet-status": 0,
+  reputation: 30,
+  "trust-check": 20,
+  "compare-reputation": 50,
 };
 
-/** Create an ephemeral agent wallet (per-request, serverless-safe). */
+/** Singleton agent wallet — persists ecash proofs across requests within the same server process. */
+let _agentWallet: AgentWallet | null = null;
+
 function getAgentWallet(): AgentWallet {
-  return new AgentWallet({
-    mintUrl: process.env.CASHU_MINT_URL || "http://localhost:3338",
-    storage: new MemoryStorage(),
-    budget: {
-      maxPerOperationSats: 1000,
-      maxPerSessionSats: 5000,
-    },
-  });
+  if (!_agentWallet) {
+    _agentWallet = new AgentWallet({
+      mintUrl: process.env.CASHU_MINT_URL || "http://localhost:3338",
+      storage: new MemoryStorage(),
+      budget: {
+        maxPerOperationSats: 1000,
+        maxPerSessionSats: 5000,
+      },
+    });
+    logger.info("Agent wallet initialized (singleton, in-process persistence)", {
+      action: "agent_wallet_init",
+      mintUrl: process.env.CASHU_MINT_URL || "http://localhost:3338",
+    });
+  }
+  return _agentWallet;
 }
 
 /**
@@ -148,6 +164,32 @@ async function checkPayment(
 }
 
 /**
+ * Record a completed payment event for reputation tracking.
+ * Uses X-Agent-Id header if provided by the calling agent.
+ */
+async function recordReputationEvent(
+  request: NextRequest,
+  method: "l402" | "cashu" | "skip",
+  serviceName: string
+): Promise<void> {
+  const agentId = request.headers.get("X-Agent-Id");
+  if (!agentId) return;
+
+  const price = SERVICE_PRICES[serviceName] || PAYWALL_CONFIG.priceSats;
+  if (price === 0) return;
+
+  recordPaymentEvent({
+    agentId,
+    counterpartyId: "arxmint-agent-api",
+    amountSats: price,
+    direction: "sent",
+    status: "completed",
+    timestamp: Date.now(),
+    metadata: { service: serviceName, paymentMethod: method },
+  }).catch(() => {});
+}
+
+/**
  * GET /api/agent — Main agent query endpoint
  *
  * Payment required (unless SKIP_PAYMENT_VERIFY=true in env):
@@ -212,6 +254,9 @@ export async function GET(request: NextRequest) {
 
   const paymentMethod = payment.method;
 
+  // Record payment for reputation tracking (best-effort, never blocks)
+  recordReputationEvent(request, paymentMethod, service);
+
   // Route to the right agent service
   switch (service) {
     case "privacy-audit": {
@@ -255,6 +300,98 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    case "liquidity": {
+      try {
+        const [cycleMetrics, stats, fees] = await Promise.all([
+          getCycleMetrics(),
+          getMempoolStats(),
+          getFeeEstimates(),
+        ]);
+        const routing = computeRoutingAdvice(stats, fees);
+
+        const btcAction: string =
+          cycleMetrics.signal === "strong-buy"
+            ? "Aggressively convert USD → BTC. Mempool is " +
+              routing.mempoolCongestion +
+              ". Use Lightning for small buys (" +
+              routing.recommendedFee +
+              " on-chain)."
+            : cycleMetrics.signal === "buy"
+              ? "DCA into BTC. Current on-chain fee: " +
+                fees.fastestFee +
+                " sat/vB."
+              : cycleMetrics.signal === "sell" || cycleMetrics.signal === "strong-sell"
+                ? "Cycle top signals firing. Spend BTC on productive assets. " +
+                  routing.mempoolCongestion +
+                  " mempool — expect " +
+                  (routing.lightningRecommended ? "use Lightning" : "on-chain is fine") +
+                  "."
+                : "Hold. Mempool " +
+                  routing.mempoolCongestion +
+                  " (" +
+                  stats.count +
+                  " tx pending).";
+
+        return NextResponse.json({
+          service: "liquidity",
+          paymentMethod,
+          treasury: {
+            cycle: {
+              signal: cycleMetrics.signal,
+              mvrv: cycleMetrics.mvrv,
+              nupl: cycleMetrics.nupl,
+              supplyInProfit: cycleMetrics.supplyInProfit,
+              price: cycleMetrics.price,
+            },
+            network: {
+              mempoolTxCount: stats.count,
+              mempoolVSize: stats.vsize,
+              congestion: routing.mempoolCongestion,
+              fees,
+              recommendedFee: routing.recommendedFee,
+            },
+            action: btcAction,
+            routingRecommendation: routing.lightningRecommended
+              ? "Lightning"
+              : routing.mempoolCongestion === "low"
+                ? "On-chain"
+                : "Ecash (instant, zero-fee)",
+          },
+          timestamp: Date.now(),
+        });
+      } catch (error: unknown) {
+        logger.warn("liquidity live fetch failed; returning degraded signal", {
+          error: error instanceof Error ? error.message : String(error),
+          action: "liquidity_fallback",
+        });
+        try {
+          const cycleMetrics = await getCycleMetrics();
+          return NextResponse.json({
+            service: "liquidity",
+            paymentMethod,
+            degraded: true,
+            treasury: {
+              cycle: {
+                signal: cycleMetrics.signal,
+                mvrv: cycleMetrics.mvrv,
+                nupl: cycleMetrics.nupl,
+                supplyInProfit: cycleMetrics.supplyInProfit,
+                price: cycleMetrics.price,
+              },
+              network: { note: "mempool data unavailable" },
+            },
+            timestamp: Date.now(),
+          });
+        } catch {
+          return NextResponse.json({
+            service: "liquidity",
+            error: "All data sources unavailable",
+            cached: { signal: "neutral", action: "Hold. Check again later." },
+          });
+        }
+      }
+    }
+
     case "cycle-signals": {
       try {
         const metrics = await getCycleMetrics();
@@ -289,52 +426,167 @@ export async function GET(request: NextRequest) {
     }
 
     case "compute": {
-      const computeWallet = getAgentWallet();
+      const ct = (searchParams.get("type") || "hash").toLowerCase();
+      const inputParam = searchParams.get("input");
+      const jobId = searchParams.get("jobId");
+
+      if (jobId) {
+        const job = getJob(jobId);
+        if (!job) {
+          return NextResponse.json({ error: "Job not found", jobId }, { status: 404 });
+        }
+        return NextResponse.json({
+          service: "compute",
+          paymentMethod,
+          job,
+        }, {
+          headers: job.status === "completed"
+            ? { "X-Job-Status": "completed" }
+            : { "Retry-After": "2" },
+        });
+      }
+
+      if (!inputParam) {
+        const types = listComputeTypes();
+        return NextResponse.json({
+          service: "compute",
+          paymentMethod,
+          message: "Supply ?type=<jobType>&input=<json>. Use ?type=list to see available types.",
+          availableTypes: types,
+          hint: "POST also accepted for larger inputs.",
+        });
+      }
+
+      let input: unknown;
+      try {
+        input = JSON.parse(inputParam);
+      } catch {
+        input = inputParam;
+      }
+
+      const price = COMPUTE_PRICES[ct] || COMPUTE_PRICES.generic;
+      const job = createJob(ct, input);
+
       return NextResponse.json({
         service: "compute",
-        demo: true,
-        disclaimer: "Demo endpoint — returns placeholder output. Real compute dispatch is on the roadmap.",
         paymentMethod,
-        result: {
-          jobId: `job_${Date.now().toString(36)}`,
-          status: "completed",
-          output: "Compute task executed successfully (demo placeholder)",
-          compute_units: 1,
-          cost_sats: 500,
+        job: {
+          id: job.id,
+          type: job.type,
+          status: job.status,
+          costSats: price,
+          createdAt: job.createdAt,
         },
-        wallet: {
-          balance_sats: computeWallet.getBalance(),
-          budget: computeWallet.getBudgetState(),
-          audit_log: computeWallet.exportAuditLog(),
-        },
-        timestamp: Date.now(),
+        pollUrl: `/api/agent?service=compute&jobId=${job.id}`,
       });
     }
 
     case "data":
+    case "network-intel":
       return NextResponse.json({
-        service: "data-marketplace",
-        demo: true,
-        disclaimer: "Demo endpoint — returns placeholder dataset catalog. Real data delivery (mempool.space, Amboss) is on the roadmap.",
+        service: "network-intel",
         paymentMethod,
+        intel: await getNetworkIntel(),
         datasets: [
           {
-            id: "btc-mempool-stats",
-            name: "BTC Mempool Stats (demo)",
-            description: "Real-time mempool size, fee rates, and tx count",
+            id: "btc-mempool",
+            name: "BTC Mempool (live)",
+            description: "Real-time mempool size, fee rates, and tx backlog",
             price_sats: 50,
             format: "json",
+            source: "mempool.space",
           },
           {
-            id: "lightning-capacity",
-            name: "Lightning Capacity (demo)",
-            description: "Channel capacity distribution and routing stats",
-            price_sats: 100,
+            id: "lightning-network",
+            name: "Lightning Network (live)",
+            description: "Node count, channel count, total capacity",
+            price_sats: 75,
             format: "json",
+            source: "mempool.space",
+          },
+          {
+            id: "fee-estimates",
+            name: "Fee Estimates (live)",
+            description: "Recommended fee rates — fastest, hour, economy",
+            price_sats: 30,
+            format: "json",
+            source: "mempool.space",
+          },
+          {
+            id: "routing-advice",
+            name: "Payment Routing Advice (computed)",
+            description: "Congestion-aware Lightning vs ecash vs on-chain routing recommendation",
+            price_sats: 40,
+            format: "json",
+            source: "computed",
           },
         ],
         timestamp: Date.now(),
       });
+
+    case "reputation": {
+      const targetId = searchParams.get("agentId") || searchParams.get("id");
+      if (!targetId) {
+        return NextResponse.json(
+          { error: "Missing ?agentId=<rootId> parameter" },
+          { status: 400 }
+        );
+      }
+      const rep = await computeReputation(targetId);
+      return NextResponse.json({
+        service: "reputation",
+        paymentMethod,
+        reputation: rep,
+      });
+    }
+
+    case "trust-check": {
+      const targetId = searchParams.get("agentId") || searchParams.get("id");
+      const action = searchParams.get("action") || "browse-bazaar";
+      if (!targetId) {
+        return NextResponse.json(
+          { error: "Missing ?agentId=<rootId> parameter" },
+          { status: 400 }
+        );
+      }
+      if (!(action in TRUST_THRESHOLDS)) {
+        return NextResponse.json(
+          {
+            error: "Unknown action",
+            validActions: Object.keys(TRUST_THRESHOLDS),
+          },
+          { status: 400 }
+        );
+      }
+      const trust = await checkTrust(
+        targetId,
+        action as keyof typeof TRUST_THRESHOLDS
+      );
+      return NextResponse.json({
+        service: "trust-check",
+        paymentMethod,
+        agentId: targetId,
+        action,
+        ...trust,
+      });
+    }
+
+    case "compare-reputation": {
+      const a = searchParams.get("a");
+      const b = searchParams.get("b");
+      if (!a || !b) {
+        return NextResponse.json(
+          { error: "Missing ?a=<agentId>&b=<agentId> parameters" },
+          { status: 400 }
+        );
+      }
+      const comparison = await compareReputation(a, b);
+      return NextResponse.json({
+        service: "compare-reputation",
+        paymentMethod,
+        ...comparison,
+      });
+    }
 
     case "verify-payment": {
       // Payment verification service for downstream TE services (e.g. teneo-publishing).
@@ -375,21 +627,27 @@ export async function GET(request: NextRequest) {
         available_services: [
           "privacy-audit",
           "cycle-signals",
+          "liquidity",
+          "network-intel",
           "compute",
-          "data",
+          "reputation",
+          "trust-check",
+          "compare-reputation",
           "verify-payment",
           "wallet-status",
         ],
         pricing: {
           "privacy-audit": "200 sats",
           "cycle-signals": "50 sats",
-          compute: "500 sats/job (demo — placeholder output)",
-          data: "50-100 sats/dataset (demo — static catalog)",
+          liquidity: "100 sats (cycle + mempool treasury intelligence)",
+          "network-intel": "100 sats (live mempool.space data)",
+          compute: "100-500 sats/job (hash, verify, derive, merkle-proof)",
+          reputation: "30 sats (agent reputation score + tier)",
+          "trust-check": "20 sats (permission check for commerce action)",
+          "compare-reputation": "50 sats (compare two agents)",
           "verify-payment": "0 sats (TE service verification)",
           "wallet-status": "0 sats (agent introspection)",
         },
-        demo_services: ["compute", "data"],
-        demo_notice: "compute and data endpoints are demo placeholders. privacy-audit and cycle-signals use real computations.",
         payment_methods: [
           "L402 (Lightning): Pay BOLT11 invoice, include preimage in Authorization header",
           "Cashu NUT-24: Send ecash token in Authorization: Cashu <token>",
