@@ -23,11 +23,13 @@ ArxMint is an **AI Sovereign Circular Economy Builder** — a Next.js web app th
 | Checkout webhook | `app/api/checkout/webhook/route.ts` | HMAC OpenBazaar fulfill |
 | Bazaar storefront | `app/bazaar/page.tsx` | OpenBazaar catalog |
 | Agent API | `app/api/agent/route.ts` | privacy-audit cycle-signals |
+| Agent reputation | `lib/agent-reputation.ts` | computeReputationScore trust tier |
 | L402 demo | `app/api/l402/route.ts` | WWW-Authenticate 402 |
 | Agent wallet (re-export) | `lib/agent-wallet.ts` (via `@te-btc/agent-wallet`) | AgentWallet BudgetPolicy VelocityLimiter |
 | Agent commerce SDK | `packages/agent-commerce/` | AgentCommerceClient l402AgentFetch |
 | Docs index | `docs/README.md` | — |
 | Roadmap | `docs/core/roadmap.md` | Phase Fortify Keystone |
+| Sovereignty gaps | `docs/core/SOVEREIGNTY-INFRASTRUCTURE.md` | infrastructure audit gaps build order |
 | Brand guide | `docs/reference/brand.md` | tagline voice palette |
 | Merch store | `app/merch/page.tsx`, `lib/merch/products.ts` | MERCH_PRODUCTS sticker tee hat cart Lightning Stripe |
 | Merch Stripe checkout | `app/api/merch/checkout/route.ts`, `app/api/merch/webhook/route.ts` | Stripe session dropship printful_items |

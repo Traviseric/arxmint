@@ -39,6 +39,11 @@ build_log.txt
 # TypeScript build info
 tsconfig.tsbuildinfo
 
+# Python test cache
+__pycache__/
+*.pyc
+tmp/
+
 # Claude Code
 .claude/
 
